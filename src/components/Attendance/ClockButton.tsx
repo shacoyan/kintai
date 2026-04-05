@@ -1,16 +1,16 @@
-// FILE: components/Attendance/ClockButton.tsx
 import { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { AttendanceRecord } from '../../types';
 
 interface ClockButtonProps {
-  status: 'not_started' | 'working' | 'on_break' | 'finished';
+  status: 'not_started' | 'working' | 'on_break';
   clockIn: () => Promise<void>;
   clockOut: () => Promise<void>;
-  todayRecord: AttendanceRecord | null;
+  todayRecords: AttendanceRecord[];
+  activeRecord: AttendanceRecord | null;
 }
 
-export function ClockButton({ status, clockIn, clockOut, todayRecord }: ClockButtonProps) {
+export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRecord }: ClockButtonProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,25 +40,23 @@ export function ClockButton({ status, clockIn, clockOut, todayRecord }: ClockBut
   const getButtonConfig = () => {
     switch (status) {
       case 'not_started':
+        if (todayRecords.length > 0) {
+          return { label: '再出勤', bg: 'bg-green-500 hover:bg-green-600', disabled: false };
+        }
         return { label: '出勤', bg: 'bg-green-500 hover:bg-green-600', disabled: false };
       case 'working':
         return { label: '退勤', bg: 'bg-red-500 hover:bg-red-600', disabled: false };
       case 'on_break':
         return { label: '休憩中...', bg: 'bg-yellow-400', disabled: true };
-      case 'finished':
-        return { label: 'お疲れ様！', bg: 'bg-gray-400', disabled: true };
     }
   };
 
   const config = getButtonConfig();
-  const formatTime = (iso: string | null) => iso ? format(parseISO(iso), 'HH:mm') : null;
+  const formatTime = (iso: string | null | undefined) => iso ? format(parseISO(iso), 'HH:mm') : null;
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="text-5xl font-bold text-gray-800">
-        {format(currentTime, 'HH:mm')}
-      </div>
-
+      <div className="text-5xl font-bold text-gray-800">{format(currentTime, 'HH:mm')}</div>
       <button
         onClick={handleClick}
         disabled={config.disabled || processing}
@@ -66,19 +64,32 @@ export function ClockButton({ status, clockIn, clockOut, todayRecord }: ClockBut
       >
         {config.label}
       </button>
+      {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
+      {activeRecord?.clock_in && (
+        <div className="flex gap-6 text-sm text-gray-500">
+          <span>出勤: {formatTime(activeRecord.clock_in)}</span>
+          {activeRecord.clock_out && <span>退勤: {formatTime(activeRecord.clock_out)}</span>}
+        </div>
       )}
 
-      <div className="flex gap-6 text-sm text-gray-500">
-        {todayRecord?.clock_in && (
-          <span>出勤: {formatTime(todayRecord.clock_in)}</span>
-        )}
-        {todayRecord?.clock_out && (
-          <span>退勤: {formatTime(todayRecord.clock_out)}</span>
-        )}
-      </div>
+      {todayRecords.length > 0 && (
+        <div className="w-full max-w-sm mt-2">
+          <p className="text-xs text-gray-400 mb-2 text-center">本日のセッション一覧</p>
+          <div className="space-y-1">
+            {todayRecords.map((record, index) => (
+              <div key={record.id} className="flex items-center justify-between text-sm bg-gray-50 rounded px-3 py-1.5">
+                <span className="text-gray-500">{index + 1}回目</span>
+                <div className="flex gap-3">
+                  <span className="text-gray-700">{formatTime(record.clock_in) || '-'}</span>
+                  <span className="text-gray-400">〜</span>
+                  <span className="text-gray-700">{formatTime(record.clock_out) || '勤務中'}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

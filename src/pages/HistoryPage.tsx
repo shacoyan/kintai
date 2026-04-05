@@ -1,11 +1,20 @@
-// FILE: pages/HistoryPage.tsx
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useTenant } from '../hooks/useTenant';
 import { useAttendance } from '../hooks/useAttendance';
 import { DailyList } from '../components/Attendance/DailyList';
 import { MonthlySummary } from '../components/Attendance/MonthlySummary';
+import { CorrectionForm } from '../components/Correction/CorrectionForm';
+import { AttendanceRecord } from '../types';
 import { format, subMonths, addMonths } from 'date-fns';
+
+interface CorrectionModalState {
+  isOpen: boolean;
+  date: string;
+  recordId?: string;
+  clockIn?: string;
+  clockOut?: string;
+}
 
 export function HistoryPage() {
   const { currentTenant } = useTenant();
@@ -21,6 +30,11 @@ function HistoryContent({ tenantId }: { tenantId: string }) {
   const { fetchRecords, monthlyRecords, monthlySummary, loading } = useAttendance(tenantId);
 
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [correctionModal, setCorrectionModal] = useState<CorrectionModalState>({
+    isOpen: false,
+    date: '',
+  });
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
 
@@ -36,6 +50,21 @@ function HistoryContent({ tenantId }: { tenantId: string }) {
 
   function handleNextMonth() {
     setCurrentDate(prev => addMonths(prev, 1));
+  }
+
+  function handleRequestCorrection(date: string, record?: AttendanceRecord) {
+    setCorrectionModal({
+      isOpen: true,
+      date,
+      recordId: record?.id,
+      clockIn: record?.clock_in ?? undefined,
+      clockOut: record?.clock_out ?? undefined,
+    });
+  }
+
+  function handleCloseCorrectionModal() {
+    setCorrectionModal({ isOpen: false, date: '' });
+    fetchRecords(year, month);
   }
 
   return (
@@ -76,9 +105,25 @@ function HistoryContent({ tenantId }: { tenantId: string }) {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
         ) : (
-          <DailyList records={monthlyRecords} year={year} month={month} />
+          <DailyList
+            records={monthlyRecords}
+            year={year}
+            month={month}
+            onRequestCorrection={handleRequestCorrection}
+          />
         )}
       </div>
+
+      {/* 修正申請モーダル */}
+      <CorrectionForm
+        isOpen={correctionModal.isOpen}
+        onClose={handleCloseCorrectionModal}
+        date={correctionModal.date}
+        tenantId={tenantId}
+        attendanceRecordId={correctionModal.recordId}
+        existingClockIn={correctionModal.clockIn}
+        existingClockOut={correctionModal.clockOut}
+      />
     </div>
   );
 }

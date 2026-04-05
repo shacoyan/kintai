@@ -1,34 +1,52 @@
-// FILE: hooks/useAttendance.ts
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { AttendanceRecord } from '../types';
+import { AttendanceRecord, Break } from '../types';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
 
 export function useAttendance(tenantId: string) {
-  const [todayRecord, setTodayRecord] = useState<AttendanceRecord | null>(null);
+  const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
   const [monthlyRecords, setMonthlyRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
-  const status: 'not_started' | 'working' | 'on_break' | 'finished' = (() => {
-    if (!todayRecord) return 'not_started';
-    if (todayRecord.clock_out) return 'finished';
-    if (todayRecord.break_start && !todayRecord.break_end) return 'on_break';
+  const activeRecord = useMemo<AttendanceRecord | null>(() => {
+    return todayRecords.find((r) => r.clock_in && !r.clock_out) ?? null;
+  }, [todayRecords]);
+
+  const activeBreak = useMemo<Break | null>(() => {
+    if (!activeRecord?.breaks) return null;
+    return activeRecord.breaks.find((b) => !b.end_time) ?? null;
+  }, [activeRecord]);
+
+  const status: 'not_started' | 'working' | 'on_break' = (() => {
+    if (!activeRecord) return 'not_started';
+    if (activeBreak) return 'on_break';
     return 'working';
   })();
 
-  const monthlySummary = (() => {
-    const workDays = monthlyRecords.filter(r => r.clock_in).length;
-    const totalWorkMinutes = monthlyRecords.reduce((sum, r) => sum + (r.total_work_minutes || 0), 0);
+  const monthlySummary = useMemo(() => {
+    const workDays = new Set(monthlyRecords.filter((r) => r.clock_in).map((r) => r.date)).size;
+    const totalWorkMinutes = monthlyRecords.reduce(
+      (sum, r) => sum + (r.total_work_minutes || 0),
+      0
+    );
     const totalBreakMinutes = monthlyRecords.reduce((sum, r) => {
-      if (r.break_start && r.break_end) {
-        return sum + differenceInMinutes(parseISO(r.break_end), parseISO(r.break_start));
+      if (r.breaks && r.breaks.length > 0) {
+        return (
+          sum +
+          r.breaks.reduce((bSum, b) => {
+            if (b.start_time && b.end_time) {
+              return bSum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
+            }
+            return bSum;
+          }, 0)
+        );
       }
       return sum;
     }, 0);
     const avgWorkMinutes = workDays > 0 ? Math.round(totalWorkMinutes / workDays) : 0;
     return { totalWorkMinutes, totalBreakMinutes, workDays, avgWorkMinutes };
-  })();
+  }, [monthlyRecords]);
 
   useEffect(() => {
     const channel = supabase
@@ -41,136 +59,179 @@ export function useAttendance(tenantId: string) {
           table: 'attendance_records',
           filter: `tenant_id=eq.${tenantId}`,
         },
-        (payload) => {
-          const record = payload.new as AttendanceRecord;
-          if (record.date === today) {
-            setTodayRecord(record);
-          }
+        () => {
+          fetchTodayRecords();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'breaks',
+        },
+        () => {
+          fetchTodayRecords();
         }
       )
       .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
     };
   }, [tenantId, today]);
 
   useEffect(() => {
-    fetchTodayRecord();
+    fetchTodayRecords();
   }, [tenantId]);
 
-  async function fetchTodayRecord() {
+  async function fetchTodayRecords() {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from('attendance_records')
-        .select('*')
+        .select('*, breaks(*)')
         .eq('tenant_id', tenantId)
         .eq('user_id', user.id)
         .eq('date', today)
-        .maybeSingle();
+        .order('clock_in', { ascending: true });
       if (error) throw error;
-      setTodayRecord(data);
+      setTodayRecords((data as AttendanceRecord[]) || []);
     } catch (err: any) {
-      console.error('Fetch today record error:', err.message);
+      console.error('Fetch today records error:', err.message);
     } finally {
       setLoading(false);
     }
   }
 
   async function clockIn() {
-    if (todayRecord) throw new Error('既に出勤しています');
-    const { data: { user } } = await supabase.auth.getUser();
+    if (activeRecord) {
+      throw new Error('終了していない勤務セッションがあります');
+    }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
     const now = new Date().toISOString();
-    const { error } = await supabase
-      .from('attendance_records')
-      .insert({
-        tenant_id: tenantId,
-        user_id: user.id,
-        date: today,
-        clock_in: now,
-      });
+    const { error } = await supabase.from('attendance_records').insert({
+      tenant_id: tenantId,
+      user_id: user.id,
+      date: today,
+      clock_in: now,
+    });
     if (error) {
       console.error('Clock in error:', error.message);
       throw error;
     }
-    await fetchTodayRecord();
+    await fetchTodayRecords();
   }
 
   async function clockOut() {
-    if (!todayRecord?.clock_in) return;
+    if (!activeRecord?.clock_in) return;
     const now = new Date();
-    let breakDuration = 0;
-    if (todayRecord.break_start && todayRecord.break_end) {
-      breakDuration = differenceInMinutes(parseISO(todayRecord.break_end), parseISO(todayRecord.break_start));
+
+    let totalBreakMinutes = 0;
+    if (activeRecord.breaks && activeRecord.breaks.length > 0) {
+      totalBreakMinutes = activeRecord.breaks.reduce((sum, b) => {
+        if (b.start_time && b.end_time) {
+          return sum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
+        }
+        return sum;
+      }, 0);
     }
-    const totalWorkMinutes = differenceInMinutes(now, parseISO(todayRecord.clock_in)) - breakDuration;
+
+    const totalWorkMinutes =
+      differenceInMinutes(now, parseISO(activeRecord.clock_in)) - totalBreakMinutes;
+
     const { error } = await supabase
       .from('attendance_records')
       .update({
         clock_out: now.toISOString(),
         total_work_minutes: totalWorkMinutes,
       })
-      .eq('id', todayRecord.id);
+      .eq('id', activeRecord.id);
     if (error) {
       console.error('Clock out error:', error.message);
       throw error;
     }
-    await fetchTodayRecord();
+    await fetchTodayRecords();
   }
 
   async function breakStart() {
-    if (!todayRecord) return;
-    const { error } = await supabase
-      .from('attendance_records')
-      .update({ break_start: new Date().toISOString() })
-      .eq('id', todayRecord.id);
+    if (!activeRecord) return;
+    const { error } = await supabase.from('breaks').insert({
+      attendance_record_id: activeRecord.id,
+      start_time: new Date().toISOString(),
+    });
     if (error) {
       console.error('Break start error:', error.message);
       throw error;
     }
-    await fetchTodayRecord();
+    await fetchTodayRecords();
   }
 
   async function breakEnd() {
-    if (!todayRecord) return;
+    if (!activeRecord) return;
+
+    const { data, error: fetchError } = await supabase
+      .from('breaks')
+      .select('id')
+      .eq('attendance_record_id', activeRecord.id)
+      .is('end_time', null)
+      .order('start_time', { ascending: false })
+      .limit(1);
+    if (fetchError) {
+      console.error('Find active break error:', fetchError.message);
+      throw fetchError;
+    }
+    if (!data || data.length === 0) return;
+
     const { error } = await supabase
-      .from('attendance_records')
-      .update({ break_end: new Date().toISOString() })
-      .eq('id', todayRecord.id);
+      .from('breaks')
+      .update({ end_time: new Date().toISOString() })
+      .eq('id', data[0].id);
     if (error) {
       console.error('Break end error:', error.message);
       throw error;
     }
-    await fetchTodayRecord();
+    await fetchTodayRecords();
   }
 
-  const fetchRecords = useCallback(async (year: number, month: number) => {
-    const startDate = format(new Date(year, month - 1, 1), 'yyyy-MM-dd');
-    const endDate = format(new Date(year, month, 0), 'yyyy-MM-dd');
-    const { data, error } = await supabase
-      .from('attendance_records')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: true });
-    if (error) {
-      console.error('Fetch records error:', error.message);
-    }
-    setMonthlyRecords(data || []);
-  }, [tenantId]);
+  const fetchRecords = useCallback(
+    async (year: number, month: number) => {
+      const startDate = format(new Date(year, month - 1, 1), 'yyyy-MM-dd');
+      const endDate = format(new Date(year, month, 0), 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .select('*, breaks(*)')
+        .eq('tenant_id', tenantId)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true })
+        .order('clock_in', { ascending: true });
+      if (error) {
+        console.error('Fetch records error:', error.message);
+      }
+      setMonthlyRecords((data as AttendanceRecord[]) || []);
+    },
+    [tenantId]
+  );
 
   return {
-    todayRecord,
+    todayRecords,
+    activeRecord,
     status,
     clockIn,
     clockOut,
     breakStart,
     breakEnd,
+    activeBreak,
     fetchRecords,
     monthlyRecords,
     monthlySummary,

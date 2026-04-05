@@ -1,4 +1,3 @@
-// FILE: pages/DashboardPage.tsx
 import { useTenant } from '../hooks/useTenant';
 import { useAttendance } from '../hooks/useAttendance';
 import { ClockButton } from '../components/Attendance/ClockButton';
@@ -10,22 +9,20 @@ import { ja } from 'date-fns/locale';
 export function DashboardPage() {
   const { currentTenant } = useTenant();
   const tenantId = currentTenant?.id;
-
-  if (!tenantId) {
-    return <Navigate to="/tenant" replace />;
-  }
-
+  if (!tenantId) return <Navigate to="/tenant" replace />;
   return <DashboardContent tenantId={tenantId} />;
 }
 
 function DashboardContent({ tenantId }: { tenantId: string }) {
   const {
-    todayRecord,
+    todayRecords,
+    activeRecord,
     status,
     clockIn,
     clockOut,
     breakStart,
     breakEnd,
+    activeBreak,
     loading,
   } = useAttendance(tenantId);
 
@@ -52,44 +49,59 @@ function DashboardContent({ tenantId }: { tenantId: string }) {
     return `${h}時間${m}分`;
   };
 
+  const totalWorkMinutes = todayRecords.reduce((sum, record) => sum + (record.total_work_minutes ?? 0), 0);
+
+  const firstClockIn = todayRecords.length > 0
+    ? todayRecords.reduce((earliest, record) => {
+        if (!record.clock_in) return earliest;
+        if (!earliest) return record.clock_in;
+        return record.clock_in < earliest ? record.clock_in : earliest;
+      }, null as string | null)
+    : null;
+
+  const lastClockOut = todayRecords.reduce((latest, record) => {
+    if (!record.clock_out) return latest;
+    if (!latest) return record.clock_out;
+    return record.clock_out > latest ? record.clock_out : latest;
+  }, null as string | null);
+
   return (
     <div className="max-w-md mx-auto space-y-6">
-      {/* 今日の日付 */}
       <div className="text-center pt-6">
         <p className="text-3xl font-bold text-gray-900">{dateDisplay}</p>
       </div>
 
-      {/* 打刻ボタンエリア */}
       <div className="flex flex-col items-center gap-6 py-8">
         <ClockButton
           status={status}
           clockIn={clockIn}
           clockOut={clockOut}
-          todayRecord={todayRecord}
+          todayRecords={todayRecords}
+          activeRecord={activeRecord}
         />
         <BreakButton
           status={status}
           breakStart={breakStart}
           breakEnd={breakEnd}
-          todayRecord={todayRecord}
+          activeRecord={activeRecord}
+          activeBreak={activeBreak}
         />
       </div>
 
-      {/* 今日のサマリーカード */}
       <div className="bg-white rounded-lg shadow p-6 space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 text-center">本日の記録</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">出勤時刻</p>
-            <p className="text-lg font-semibold text-gray-900">{formatTime(todayRecord?.clock_in)}</p>
+            <p className="text-xs text-gray-500 mb-1">最初の出勤</p>
+            <p className="text-lg font-semibold text-gray-900">{formatTime(firstClockIn)}</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">退勤時刻</p>
-            <p className="text-lg font-semibold text-gray-900">{formatTime(todayRecord?.clock_out)}</p>
+            <p className="text-xs text-gray-500 mb-1">最後の退勤</p>
+            <p className="text-lg font-semibold text-gray-900">{lastClockOut ? formatTime(lastClockOut) : (activeRecord ? '勤務中' : '-')}</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-500 mb-1">労働時間</p>
-            <p className="text-lg font-semibold text-gray-900">{formatDuration(todayRecord?.total_work_minutes)}</p>
+            <p className="text-lg font-semibold text-gray-900">{formatDuration(totalWorkMinutes)}</p>
           </div>
         </div>
       </div>

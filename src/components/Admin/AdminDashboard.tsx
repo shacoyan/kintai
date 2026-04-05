@@ -1,8 +1,9 @@
-// FILE: components/Admin/AdminDashboard.tsx
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { useCorrection } from '../../hooks/useCorrection';
+import { CorrectionList } from '../Correction/CorrectionList';
 
 interface AttendanceWithMember {
   id: string;
@@ -28,11 +29,13 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const [records, setRecords] = useState<AttendanceWithMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
   useEffect(() => {
     fetchTodayRecords();
+    fetchRequests();
   }, [tenantId]);
 
   async function fetchTodayRecords() {
@@ -57,9 +60,6 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
     if (record.clock_out) {
       return { label: '退勤済', className: 'bg-gray-100 text-gray-600' };
     }
-    if (record.break_start && !record.break_end) {
-      return { label: '休憩中', className: 'bg-yellow-100 text-yellow-600' };
-    }
     if (record.clock_in) {
       return { label: '出勤中', className: 'bg-green-100 text-green-600' };
     }
@@ -70,6 +70,17 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
     if (!time) return '-';
     return format(parseISO(time), 'HH:mm');
   }
+
+  async function handleReview(requestId: string, status: 'approved' | 'rejected') {
+    try {
+      await reviewRequest(requestId, status);
+    } catch (err) {
+      console.error('Failed to review request:', err);
+    }
+  }
+
+  const pendingRequests = requests.filter((r) => r.status === 'pending');
+  const processedRequests = requests.filter((r) => r.status !== 'pending');
 
   if (loading) {
     return (
@@ -89,65 +100,89 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">
-          本日の勤怠状況（{format(new Date(), 'M月d日', { locale: ja })}）
-        </h2>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                名前
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                ステータス
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                出勤
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                退勤
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {records.length === 0 ? (
+    <div className="space-y-6">
+      {/* 本日の勤怠状況 */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">
+            本日の勤怠状況（{format(new Date(), 'M月d日', { locale: ja })}）
+          </h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                  本日の勤怠記録はありません
-                </td>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">名前</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ステータス</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">出勤</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">退勤</th>
               </tr>
-            ) : (
-              records.map((record) => {
-                const status = getStatus(record);
-                return (
-                  <tr key={record.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {record.tenant_members?.[0]?.display_name || '不明'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${status.className}`}>
-                        {status.label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {formatTime(record.clock_in)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {formatTime(record.clock_out)}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {records.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                    本日の勤怠記録はありません
+                  </td>
+                </tr>
+              ) : (
+                records.map((record) => {
+                  const status = getStatus(record);
+                  return (
+                    <tr key={record.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {record.tenant_members?.[0]?.display_name || '不明'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${status.className}`}>
+                          {status.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {formatTime(record.clock_in)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {formatTime(record.clock_out)}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* 修正申請（承認待ち） */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">修正申請（承認待ち）</h2>
+          {pendingRequests.length > 0 && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+              {pendingRequests.length}件
+            </span>
+          )}
+        </div>
+        {correctionLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          <CorrectionList requests={pendingRequests} onReview={handleReview} />
+        )}
+      </div>
+
+      {/* 修正申請履歴 */}
+      {processedRequests.length > 0 && (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">修正申請履歴</h2>
+          </div>
+          <CorrectionList requests={processedRequests} />
+        </div>
+      )}
     </div>
   );
 }
