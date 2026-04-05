@@ -1,0 +1,149 @@
+import { useState, useMemo, useEffect } from 'react';
+import { useAdmin } from '../../hooks/useAdmin';
+
+interface PayrollCalculationProps {
+  tenantId: string;
+}
+
+interface PayrollRow {
+  userId: string;
+  displayName: string;
+  hourlyRate: number;
+  workDays: number;
+  totalMinutes: number;
+  payment: number;
+}
+
+export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
+  const { members, allAttendance, loading, fetchMembers, fetchAllAttendance } = useAdmin(tenantId);
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
+  const [calculated, setCalculated] = useState(false);
+
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
+
+  const handleCalculate = async () => {
+    setCalculated(false);
+    await fetchAllAttendance(selectedYear, selectedMonth);
+    setCalculated(true);
+  };
+
+  const payrollData: PayrollRow[] = useMemo(() => {
+    if (!calculated) return [];
+
+    const grouped: Record<string, { totalMinutes: number; dates: Set<string> }> = {};
+    allAttendance.forEach((r) => {
+      if (!grouped[r.user_id]) grouped[r.user_id] = { totalMinutes: 0, dates: new Set() };
+      grouped[r.user_id].totalMinutes += r.total_work_minutes || 0;
+      if (r.clock_in) grouped[r.user_id].dates.add(r.date);
+    });
+
+    return members.map((m) => {
+      const data = grouped[m.user_id] || { totalMinutes: 0, dates: new Set() };
+      return {
+        userId: m.user_id,
+        displayName: m.display_name,
+        hourlyRate: m.hourly_rate ?? 0,
+        workDays: data.dates.size,
+        totalMinutes: data.totalMinutes,
+        payment: Math.ceil((data.totalMinutes / 60) * (m.hourly_rate ?? 0)),
+      };
+    });
+  }, [calculated, allAttendance, members]);
+
+  const totalPayment = payrollData.reduce((s, r) => s + r.payment, 0);
+  const totalMinutes = payrollData.reduce((s, r) => s + r.totalMinutes, 0);
+
+  const fmtTime = (min: number) => {
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return `${h}:${String(m).padStart(2, '0')}`;
+  };
+
+  const yearOpts = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 2 + i);
+  const monthOpts = Array.from({ length: 12 }, (_, i) => i + 1);
+
+  return (
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900">給与計算</h2>
+        <p className="mt-1 text-sm text-gray-500">月次の勤怠データから給与を計算します</p>
+      </div>
+
+      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">年</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="block w-28 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              {yearOpts.map((y) => <option key={y} value={y}>{y}年</option>)}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700">月</label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              className="block w-24 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              {monthOpts.map((m) => <option key={m} value={m}>{m}月</option>)}
+            </select>
+          </div>
+          <button
+            onClick={handleCalculate}
+            disabled={loading}
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            {loading ? '計算中...' : '計算'}
+          </button>
+        </div>
+      </div>
+
+      {calculated && (
+        <div className="overflow-x-auto">
+          {payrollData.every((r) => r.totalMinutes === 0) ? (
+            <div className="px-6 py-12 text-center text-gray-500">
+              {selectedYear}年{selectedMonth}月の勤怠データはありません
+            </div>
+          ) : (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">名前</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">稼働日数</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">総労働時間</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">時給</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">支払額</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {payrollData.map((row) => (
+                  <tr key={row.userId} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{row.displayName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">{row.workDays}日</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">{fmtTime(row.totalMinutes)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">¥{row.hourlyRate.toLocaleString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">¥{row.payment.toLocaleString()}</td>
+                  </tr>
+                ))}
+                <tr className="bg-gray-50 border-t-2 border-gray-300">
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900">合計</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900 text-right">-</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900 text-right">{fmtTime(totalMinutes)}</td>
+                  <td className="px-6 py-4 text-right">-</td>
+                  <td className="px-6 py-4 text-base font-bold text-gray-900 text-right">¥{totalPayment.toLocaleString()}</td>
+                </tr>
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

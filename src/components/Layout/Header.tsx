@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useTenant } from '../../hooks/useTenant';
 
 export const Header: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { myRole } = useTenant();
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
@@ -11,6 +13,7 @@ export const Header: React.FC = () => {
   const navLinks = [
     { path: '/', label: 'ダッシュボード' },
     { path: '/history', label: '履歴' },
+    ...(myRole === 'owner' ? [{ path: '/admin', label: '管理' }] : []),
   ];
 
   return (

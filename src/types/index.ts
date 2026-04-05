@@ -12,6 +12,7 @@ export interface TenantMember {
   user_id: string;
   role: 'owner' | 'admin' | 'staff';
   display_name: string;
+  hourly_rate: number;
   created_at: string;
 }
 

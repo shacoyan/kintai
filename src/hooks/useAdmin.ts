@@ -1,0 +1,107 @@
+import { useState, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import type { TenantMember, AttendanceRecord } from '../types';
+
+export function useAdmin(tenantId: string) {
+  const [members, setMembers] = useState<TenantMember[]>([]);
+  const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([]);
+  const [memberAttendance, setMemberAttendance] = useState<AttendanceRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchMembers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error: e } = await supabase
+      .from('tenant_members')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('created_at', { ascending: true });
+    if (e) {
+      setError(e.message);
+    } else {
+      setMembers((data as TenantMember[]) || []);
+    }
+    setLoading(false);
+  }, [tenantId]);
+
+  const updateHourlyRate = useCallback(async (memberId: string, rate: number) => {
+    const { error: e } = await supabase
+      .from('tenant_members')
+      .update({ hourly_rate: rate })
+      .eq('id', memberId);
+    if (e) throw e;
+    await fetchMembers();
+  }, [fetchMembers]);
+
+  const fetchAllAttendance = useCallback(async (year: number, month: number) => {
+    setLoading(true);
+    setError(null);
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    const { data, error: e } = await supabase
+      .from('attendance_records')
+      .select('*, breaks(*)')
+      .eq('tenant_id', tenantId)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true });
+    if (e) {
+      setError(e.message);
+    } else {
+      setAllAttendance((data as AttendanceRecord[]) || []);
+    }
+    setLoading(false);
+  }, [tenantId]);
+
+  const fetchMemberAttendance = useCallback(async (userId: string, startDate: string, endDate: string) => {
+    setLoading(true);
+    setError(null);
+    const { data, error: e } = await supabase
+      .from('attendance_records')
+      .select('*, breaks(*)')
+      .eq('tenant_id', tenantId)
+      .eq('user_id', userId)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true })
+      .order('clock_in', { ascending: true });
+    if (e) {
+      setError(e.message);
+    } else {
+      setMemberAttendance((data as AttendanceRecord[]) || []);
+    }
+    setLoading(false);
+  }, [tenantId]);
+
+  const updateAttendance = useCallback(async (recordId: string, data: { clock_in?: string; clock_out?: string; total_work_minutes?: number }) => {
+    const { error: e } = await supabase
+      .from('attendance_records')
+      .update(data)
+      .eq('id', recordId);
+    if (e) throw e;
+  }, []);
+
+  const deleteAttendance = useCallback(async (recordId: string) => {
+    const { error: e } = await supabase
+      .from('attendance_records')
+      .delete()
+      .eq('id', recordId);
+    if (e) throw e;
+  }, []);
+
+  return {
+    members,
+    allAttendance,
+    memberAttendance,
+    loading,
+    error,
+    fetchMembers,
+    updateHourlyRate,
+    fetchAllAttendance,
+    fetchMemberAttendance,
+    updateAttendance,
+    deleteAttendance,
+  };
+}
