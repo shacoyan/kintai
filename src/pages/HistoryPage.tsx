@@ -1,5 +1,6 @@
 // FILE: pages/HistoryPage.tsx
 import { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useTenant } from '../hooks/useTenant';
 import { useAttendance } from '../hooks/useAttendance';
 import { DailyList } from '../components/Attendance/DailyList';
@@ -8,8 +9,15 @@ import { format, subMonths, addMonths } from 'date-fns';
 
 export function HistoryPage() {
   const { currentTenant } = useTenant();
-  const tenantId = currentTenant?.id || '';
 
+  if (!currentTenant) {
+    return <Navigate to="/tenant" replace />;
+  }
+
+  return <HistoryContent tenantId={currentTenant.id} />;
+}
+
+function HistoryContent({ tenantId }: { tenantId: string }) {
   const { fetchRecords, monthlyRecords, monthlySummary, loading } = useAttendance(tenantId);
 
   const [currentDate, setCurrentDate] = useState(new Date());

@@ -13,6 +13,7 @@ interface ClockButtonProps {
 export function ClockButton({ status, clockIn, clockOut, todayRecord }: ClockButtonProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -22,12 +23,15 @@ export function ClockButton({ status, clockIn, clockOut, todayRecord }: ClockBut
   const handleClick = async () => {
     if (processing) return;
     setProcessing(true);
+    setError(null);
     try {
       if (status === 'not_started') {
         await clockIn();
       } else if (status === 'working') {
         await clockOut();
       }
+    } catch (err: any) {
+      setError(err.message || 'エラーが発生しました');
     } finally {
       setProcessing(false);
     }
@@ -62,6 +66,10 @@ export function ClockButton({ status, clockIn, clockOut, todayRecord }: ClockBut
       >
         {config.label}
       </button>
+
+      {error && (
+        <p className="text-sm text-red-500">{error}</p>
+      )}
 
       <div className="flex gap-6 text-sm text-gray-500">
         {todayRecord?.clock_in && (

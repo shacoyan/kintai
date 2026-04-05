@@ -1,10 +1,10 @@
 // FILE: components/Admin/AdminDashboard.tsx
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
-interface AttendanceWithProfile {
+interface AttendanceWithMember {
   id: string;
   tenant_id: string;
   user_id: string;
@@ -15,9 +15,9 @@ interface AttendanceWithProfile {
   break_end: string | null;
   total_work_minutes: number | null;
   created_at: string;
-  profiles: {
-    display_name: string | null;
-  } | null;
+  tenant_members: {
+    display_name: string;
+  }[] | null;
 }
 
 interface AdminDashboardProps {
@@ -25,8 +25,9 @@ interface AdminDashboardProps {
 }
 
 export function AdminDashboard({ tenantId }: AdminDashboardProps) {
-  const [records, setRecords] = useState<AttendanceWithProfile[]>([]);
+  const [records, setRecords] = useState<AttendanceWithMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -36,21 +37,23 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
 
   async function fetchTodayRecords() {
     setLoading(true);
-    const { data, error } = await supabase
+    setError(null);
+    const { data, error: fetchError } = await supabase
       .from('attendance_records')
-      .select('*, profiles(display_name)')
+      .select('*, tenant_members!attendance_records_user_id_fkey(display_name)')
       .eq('tenant_id', tenantId)
       .eq('date', today);
 
-    if (error) {
-      console.error('Error fetching records:', error);
+    if (fetchError) {
+      console.error('Error fetching records:', fetchError);
+      setError(fetchError.message);
     } else {
-      setRecords(data || []);
+      setRecords((data as AttendanceWithMember[]) || []);
     }
     setLoading(false);
   }
 
-  function getStatus(record: AttendanceWithProfile) {
+  function getStatus(record: AttendanceWithMember) {
     if (record.clock_out) {
       return { label: '退勤済', className: 'bg-gray-100 text-gray-600' };
     }
@@ -65,13 +68,22 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
 
   function formatTime(time: string | null) {
     if (!time) return '-';
-    return format(new Date(time), 'HH:mm');
+    return format(parseISO(time), 'HH:mm');
   }
 
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+        <p className="text-red-600">{error}</p>
+        <button onClick={fetchTodayRecords} className="mt-2 text-sm text-blue-600 hover:underline">再読み込み</button>
       </div>
     );
   }
@@ -115,7 +127,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   <tr key={record.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {record.profiles?.display_name || '不明'}
+                        {record.tenant_members?.[0]?.display_name || '不明'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

@@ -5,7 +5,14 @@ import type { Tenant, TenantMember, TenantWithRole, UserRole } from '../types';
 
 export function useTenant() {
   const [tenants, setTenants] = useState<TenantWithRole[]>([]);
-  const [currentTenant, setCurrentTenantState] = useState<Tenant | null>(null);
+  const [currentTenant, setCurrentTenantState] = useState<Tenant | null>(() => {
+    try {
+      const saved = localStorage.getItem('kintai_current_tenant');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [members, setMembers] = useState<TenantMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,9 +23,9 @@ export function useTenant() {
 
   const setCurrentTenant = useCallback((tenant: Tenant | null) => {
     if (tenant) {
-      localStorage.setItem('kintai_current_tenant_id', tenant.id);
+      localStorage.setItem('kintai_current_tenant', JSON.stringify(tenant));
     } else {
-      localStorage.removeItem('kintai_current_tenant_id');
+      localStorage.removeItem('kintai_current_tenant');
     }
     setCurrentTenantState(tenant);
   }, []);
@@ -153,13 +160,16 @@ export function useTenant() {
 
   useEffect(() => {
     fetchTenants().then(fetchedTenants => {
-      const savedTenantId = localStorage.getItem('kintai_current_tenant_id');
-      if (savedTenantId) {
-        const found = fetchedTenants.find(t => t.id === savedTenantId);
-        if (found) {
-          setCurrentTenantState(found);
-          fetchMembers(found.id);
-        }
+      const saved = localStorage.getItem('kintai_current_tenant');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const found = fetchedTenants.find(t => t.id === parsed.id);
+          if (found) {
+            setCurrentTenantState(found);
+            fetchMembers(found.id);
+          }
+        } catch {}
       }
     });
   }, [fetchTenants, fetchMembers, setCurrentTenantState]);

@@ -61,22 +61,35 @@ export function useAttendance(tenantId: string) {
 
   async function fetchTodayRecord() {
     setLoading(true);
-    const { data } = await supabase
-      .from('attendance_records')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .eq('date', today)
-      .single();
-    setTodayRecord(data);
-    setLoading(false);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .maybeSingle();
+      if (error) throw error;
+      setTodayRecord(data);
+    } catch (err: any) {
+      console.error('Fetch today record error:', err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function clockIn() {
+    if (todayRecord) throw new Error('既に出勤しています');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
     const now = new Date().toISOString();
     const { error } = await supabase
       .from('attendance_records')
       .insert({
         tenant_id: tenantId,
+        user_id: user.id,
         date: today,
         clock_in: now,
       });
@@ -84,6 +97,7 @@ export function useAttendance(tenantId: string) {
       console.error('Clock in error:', error.message);
       throw error;
     }
+    await fetchTodayRecord();
   }
 
   async function clockOut() {
@@ -105,6 +119,7 @@ export function useAttendance(tenantId: string) {
       console.error('Clock out error:', error.message);
       throw error;
     }
+    await fetchTodayRecord();
   }
 
   async function breakStart() {
@@ -117,6 +132,7 @@ export function useAttendance(tenantId: string) {
       console.error('Break start error:', error.message);
       throw error;
     }
+    await fetchTodayRecord();
   }
 
   async function breakEnd() {
@@ -129,6 +145,7 @@ export function useAttendance(tenantId: string) {
       console.error('Break end error:', error.message);
       throw error;
     }
+    await fetchTodayRecord();
   }
 
   const fetchRecords = useCallback(async (year: number, month: number) => {

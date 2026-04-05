@@ -13,13 +13,13 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
   const roleColors: Record<string, string> = {
     owner: 'bg-blue-100 text-blue-800',
     admin: 'bg-green-100 text-green-800',
-    member: 'bg-gray-100 text-gray-800',
+    staff: 'bg-gray-100 text-gray-800',
   };
 
   const roleLabels: Record<string, string> = {
     owner: 'オーナー',
     admin: '管理者',
-    member: 'メンバー',
+    staff: 'スタッフ',
   };
 
   return (
