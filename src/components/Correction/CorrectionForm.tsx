@@ -54,9 +54,24 @@ export function CorrectionForm({
 
   const isDelete = mode === 'delete';
 
-  const toISOTimestamp = (timeStr: string, dateStr: string): string | undefined => {
-    if (!timeStr) return undefined;
-    return new Date(`${dateStr}T${timeStr}:00`).toISOString();
+  const buildTimestamps = () => {
+    if (!requestedClockIn && !requestedClockOut) return { clockIn: undefined, clockOut: undefined };
+
+    const clockInISO = requestedClockIn
+      ? new Date(`${date}T${requestedClockIn}:00`).toISOString()
+      : undefined;
+
+    let clockOutISO: string | undefined;
+    if (requestedClockOut) {
+      const outDate = new Date(`${date}T${requestedClockOut}:00`);
+      // 退勤時刻が出勤時刻より前なら翌日とみなす（例: 出勤22:00 → 退勤05:00）
+      if (requestedClockIn && requestedClockOut < requestedClockIn) {
+        outDate.setDate(outDate.getDate() + 1);
+      }
+      clockOutISO = outDate.toISOString();
+    }
+
+    return { clockIn: clockInISO, clockOut: clockOutISO };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,11 +85,15 @@ export function CorrectionForm({
     setError(null);
 
     try {
+      const { clockIn, clockOut } = isDelete
+        ? { clockIn: undefined, clockOut: undefined }
+        : buildTimestamps();
+
       await submitRequest({
         date,
         attendance_record_id: attendanceRecordId,
-        requested_clock_in: isDelete ? undefined : toISOTimestamp(requestedClockIn, date),
-        requested_clock_out: isDelete ? undefined : toISOTimestamp(requestedClockOut, date),
+        requested_clock_in: clockIn,
+        requested_clock_out: clockOut,
         reason: reason.trim(),
         request_type: mode,
       });
@@ -128,7 +147,12 @@ export function CorrectionForm({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">退勤時刻</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  退勤時刻
+                  {requestedClockIn && requestedClockOut && requestedClockOut < requestedClockIn && (
+                    <span className="ml-2 text-xs text-amber-600 font-normal">（翌日）</span>
+                  )}
+                </label>
                 <input
                   type="time"
                   value={requestedClockOut}
