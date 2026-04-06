@@ -8,6 +8,7 @@ export const LoginForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [signUpSuccess, setSignUpSuccess] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -19,6 +20,7 @@ export const LoginForm: React.FC = () => {
         await signIn(email, password);
       } else {
         await signUp(email, password);
+        setSignUpSuccess(true);
       }
     } catch (err: any) {
       setError(err.message || '認証に失敗しました。');
@@ -26,6 +28,34 @@ export const LoginForm: React.FC = () => {
       setLoading(false);
     }
   };
+
+  if (signUpSuccess) {
+    return (
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md border border-blue-100 text-center">
+        <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-green-100 mb-4">
+          <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">メールを確認してください</h2>
+        <p className="text-sm text-gray-600 mb-1">
+          <span className="font-medium text-gray-900">{email}</span> に確認メールを送信しました。
+        </p>
+        <p className="text-sm text-gray-500 mb-6">
+          メール内のリンクをクリックして、アカウントを有効化してください。
+        </p>
+        <button
+          onClick={() => {
+            setSignUpSuccess(false);
+            setIsLogin(true);
+          }}
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition font-medium"
+        >
+          ログイン画面に戻る
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md border border-blue-100">
