@@ -1,0 +1,19 @@
+# Kintai マイグレーション適用ログ
+
+## 適用済みマイグレーション
+
+| # | ファイル | 内容 | 適用日 |
+|---|---------|------|--------|
+| 001 | `001_initial_schema.sql` | tenants, tenant_members, attendance_records テーブル作成 + RLS | 初期 |
+| 002 | `002_fix_rls_recursion.sql` | RLS無限再帰修正、`get_my_tenant_ids()` 関数作成 | 初期 |
+| 003 | `003_multi_session_breaks_corrections.sql` | breaks テーブル、correction_requests テーブル作成、複数出退勤対応 | 初期 |
+| 004 | `004_add_hourly_rate.sql` | tenant_members に `hourly_rate` カラム追加 + owner更新ポリシー | 2026-04-06 |
+| 005 | `005_add_request_type.sql` | correction_requests に `request_type` カラム追加 (correction/delete) | 2026-04-06 |
+| 006 | `006_add_night_shift.sql` | tenant_members に `night_shift_enabled` カラム追加 | 2026-04-06 |
+| 007 | `007_admin_attendance_rls.sql` | attendance_records に admin用 UPDATE/DELETE RLSポリシー追加 | 2026-04-06 |
+
+## 備考
+
+- 004〜007 は 2026-04-06 にまとめて手動適用（Supabase SQL Editor）
+- 004 のポリシー `owner_can_update_hourly_rate` は DO $$ ブロックで条件付き作成
+- 005 の `request_type` カラムは CHECK制約付きのため DO $$ ブロックで条件付き作成
