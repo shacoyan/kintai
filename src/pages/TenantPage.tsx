@@ -1,6 +1,6 @@
 // FILE: pages/TenantPage.tsx
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useTenant } from '../hooks/useTenant';
 import TenantSelector from '../components/Tenant/TenantSelector';
 import CreateTenant from '../components/Tenant/CreateTenant';
@@ -14,24 +14,26 @@ const TenantPage: React.FC = () => {
   const navigate = useNavigate();
   const { tenants, currentTenant, setCurrentTenant, fetchTenants, createTenant, joinTenant, loading, error } = useTenant();
 
-  useEffect(() => {
-    if (currentTenant) {
-      navigate('/', { replace: true });
-    }
-  }, [currentTenant, navigate]);
+  // テナント選択済みなら即ダッシュボードへ
+  if (currentTenant) {
+    return <Navigate to="/" replace />;
+  }
 
   const handleSelect = (tenant: TenantWithRole) => {
     setCurrentTenant(tenant);
+    navigate('/', { replace: true });
   };
 
   const handleTenantCreated = async (tenant: Tenant) => {
     await fetchTenants();
     setCurrentTenant(tenant);
+    navigate('/', { replace: true });
   };
 
   const handleTenantJoined = async (tenant: Tenant) => {
     await fetchTenants();
     setCurrentTenant(tenant);
+    navigate('/', { replace: true });
   };
 
   if (loading && pageState === 'select' && tenants.length === 0) {

@@ -2,18 +2,14 @@ import { useTenant } from '../hooks/useTenant';
 import { useAttendance } from '../hooks/useAttendance';
 import { ClockButton } from '../components/Attendance/ClockButton';
 import { BreakButton } from '../components/Attendance/BreakButton';
-import { Navigate } from 'react-router-dom';
 import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 export function DashboardPage() {
   const { currentTenant } = useTenant();
-  const tenantId = currentTenant?.id;
-  if (!tenantId) return <Navigate to="/tenant" replace />;
-  return <DashboardContent tenantId={tenantId} />;
-}
+  // RequireTenant ガードにより currentTenant は必ず存在する
+  const tenantId = currentTenant!.id;
 
-function DashboardContent({ tenantId }: { tenantId: string }) {
   const {
     todayRecords,
     activeRecord,
