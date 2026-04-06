@@ -3,6 +3,7 @@ import { MemberManagement } from './MemberManagement';
 import { PayrollCalculation } from './PayrollCalculation';
 import { AttendanceAdmin } from './AttendanceAdmin';
 import { useCorrection } from '../../hooks/useCorrection';
+import { useTenant } from '../../hooks/useTenant';
 import { CorrectionList } from '../Correction/CorrectionList';
 
 interface AdminDashboardProps {
@@ -21,7 +22,16 @@ type TabId = typeof tabs[number]['id'];
 export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabId>('members');
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const { currentTenant } = useTenant();
   const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
+
+  const handleCopyCode = () => {
+    if (!currentTenant?.invite_code) return;
+    navigator.clipboard.writeText(currentTenant.invite_code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     fetchRequests();
@@ -42,6 +52,23 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
 
   return (
     <div className="space-y-6">
+      {currentTenant && (
+        <div className="bg-white rounded-lg shadow px-6 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-500 mb-1">招待コード（メンバーに共有してください）</p>
+            <p className="text-2xl font-mono font-bold tracking-widest text-gray-900">
+              {currentTenant.invite_code}
+            </p>
+          </div>
+          <button
+            onClick={handleCopyCode}
+            className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+          >
+            {copied ? 'コピーしました' : 'コピー'}
+          </button>
+        </div>
+      )}
+
       <div className="border-b border-gray-200 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         <nav className="flex space-x-4 sm:space-x-8 min-w-max">
           {tabs.map((tab) => (
