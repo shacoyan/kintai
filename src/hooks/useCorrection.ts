@@ -113,51 +113,71 @@ export function useCorrection(tenantId: string) {
         .single();
       const target = targetData as CorrectionRequest | null;
 
-      if (target && target.attendance_record_id) {
-        if (target.request_type === 'delete') {
+      if (target) {
+        if (target.request_type === 'delete' && target.attendance_record_id) {
+          // 削除
           const { error: delError } = await supabase
             .from('attendance_records')
             .delete()
             .eq('id', target.attendance_record_id);
           if (delError) {
-            console.error('Delete attendance record error:', delError.message);
             throw new Error(`勤怠レコードの削除に失敗: ${delError.message}`);
           }
-        } else {
-          const updateData: Record<string, any> = {};
-          if (target.requested_clock_in) {
-            updateData.clock_in = target.requested_clock_in;
-          }
-          if (target.requested_clock_out) {
-            updateData.clock_out = target.requested_clock_out;
-          }
+        } else if (target.request_type !== 'delete') {
           const clockIn = target.requested_clock_in || null;
           const clockOut = target.requested_clock_out || null;
+
+          // total_work_minutes を計算
+          let totalWorkMinutes: number | null = null;
           if (clockIn && clockOut) {
-            const { data: breaks } = await supabase
-              .from('breaks')
-              .select('start_time, end_time')
-              .eq('attendance_record_id', target.attendance_record_id);
-            let breakMinutes = 0;
-            if (breaks) {
-              breakMinutes = breaks.reduce((sum, b) => {
-                if (b.start_time && b.end_time) {
-                  return sum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
-                }
-                return sum;
-              }, 0);
+            totalWorkMinutes = differenceInMinutes(parseISO(clockOut), parseISO(clockIn));
+            // 既存レコードがあれば休憩分を差し引く
+            if (target.attendance_record_id) {
+              const { data: breaks } = await supabase
+                .from('breaks')
+                .select('start_time, end_time')
+                .eq('attendance_record_id', target.attendance_record_id);
+              if (breaks) {
+                const breakMins = breaks.reduce((sum, b) => {
+                  if (b.start_time && b.end_time) {
+                    return sum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
+                  }
+                  return sum;
+                }, 0);
+                totalWorkMinutes -= breakMins;
+              }
             }
-            updateData.total_work_minutes =
-              differenceInMinutes(parseISO(clockOut), parseISO(clockIn)) - breakMinutes;
           }
-          if (Object.keys(updateData).length > 0) {
-            const { error: updError } = await supabase
+
+          if (target.attendance_record_id) {
+            // 既存レコードを更新
+            const updateData: Record<string, any> = {};
+            if (clockIn) updateData.clock_in = clockIn;
+            if (clockOut) updateData.clock_out = clockOut;
+            if (totalWorkMinutes !== null) updateData.total_work_minutes = totalWorkMinutes;
+            if (Object.keys(updateData).length > 0) {
+              const { error: updError } = await supabase
+                .from('attendance_records')
+                .update(updateData)
+                .eq('id', target.attendance_record_id);
+              if (updError) {
+                throw new Error(`勤怠レコードの更新に失敗: ${updError.message}`);
+              }
+            }
+          } else if (clockIn) {
+            // レコードなしの日 → 新規作成
+            const { error: insError } = await supabase
               .from('attendance_records')
-              .update(updateData)
-              .eq('id', target.attendance_record_id);
-            if (updError) {
-              console.error('Update attendance record error:', updError.message);
-              throw new Error(`勤怠レコードの更新に失敗: ${updError.message}`);
+              .insert({
+                tenant_id: target.tenant_id,
+                user_id: target.user_id,
+                date: target.date,
+                clock_in: clockIn,
+                clock_out: clockOut,
+                total_work_minutes: totalWorkMinutes,
+              });
+            if (insError) {
+              throw new Error(`勤怠レコードの作成に失敗: ${insError.message}`);
             }
           }
         }
