@@ -89,7 +89,7 @@ function calcMemberPayroll(
 }
 
 export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
-  const { members, allAttendance, loading, fetchMembers, fetchAllAttendance } = useAdmin(tenantId);
+  const { members, allAttendance, loading, error, fetchMembers, fetchAllAttendance } = useAdmin(tenantId);
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
@@ -169,11 +169,20 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
         </div>
       </div>
 
+      {error && (
+        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
+
       {calculated && (
         <div className="overflow-x-auto">
           {payrollData.every((r) => r.totalMinutes === 0) ? (
             <div className="px-6 py-12 text-center text-gray-500">
               {selectedYear}年{selectedMonth}月の勤怠データはありません
+              <p className="mt-2 text-xs text-gray-400">
+                取得件数: {allAttendance.length}件 / メンバー: {members.length}人
+              </p>
             </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200">
