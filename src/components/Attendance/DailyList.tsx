@@ -7,9 +7,10 @@ interface DailyListProps {
   year: number;
   month: number;
   onRequestCorrection: (date: string, record?: AttendanceRecord) => void;
+  onRequestDeletion: (date: string, record: AttendanceRecord) => void;
 }
 
-export function DailyList({ records, year, month, onRequestCorrection }: DailyListProps) {
+export function DailyList({ records, year, month, onRequestCorrection, onRequestDeletion }: DailyListProps) {
   const start = startOfMonth(new Date(year, month - 1, 1));
   const end = endOfMonth(new Date(year, month - 1, 1));
   const days = eachDayOfInterval({ start, end });
@@ -115,12 +116,18 @@ export function DailyList({ records, year, month, onRequestCorrection }: DailyLi
                   <td className="px-3 py-2">
                     {formatMinutes(record.total_work_minutes) || '--:--'}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 space-x-1">
                     <button
                       onClick={() => onRequestCorrection(dateStr, record)}
                       className="px-2 py-1 text-xs text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
                     >
                       修正申請
+                    </button>
+                    <button
+                      onClick={() => onRequestDeletion(dateStr, record)}
+                      className="px-2 py-1 text-xs text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
+                    >
+                      削除依頼
                     </button>
                   </td>
                 </tr>

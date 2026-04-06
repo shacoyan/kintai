@@ -63,6 +63,7 @@ export interface CorrectionRequest {
   requested_clock_in: string | null;
   requested_clock_out: string | null;
   reason: string;
+  request_type: 'correction' | 'delete';
   status: 'pending' | 'approved' | 'rejected';
   reviewed_by: string | null;
   reviewed_at: string | null;

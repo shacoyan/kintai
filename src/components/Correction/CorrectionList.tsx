@@ -12,6 +12,11 @@ const statusConfig = {
   rejected: { label: '却下', bgClass: 'bg-red-100 text-red-800' },
 } as const;
 
+const typeConfig = {
+  correction: { label: '修正', bgClass: 'bg-blue-100 text-blue-800' },
+  delete: { label: '削除', bgClass: 'bg-red-100 text-red-800' },
+} as const;
+
 function formatTime(time: string | null): string {
   if (!time) return '-';
   try {
@@ -36,6 +41,7 @@ export function CorrectionList({ requests, onReview }: CorrectionListProps) {
         <thead className="bg-gray-50">
           <tr>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日付</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">種類</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">申請出勤</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">申請退勤</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">理由</th>
@@ -47,16 +53,27 @@ export function CorrectionList({ requests, onReview }: CorrectionListProps) {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {requests.map((request) => {
-            const config = statusConfig[request.status];
+            const statusCfg = statusConfig[request.status];
+            const requestType = request.request_type || 'correction';
+            const typeCfg = typeConfig[requestType];
             return (
               <tr key={request.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">{request.date}</td>
-                <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">{formatTime(request.requested_clock_in)}</td>
-                <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">{formatTime(request.requested_clock_out)}</td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${typeCfg.bgClass}`}>
+                    {typeCfg.label}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                  {requestType === 'delete' ? '-' : formatTime(request.requested_clock_in)}
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                  {requestType === 'delete' ? '-' : formatTime(request.requested_clock_out)}
+                </td>
                 <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">{request.reason}</td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bgClass}`}>
-                    {config.label}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusCfg.bgClass}`}>
+                    {statusCfg.label}
                   </span>
                 </td>
                 {onReview && (

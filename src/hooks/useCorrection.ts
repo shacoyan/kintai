@@ -30,6 +30,7 @@ export function useCorrection(tenantId: string) {
     requested_clock_in?: string;
     requested_clock_out?: string;
     reason: string;
+    request_type?: 'correction' | 'delete';
   }) => {
     const {
       data: { user },
@@ -42,6 +43,7 @@ export function useCorrection(tenantId: string) {
       date: data.date,
       reason: data.reason,
       status: 'pending',
+      request_type: data.request_type || 'correction',
     };
 
     if (data.attendance_record_id) {
@@ -73,6 +75,7 @@ export function useCorrection(tenantId: string) {
     } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
+    // Update the request status
     const { error } = await supabase
       .from('correction_requests')
       .update({
@@ -85,6 +88,21 @@ export function useCorrection(tenantId: string) {
       console.error('Review correction request error:', error.message);
       throw error;
     }
+
+    // If approving a delete request, delete the attendance record
+    if (reviewStatus === 'approved') {
+      const target = requests.find((r) => r.id === requestId);
+      if (target && target.request_type === 'delete' && target.attendance_record_id) {
+        const { error: delError } = await supabase
+          .from('attendance_records')
+          .delete()
+          .eq('id', target.attendance_record_id);
+        if (delError) {
+          console.error('Delete attendance record error:', delError.message);
+        }
+      }
+    }
+
     await fetchRequests();
   };
 

@@ -10,6 +10,7 @@ interface CorrectionFormProps {
   attendanceRecordId?: string;
   existingClockIn?: string;
   existingClockOut?: string;
+  mode?: 'correction' | 'delete';
 }
 
 export function CorrectionForm({
@@ -20,6 +21,7 @@ export function CorrectionForm({
   attendanceRecordId,
   existingClockIn,
   existingClockOut,
+  mode = 'correction',
 }: CorrectionFormProps) {
   const { submitRequest } = useCorrection(tenantId);
 
@@ -40,6 +42,8 @@ export function CorrectionForm({
 
   if (!isOpen) return null;
 
+  const isDelete = mode === 'delete';
+
   const toISOTimestamp = (timeStr: string, dateStr: string): string | undefined => {
     if (!timeStr) return undefined;
     return `${dateStr}T${timeStr}:00`;
@@ -59,9 +63,10 @@ export function CorrectionForm({
       await submitRequest({
         date,
         attendance_record_id: attendanceRecordId,
-        requested_clock_in: toISOTimestamp(requestedClockIn, date),
-        requested_clock_out: toISOTimestamp(requestedClockOut, date),
+        requested_clock_in: isDelete ? undefined : toISOTimestamp(requestedClockIn, date),
+        requested_clock_out: isDelete ? undefined : toISOTimestamp(requestedClockOut, date),
         reason: reason.trim(),
+        request_type: mode,
       });
       setReason('');
       setRequestedClockIn('');
@@ -78,7 +83,9 @@ export function CorrectionForm({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">勤怠修正申請</h2>
+          <h2 className="text-lg font-bold text-gray-900">
+            {isDelete ? '勤怠削除依頼' : '勤怠修正申請'}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -93,39 +100,48 @@ export function CorrectionForm({
           <p className="text-sm text-gray-600">
             対象日: <span className="font-medium text-gray-900">{date}</span>
           </p>
+          {isDelete && (
+            <p className="text-sm text-red-600 mt-1">
+              この勤怠記録の削除を管理者に依頼します
+            </p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">出勤時刻</label>
-            <input
-              type="time"
-              value={requestedClockIn}
-              onChange={(e) => setRequestedClockIn(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+          {!isDelete && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">出勤時刻</label>
+                <input
+                  type="time"
+                  value={requestedClockIn}
+                  onChange={(e) => setRequestedClockIn(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">退勤時刻</label>
-            <input
-              type="time"
-              value={requestedClockOut}
-              onChange={(e) => setRequestedClockOut(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">退勤時刻</label>
+                <input
+                  type="time"
+                  value={requestedClockOut}
+                  onChange={(e) => setRequestedClockOut(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              修正理由 <span className="text-red-500">*</span>
+              {isDelete ? '削除理由' : '修正理由'} <span className="text-red-500">*</span>
             </label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={4}
               required
-              placeholder="修正理由を入力してください"
+              placeholder={isDelete ? '削除理由を入力してください' : '修正理由を入力してください'}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
           </div>
@@ -147,9 +163,13 @@ export function CorrectionForm({
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className={`flex-1 px-4 py-2 text-sm font-medium text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                isDelete
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
-              {submitting ? '送信中...' : '申請する'}
+              {submitting ? '送信中...' : isDelete ? '削除依頼する' : '申請する'}
             </button>
           </div>
         </form>

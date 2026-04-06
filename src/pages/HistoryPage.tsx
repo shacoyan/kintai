@@ -14,6 +14,7 @@ interface CorrectionModalState {
   recordId?: string;
   clockIn?: string;
   clockOut?: string;
+  mode: 'correction' | 'delete';
 }
 
 export function HistoryPage() {
@@ -33,6 +34,7 @@ function HistoryContent({ tenantId }: { tenantId: string }) {
   const [correctionModal, setCorrectionModal] = useState<CorrectionModalState>({
     isOpen: false,
     date: '',
+    mode: 'correction',
   });
 
   const year = currentDate.getFullYear();
@@ -59,11 +61,23 @@ function HistoryContent({ tenantId }: { tenantId: string }) {
       recordId: record?.id,
       clockIn: record?.clock_in ?? undefined,
       clockOut: record?.clock_out ?? undefined,
+      mode: 'correction',
+    });
+  }
+
+  function handleRequestDeletion(date: string, record: AttendanceRecord) {
+    setCorrectionModal({
+      isOpen: true,
+      date,
+      recordId: record.id,
+      clockIn: record.clock_in ?? undefined,
+      clockOut: record.clock_out ?? undefined,
+      mode: 'delete',
     });
   }
 
   function handleCloseCorrectionModal() {
-    setCorrectionModal({ isOpen: false, date: '' });
+    setCorrectionModal({ isOpen: false, date: '', mode: 'correction' });
     fetchRecords(year, month);
   }
 
@@ -110,6 +124,7 @@ function HistoryContent({ tenantId }: { tenantId: string }) {
             year={year}
             month={month}
             onRequestCorrection={handleRequestCorrection}
+            onRequestDeletion={handleRequestDeletion}
           />
         )}
       </div>
@@ -123,6 +138,7 @@ function HistoryContent({ tenantId }: { tenantId: string }) {
         attendanceRecordId={correctionModal.recordId}
         existingClockIn={correctionModal.clockIn}
         existingClockOut={correctionModal.clockOut}
+        mode={correctionModal.mode}
       />
     </div>
   );
