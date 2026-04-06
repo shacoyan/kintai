@@ -54,20 +54,35 @@ function calcMemberPayroll(
   let nightMinutes = 0;
 
   for (const r of records) {
-    totalMinutes += r.total_work_minutes || 0;
-    if (r.clock_in) dates.add(r.date);
+    if (!r.clock_in) continue;
+    dates.add(r.date);
+
+    // total_work_minutes が null の場合、clock_in/clock_out から再計算
+    let workMins = r.total_work_minutes;
+    if (workMins == null && r.clock_in && r.clock_out) {
+      const gross = differenceInMinutes(parseISO(r.clock_out), parseISO(r.clock_in));
+      const breakMins = (r.breaks || []).reduce((sum, b) => {
+        if (b.start_time && b.end_time) {
+          return sum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
+        }
+        return sum;
+      }, 0);
+      workMins = Math.max(0, gross - breakMins);
+    }
+    if (workMins == null || workMins <= 0) continue;
+
+    totalMinutes += workMins;
 
     if (member.night_shift_enabled && r.clock_in && r.clock_out) {
       const { normal, night } = splitNightMinutes(r.clock_in, r.clock_out);
-      // 休憩分を差し引く（total_work_minutesが実労働時間）
-      const breakMins = differenceInMinutes(parseISO(r.clock_out), parseISO(r.clock_in)) - (r.total_work_minutes || 0);
-      // 休憩を通常時間から優先的に差し引く
+      const gross = differenceInMinutes(parseISO(r.clock_out), parseISO(r.clock_in));
+      const breakMins = gross - workMins;
       const adjustedNormal = Math.max(0, normal - breakMins);
-      const adjustedNight = Math.min(night, (r.total_work_minutes || 0) - adjustedNormal);
+      const adjustedNight = Math.min(night, workMins - adjustedNormal);
       normalMinutes += adjustedNormal;
       nightMinutes += Math.max(0, adjustedNight);
     } else {
-      normalMinutes += r.total_work_minutes || 0;
+      normalMinutes += workMins;
     }
   }
 
@@ -177,12 +192,9 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
 
       {calculated && (
         <div className="overflow-x-auto">
-          {payrollData.every((r) => r.totalMinutes === 0) ? (
+          {allAttendance.length === 0 ? (
             <div className="px-6 py-12 text-center text-gray-500">
               {selectedYear}年{selectedMonth}月の勤怠データはありません
-              <p className="mt-2 text-xs text-gray-400">
-                取得件数: {allAttendance.length}件 / メンバー: {members.length}人
-              </p>
             </div>
           ) : (
             <table className="min-w-full divide-y divide-gray-200">
