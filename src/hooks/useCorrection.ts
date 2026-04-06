@@ -104,21 +104,26 @@ export function useCorrection(tenantId: string) {
       throw error;
     }
 
-    // On approval, apply the change
+    // On approval, apply the change — fetch fresh from DB to avoid stale closure
     if (reviewStatus === 'approved') {
-      const target = requests.find((r) => r.id === requestId);
+      const { data: targetData } = await supabase
+        .from('correction_requests')
+        .select('*')
+        .eq('id', requestId)
+        .single();
+      const target = targetData as CorrectionRequest | null;
+
       if (target && target.attendance_record_id) {
         if (target.request_type === 'delete') {
-          // Delete the attendance record
           const { error: delError } = await supabase
             .from('attendance_records')
             .delete()
             .eq('id', target.attendance_record_id);
           if (delError) {
             console.error('Delete attendance record error:', delError.message);
+            throw new Error(`勤怠レコードの削除に失敗: ${delError.message}`);
           }
         } else {
-          // Correction: update clock_in/clock_out with requested times
           const updateData: Record<string, any> = {};
           if (target.requested_clock_in) {
             updateData.clock_in = target.requested_clock_in;
@@ -126,11 +131,9 @@ export function useCorrection(tenantId: string) {
           if (target.requested_clock_out) {
             updateData.clock_out = target.requested_clock_out;
           }
-          // Recalculate total_work_minutes
           const clockIn = target.requested_clock_in || null;
           const clockOut = target.requested_clock_out || null;
           if (clockIn && clockOut) {
-            // Fetch breaks for this record to subtract
             const { data: breaks } = await supabase
               .from('breaks')
               .select('start_time, end_time')
@@ -154,6 +157,7 @@ export function useCorrection(tenantId: string) {
               .eq('id', target.attendance_record_id);
             if (updError) {
               console.error('Update attendance record error:', updError.message);
+              throw new Error(`勤怠レコードの更新に失敗: ${updError.message}`);
             }
           }
         }
