@@ -94,12 +94,13 @@ export function useAttendance(tenantId: string) {
         setLoading(false);
         return;
       }
+      // 今日のレコード + 日を跨いで未退勤のレコード（どの日付でも）を取得
       const { data, error } = await supabase
         .from('attendance_records')
         .select('*, breaks(*)')
         .eq('tenant_id', tenantId)
         .eq('user_id', user.id)
-        .eq('date', today)
+        .or(`date.eq.${today},clock_out.is.null`)
         .order('clock_in', { ascending: true });
       if (error) throw error;
       setTodayRecords((data as AttendanceRecord[]) || []);

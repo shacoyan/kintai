@@ -35,7 +35,11 @@ function DashboardContent({ tenantId }: { tenantId: string }) {
   }
 
   const today = new Date();
+  const todayStr = format(today, 'yyyy-MM-dd');
   const dateDisplay = format(today, 'M月d日（EEE）', { locale: ja });
+
+  // 今日のレコードのみ（日跨ぎの未退勤レコードは除外して集計）
+  const todayOnlyRecords = todayRecords.filter((r) => r.date === todayStr);
 
   const formatTime = (time: string | null | undefined) => {
     if (!time) return '-';
@@ -49,27 +53,41 @@ function DashboardContent({ tenantId }: { tenantId: string }) {
     return `${h}時間${m}分`;
   };
 
-  const totalWorkMinutes = todayRecords.reduce((sum, record) => sum + (record.total_work_minutes ?? 0), 0);
+  const totalWorkMinutes = todayOnlyRecords.reduce((sum, record) => sum + (record.total_work_minutes ?? 0), 0);
 
-  const firstClockIn = todayRecords.length > 0
-    ? todayRecords.reduce((earliest, record) => {
+  const firstClockIn = todayOnlyRecords.length > 0
+    ? todayOnlyRecords.reduce((earliest, record) => {
         if (!record.clock_in) return earliest;
         if (!earliest) return record.clock_in;
         return record.clock_in < earliest ? record.clock_in : earliest;
       }, null as string | null)
     : null;
 
-  const lastClockOut = todayRecords.reduce((latest, record) => {
+  const lastClockOut = todayOnlyRecords.reduce((latest, record) => {
     if (!record.clock_out) return latest;
     if (!latest) return record.clock_out;
     return record.clock_out > latest ? record.clock_out : latest;
   }, null as string | null);
+
+  // 日跨ぎの未退勤レコード
+  const carryOverRecord = activeRecord && activeRecord.date !== todayStr ? activeRecord : null;
 
   return (
     <div className="max-w-md mx-auto space-y-6">
       <div className="text-center pt-6">
         <p className="text-3xl font-bold text-gray-900">{dateDisplay}</p>
       </div>
+
+      {carryOverRecord && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+          <p className="text-sm text-amber-800 font-medium">
+            {carryOverRecord.date} から継続勤務中
+          </p>
+          <p className="text-xs text-amber-600 mt-1">
+            出勤: {formatTime(carryOverRecord.clock_in)} — 退勤ボタンで終了できます
+          </p>
+        </div>
+      )}
 
       <div className="flex flex-col items-center gap-6 py-8">
         <ClockButton

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { AttendanceRecord } from '../../types';
 
@@ -37,15 +37,18 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
     }
   };
 
+  const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+  const isCarryOver = activeRecord ? activeRecord.date !== todayStr : false;
+
   const getButtonConfig = () => {
     switch (status) {
       case 'not_started':
-        if (todayRecords.length > 0) {
+        if (todayRecords.some((r) => r.date === todayStr)) {
           return { label: '再出勤', bg: 'bg-green-500 hover:bg-green-600', disabled: false };
         }
         return { label: '出勤', bg: 'bg-green-500 hover:bg-green-600', disabled: false };
       case 'working':
-        return { label: '退勤', bg: 'bg-red-500 hover:bg-red-600', disabled: false };
+        return { label: isCarryOver ? '退勤（日跨ぎ）' : '退勤', bg: 'bg-red-500 hover:bg-red-600', disabled: false };
       case 'on_break':
         return { label: '休憩中...', bg: 'bg-yellow-400', disabled: true };
     }
@@ -75,18 +78,23 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
 
       {todayRecords.length > 0 && (
         <div className="w-full max-w-sm mt-2">
-          <p className="text-xs text-gray-400 mb-2 text-center">本日のセッション一覧</p>
+          <p className="text-xs text-gray-400 mb-2 text-center">セッション一覧</p>
           <div className="space-y-1">
-            {todayRecords.map((record, index) => (
-              <div key={record.id} className="flex items-center justify-between text-sm bg-gray-50 rounded px-3 py-1.5">
-                <span className="text-gray-500">{index + 1}回目</span>
-                <div className="flex gap-3">
-                  <span className="text-gray-700">{formatTime(record.clock_in) || '-'}</span>
-                  <span className="text-gray-400">〜</span>
-                  <span className="text-gray-700">{formatTime(record.clock_out) || '勤務中'}</span>
+            {todayRecords.map((record, index) => {
+              const isCrossDay = record.date !== todayStr;
+              return (
+                <div key={record.id} className={`flex items-center justify-between text-sm rounded px-3 py-1.5 ${isCrossDay ? 'bg-amber-50' : 'bg-gray-50'}`}>
+                  <span className="text-gray-500">
+                    {isCrossDay ? `${record.date}〜` : `${index + 1}回目`}
+                  </span>
+                  <div className="flex gap-3">
+                    <span className="text-gray-700">{formatTime(record.clock_in) || '-'}</span>
+                    <span className="text-gray-400">〜</span>
+                    <span className="text-gray-700">{formatTime(record.clock_out) || '勤務中'}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
