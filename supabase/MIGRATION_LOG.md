@@ -11,9 +11,10 @@
 | 005 | `005_add_request_type.sql` | correction_requests に `request_type` カラム追加 (correction/delete) | 2026-04-06 |
 | 006 | `006_add_night_shift.sql` | tenant_members に `night_shift_enabled` カラム追加 | 2026-04-06 |
 | 007 | `007_admin_attendance_rls.sql` | attendance_records に admin用 UPDATE/DELETE RLSポリシー追加 | 2026-04-06 |
+| 008 | `008_fix_tenant_members_update_rls.sql` | tenant_members UPDATE RLS無限再帰修正、`is_tenant_owner()` 関数作成 | 2026-04-06 |
 
 ## 備考
 
 - 004〜007 は 2026-04-06 にまとめて手動適用（Supabase SQL Editor）
-- 004 のポリシー `owner_can_update_hourly_rate` は DO $$ ブロックで条件付き作成
+- 004 のポリシー `owner_can_update_hourly_rate` は 008 で `owner_can_update_tenant_members` に置換
 - 005 の `request_type` カラムは CHECK制約付きのため DO $$ ブロックで条件付き作成
