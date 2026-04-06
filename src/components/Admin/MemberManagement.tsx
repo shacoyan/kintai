@@ -13,7 +13,7 @@ const roleBadge: Record<string, { label: string; className: string }> = {
 };
 
 export function MemberManagement({ tenantId }: MemberManagementProps) {
-  const { members, loading, error, fetchMembers, updateHourlyRate } = useAdmin(tenantId);
+  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift } = useAdmin(tenantId);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRate, setEditRate] = useState<string>('');
   const [saving, setSaving] = useState(false);
@@ -24,7 +24,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
 
   const handleStartEdit = (member: TenantMember) => {
     setEditingId(member.id);
-    setEditRate(String(member.hourly_rate));
+    setEditRate(String(member.hourly_rate ?? 0));
   };
 
   const handleSave = async (memberId: string) => {
@@ -43,9 +43,22 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     setSaving(false);
   };
 
+  const handleCancel = () => {
+    setEditingId(null);
+    setEditRate('');
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent, memberId: string) => {
     if (e.key === 'Enter') handleSave(memberId);
-    if (e.key === 'Escape') setEditingId(null);
+    if (e.key === 'Escape') handleCancel();
+  };
+
+  const handleNightShiftToggle = async (member: TenantMember) => {
+    try {
+      await updateNightShift(member.id, !member.night_shift_enabled);
+    } catch {
+      // error handled in useAdmin
+    }
   };
 
   if (loading && members.length === 0) {
@@ -69,72 +82,112 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">メンバー管理</h2>
-        <p className="mt-1 text-sm text-gray-500">時給をダブルクリックで編集できます</p>
+        <p className="mt-1 text-sm text-gray-500">各メンバーの時給・深夜給を設定できます</p>
       </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">名前</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ロール</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">時給（円）</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">参加日</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {members.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="px-6 py-8 text-center text-gray-500">メンバーがいません</td>
-              </tr>
-            ) : (
-              members.map((member) => {
-                const badge = roleBadge[member.role] || roleBadge.staff;
-                return (
-                  <tr key={member.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {member.display_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
-                        {badge.label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {editingId === member.id ? (
-                        <div className="flex items-center space-x-2">
-                          <span className="text-gray-500">¥</span>
-                          <input
-                            type="number"
-                            value={editRate}
-                            onChange={(e) => setEditRate(e.target.value)}
-                            onBlur={() => handleSave(member.id)}
-                            onKeyDown={(e) => handleKeyDown(e, member.id)}
-                            className="w-24 px-2 py-1 text-sm border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            autoFocus
-                            disabled={saving}
-                            min="0"
-                            step="1"
-                          />
-                        </div>
-                      ) : (
-                        <span
-                          className="cursor-pointer hover:text-blue-600 hover:underline"
-                          onDoubleClick={() => handleStartEdit(member)}
-                          title="ダブルクリックで編集"
+
+      {/* カード型レイアウト（モバイル対応） */}
+      <div className="divide-y divide-gray-200">
+        {members.length === 0 ? (
+          <div className="px-6 py-8 text-center text-gray-500">メンバーがいません</div>
+        ) : (
+          members.map((member) => {
+            const badge = roleBadge[member.role] || roleBadge.staff;
+            const isEditing = editingId === member.id;
+            const rate = member.hourly_rate ?? 0;
+
+            return (
+              <div key={member.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                {/* 上段: 名前・ロール・参加日 */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
+                      {member.display_name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{member.display_name}</p>
+                      <p className="text-xs text-gray-400">{new Date(member.created_at).toLocaleDateString('ja-JP')} 参加</p>
+                    </div>
+                  </div>
+                  <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
+                    {badge.label}
+                  </span>
+                </div>
+
+                {/* 下段: 時給・深夜給 */}
+                <div className="flex items-center gap-4 ml-12">
+                  {/* 時給 */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 w-8">時給</span>
+                    {isEditing ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-gray-500">¥</span>
+                        <input
+                          type="number"
+                          value={editRate}
+                          onChange={(e) => setEditRate(e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(e, member.id)}
+                          className="w-24 px-2 py-1.5 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50"
+                          autoFocus
+                          disabled={saving}
+                          min="0"
+                          step="50"
+                        />
+                        <button
+                          onClick={() => handleSave(member.id)}
+                          disabled={saving}
+                          className="px-2.5 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
                         >
-                          ¥{(member.hourly_rate ?? 0).toLocaleString()}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(member.created_at).toLocaleDateString('ja-JP')}
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                          {saving ? '...' : '保存'}
+                        </button>
+                        <button
+                          onClick={handleCancel}
+                          className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                        >
+                          取消
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleStartEdit(member)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                          rate > 0
+                            ? 'text-gray-900 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                            : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
+                        }`}
+                      >
+                        {rate > 0 ? (
+                          <>¥{rate.toLocaleString()}</>
+                        ) : (
+                          <>未設定</>
+                        )}
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 深夜給 */}
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={member.night_shift_enabled ?? false}
+                        onChange={() => handleNightShiftToggle(member)}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                      />
+                      <span className="text-xs text-gray-600">深夜給 <span className="font-medium">1.25x</span></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+        <p className="text-xs text-gray-500">深夜給: 22:00〜翌5:00 の勤務時間に対して時給1.25倍で計算されます</p>
       </div>
     </div>
   );

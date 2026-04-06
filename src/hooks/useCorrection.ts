@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { CorrectionRequest } from '../types';
+import { differenceInMinutes, parseISO } from 'date-fns';
 
 export function useCorrection(tenantId: string) {
   const [requests, setRequests] = useState<CorrectionRequest[]>([]);
@@ -43,8 +44,12 @@ export function useCorrection(tenantId: string) {
       date: data.date,
       reason: data.reason,
       status: 'pending',
-      request_type: data.request_type || 'correction',
     };
+
+    // request_type カラムが存在しない場合にも対応
+    if (data.request_type && data.request_type !== 'correction') {
+      insertPayload.request_type = data.request_type;
+    }
 
     if (data.attendance_record_id) {
       insertPayload.attendance_record_id = data.attendance_record_id;
@@ -56,9 +61,19 @@ export function useCorrection(tenantId: string) {
       insertPayload.requested_clock_out = data.requested_clock_out;
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from('correction_requests')
       .insert(insertPayload);
+
+    // request_type カラムが未追加の場合、フォールバック（reason に種別を含めて再送）
+    if (error && insertPayload.request_type) {
+      const fallbackPayload = { ...insertPayload };
+      fallbackPayload.reason = `[${data.request_type}] ${data.reason}`;
+      delete fallbackPayload.request_type;
+      const res = await supabase.from('correction_requests').insert(fallbackPayload);
+      error = res.error;
+    }
+
     if (error) {
       console.error('Submit correction request error:', error.message);
       throw error;
@@ -89,16 +104,58 @@ export function useCorrection(tenantId: string) {
       throw error;
     }
 
-    // If approving a delete request, delete the attendance record
+    // On approval, apply the change
     if (reviewStatus === 'approved') {
       const target = requests.find((r) => r.id === requestId);
-      if (target && target.request_type === 'delete' && target.attendance_record_id) {
-        const { error: delError } = await supabase
-          .from('attendance_records')
-          .delete()
-          .eq('id', target.attendance_record_id);
-        if (delError) {
-          console.error('Delete attendance record error:', delError.message);
+      if (target && target.attendance_record_id) {
+        if (target.request_type === 'delete') {
+          // Delete the attendance record
+          const { error: delError } = await supabase
+            .from('attendance_records')
+            .delete()
+            .eq('id', target.attendance_record_id);
+          if (delError) {
+            console.error('Delete attendance record error:', delError.message);
+          }
+        } else {
+          // Correction: update clock_in/clock_out with requested times
+          const updateData: Record<string, any> = {};
+          if (target.requested_clock_in) {
+            updateData.clock_in = target.requested_clock_in;
+          }
+          if (target.requested_clock_out) {
+            updateData.clock_out = target.requested_clock_out;
+          }
+          // Recalculate total_work_minutes
+          const clockIn = target.requested_clock_in || null;
+          const clockOut = target.requested_clock_out || null;
+          if (clockIn && clockOut) {
+            // Fetch breaks for this record to subtract
+            const { data: breaks } = await supabase
+              .from('breaks')
+              .select('start_time, end_time')
+              .eq('attendance_record_id', target.attendance_record_id);
+            let breakMinutes = 0;
+            if (breaks) {
+              breakMinutes = breaks.reduce((sum, b) => {
+                if (b.start_time && b.end_time) {
+                  return sum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
+                }
+                return sum;
+              }, 0);
+            }
+            updateData.total_work_minutes =
+              differenceInMinutes(parseISO(clockOut), parseISO(clockIn)) - breakMinutes;
+          }
+          if (Object.keys(updateData).length > 0) {
+            const { error: updError } = await supabase
+              .from('attendance_records')
+              .update(updateData)
+              .eq('id', target.attendance_record_id);
+            if (updError) {
+              console.error('Update attendance record error:', updError.message);
+            }
+          }
         }
       }
     }

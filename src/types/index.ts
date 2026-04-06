@@ -13,6 +13,7 @@ export interface TenantMember {
   role: 'owner' | 'admin' | 'staff';
   display_name: string;
   hourly_rate: number;
+  night_shift_enabled: boolean;
   created_at: string;
 }
 

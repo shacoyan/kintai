@@ -91,6 +91,15 @@ export function useAdmin(tenantId: string) {
     if (e) throw e;
   }, []);
 
+  const updateNightShift = useCallback(async (memberId: string, enabled: boolean) => {
+    const { error: e } = await supabase
+      .from('tenant_members')
+      .update({ night_shift_enabled: enabled })
+      .eq('id', memberId);
+    if (e) throw e;
+    await fetchMembers();
+  }, [fetchMembers]);
+
   return {
     members,
     allAttendance,
@@ -103,5 +112,6 @@ export function useAdmin(tenantId: string) {
     fetchMemberAttendance,
     updateAttendance,
     deleteAttendance,
+    updateNightShift,
   };
 }

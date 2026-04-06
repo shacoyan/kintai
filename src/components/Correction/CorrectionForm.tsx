@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCorrection } from '../../hooks/useCorrection';
 import { format, parseISO } from 'date-fns';
 
@@ -34,11 +34,21 @@ export function CorrectionForm({
     }
   };
 
-  const [requestedClockIn, setRequestedClockIn] = useState(toTimeValue(existingClockIn));
-  const [requestedClockOut, setRequestedClockOut] = useState(toTimeValue(existingClockOut));
+  const [requestedClockIn, setRequestedClockIn] = useState('');
+  const [requestedClockOut, setRequestedClockOut] = useState('');
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reset state when modal opens with new props
+  useEffect(() => {
+    if (isOpen) {
+      setRequestedClockIn(toTimeValue(existingClockIn));
+      setRequestedClockOut(toTimeValue(existingClockOut));
+      setReason('');
+      setError(null);
+    }
+  }, [isOpen, existingClockIn, existingClockOut]);
 
   if (!isOpen) return null;
 
@@ -46,7 +56,7 @@ export function CorrectionForm({
 
   const toISOTimestamp = (timeStr: string, dateStr: string): string | undefined => {
     if (!timeStr) return undefined;
-    return `${dateStr}T${timeStr}:00`;
+    return new Date(`${dateStr}T${timeStr}:00`).toISOString();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,9 +78,6 @@ export function CorrectionForm({
         reason: reason.trim(),
         request_type: mode,
       });
-      setReason('');
-      setRequestedClockIn('');
-      setRequestedClockOut('');
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : '申請の送信に失敗しました');
