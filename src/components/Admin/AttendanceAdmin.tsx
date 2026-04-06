@@ -18,6 +18,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
   const [endDate, setEndDate] = useState(format(now, 'yyyy-MM-dd'));
   const [searched, setSearched] = useState(false);
   const [edits, setEdits] = useState<Record<string, { clock_in: string; clock_out: string }>>({});
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (members.length > 0 && !selectedUserId) {
@@ -67,14 +68,16 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
     const record = memberAttendance.find((r) => r.id === recordId);
     if (!record) return;
 
-    const clockIn = edit.clock_in || record.clock_in;
-    const clockOut = edit.clock_out || record.clock_out;
+    // datetime-local値をISO文字列に統一してから計算
+    const clockInISO = edit.clock_in ? new Date(edit.clock_in).toISOString() : record.clock_in;
+    const clockOutISO = edit.clock_out ? new Date(edit.clock_out).toISOString() : record.clock_out;
     let totalWorkMinutes: number | undefined;
-    if (clockIn && clockOut) {
+    if (clockInISO && clockOutISO) {
       const breakMin = calcBreakMinutes(record);
-      totalWorkMinutes = differenceInMinutes(parseISO(clockOut), parseISO(clockIn)) - breakMin;
+      totalWorkMinutes = differenceInMinutes(parseISO(clockOutISO), parseISO(clockInISO)) - breakMin;
     }
 
+    setActionError(null);
     try {
       await updateAttendance(recordId, {
         ...(edit.clock_in ? { clock_in: new Date(edit.clock_in).toISOString() } : {}),
@@ -87,18 +90,19 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
         return next;
       });
       await fetchMemberAttendance(selectedUserId, startDate, endDate);
-    } catch {
-      // error handled in useAdmin
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : '勤怠記録の更新に失敗しました');
     }
   };
 
   const handleDelete = async (recordId: string) => {
     if (!window.confirm('この勤怠記録を削除しますか？')) return;
+    setActionError(null);
     try {
       await deleteAttendance(recordId);
       await fetchMemberAttendance(selectedUserId, startDate, endDate);
-    } catch {
-      // error handled in useAdmin
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : '勤怠記録の削除に失敗しました');
     }
   };
 
@@ -137,6 +141,12 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           </button>
         </div>
       </div>
+
+      {actionError && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-sm text-red-600">{actionError}</p>
+        </div>
+      )}
 
       {searched && (
         <div className="bg-white rounded-lg shadow overflow-hidden">

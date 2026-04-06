@@ -20,20 +20,23 @@ type TabId = typeof tabs[number]['id'];
 
 export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabId>('members');
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
 
   useEffect(() => {
     fetchRequests();
-  }, [tenantId]);
+  }, [tenantId, fetchRequests]);
 
   const pendingRequests = requests.filter((r) => r.status === 'pending');
   const processedRequests = requests.filter((r) => r.status !== 'pending');
 
   const handleReview = async (requestId: string, status: 'approved' | 'rejected') => {
+    setReviewError(null);
     try {
       await reviewRequest(requestId, status);
     } catch (err) {
-      console.error('Failed to review request:', err);
+      const msg = err instanceof Error ? err.message : '申請の処理に失敗しました';
+      setReviewError(msg);
     }
   };
 
@@ -77,6 +80,11 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   </span>
                 )}
               </div>
+              {reviewError && (
+                <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{reviewError}</p>
+                </div>
+              )}
               {correctionLoading ? (
                 <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>

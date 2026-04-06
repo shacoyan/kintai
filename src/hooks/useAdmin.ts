@@ -26,11 +26,14 @@ export function useAdmin(tenantId: string) {
   }, [tenantId]);
 
   const updateHourlyRate = useCallback(async (memberId: string, rate: number) => {
-    const { error: e } = await supabase
+    const { data, error: e } = await supabase
       .from('tenant_members')
       .update({ hourly_rate: rate })
-      .eq('id', memberId);
-    if (e) throw e;
+      .eq('id', memberId)
+      .select()
+      .single();
+    if (e) throw new Error(`時給の更新に失敗しました: ${e.message}`);
+    if (!data) throw new Error('時給の更新に失敗しました（権限がない可能性があります）');
     await fetchMembers();
   }, [fetchMembers]);
 
@@ -76,11 +79,14 @@ export function useAdmin(tenantId: string) {
   }, [tenantId]);
 
   const updateAttendance = useCallback(async (recordId: string, data: { clock_in?: string; clock_out?: string; total_work_minutes?: number }) => {
-    const { error: e } = await supabase
+    const { data: updated, error: e } = await supabase
       .from('attendance_records')
       .update(data)
-      .eq('id', recordId);
-    if (e) throw e;
+      .eq('id', recordId)
+      .select()
+      .single();
+    if (e) throw new Error(`勤怠記録の更新に失敗: ${e.message}`);
+    if (!updated) throw new Error('勤怠記録の更新に失敗しました（権限がない可能性があります）');
   }, []);
 
   const deleteAttendance = useCallback(async (recordId: string) => {
@@ -88,15 +94,18 @@ export function useAdmin(tenantId: string) {
       .from('attendance_records')
       .delete()
       .eq('id', recordId);
-    if (e) throw e;
+    if (e) throw new Error(`勤怠記録の削除に失敗: ${e.message}`);
   }, []);
 
   const updateNightShift = useCallback(async (memberId: string, enabled: boolean) => {
-    const { error: e } = await supabase
+    const { data, error: e } = await supabase
       .from('tenant_members')
       .update({ night_shift_enabled: enabled })
-      .eq('id', memberId);
-    if (e) throw e;
+      .eq('id', memberId)
+      .select()
+      .single();
+    if (e) throw new Error(`深夜給設定の更新に失敗しました: ${e.message}`);
+    if (!data) throw new Error('深夜給設定の更新に失敗しました（権限がない可能性があります）');
     await fetchMembers();
   }, [fetchMembers]);
 
