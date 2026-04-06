@@ -12,6 +12,7 @@ interface BreakButtonProps {
 
 export function BreakButton({ status, breakStart, breakEnd, activeRecord, activeBreak }: BreakButtonProps) {
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (status !== 'working' && status !== 'on_break') return null;
 
@@ -20,10 +21,11 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
   const handleBreakStart = async () => {
     if (processing) return;
     setProcessing(true);
+    setError(null);
     try {
       await breakStart();
-    } catch (err) {
-      console.error('Break start error:', err);
+    } catch (err: any) {
+      setError(err.message || '休憩開始に失敗しました');
     } finally {
       setProcessing(false);
     }
@@ -32,10 +34,11 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
   const handleBreakEnd = async () => {
     if (processing) return;
     setProcessing(true);
+    setError(null);
     try {
       await breakEnd();
-    } catch (err) {
-      console.error('Break end error:', err);
+    } catch (err: any) {
+      setError(err.message || '休憩終了に失敗しました');
     } finally {
       setProcessing(false);
     }
@@ -66,6 +69,8 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
           )}
         </>
       )}
+
+      {error && <p className="text-sm text-red-500">{error}</p>}
 
       {activeRecord?.breaks && activeRecord.breaks.filter(b => b.end_time !== null).length > 0 && (
         <div className="mt-2 w-full max-w-xs">

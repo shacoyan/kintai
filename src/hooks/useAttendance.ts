@@ -26,10 +26,21 @@ export function useAttendance(tenantId: string) {
 
   const monthlySummary = useMemo(() => {
     const workDays = new Set(monthlyRecords.filter((r) => r.clock_in).map((r) => r.date)).size;
-    const totalWorkMinutes = monthlyRecords.reduce(
-      (sum, r) => sum + (r.total_work_minutes || 0),
-      0
-    );
+    const totalWorkMinutes = monthlyRecords.reduce((sum, r) => {
+      if (r.total_work_minutes != null) return sum + r.total_work_minutes;
+      // total_work_minutes が null の場合、clock_in/clock_out から再計算
+      if (r.clock_in && r.clock_out) {
+        const gross = differenceInMinutes(parseISO(r.clock_out), parseISO(r.clock_in));
+        const breakMins = (r.breaks || []).reduce((bSum, b) => {
+          if (b.start_time && b.end_time) {
+            return bSum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
+          }
+          return bSum;
+        }, 0);
+        return sum + Math.max(0, gross - breakMins);
+      }
+      return sum;
+    }, 0);
     const totalBreakMinutes = monthlyRecords.reduce((sum, r) => {
       if (r.breaks && r.breaks.length > 0) {
         return (
@@ -206,12 +217,17 @@ export function useAttendance(tenantId: string) {
 
   const fetchRecords = useCallback(
     async (year: number, month: number) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
       const startDate = format(new Date(year, month - 1, 1), 'yyyy-MM-dd');
       const endDate = format(new Date(year, month, 0), 'yyyy-MM-dd');
       const { data, error } = await supabase
         .from('attendance_records')
         .select('*, breaks(*)')
         .eq('tenant_id', tenantId)
+        .eq('user_id', user.id)
         .gte('date', startDate)
         .lte('date', endDate)
         .order('date', { ascending: true })

@@ -153,7 +153,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
       </div>
 
       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700">年</label>
             <select

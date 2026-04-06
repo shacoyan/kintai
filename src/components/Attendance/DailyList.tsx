@@ -21,8 +21,8 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
     return format(parseISO(iso), 'HH:mm');
   };
 
-  const formatMinutes = (minutes: number | null) => {
-    if (minutes === null || minutes === 0) return null;
+  const formatMinutes = (minutes: number | null | undefined) => {
+    if (minutes == null) return null;
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return `${h}h ${m.toString().padStart(2, '0')}m`;

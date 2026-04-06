@@ -47,7 +47,7 @@ function DashboardContent({ tenantId }: { tenantId: string }) {
   };
 
   const formatDuration = (minutes: number | null | undefined) => {
-    if (!minutes) return '-';
+    if (minutes == null) return '-';
     const h = Math.floor(minutes / 60);
     const m = minutes % 60;
     return `${h}時間${m}分`;

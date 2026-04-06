@@ -110,8 +110,8 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">勤怠記録検索</h3>
-        <div className="flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="sm:col-span-2 lg:col-span-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">メンバー</label>
             <select
               value={selectedUserId}
@@ -126,19 +126,21 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">開始日</label>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">終了日</label>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
-          <button
-            onClick={handleSearch}
-            disabled={!selectedUserId || loading}
-            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            {loading ? '検索中...' : '検索'}
-          </button>
+          <div className="flex items-end">
+            <button
+              onClick={handleSearch}
+              disabled={!selectedUserId || loading}
+              className="w-full bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {loading ? '検索中...' : '検索'}
+            </button>
+          </div>
         </div>
       </div>
 

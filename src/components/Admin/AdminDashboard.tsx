@@ -42,8 +42,8 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-200">
-        <nav className="flex space-x-8">
+      <div className="border-b border-gray-200 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+        <nav className="flex space-x-4 sm:space-x-8 min-w-max">
           {tabs.map((tab) => (
             <button
               key={tab.id}
