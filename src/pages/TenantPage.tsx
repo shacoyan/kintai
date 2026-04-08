@@ -25,14 +25,16 @@ const TenantPage: React.FC = () => {
   };
 
   const handleTenantCreated = async (tenant: Tenant) => {
-    await fetchTenants();
-    setCurrentTenant(tenant);
+    const fetched = await fetchTenants();
+    const found = fetched.find(t => t.id === tenant.id);
+    setCurrentTenant(found || tenant);
     navigate('/', { replace: true });
   };
 
   const handleTenantJoined = async (tenant: Tenant) => {
-    await fetchTenants();
-    setCurrentTenant(tenant);
+    const fetched = await fetchTenants();
+    const found = fetched.find(t => t.id === tenant.id);
+    setCurrentTenant(found || tenant);
     navigate('/', { replace: true });
   };
 

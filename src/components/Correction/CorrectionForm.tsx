@@ -81,6 +81,11 @@ export function CorrectionForm({
       return;
     }
 
+    if (!isDelete && !requestedClockIn && !requestedClockOut) {
+      setError('出勤時刻または退勤時刻を入力してください');
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -114,7 +119,8 @@ export function CorrectionForm({
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            disabled={submitting}
+            className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -187,7 +193,8 @@ export function CorrectionForm({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors"
+              disabled={submitting}
+              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               キャンセル
             </button>

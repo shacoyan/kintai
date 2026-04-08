@@ -47,7 +47,7 @@ export function useCorrection(tenantId: string) {
     };
 
     // request_type カラムが存在しない場合にも対応
-    if (data.request_type && data.request_type !== 'correction') {
+    if (data.request_type) {
       insertPayload.request_type = data.request_type;
     }
 
@@ -147,6 +147,7 @@ export function useCorrection(tenantId: string) {
                 totalWorkMinutes -= breakMins;
               }
             }
+            totalWorkMinutes = Math.max(0, totalWorkMinutes);
           }
 
           if (target.attendance_record_id) {

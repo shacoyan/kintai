@@ -39,9 +39,13 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
     }
   };
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (createdTenant) {
-      navigator.clipboard.writeText(createdTenant.invite_code);
+      try {
+        await navigator.clipboard.writeText(createdTenant.invite_code);
+      } catch {
+        // HTTPS以外の環境ではclipboard APIが使えないため無視
+      }
     }
   };
 

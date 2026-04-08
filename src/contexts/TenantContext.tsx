@@ -110,7 +110,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       if (authError || !authUser) throw new Error('認証情報の取得に失敗しました');
 
-      const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const inviteCode = crypto.randomUUID().substring(0, 6).toUpperCase();
 
       const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')
@@ -154,6 +154,16 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         .single();
 
       if (tenantError || !tenantData) throw new Error('無効な招待コードです');
+
+      // 既存メンバーシップの重複チェック
+      const { data: existingMember } = await supabase
+        .from('tenant_members')
+        .select('id')
+        .eq('tenant_id', tenantData.id)
+        .eq('user_id', authUser.id)
+        .maybeSingle();
+
+      if (existingMember) throw new Error('すでにこのテナントに参加しています');
 
       const { error: memberError } = await supabase
         .from('tenant_members')

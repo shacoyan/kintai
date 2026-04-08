@@ -83,19 +83,21 @@ export function useAdmin(tenantId: string) {
       .from('attendance_records')
       .update(data)
       .eq('id', recordId)
+      .eq('tenant_id', tenantId)
       .select()
       .single();
     if (e) throw new Error(`勤怠記録の更新に失敗: ${e.message}`);
     if (!updated) throw new Error('勤怠記録の更新に失敗しました（権限がない可能性があります）');
-  }, []);
+  }, [tenantId]);
 
   const deleteAttendance = useCallback(async (recordId: string) => {
     const { error: e } = await supabase
       .from('attendance_records')
       .delete()
-      .eq('id', recordId);
+      .eq('id', recordId)
+      .eq('tenant_id', tenantId);
     if (e) throw new Error(`勤怠記録の削除に失敗: ${e.message}`);
-  }, []);
+  }, [tenantId]);
 
   const updateNightShift = useCallback(async (memberId: string, enabled: boolean) => {
     const { data, error: e } = await supabase

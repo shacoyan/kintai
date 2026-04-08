@@ -74,7 +74,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
     let totalWorkMinutes: number | undefined;
     if (clockInISO && clockOutISO) {
       const breakMin = calcBreakMinutes(record);
-      totalWorkMinutes = differenceInMinutes(parseISO(clockOutISO), parseISO(clockInISO)) - breakMin;
+      totalWorkMinutes = Math.max(0, differenceInMinutes(parseISO(clockOutISO), parseISO(clockInISO)) - breakMin);
     }
 
     setActionError(null);

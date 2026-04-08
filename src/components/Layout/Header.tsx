@@ -32,7 +32,7 @@ export const Header: React.FC = () => {
   const navLinks = [
     { path: '/', label: 'ダッシュボード', shortLabel: '打刻', icon: <ClockIcon /> },
     { path: '/history', label: '履歴', shortLabel: '履歴', icon: <CalendarIcon /> },
-    ...(myRole === 'owner' ? [{ path: '/admin', label: '管理', shortLabel: '管理', icon: <CogIcon /> }] : []),
+    ...(myRole === 'owner' || myRole === 'admin' ? [{ path: '/admin', label: '管理', shortLabel: '管理', icon: <CogIcon /> }] : []),
   ];
 
   return (

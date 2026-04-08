@@ -7,7 +7,15 @@ export function useAttendance(tenantId: string) {
   const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
   const [monthlyRecords, setMonthlyRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+  const [today, setToday] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = format(new Date(), 'yyyy-MM-dd');
+      setToday((prev) => (prev !== now ? now : prev));
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const activeRecord = useMemo<AttendanceRecord | null>(() => {
     return todayRecords.find((r) => r.clock_in && !r.clock_out) ?? null;
@@ -18,11 +26,11 @@ export function useAttendance(tenantId: string) {
     return activeRecord.breaks.find((b) => !b.end_time) ?? null;
   }, [activeRecord]);
 
-  const status: 'not_started' | 'working' | 'on_break' = (() => {
+  const status = useMemo<'not_started' | 'working' | 'on_break'>(() => {
     if (!activeRecord) return 'not_started';
     if (activeBreak) return 'on_break';
     return 'working';
-  })();
+  }, [activeRecord, activeBreak]);
 
   const monthlySummary = useMemo(() => {
     const workDays = new Set(monthlyRecords.filter((r) => r.clock_in).map((r) => r.date)).size;
@@ -93,7 +101,7 @@ export function useAttendance(tenantId: string) {
 
   useEffect(() => {
     fetchTodayRecords();
-  }, [tenantId]);
+  }, [tenantId, today]);
 
   async function fetchTodayRecords() {
     setLoading(true);
@@ -148,18 +156,35 @@ export function useAttendance(tenantId: string) {
     if (!activeRecord?.clock_in) return;
     const now = new Date();
 
+    // 進行中の休憩があれば自動的に終了する
+    if (activeBreak) {
+      const { error: breakError } = await supabase
+        .from('breaks')
+        .update({ end_time: now.toISOString() })
+        .eq('id', activeBreak.id);
+      if (breakError) {
+        console.error('Auto break end error:', breakError.message);
+        throw breakError;
+      }
+    }
+
+    // 休憩時間をローカルで計算（自動終了した休憩も含む）
     let totalBreakMinutes = 0;
     if (activeRecord.breaks && activeRecord.breaks.length > 0) {
       totalBreakMinutes = activeRecord.breaks.reduce((sum, b) => {
         if (b.start_time && b.end_time) {
           return sum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
         }
+        // 自動終了した休憩（end_time が null だった → now で終了）
+        if (b.start_time && !b.end_time) {
+          return sum + differenceInMinutes(now, parseISO(b.start_time));
+        }
         return sum;
       }, 0);
     }
 
     const totalWorkMinutes =
-      differenceInMinutes(now, parseISO(activeRecord.clock_in)) - totalBreakMinutes;
+      Math.max(0, differenceInMinutes(now, parseISO(activeRecord.clock_in)) - totalBreakMinutes);
 
     const { error } = await supabase
       .from('attendance_records')
@@ -234,6 +259,7 @@ export function useAttendance(tenantId: string) {
         .order('clock_in', { ascending: true });
       if (error) {
         console.error('Fetch records error:', error.message);
+        return;
       }
       setMonthlyRecords((data as AttendanceRecord[]) || []);
     },
@@ -250,6 +276,7 @@ export function useAttendance(tenantId: string) {
     breakEnd,
     activeBreak,
     fetchRecords,
+    today,
     monthlyRecords,
     monthlySummary,
     loading,

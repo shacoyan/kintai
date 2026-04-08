@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { AttendanceRecord } from '../../types';
 
@@ -37,7 +37,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
     }
   };
 
-  const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+  const todayStr = format(currentTime, 'yyyy-MM-dd');
   const isCarryOver = activeRecord ? activeRecord.date !== todayStr : false;
 
   const getButtonConfig = () => {
@@ -65,7 +65,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
         disabled={config.disabled || processing}
         className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg transition-all ${config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
       >
-        {config.label}
+        {processing ? '処理中...' : config.label}
       </button>
       {error && <p className="text-sm text-red-500">{error}</p>}
 

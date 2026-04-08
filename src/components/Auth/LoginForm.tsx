@@ -19,8 +19,14 @@ export const LoginForm: React.FC = () => {
         await signIn(email, password);
       } else {
         await signUp(email, password);
-        // 登録後そのままログイン
-        await signIn(email, password);
+        try {
+          await signIn(email, password);
+        } catch {
+          // メール確認が必要な場合はログインに失敗する
+          setError('登録しました！確認メールを送信した場合は、メール内のリンクをクリックしてからログインしてください。');
+          setLoading(false);
+          return;
+        }
       }
     } catch (err: any) {
       setError(err.message || '認証に失敗しました。');

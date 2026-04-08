@@ -7,7 +7,7 @@ export function AdminPage() {
   // RequireTenant ガードにより currentTenant は必ず存在する
   const tenantId = currentTenant!.id;
 
-  if (myRole !== 'owner') {
+  if (myRole !== 'owner' && myRole !== 'admin') {
     return <Navigate to="/" replace />;
   }
 

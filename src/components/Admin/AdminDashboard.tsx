@@ -26,11 +26,15 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const { currentTenant } = useTenant();
   const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
 
-  const handleCopyCode = () => {
+  const handleCopyCode = async () => {
     if (!currentTenant?.invite_code) return;
-    navigator.clipboard.writeText(currentTenant.invite_code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(currentTenant.invite_code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // HTTPS以外の環境ではclipboard APIが使えないため無視
+    }
   };
 
   useEffect(() => {

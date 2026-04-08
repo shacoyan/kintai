@@ -79,6 +79,7 @@ export function HistoryPage() {
       <div className="flex items-center justify-between bg-white rounded-lg shadow px-4 py-3">
         <button
           onClick={handlePrevMonth}
+          aria-label="前月"
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,6 +91,7 @@ export function HistoryPage() {
         </h2>
         <button
           onClick={handleNextMonth}
+          aria-label="翌月"
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

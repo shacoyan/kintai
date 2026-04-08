@@ -42,8 +42,8 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
                   <p className="text-base font-semibold text-gray-900 truncate">{tenant.name}</p>
                   <p className="text-sm text-gray-500 truncate">{tenant.display_name}</p>
                 </div>
-                <span className={`ml-4 px-3 py-1 text-xs font-medium rounded-full ${roleColors[tenant.role]}`}>
-                  {roleLabels[tenant.role]}
+                <span className={`ml-4 px-3 py-1 text-xs font-medium rounded-full ${roleColors[tenant.role] || roleColors.staff}`}>
+                  {roleLabels[tenant.role] || roleLabels.staff}
                 </span>
               </button>
             ))}

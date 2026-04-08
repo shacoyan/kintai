@@ -47,6 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    localStorage.removeItem('kintai_current_tenant');
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
