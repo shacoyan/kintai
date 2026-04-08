@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAdmin } from '../../hooks/useAdmin';
+import { useTenant } from '../../hooks/useTenant';
 import type { TenantMember } from '../../types';
 
 interface MemberManagementProps {
@@ -13,6 +14,7 @@ const roleBadge: Record<string, { label: string; className: string }> = {
 };
 
 export function MemberManagement({ tenantId }: MemberManagementProps) {
+  const { myRole } = useTenant();
   const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift } = useAdmin(tenantId);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRate, setEditRate] = useState<string>('');
@@ -74,6 +76,14 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
       setSaveError(err instanceof Error ? err.message : '深夜給設定の更新に失敗しました');
     }
   };
+
+  if (myRole !== 'owner' && myRole !== 'admin') {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+        <p className="text-yellow-700">この機能を使用する権限がありません</p>
+      </div>
+    );
+  }
 
   if (loading && members.length === 0) {
     return (

@@ -20,6 +20,55 @@ interface PayrollRow {
 }
 
 /**
+ * 2つの時間範囲の重複分数を計算する
+ */
+function getOverlapMinutes(s1: Date, e1: Date, s2: Date, e2: Date): number {
+  const overlapStart = s1 > s2 ? s1 : s2;
+  const overlapEnd = e1 < e2 ? e1 : e2;
+  if (overlapStart >= overlapEnd) return 0;
+  return differenceInMinutes(overlapEnd, overlapStart);
+}
+
+/**
+ * 指定時間帯が深夜帯（22:00〜翌5:00）に重なる分数を計算する
+ */
+function getNightMinutesInRange(start: Date, end: Date): number {
+  const totalMins = differenceInMinutes(end, start);
+  if (totalMins <= 0) return 0;
+
+  let nightMins = 0;
+  // 日ごとに処理（最大2日程度なので問題ない）
+  const current = new Date(start);
+  current.setHours(0, 0, 0, 0);
+
+  while (current < end) {
+    const dayStart = new Date(current);
+
+    // 0:00-5:00
+    const earlyNightStart = new Date(dayStart);
+    earlyNightStart.setHours(0, 0, 0, 0);
+    const earlyNightEnd = new Date(dayStart);
+    earlyNightEnd.setHours(5, 0, 0, 0);
+
+    // 22:00-24:00
+    const lateNightStart = new Date(dayStart);
+    lateNightStart.setHours(22, 0, 0, 0);
+    const lateNightEnd = new Date(dayStart);
+    lateNightEnd.setHours(24, 0, 0, 0);
+
+    // 重複計算
+    nightMins += getOverlapMinutes(start, end, earlyNightStart, earlyNightEnd);
+    nightMins += getOverlapMinutes(start, end, lateNightStart, lateNightEnd);
+
+    // 次の日へ
+    current.setDate(current.getDate() + 1);
+    current.setHours(0, 0, 0, 0);
+  }
+
+  return Math.min(nightMins, totalMins);
+}
+
+/**
  * 勤務時間を通常時間と深夜時間（22:00〜翌5:00）に分割する
  */
 function splitNightMinutes(clockIn: string, clockOut: string): { normal: number; night: number } {
@@ -28,18 +77,7 @@ function splitNightMinutes(clockIn: string, clockOut: string): { normal: number;
   const totalMins = differenceInMinutes(end, start);
   if (totalMins <= 0) return { normal: 0, night: 0 };
 
-  let nightMins = 0;
-  // 1分単位でチェック（精度と速度のバランス）
-  const cursor = new Date(start);
-  for (let i = 0; i < totalMins; i++) {
-    const h = cursor.getHours();
-    // 22:00〜23:59 or 0:00〜4:59 = 深夜帯
-    if (h >= 22 || h < 5) {
-      nightMins++;
-    }
-    cursor.setMinutes(cursor.getMinutes() + 1);
-  }
-
+  const nightMins = getNightMinutesInRange(start, end);
   return { normal: totalMins - nightMins, night: nightMins };
 }
 
@@ -75,12 +113,25 @@ function calcMemberPayroll(
 
     if (member.night_shift_enabled && r.clock_in && r.clock_out) {
       const { normal, night } = splitNightMinutes(r.clock_in, r.clock_out);
-      const gross = differenceInMinutes(parseISO(r.clock_out), parseISO(r.clock_in));
-      const breakMins = gross - workMins;
-      const adjustedNormal = Math.max(0, normal - breakMins);
-      const adjustedNight = Math.min(night, workMins - adjustedNormal);
+      // 休憩時間を通常/深夜に分割
+      let breakNormalMins = 0;
+      let breakNightMins = 0;
+      if (r.breaks && r.breaks.length > 0) {
+        for (const b of r.breaks) {
+          if (b.start_time && b.end_time) {
+            const bStart = parseISO(b.start_time);
+            const bEnd = parseISO(b.end_time);
+            const bNight = getNightMinutesInRange(bStart, bEnd);
+            const bTotal = differenceInMinutes(bEnd, bStart);
+            breakNightMins += bNight;
+            breakNormalMins += bTotal - bNight;
+          }
+        }
+      }
+      const adjustedNormal = Math.max(0, normal - breakNormalMins);
+      const adjustedNight = Math.max(0, night - breakNightMins);
       normalMinutes += adjustedNormal;
-      nightMinutes += Math.max(0, adjustedNight);
+      nightMinutes += adjustedNight;
     } else {
       normalMinutes += workMins;
     }

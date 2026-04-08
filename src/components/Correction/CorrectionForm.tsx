@@ -50,6 +50,15 @@ export function CorrectionForm({
     }
   }, [isOpen, existingClockIn, existingClockOut]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !submitting) onClose();
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [isOpen, submitting, onClose]);
+
   if (!isOpen) return null;
 
   const isDelete = mode === 'delete';
@@ -58,12 +67,12 @@ export function CorrectionForm({
     if (!requestedClockIn && !requestedClockOut) return { clockIn: undefined, clockOut: undefined };
 
     const clockInISO = requestedClockIn
-      ? new Date(`${date}T${requestedClockIn}:00`).toISOString()
+      ? new Date(`${date}T${requestedClockIn}:00+09:00`).toISOString()
       : undefined;
 
     let clockOutISO: string | undefined;
     if (requestedClockOut) {
-      const outDate = new Date(`${date}T${requestedClockOut}:00`);
+      const outDate = new Date(`${date}T${requestedClockOut}:00+09:00`);
       // 退勤時刻が出勤時刻より前なら翌日とみなす（例: 出勤22:00 → 退勤05:00）
       if (requestedClockIn && requestedClockOut < requestedClockIn) {
         outDate.setDate(outDate.getDate() + 1);
@@ -111,8 +120,8 @@ export function CorrectionForm({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={submitting ? undefined : onClose}>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">
             {isDelete ? '勤怠削除依頼' : '勤怠修正申請'}

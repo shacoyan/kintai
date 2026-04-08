@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { AttendanceRecord } from '../../types';
 
 interface ClockButtonProps {
@@ -37,7 +38,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
     }
   };
 
-  const todayStr = format(currentTime, 'yyyy-MM-dd');
+  const todayStr = formatInTimeZone(currentTime, 'Asia/Tokyo', 'yyyy-MM-dd');
   const isCarryOver = activeRecord ? activeRecord.date !== todayStr : false;
 
   const getButtonConfig = () => {

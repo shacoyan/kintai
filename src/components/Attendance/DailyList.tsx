@@ -1,4 +1,5 @@
 import { eachDayOfInterval, startOfMonth, endOfMonth, format, parseISO, differenceInMinutes } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { ja } from 'date-fns/locale';
 import { AttendanceRecord } from '../../types';
 
@@ -14,7 +15,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
   const start = startOfMonth(new Date(year, month - 1, 1));
   const end = endOfMonth(new Date(year, month - 1, 1));
   const days = eachDayOfInterval({ start, end });
-  const today = format(new Date(), 'yyyy-MM-dd');
+  const today = formatInTimeZone(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd');
 
   const formatHM = (iso: string | null) => {
     if (!iso) return null;
@@ -37,9 +38,6 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
         }
         return sum;
       }, 0);
-    }
-    if (record.break_start && record.break_end) {
-      return differenceInMinutes(parseISO(record.break_end), parseISO(record.break_start));
     }
     return 0;
   };

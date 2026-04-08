@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAdmin } from '../../hooks/useAdmin';
-import { useTenant } from '../../hooks/useTenant';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import type { AttendanceRecord } from '../../types';
 
@@ -9,8 +8,7 @@ interface AttendanceAdminProps {
 }
 
 export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
-  const { memberAttendance, loading, fetchMemberAttendance, updateAttendance, deleteAttendance } = useAdmin(tenantId);
-  const { members } = useTenant();
+  const { members, memberAttendance, loading, fetchMembers, fetchMemberAttendance, updateAttendance, deleteAttendance } = useAdmin(tenantId);
 
   const now = new Date();
   const [selectedUserId, setSelectedUserId] = useState('');
@@ -19,6 +17,10 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
   const [searched, setSearched] = useState(false);
   const [edits, setEdits] = useState<Record<string, { clock_in: string; clock_out: string }>>({});
   const [actionError, setActionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
 
   useEffect(() => {
     if (members.length > 0 && !selectedUserId) {
@@ -34,10 +36,13 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
   };
 
   const handleFieldChange = (recordId: string, field: 'clock_in' | 'clock_out', value: string) => {
-    setEdits((prev) => ({
-      ...prev,
-      [recordId]: { ...prev[recordId], [field]: value },
-    }));
+    setEdits((prev) => {
+      const existing = prev[recordId] || { clock_in: '', clock_out: '' };
+      return {
+        ...prev,
+        [recordId]: { ...existing, [field]: value },
+      };
+    });
   };
 
   const getEditValue = (record: AttendanceRecord, field: 'clock_in' | 'clock_out'): string => {

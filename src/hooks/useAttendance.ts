@@ -2,16 +2,17 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { AttendanceRecord, Break } from '../types';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 
 export function useAttendance(tenantId: string) {
   const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
   const [monthlyRecords, setMonthlyRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [today, setToday] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const [today, setToday] = useState(() => formatInTimeZone(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd'));
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const now = format(new Date(), 'yyyy-MM-dd');
+      const now = formatInTimeZone(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd');
       setToday((prev) => (prev !== now ? now : prev));
     }, 60_000);
     return () => clearInterval(interval);
@@ -67,43 +68,7 @@ export function useAttendance(tenantId: string) {
     return { totalWorkMinutes, totalBreakMinutes, workDays, avgWorkMinutes };
   }, [monthlyRecords]);
 
-  useEffect(() => {
-    const channel = supabase
-      .channel(`attendance:${tenantId}:${today}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'attendance_records',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => {
-          fetchTodayRecords();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'breaks',
-        },
-        () => {
-          fetchTodayRecords();
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [tenantId, today]);
-
-  useEffect(() => {
-    fetchTodayRecords();
-  }, [tenantId, today]);
-
-  async function fetchTodayRecords() {
+  const fetchTodayRecords = useCallback(async () => {
     setLoading(true);
     try {
       const {
@@ -128,7 +93,45 @@ export function useAttendance(tenantId: string) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [tenantId, today]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`attendance:${tenantId}:${today}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'attendance_records',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          fetchTodayRecords();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'breaks',
+        },
+        () => {
+          // TODO: breaks テーブルには tenant_id がないため Supabase Realtime フィルタで絞れない
+          // attendance_record_id で不要な fetch を減らす改善余地あり
+          fetchTodayRecords();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId, today, fetchTodayRecords]);
+
+  useEffect(() => {
+    fetchTodayRecords();
+  }, [fetchTodayRecords]);
 
   async function clockIn() {
     if (activeRecord) {

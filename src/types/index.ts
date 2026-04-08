@@ -12,8 +12,8 @@ export interface TenantMember {
   user_id: string;
   role: 'owner' | 'admin' | 'staff';
   display_name: string;
-  hourly_rate: number;
-  night_shift_enabled: boolean;
+  hourly_rate: number | null;
+  night_shift_enabled: boolean | null;
   created_at: string;
 }
 
@@ -32,10 +32,6 @@ export interface AttendanceRecord {
   date: string;
   clock_in: string | null;
   clock_out: string | null;
-  /** @deprecated Use breaks table instead */
-  break_start: string | null;
-  /** @deprecated Use breaks table instead */
-  break_end: string | null;
   total_work_minutes: number | null;
   note: string | null;
   created_at: string;

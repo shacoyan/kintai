@@ -15,6 +15,7 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
   const [error, setError] = useState<string | null>(null);
 
   if (status !== 'working' && status !== 'on_break') return null;
+  if (!activeRecord) return null;
 
   const formatTime = (iso: string | null | undefined) => iso ? format(parseISO(iso), 'HH:mm') : null;
 

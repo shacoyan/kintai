@@ -6,11 +6,14 @@ export function useAdmin(tenantId: string) {
   const [members, setMembers] = useState<TenantMember[]>([]);
   const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([]);
   const [memberAttendance, setMemberAttendance] = useState<AttendanceRecord[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingCount, setLoadingCount] = useState(0);
+  const loading = loadingCount > 0;
+  const startLoading = () => setLoadingCount(c => c + 1);
+  const stopLoading = () => setLoadingCount(c => Math.max(0, c - 1));
   const [error, setError] = useState<string | null>(null);
 
   const fetchMembers = useCallback(async () => {
-    setLoading(true);
+    startLoading();
     setError(null);
     const { data, error: e } = await supabase
       .from('tenant_members')
@@ -22,7 +25,7 @@ export function useAdmin(tenantId: string) {
     } else {
       setMembers((data as TenantMember[]) || []);
     }
-    setLoading(false);
+    stopLoading();
   }, [tenantId]);
 
   const updateHourlyRate = useCallback(async (memberId: string, rate: number) => {
@@ -38,7 +41,7 @@ export function useAdmin(tenantId: string) {
   }, [fetchMembers]);
 
   const fetchAllAttendance = useCallback(async (year: number, month: number) => {
-    setLoading(true);
+    startLoading();
     setError(null);
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
@@ -55,11 +58,11 @@ export function useAdmin(tenantId: string) {
     } else {
       setAllAttendance((data as AttendanceRecord[]) || []);
     }
-    setLoading(false);
+    stopLoading();
   }, [tenantId]);
 
   const fetchMemberAttendance = useCallback(async (userId: string, startDate: string, endDate: string) => {
-    setLoading(true);
+    startLoading();
     setError(null);
     const { data, error: e } = await supabase
       .from('attendance_records')
@@ -75,7 +78,7 @@ export function useAdmin(tenantId: string) {
     } else {
       setMemberAttendance((data as AttendanceRecord[]) || []);
     }
-    setLoading(false);
+    stopLoading();
   }, [tenantId]);
 
   const updateAttendance = useCallback(async (recordId: string, data: { clock_in?: string; clock_out?: string; total_work_minutes?: number }) => {

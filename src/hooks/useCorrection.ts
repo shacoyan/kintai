@@ -124,8 +124,21 @@ export function useCorrection(tenantId: string) {
             throw new Error(`勤怠レコードの削除に失敗: ${delError.message}`);
           }
         } else if (target.request_type !== 'delete') {
-          const clockIn = target.requested_clock_in || null;
-          const clockOut = target.requested_clock_out || null;
+          let clockIn = target.requested_clock_in || null;
+          let clockOut = target.requested_clock_out || null;
+
+          // 片方のみ変更の場合、既存レコードからもう片方を取得
+          if (target.attendance_record_id && (!clockIn || !clockOut)) {
+            const { data: existingRecord } = await supabase
+              .from('attendance_records')
+              .select('clock_in, clock_out')
+              .eq('id', target.attendance_record_id)
+              .single();
+            if (existingRecord) {
+              if (!clockIn) clockIn = existingRecord.clock_in;
+              if (!clockOut) clockOut = existingRecord.clock_out;
+            }
+          }
 
           // total_work_minutes を計算
           let totalWorkMinutes: number | null = null;
