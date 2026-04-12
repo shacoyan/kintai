@@ -8,6 +8,7 @@ interface ShiftAdminPanelProps {
   onReject: (shiftId: string) => Promise<void>;
   onModify: (shiftId: string, startTime: string, endTime: string) => Promise<void>;
   onBulkApprove: (shiftIds: string[]) => Promise<void>;
+  onDelete: (shiftId: string) => Promise<void>;
   onRefresh: () => void;
 }
 
@@ -25,8 +26,9 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   modified: { label: '修正', className: 'bg-blue-100 text-blue-800' },
 };
 
-export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify, onBulkApprove, onRefresh }: ShiftAdminPanelProps) {
+export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify, onBulkApprove, onDelete, onRefresh }: ShiftAdminPanelProps) {
   const [modifyingId, setModifyingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [modStart, setModStart] = useState('');
   const [modEnd, setModEnd] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -173,6 +175,35 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       >
                         却下
                       </button>
+                    </div>
+                  )}
+
+                  {shift.status !== 'pending' && !isModifying && (
+                    <div className="flex gap-1.5">
+                      {deletingId === shift.id ? (
+                        <>
+                          <button
+                            onClick={() => { handleAction(() => onDelete(shift.id)); setDeletingId(null); }}
+                            disabled={processing}
+                            className="px-2.5 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 transition"
+                          >
+                            削除する
+                          </button>
+                          <button
+                            onClick={() => setDeletingId(null)}
+                            className="px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition"
+                          >
+                            戻す
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setDeletingId(shift.id)}
+                          className="px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 rounded hover:bg-red-100 transition"
+                        >
+                          削除
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

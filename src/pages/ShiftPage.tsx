@@ -19,7 +19,7 @@ export function ShiftPage() {
   const tenantId = currentTenant?.id || '';
   const isAdmin = myRole === 'owner' || myRole === 'admin';
 
-  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, submitShift, approveShift, rejectShift, modifyShift, bulkApprove, getLaborCostEstimate } = useShift(tenantId);
+  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, submitShift, deleteShift, approveShift, rejectShift, modifyShift, bulkApprove, getLaborCostEstimate } = useShift(tenantId);
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useAdmin(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId);
@@ -137,12 +137,13 @@ export function ShiftPage() {
           {isAdmin && (
             <>
               <ShiftAdminPanel
-                shifts={shifts.filter(s => s.status === 'pending')}
+                shifts={shifts.filter(s => s.status !== 'cancelled')}
                 members={members}
                 onApprove={approveShift}
                 onReject={rejectShift}
                 onModify={modifyShift}
                 onBulkApprove={bulkApprove}
+                onDelete={deleteShift}
                 onRefresh={fetchRange}
               />
 

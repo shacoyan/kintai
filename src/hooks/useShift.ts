@@ -79,6 +79,14 @@ export function useShift(tenantId: string) {
     if (e) throw new Error(`シフト申請に失敗しました: ${e.message}`);
   }, [tenantId]);
 
+  const deleteShift = useCallback(async (shiftId: string) => {
+    const { error: e } = await supabase
+      .from('shifts')
+      .delete()
+      .eq('id', shiftId);
+    if (e) throw new Error(`シフト削除に失敗しました: ${e.message}`);
+  }, []);
+
   const cancelShift = useCallback(async (shiftId: string) => {
     const { error: e } = await supabase
       .from('shifts')
@@ -222,6 +230,7 @@ export function useShift(tenantId: string) {
     getMyShifts,
     getAllShifts,
     submitShift,
+    deleteShift,
     cancelShift,
     approveShift,
     rejectShift,
