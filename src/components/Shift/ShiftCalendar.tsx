@@ -1,0 +1,193 @@
+import { useState, useMemo } from 'react';
+import { format, startOfWeek, addDays, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
+import { ja } from 'date-fns/locale';
+import type { Shift } from '../../types';
+
+type ViewMode = 'week' | '2week' | 'month';
+
+interface ShiftCalendarProps {
+  shifts: Shift[];
+  onDateClick: (date: string) => void;
+  /** member display_name map for admin view */
+  memberNames?: Map<string, string>;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: 'bg-yellow-100 border-yellow-300 text-yellow-800',
+  approved: 'bg-green-100 border-green-300 text-green-800',
+  rejected: 'bg-red-100 border-red-300 text-red-800',
+  modified: 'bg-blue-100 border-blue-300 text-blue-800',
+  cancelled: 'bg-gray-100 border-gray-300 text-gray-500',
+};
+
+const STATUS_DOT: Record<string, string> = {
+  pending: 'bg-yellow-400',
+  approved: 'bg-green-400',
+  rejected: 'bg-red-400',
+  modified: 'bg-blue-400',
+  cancelled: 'bg-gray-400',
+};
+
+export function ShiftCalendar({ shifts, onDateClick, memberNames }: ShiftCalendarProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [baseDate, setBaseDate] = useState(() => new Date());
+
+  const dates = useMemo(() => {
+    const result: Date[] = [];
+    if (viewMode === 'month') {
+      const monthStart = startOfMonth(baseDate);
+      const monthEnd = endOfMonth(baseDate);
+      const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+      let d = calStart;
+      while (d <= monthEnd || result.length % 7 !== 0) {
+        result.push(d);
+        d = addDays(d, 1);
+      }
+    } else {
+      const weekStart = startOfWeek(baseDate, { weekStartsOn: 1 });
+      const days = viewMode === 'week' ? 7 : 14;
+      for (let i = 0; i < days; i++) {
+        result.push(addDays(weekStart, i));
+      }
+    }
+    return result;
+  }, [viewMode, baseDate]);
+
+  const shiftsByDate = useMemo(() => {
+    const map = new Map<string, Shift[]>();
+    for (const s of shifts) {
+      const arr = map.get(s.date) || [];
+      arr.push(s);
+      map.set(s.date, arr);
+    }
+    return map;
+  }, [shifts]);
+
+  const navigate = (dir: number) => {
+    if (viewMode === 'month') {
+      setBaseDate(prev => new Date(prev.getFullYear(), prev.getMonth() + dir, 1));
+    } else if (viewMode === '2week') {
+      setBaseDate(prev => addWeeks(prev, dir * 2));
+    } else {
+      setBaseDate(prev => addWeeks(prev, dir));
+    }
+  };
+
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const weekDays = ['月', '火', '水', '木', '金', '土', '日'];
+
+  return (
+    <div className="space-y-3">
+      {/* Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate(-1)} className="p-1.5 rounded-md hover:bg-gray-100 transition">
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <span className="text-sm font-semibold text-gray-900 min-w-[120px] text-center">
+            {viewMode === 'month'
+              ? format(baseDate, 'yyyy年M月', { locale: ja })
+              : `${format(dates[0], 'M/d')} - ${format(dates[dates.length - 1], 'M/d')}`
+            }
+          </span>
+          <button onClick={() => navigate(1)} className="p-1.5 rounded-md hover:bg-gray-100 transition">
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setBaseDate(new Date())}
+            className="px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition"
+          >
+            今日
+          </button>
+        </div>
+
+        <div className="flex rounded-md overflow-hidden border border-gray-300">
+          {(['week', '2week', 'month'] as ViewMode[]).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              className={`px-2.5 py-1 text-xs font-medium transition-colors ${
+                viewMode === mode
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {mode === 'week' ? '週' : mode === '2week' ? '2週' : '月'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Calendar grid */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        {/* Header */}
+        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+          {weekDays.map((d, i) => (
+            <div key={i} className={`text-center py-2 text-xs font-medium ${
+              i === 5 ? 'text-blue-600' : i === 6 ? 'text-red-600' : 'text-gray-500'
+            }`}>
+              {d}
+            </div>
+          ))}
+        </div>
+
+        {/* Cells */}
+        <div className="grid grid-cols-7">
+          {dates.map((d) => {
+            const dateStr = format(d, 'yyyy-MM-dd');
+            const isToday = dateStr === today;
+            const dayShifts = shiftsByDate.get(dateStr) || [];
+            const isCurrentMonth = viewMode === 'month' ? d.getMonth() === baseDate.getMonth() : true;
+
+            return (
+              <div
+                key={dateStr}
+                onClick={() => onDateClick(dateStr)}
+                className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-gray-100 p-1 cursor-pointer hover:bg-gray-50 transition ${
+                  !isCurrentMonth ? 'bg-gray-50 opacity-50' : ''
+                }`}
+              >
+                <div className={`text-xs font-medium mb-0.5 ${
+                  isToday ? 'bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center' : 'text-gray-700'
+                }`}>
+                  {format(d, 'd')}
+                </div>
+                <div className="space-y-0.5">
+                  {dayShifts.slice(0, 3).map((s) => (
+                    <div
+                      key={s.id}
+                      className={`text-[10px] leading-tight px-1 py-0.5 rounded border truncate ${STATUS_COLORS[s.status]}`}
+                    >
+                      {memberNames ? (
+                        <span>{memberNames.get(s.user_id)?.charAt(0) || '?'} {s.start_time.slice(0, 5)}-{s.end_time.slice(0, 5)}</span>
+                      ) : (
+                        <span>{s.start_time.slice(0, 5)}-{s.end_time.slice(0, 5)}</span>
+                      )}
+                    </div>
+                  ))}
+                  {dayShifts.length > 3 && (
+                    <div className="text-[10px] text-gray-500">+{dayShifts.length - 3}件</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3 text-xs">
+        {Object.entries({ pending: '申請中', approved: '承認済', rejected: '却下', modified: '修正', cancelled: '取消' }).map(([key, label]) => (
+          <div key={key} className="flex items-center gap-1">
+            <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[key]}`} />
+            <span className="text-gray-600">{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

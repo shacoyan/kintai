@@ -102,6 +102,42 @@ export function useAdmin(tenantId: string) {
     if (e) throw new Error(`勤怠記録の削除に失敗: ${e.message}`);
   }, [tenantId]);
 
+  const updatePayType = useCallback(async (memberId: string, payType: 'hourly' | 'monthly') => {
+    const { data, error: e } = await supabase
+      .from('tenant_members')
+      .update({ pay_type: payType })
+      .eq('id', memberId)
+      .select()
+      .single();
+    if (e) throw new Error(`給与タイプの更新に失敗しました: ${e.message}`);
+    if (!data) throw new Error('給与タイプの更新に失敗しました（権限がない可能性があります）');
+    await fetchMembers();
+  }, [fetchMembers]);
+
+  const updateMonthlySalary = useCallback(async (memberId: string, salary: number) => {
+    const { data, error: e } = await supabase
+      .from('tenant_members')
+      .update({ monthly_salary: salary })
+      .eq('id', memberId)
+      .select()
+      .single();
+    if (e) throw new Error(`月給の更新に失敗しました: ${e.message}`);
+    if (!data) throw new Error('月給の更新に失敗しました（権限がない可能性があります）');
+    await fetchMembers();
+  }, [fetchMembers]);
+
+  const updatePaidLeaveDays = useCallback(async (memberId: string, days: number) => {
+    const { data, error: e } = await supabase
+      .from('tenant_members')
+      .update({ paid_leave_days: days })
+      .eq('id', memberId)
+      .select()
+      .single();
+    if (e) throw new Error(`有給日数の更新に失敗しました: ${e.message}`);
+    if (!data) throw new Error('有給日数の更新に失敗しました（権限がない可能性があります）');
+    await fetchMembers();
+  }, [fetchMembers]);
+
   const updateNightShift = useCallback(async (memberId: string, enabled: boolean) => {
     const { data, error: e } = await supabase
       .from('tenant_members')
@@ -127,5 +163,8 @@ export function useAdmin(tenantId: string) {
     updateAttendance,
     deleteAttendance,
     updateNightShift,
+    updatePayType,
+    updateMonthlySalary,
+    updatePaidLeaveDays,
   };
 }

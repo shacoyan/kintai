@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAdmin } from '../../hooks/useAdmin';
 import { parseISO, differenceInMinutes } from 'date-fns';
 import type { AttendanceRecord, TenantMember } from '../../types';
+import { generatePayrollCsv, downloadCsv } from '../../utils/csvExport';
+import { getNightMinutesInRange } from '../../utils/nightShift';
 
 interface PayrollCalculationProps {
   tenantId: string;
@@ -10,62 +12,15 @@ interface PayrollCalculationProps {
 interface PayrollRow {
   userId: string;
   displayName: string;
+  payType: 'hourly' | 'monthly';
   hourlyRate: number;
+  monthlySalary: number;
   nightShiftEnabled: boolean;
   workDays: number;
   totalMinutes: number;
   normalMinutes: number;
   nightMinutes: number;
   payment: number;
-}
-
-/**
- * 2つの時間範囲の重複分数を計算する
- */
-function getOverlapMinutes(s1: Date, e1: Date, s2: Date, e2: Date): number {
-  const overlapStart = s1 > s2 ? s1 : s2;
-  const overlapEnd = e1 < e2 ? e1 : e2;
-  if (overlapStart >= overlapEnd) return 0;
-  return differenceInMinutes(overlapEnd, overlapStart);
-}
-
-/**
- * 指定時間帯が深夜帯（22:00〜翌5:00）に重なる分数を計算する
- */
-function getNightMinutesInRange(start: Date, end: Date): number {
-  const totalMins = differenceInMinutes(end, start);
-  if (totalMins <= 0) return 0;
-
-  let nightMins = 0;
-  // 日ごとに処理（最大2日程度なので問題ない）
-  const current = new Date(start);
-  current.setHours(0, 0, 0, 0);
-
-  while (current < end) {
-    const dayStart = new Date(current);
-
-    // 0:00-5:00
-    const earlyNightStart = new Date(dayStart);
-    earlyNightStart.setHours(0, 0, 0, 0);
-    const earlyNightEnd = new Date(dayStart);
-    earlyNightEnd.setHours(5, 0, 0, 0);
-
-    // 22:00-24:00
-    const lateNightStart = new Date(dayStart);
-    lateNightStart.setHours(22, 0, 0, 0);
-    const lateNightEnd = new Date(dayStart);
-    lateNightEnd.setHours(24, 0, 0, 0);
-
-    // 重複計算
-    nightMins += getOverlapMinutes(start, end, earlyNightStart, earlyNightEnd);
-    nightMins += getOverlapMinutes(start, end, lateNightStart, lateNightEnd);
-
-    // 次の日へ
-    current.setDate(current.getDate() + 1);
-    current.setHours(0, 0, 0, 0);
-  }
-
-  return Math.min(nightMins, totalMins);
 }
 
 /**
@@ -137,14 +92,24 @@ function calcMemberPayroll(
     }
   }
 
-  const normalPay = (normalMinutes / 60) * rate;
-  const nightPay = (nightMinutes / 60) * rate * 1.25;
-  const payment = Math.ceil(normalPay + nightPay);
+  const payType = member.pay_type ?? 'hourly';
+  const monthlySalary = member.monthly_salary ?? 0;
+
+  let payment: number;
+  if (payType === 'monthly') {
+    payment = monthlySalary;
+  } else {
+    const normalPay = (normalMinutes / 60) * rate;
+    const nightPay = (nightMinutes / 60) * rate * 1.25;
+    payment = Math.ceil(normalPay + nightPay);
+  }
 
   return {
     userId: member.user_id,
     displayName: member.display_name,
+    payType,
     hourlyRate: rate,
+    monthlySalary,
     nightShiftEnabled: member.night_shift_enabled ?? false,
     workDays: dates.size,
     totalMinutes,
@@ -232,6 +197,20 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
           >
             {loading ? '計算中...' : '計算'}
           </button>
+          {calculated && allAttendance.length > 0 && (
+            <button
+              onClick={() => {
+                const csv = generatePayrollCsv(allAttendance, members);
+                downloadCsv(csv, `給与計算_${selectedYear}年${selectedMonth}月.csv`);
+              }}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition"
+            >
+              <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              CSVダウンロード
+            </button>
+          )}
         </div>
       </div>
 
@@ -255,7 +234,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">稼働日数</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">通常時間</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">深夜時間</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">時給</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">時給/月給</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">支払額</th>
                 </tr>
               </thead>
@@ -272,7 +251,13 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                         <span className="text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">¥{row.hourlyRate.toLocaleString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">
+                      {row.payType === 'monthly' ? (
+                        <span>¥{row.monthlySalary.toLocaleString()}/月</span>
+                      ) : (
+                        <span>¥{row.hourlyRate.toLocaleString()}/時</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">¥{row.payment.toLocaleString()}</td>
                   </tr>
                 ))}

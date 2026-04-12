@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { format, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
 import { MemberManagement } from './MemberManagement';
 import { PayrollCalculation } from './PayrollCalculation';
 import { AttendanceAdmin } from './AttendanceAdmin';
 import { useCorrection } from '../../hooks/useCorrection';
+import { useLeave } from '../../hooks/useLeave';
+import { useAdmin } from '../../hooks/useAdmin';
 import { useTenant } from '../../hooks/useTenant';
 import { CorrectionList } from '../Correction/CorrectionList';
+import { LeaveList } from '../Leave/LeaveList';
 
 interface AdminDashboardProps {
   tenantId: string;
@@ -15,6 +19,7 @@ const tabs = [
   { id: 'payroll', label: '給与計算' },
   { id: 'attendance', label: '勤怠管理' },
   { id: 'corrections', label: '修正申請' },
+  { id: 'leaves', label: '休暇管理' },
 ] as const;
 
 type TabId = typeof tabs[number]['id'];
@@ -25,6 +30,29 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const [copied, setCopied] = useState(false);
   const { currentTenant } = useTenant();
   const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
+  const { allLeaves, loading: leaveLoading, getAllLeaves, approveLeave, rejectLeave } = useLeave(tenantId);
+  const { members: adminMembers, fetchMembers: fetchAdminMembers } = useAdmin(tenantId);
+
+  const leaveRange = useMemo(() => {
+    const now = new Date();
+    return {
+      start: format(startOfMonth(addWeeks(now, -2)), 'yyyy-MM-dd'),
+      end: format(endOfMonth(addWeeks(now, 4)), 'yyyy-MM-dd'),
+    };
+  }, []);
+
+  const fetchLeaves = useCallback(() => {
+    getAllLeaves(leaveRange.start, leaveRange.end);
+    fetchAdminMembers();
+  }, [getAllLeaves, leaveRange, fetchAdminMembers]);
+
+  const leaveMemberNames = useMemo(() => {
+    const map = new Map<string, string>();
+    adminMembers.forEach(m => map.set(m.user_id, m.display_name));
+    return map;
+  }, [adminMembers]);
+
+  const pendingLeaves = allLeaves.filter(l => l.status === 'pending');
 
   const handleCopyCode = async () => {
     if (!currentTenant?.invite_code) return;
@@ -39,7 +67,8 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
 
   useEffect(() => {
     fetchRequests();
-  }, [tenantId, fetchRequests]);
+    fetchLeaves();
+  }, [tenantId, fetchRequests, fetchLeaves]);
 
   const pendingRequests = requests.filter((r) => r.status === 'pending');
   const processedRequests = requests.filter((r) => r.status !== 'pending');
@@ -86,6 +115,11 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               }`}
             >
               {tab.label}
+              {tab.id === 'leaves' && pendingLeaves.length > 0 && (
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  {pendingLeaves.length}
+                </span>
+              )}
               {tab.id === 'corrections' && pendingRequests.length > 0 && (
                 <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                   {pendingRequests.length}
@@ -132,6 +166,25 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 </div>
                 <CorrectionList requests={processedRequests} />
               </div>
+            )}
+          </div>
+        )}
+        {activeTab === 'leaves' && (
+          <div className="space-y-6">
+            {leaveLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              </div>
+            ) : (
+              <LeaveList
+                leaves={allLeaves}
+                memberNames={leaveMemberNames}
+                isAdmin={true}
+                onApprove={approveLeave}
+                onReject={rejectLeave}
+                onCancel={async () => {}}
+                onRefresh={fetchLeaves}
+              />
             )}
           </div>
         )}

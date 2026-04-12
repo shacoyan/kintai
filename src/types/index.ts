@@ -14,6 +14,9 @@ export interface TenantMember {
   display_name: string;
   hourly_rate: number | null;
   night_shift_enabled: boolean | null;
+  pay_type: 'hourly' | 'monthly';
+  monthly_salary: number | null;
+  paid_leave_days: number | null;
   created_at: string;
 }
 
@@ -49,6 +52,37 @@ export interface UserProfile {
 export interface TenantWithRole extends Tenant {
   role: UserRole;
   display_name: string;
+}
+
+export interface Shift {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  status: 'pending' | 'approved' | 'rejected' | 'modified' | 'cancelled';
+  original_start_time: string | null;
+  original_end_time: string | null;
+  note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
+export type LeaveType = 'paid' | 'half_paid' | 'absence' | 'other';
+
+export interface LeaveRequest {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  date: string;
+  leave_type: LeaveType;
+  reason: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
 }
 
 export interface CorrectionRequest {

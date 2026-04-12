@@ -11,6 +11,7 @@ import TenantPage from './pages/TenantPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { AdminPage } from './pages/AdminPage';
+import { ShiftPage } from './pages/ShiftPage';
 
 const App: React.FC = () => {
   return (
@@ -45,6 +46,18 @@ const App: React.FC = () => {
                 <RequireTenant>
                   <Layout>
                     <HistoryPage />
+                  </Layout>
+                </RequireTenant>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shift"
+            element={
+              <ProtectedRoute>
+                <RequireTenant>
+                  <Layout>
+                    <ShiftPage />
                   </Layout>
                 </RequireTenant>
               </ProtectedRoute>

@@ -15,9 +15,11 @@ const roleBadge: Record<string, { label: string; className: string }> = {
 
 export function MemberManagement({ tenantId }: MemberManagementProps) {
   const { myRole } = useTenant();
-  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift } = useAdmin(tenantId);
+  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary } = useAdmin(tenantId);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRate, setEditRate] = useState<string>('');
+  const [editMonthlySalary, setEditMonthlySalary] = useState<string>('');
+  const [editingMonthlySalaryId, setEditingMonthlySalaryId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -66,6 +68,44 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const handleKeyDown = (e: React.KeyboardEvent, memberId: string) => {
     if (e.key === 'Enter') handleSave(memberId);
     if (e.key === 'Escape') handleCancel();
+  };
+
+  const handlePayTypeChange = async (member: TenantMember, payType: 'hourly' | 'monthly') => {
+    setSaveError(null);
+    try {
+      await updatePayType(member.id, payType);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : '給与タイプの更新に失敗しました');
+    }
+  };
+
+  const handleStartEditMonthlySalary = (member: TenantMember) => {
+    setEditingMonthlySalaryId(member.id);
+    setEditMonthlySalary(String(member.monthly_salary ?? 0));
+    setSaveError(null);
+  };
+
+  const handleSaveMonthlySalary = async (memberId: string) => {
+    const salary = parseInt(editMonthlySalary, 10);
+    if (isNaN(salary) || salary < 0) {
+      setEditingMonthlySalaryId(null);
+      return;
+    }
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await updateMonthlySalary(memberId, salary);
+      setEditingMonthlySalaryId(null);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : '月給の保存に失敗しました');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleMonthlySalaryKeyDown = (e: React.KeyboardEvent, memberId: string) => {
+    if (e.key === 'Enter') handleSaveMonthlySalary(memberId);
+    if (e.key === 'Escape') setEditingMonthlySalaryId(null);
   };
 
   const handleNightShiftToggle = async (member: TenantMember) => {
@@ -143,71 +183,153 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                   </span>
                 </div>
 
-                {/* 下段: 時給・深夜給 */}
-                <div className="flex items-center gap-4 ml-12">
-                  {/* 時給 */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 w-8">時給</span>
-                    {isEditing ? (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm text-gray-500">¥</span>
-                        <input
-                          type="number"
-                          value={editRate}
-                          onChange={(e) => setEditRate(e.target.value)}
-                          onKeyDown={(e) => handleKeyDown(e, member.id)}
-                          className="w-24 px-2 py-1.5 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50"
-                          autoFocus
-                          disabled={saving}
-                          min="0"
-                          step="50"
-                        />
-                        <button
-                          onClick={() => handleSave(member.id)}
-                          disabled={saving}
-                          className="px-2.5 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                        >
-                          {saving ? '...' : '保存'}
-                        </button>
-                        <button
-                          onClick={handleCancel}
-                          className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                        >
-                          取消
-                        </button>
-                      </div>
-                    ) : (
+                {/* 下段: 給与タイプ・時給/月給・深夜給 */}
+                <div className="space-y-2 ml-12">
+                  {/* 給与タイプ切替 */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-500 w-14">給与形態</span>
+                    <div className="flex rounded-md overflow-hidden border border-gray-300">
                       <button
-                        onClick={() => handleStartEdit(member)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors ${
-                          rate > 0
-                            ? 'text-gray-900 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                            : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
+                        onClick={() => handlePayTypeChange(member, 'hourly')}
+                        className={`px-3 py-1 text-xs font-medium transition-colors ${
+                          (member.pay_type ?? 'hourly') === 'hourly'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-600 hover:bg-gray-50'
                         }`}
                       >
-                        {rate > 0 ? (
-                          <>¥{rate.toLocaleString()}</>
-                        ) : (
-                          <>未設定</>
-                        )}
-                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
+                        時給
                       </button>
-                    )}
+                      <button
+                        onClick={() => handlePayTypeChange(member, 'monthly')}
+                        className={`px-3 py-1 text-xs font-medium transition-colors ${
+                          member.pay_type === 'monthly'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        月給
+                      </button>
+                    </div>
                   </div>
 
-                  {/* 深夜給 */}
-                  <div className="flex items-center gap-1.5 ml-auto">
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={member.night_shift_enabled ?? false}
-                        onChange={() => handleNightShiftToggle(member)}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                      />
-                      <span className="text-xs text-gray-600">深夜給 <span className="font-medium">1.25x</span></span>
-                    </label>
+                  <div className="flex items-center gap-4">
+                    {/* 時給/月給入力 */}
+                    {(member.pay_type ?? 'hourly') === 'hourly' ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 w-14">時給</span>
+                        {isEditing ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm text-gray-500">¥</span>
+                            <input
+                              type="number"
+                              value={editRate}
+                              onChange={(e) => setEditRate(e.target.value)}
+                              onKeyDown={(e) => handleKeyDown(e, member.id)}
+                              className="w-24 px-2 py-1.5 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50"
+                              autoFocus
+                              disabled={saving}
+                              min="0"
+                              step="50"
+                            />
+                            <button
+                              onClick={() => handleSave(member.id)}
+                              disabled={saving}
+                              className="px-2.5 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                            >
+                              {saving ? '...' : '保存'}
+                            </button>
+                            <button
+                              onClick={handleCancel}
+                              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                            >
+                              取消
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleStartEdit(member)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                              rate > 0
+                                ? 'text-gray-900 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
+                            }`}
+                          >
+                            {rate > 0 ? (
+                              <>¥{rate.toLocaleString()}</>
+                            ) : (
+                              <>未設定</>
+                            )}
+                            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500 w-14">月給</span>
+                        {editingMonthlySalaryId === member.id ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm text-gray-500">¥</span>
+                            <input
+                              type="number"
+                              value={editMonthlySalary}
+                              onChange={(e) => setEditMonthlySalary(e.target.value)}
+                              onKeyDown={(e) => handleMonthlySalaryKeyDown(e, member.id)}
+                              className="w-28 px-2 py-1.5 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50"
+                              autoFocus
+                              disabled={saving}
+                              min="0"
+                              step="10000"
+                            />
+                            <button
+                              onClick={() => handleSaveMonthlySalary(member.id)}
+                              disabled={saving}
+                              className="px-2.5 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                            >
+                              {saving ? '...' : '保存'}
+                            </button>
+                            <button
+                              onClick={() => setEditingMonthlySalaryId(null)}
+                              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                            >
+                              取消
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleStartEditMonthlySalary(member)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                              (member.monthly_salary ?? 0) > 0
+                                ? 'text-gray-900 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
+                            }`}
+                          >
+                            {(member.monthly_salary ?? 0) > 0 ? (
+                              <>¥{(member.monthly_salary ?? 0).toLocaleString()}</>
+                            ) : (
+                              <>未設定</>
+                            )}
+                            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 深夜給 */}
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={member.night_shift_enabled ?? false}
+                          onChange={() => handleNightShiftToggle(member)}
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span className="text-xs text-gray-600">深夜給 <span className="font-medium">1.25x</span></span>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
