@@ -8,9 +8,23 @@ type ViewMode = 'week' | '2week' | 'month';
 interface ShiftCalendarProps {
   shifts: Shift[];
   onDateClick: (date: string) => void;
+  onShiftClick?: (shift: Shift) => void;
   /** member display_name map for admin view */
   memberNames?: Map<string, string>;
 }
+
+const MEMBER_COLORS = [
+  'bg-blue-100 border-blue-300 text-blue-800',
+  'bg-emerald-100 border-emerald-300 text-emerald-800',
+  'bg-purple-100 border-purple-300 text-purple-800',
+  'bg-orange-100 border-orange-300 text-orange-800',
+  'bg-pink-100 border-pink-300 text-pink-800',
+  'bg-cyan-100 border-cyan-300 text-cyan-800',
+  'bg-amber-100 border-amber-300 text-amber-800',
+  'bg-indigo-100 border-indigo-300 text-indigo-800',
+  'bg-rose-100 border-rose-300 text-rose-800',
+  'bg-teal-100 border-teal-300 text-teal-800',
+];
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-yellow-100 border-yellow-300 text-yellow-800',
@@ -28,7 +42,7 @@ const STATUS_DOT: Record<string, string> = {
   cancelled: 'bg-gray-400',
 };
 
-export function ShiftCalendar({ shifts, onDateClick, memberNames }: ShiftCalendarProps) {
+export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }: ShiftCalendarProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [baseDate, setBaseDate] = useState(() => new Date());
 
@@ -52,6 +66,15 @@ export function ShiftCalendar({ shifts, onDateClick, memberNames }: ShiftCalenda
     }
     return result;
   }, [viewMode, baseDate]);
+
+  const userColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const uniqueUsers = [...new Set(shifts.map(s => s.user_id))];
+    uniqueUsers.forEach((uid, i) => {
+      map.set(uid, MEMBER_COLORS[i % MEMBER_COLORS.length]);
+    });
+    return map;
+  }, [shifts]);
 
   const shiftsByDate = useMemo(() => {
     const map = new Map<string, Shift[]>();
@@ -157,18 +180,24 @@ export function ShiftCalendar({ shifts, onDateClick, memberNames }: ShiftCalenda
                   {format(d, 'd')}
                 </div>
                 <div className="space-y-0.5">
-                  {dayShifts.slice(0, 3).map((s) => (
-                    <div
-                      key={s.id}
-                      className={`text-[10px] leading-tight px-1 py-0.5 rounded border truncate ${STATUS_COLORS[s.status]}`}
-                    >
-                      {memberNames ? (
-                        <span>{memberNames.get(s.user_id)?.charAt(0) || '?'} {s.start_time.slice(0, 5)}-{s.end_time.slice(0, 5)}</span>
-                      ) : (
-                        <span>{s.start_time.slice(0, 5)}-{s.end_time.slice(0, 5)}</span>
-                      )}
-                    </div>
-                  ))}
+                  {dayShifts.slice(0, 3).map((s) => {
+                    const colorClass = memberNames
+                      ? userColorMap.get(s.user_id) || MEMBER_COLORS[0]
+                      : STATUS_COLORS[s.status];
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={(e) => { e.stopPropagation(); onShiftClick?.(s); }}
+                        className={`text-[10px] leading-tight px-1 py-0.5 rounded border truncate cursor-pointer hover:opacity-80 transition ${colorClass}`}
+                      >
+                        {memberNames ? (
+                          <span>{memberNames.get(s.user_id)?.charAt(0) || '?'} {s.start_time.slice(0, 5)}-{s.end_time.slice(0, 5)}</span>
+                        ) : (
+                          <span>{s.start_time.slice(0, 5)}-{s.end_time.slice(0, 5)}</span>
+                        )}
+                      </div>
+                    );
+                  })}
                   {dayShifts.length > 3 && (
                     <div className="text-[10px] text-gray-500">+{dayShifts.length - 3}件</div>
                   )}
@@ -181,12 +210,24 @@ export function ShiftCalendar({ shifts, onDateClick, memberNames }: ShiftCalenda
 
       {/* Legend */}
       <div className="flex flex-wrap gap-3 text-xs">
-        {Object.entries({ pending: '申請中', approved: '承認済', rejected: '却下', modified: '修正', cancelled: '取消' }).map(([key, label]) => (
-          <div key={key} className="flex items-center gap-1">
-            <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[key]}`} />
-            <span className="text-gray-600">{label}</span>
-          </div>
-        ))}
+        {memberNames ? (
+          [...userColorMap.entries()].map(([uid, colorClass]) => {
+            const bgClass = colorClass.split(' ')[0];
+            return (
+              <div key={uid} className="flex items-center gap-1">
+                <div className={`w-2.5 h-2.5 rounded-full ${bgClass.replace('100', '400')}`} />
+                <span className="text-gray-600">{memberNames.get(uid) || '不明'}</span>
+              </div>
+            );
+          })
+        ) : (
+          Object.entries({ pending: '申請中', approved: '承認済', rejected: '却下', modified: '修正', cancelled: '取消' }).map(([key, label]) => (
+            <div key={key} className="flex items-center gap-1">
+              <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[key]}`} />
+              <span className="text-gray-600">{label}</span>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { useAdmin } from '../hooks/useAdmin';
 import { useShiftPreset } from '../hooks/useShiftPreset';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftForm } from '../components/Shift/ShiftForm';
+import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
 import { ShiftAdminPanel } from '../components/Shift/ShiftAdminPanel';
 import { LaborCostSummary } from '../components/Shift/LaborCostSummary';
 import { LeaveForm } from '../components/Leave/LeaveForm';
@@ -26,6 +27,7 @@ export function ShiftPage() {
 
   const [activeTab, setActiveTab] = useState<TabId>('shift');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
 
   const fetchRange = useCallback(() => {
@@ -118,6 +120,7 @@ export function ShiftPage() {
           <ShiftCalendar
             shifts={shifts}
             onDateClick={(date) => setSelectedDate(date)}
+            onShiftClick={(shift) => setSelectedShift(shift)}
             memberNames={isAdmin ? memberNames : undefined}
           />
 
@@ -132,6 +135,20 @@ export function ShiftPage() {
                 />
               </div>
             </div>
+          )}
+
+          {selectedShift && isAdmin && (
+            <ShiftEditModal
+              shift={selectedShift}
+              memberName={memberNames.get(selectedShift.user_id)}
+              isAdmin={isAdmin}
+              onModify={modifyShift}
+              onDelete={deleteShift}
+              onApprove={approveShift}
+              onReject={rejectShift}
+              onClose={() => setSelectedShift(null)}
+              onRefresh={fetchRange}
+            />
           )}
 
           {isAdmin && (
