@@ -29,7 +29,7 @@ const STATUS_DOT: Record<string, string> = {
 };
 
 export function ShiftCalendar({ shifts, onDateClick, memberNames }: ShiftCalendarProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [baseDate, setBaseDate] = useState(() => new Date());
 
   const dates = useMemo(() => {

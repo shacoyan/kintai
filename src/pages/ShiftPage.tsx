@@ -117,11 +117,15 @@ export function ShiftPage() {
           />
 
           {selectedDate && (
-            <ShiftForm
-              date={selectedDate}
-              onSubmit={handleShiftSubmit}
-              onCancel={() => setSelectedDate(null)}
-            />
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setSelectedDate(null)}>
+              <div role="dialog" aria-modal="true" className="w-full max-w-md mx-4" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                <ShiftForm
+                  date={selectedDate}
+                  onSubmit={handleShiftSubmit}
+                  onCancel={() => setSelectedDate(null)}
+                />
+              </div>
+            </div>
           )}
 
           {isAdmin && (
