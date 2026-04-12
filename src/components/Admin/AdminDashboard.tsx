@@ -9,6 +9,7 @@ import { useAdmin } from '../../hooks/useAdmin';
 import { useTenant } from '../../hooks/useTenant';
 import { CorrectionList } from '../Correction/CorrectionList';
 import { LeaveList } from '../Leave/LeaveList';
+import { ShiftPresetManager } from './ShiftPresetManager';
 
 interface AdminDashboardProps {
   tenantId: string;
@@ -20,6 +21,7 @@ const tabs = [
   { id: 'attendance', label: '勤怠管理' },
   { id: 'corrections', label: '修正申請' },
   { id: 'leaves', label: '休暇管理' },
+  { id: 'presets', label: 'シフトプリセット' },
 ] as const;
 
 type TabId = typeof tabs[number]['id'];
@@ -187,6 +189,9 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               />
             )}
           </div>
+        )}
+        {activeTab === 'presets' && (
+          <ShiftPresetManager tenantId={tenantId} />
         )}
       </div>
     </div>

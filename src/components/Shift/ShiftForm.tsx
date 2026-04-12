@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ShiftPreset } from '../../types';
 
 interface ShiftFormProps {
   date: string;
@@ -6,6 +7,7 @@ interface ShiftFormProps {
   onCancel: () => void;
   initialStartTime?: string;
   initialEndTime?: string;
+  presets?: ShiftPreset[];
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -15,7 +17,7 @@ for (let h = 0; h < 24; h++) {
   }
 }
 
-export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialEndTime }: ShiftFormProps) {
+export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialEndTime, presets }: ShiftFormProps) {
   const [startTime, setStartTime] = useState(initialStartTime || '09:00');
   const [endTime, setEndTime] = useState(initialEndTime || '18:00');
   const [note, setNote] = useState('');
@@ -45,6 +47,21 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
 
       {error && (
         <div className="p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600">{error}</div>
+      )}
+
+      {presets && presets.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {presets.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => { setStartTime(p.start_time.slice(0, 5)); setEndTime(p.end_time.slice(0, 5)); }}
+              className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-full hover:bg-blue-100 transition"
+            >
+              {p.name} ({p.start_time.slice(0, 5)}-{p.end_time.slice(0, 5)})
+            </button>
+          ))}
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-3">

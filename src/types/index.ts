@@ -85,6 +85,16 @@ export interface LeaveRequest {
   created_at: string;
 }
 
+export interface ShiftPreset {
+  id: string;
+  tenant_id: string;
+  name: string;
+  start_time: string;
+  end_time: string;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface CorrectionRequest {
   id: string;
   tenant_id: string;

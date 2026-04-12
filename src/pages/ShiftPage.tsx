@@ -4,6 +4,7 @@ import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
 import { useLeave } from '../hooks/useLeave';
 import { useAdmin } from '../hooks/useAdmin';
+import { useShiftPreset } from '../hooks/useShiftPreset';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftForm } from '../components/Shift/ShiftForm';
 import { ShiftAdminPanel } from '../components/Shift/ShiftAdminPanel';
@@ -21,6 +22,7 @@ export function ShiftPage() {
   const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, submitShift, approveShift, rejectShift, modifyShift, bulkApprove, getLaborCostEstimate } = useShift(tenantId);
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useAdmin(tenantId);
+  const { presets, fetchPresets } = useShiftPreset(tenantId);
 
   const [activeTab, setActiveTab] = useState<TabId>('shift');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -41,8 +43,11 @@ export function ShiftPage() {
   }, [isAdmin, getAllShifts, getAllLeaves, getMyShifts, getMyLeaves, fetchMembers]);
 
   useEffect(() => {
-    if (tenantId) fetchRange();
-  }, [tenantId, fetchRange]);
+    if (tenantId) {
+      fetchRange();
+      fetchPresets();
+    }
+  }, [tenantId, fetchRange, fetchPresets]);
 
   const shifts = isAdmin ? allShifts : myShifts;
   const leaves = isAdmin ? allLeaves : myLeaves;
@@ -123,6 +128,7 @@ export function ShiftPage() {
                   date={selectedDate}
                   onSubmit={handleShiftSubmit}
                   onCancel={() => setSelectedDate(null)}
+                  presets={presets}
                 />
               </div>
             </div>

@@ -138,6 +138,16 @@ export function useAdmin(tenantId: string) {
     await fetchMembers();
   }, [fetchMembers]);
 
+  const deleteMember = useCallback(async (memberId: string) => {
+    const { error: e } = await supabase
+      .from('tenant_members')
+      .delete()
+      .eq('id', memberId)
+      .eq('tenant_id', tenantId);
+    if (e) throw new Error(`メンバーの削除に失敗しました: ${e.message}`);
+    await fetchMembers();
+  }, [tenantId, fetchMembers]);
+
   const updateNightShift = useCallback(async (memberId: string, enabled: boolean) => {
     const { data, error: e } = await supabase
       .from('tenant_members')
@@ -162,6 +172,7 @@ export function useAdmin(tenantId: string) {
     fetchMemberAttendance,
     updateAttendance,
     deleteAttendance,
+    deleteMember,
     updateNightShift,
     updatePayType,
     updateMonthlySalary,
