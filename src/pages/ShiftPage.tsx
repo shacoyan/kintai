@@ -116,7 +116,7 @@ export function ShiftPage() {
             memberNames={isAdmin ? memberNames : undefined}
           />
 
-          {selectedDate && !isAdmin && (
+          {selectedDate && (
             <ShiftForm
               date={selectedDate}
               onSubmit={handleShiftSubmit}
