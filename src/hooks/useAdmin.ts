@@ -138,6 +138,19 @@ export function useAdmin(tenantId: string) {
     await fetchMembers();
   }, [fetchMembers]);
 
+  const updateRole = useCallback(async (memberId: string, role: 'admin' | 'staff') => {
+    const { data, error: e } = await supabase
+      .from('tenant_members')
+      .update({ role })
+      .eq('id', memberId)
+      .eq('tenant_id', tenantId)
+      .select()
+      .single();
+    if (e) throw new Error(`権限の更新に失敗しました: ${e.message}`);
+    if (!data) throw new Error('権限の更新に失敗しました（権限がない可能性があります）');
+    await fetchMembers();
+  }, [tenantId, fetchMembers]);
+
   const deleteMember = useCallback(async (memberId: string) => {
     const { error: e } = await supabase
       .from('tenant_members')
@@ -172,6 +185,7 @@ export function useAdmin(tenantId: string) {
     fetchMemberAttendance,
     updateAttendance,
     deleteAttendance,
+    updateRole,
     deleteMember,
     updateNightShift,
     updatePayType,

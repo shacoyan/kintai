@@ -15,8 +15,9 @@ const roleBadge: Record<string, { label: string; className: string }> = {
 
 export function MemberManagement({ tenantId }: MemberManagementProps) {
   const { myRole } = useTenant();
-  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary, deleteMember } = useAdmin(tenantId);
+  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary, deleteMember, updateRole } = useAdmin(tenantId);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingRoleId, setTogglingRoleId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRate, setEditRate] = useState<string>('');
   const [editMonthlySalary, setEditMonthlySalary] = useState<string>('');
@@ -109,6 +110,19 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     if (e.key === 'Escape') setEditingMonthlySalaryId(null);
   };
 
+  const handleRoleToggle = async (member: TenantMember) => {
+    const newRole = member.role === 'admin' ? 'staff' : 'admin';
+    setTogglingRoleId(member.id);
+    setSaveError(null);
+    try {
+      await updateRole(member.id, newRole);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : '権限の更新に失敗しました');
+    } finally {
+      setTogglingRoleId(null);
+    }
+  };
+
   const handleNightShiftToggle = async (member: TenantMember) => {
     setSaveError(null);
     try {
@@ -183,6 +197,20 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
                       {badge.label}
                     </span>
+                    {member.role !== 'owner' && myRole === 'owner' && (
+                      <button
+                        onClick={() => handleRoleToggle(member)}
+                        disabled={togglingRoleId === member.id}
+                        className={`px-2 py-0.5 text-xs font-medium rounded transition ${
+                          member.role === 'admin'
+                            ? 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                            : 'text-green-700 bg-green-50 hover:bg-green-100'
+                        } disabled:opacity-50`}
+                        title={member.role === 'admin' ? 'スタッフに変更' : '管理者に変更'}
+                      >
+                        {togglingRoleId === member.id ? '...' : member.role === 'admin' ? '→スタッフ' : '→管理者'}
+                      </button>
+                    )}
                     {member.role !== 'owner' && (
                       deletingId === member.id ? (
                         <div className="flex items-center gap-1">
