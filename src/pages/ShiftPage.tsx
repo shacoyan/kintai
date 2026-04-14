@@ -7,7 +7,6 @@ import { useAdmin } from '../hooks/useAdmin';
 import { useShiftPreset } from '../hooks/useShiftPreset';
 import { useShiftPreference } from '../hooks/useShiftPreference';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
-import { ShiftForm } from '../components/Shift/ShiftForm';
 import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
 import { ShiftAdminPanel } from '../components/Shift/ShiftAdminPanel';
 import { LaborCostSummary } from '../components/Shift/LaborCostSummary';
@@ -15,6 +14,7 @@ import { LeaveForm } from '../components/Leave/LeaveForm';
 import { LeaveList } from '../components/Leave/LeaveList';
 import { ShiftPreferenceCalendar } from '../components/Shift/ShiftPreferenceCalendar';
 import { ShiftPreferenceForm } from '../components/Shift/ShiftPreferenceForm';
+import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
 
 type TabId = 'shift' | 'leave' | 'preference';
 
@@ -23,14 +23,13 @@ export function ShiftPage() {
   const tenantId = currentTenant?.id || '';
   const isAdmin = myRole === 'owner' || myRole === 'admin';
 
-  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, submitShift, deleteShift, approveShift, rejectShift, modifyShift, bulkApprove, getLaborCostEstimate } = useShift(tenantId);
+  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, bulkApprove, getLaborCostEstimate } = useShift(tenantId);
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useAdmin(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId);
-  const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference } = useShiftPreference(tenantId);
+  const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference } = useShiftPreference(tenantId);
 
   const [activeTab, setActiveTab] = useState<TabId>('shift');
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [selectedPrefDate, setSelectedPrefDate] = useState<string | null>(null);
@@ -54,12 +53,12 @@ export function ShiftPage() {
     const now = new Date();
     const start = format(startOfMonth(now), 'yyyy-MM-dd');
     const end = format(endOfMonth(addWeeks(now, 4)), 'yyyy-MM-dd');
-    if (isAdmin && showAllMembersPrefs) {
+    if (isAdmin) {
       fetchAllPreferences(start, end);
     } else {
       fetchMyPreferences(start, end);
     }
-  }, [isAdmin, showAllMembersPrefs, fetchAllPreferences, fetchMyPreferences]);
+  }, [isAdmin, fetchAllPreferences, fetchMyPreferences]);
 
   useEffect(() => {
     if (tenantId) {
@@ -82,12 +81,6 @@ export function ShiftPage() {
     members.forEach(m => map.set(m.user_id, m.display_name));
     return map;
   }, [members]);
-
-  const handleShiftSubmit = async (date: string, startTime: string, endTime: string, note?: string) => {
-    await submitShift(date, startTime, endTime, note);
-    setSelectedDate(null);
-    fetchRange();
-  };
 
   const handleLeaveSubmit = async (date: string, leaveType: 'paid' | 'half_paid' | 'absence' | 'other', reason?: string) => {
     await submitLeave(date, leaveType, reason);
@@ -113,6 +106,17 @@ export function ShiftPage() {
     fetchPreferenceRange();
   };
 
+  const handleApprovePreference = async (id: string, startTime?: string, endTime?: string) => {
+    await approvePreference(id, startTime, endTime);
+    fetchPreferenceRange();
+    fetchRange(); // シフトテーブルも更新
+  };
+
+  const handleRejectPreference = async (id: string) => {
+    await rejectPreference(id);
+    fetchPreferenceRange();
+  };
+
   const laborEstimates = useMemo(() => {
     if (!isAdmin || members.length === 0) return [];
     return getLaborCostEstimate(shifts, members);
@@ -120,11 +124,14 @@ export function ShiftPage() {
 
   const pendingShifts = shifts.filter(s => s.status === 'pending');
 
+  // 管理者の希望タブ: 常に全員の希望を表示、スタッフは自分の希望のみ
+  const displayedPreferences = isAdmin ? allPreferences : myPreferences;
+
   if (!tenantId) return null;
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex space-x-8">
           {([
             { id: 'shift' as TabId, label: 'シフト' },
@@ -136,13 +143,13 @@ export function ShiftPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition ${
                 activeTab === tab.id
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
             >
               {tab.label}
               {tab.id === 'shift' && isAdmin && pendingShifts.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
                   {pendingShifts.length}
                 </span>
               )}
@@ -153,7 +160,7 @@ export function ShiftPage() {
 
       {activeTab === 'shift' && (
         <div className="space-y-6">
-          {(shiftLoading) && (
+          {shiftLoading && (
             <div className="flex justify-center py-4">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
             </div>
@@ -161,23 +168,10 @@ export function ShiftPage() {
 
           <ShiftCalendar
             shifts={shifts}
-            onDateClick={(date) => setSelectedDate(date)}
+            onDateClick={() => {/* スタッフはシフトを直接申請しない */}}
             onShiftClick={(shift) => setSelectedShift(shift)}
             memberNames={isAdmin ? memberNames : undefined}
           />
-
-          {selectedDate && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setSelectedDate(null)}>
-              <div role="dialog" aria-modal="true" className="w-full max-w-md mx-4" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                <ShiftForm
-                  date={selectedDate}
-                  onSubmit={handleShiftSubmit}
-                  onCancel={() => setSelectedDate(null)}
-                  presets={presets}
-                />
-              </div>
-            </div>
-          )}
 
           {selectedShift && isAdmin && (
             <ShiftEditModal
@@ -223,13 +217,13 @@ export function ShiftPage() {
           {/* 管理者: 全員表示トグル */}
           {isAdmin && (
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">表示:</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">カレンダー表示:</span>
               <button
                 onClick={() => setShowAllMembersPrefs(false)}
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
                   !showAllMembersPrefs
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
                 自分の希望
@@ -239,7 +233,7 @@ export function ShiftPage() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
                   showAllMembersPrefs
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
                 全員の希望
@@ -249,11 +243,16 @@ export function ShiftPage() {
 
           <ShiftPreferenceCalendar
             preferences={isAdmin && showAllMembersPrefs ? allPreferences : myPreferences}
-            onDateClick={(date) => setSelectedPrefDate(date)}
+            onDateClick={(date) => {
+              // 管理者が全員表示中はカレンダークリックで希望フォームを開かない
+              if (isAdmin && showAllMembersPrefs) return;
+              setSelectedPrefDate(date);
+            }}
             memberNames={isAdmin && showAllMembersPrefs ? memberNames : undefined}
             isAdmin={isAdmin && showAllMembersPrefs}
           />
 
+          {/* スタッフ: 希望入力フォーム */}
           {selectedPrefDate && (
             <div
               className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
@@ -271,8 +270,22 @@ export function ShiftPage() {
                   onSubmit={handlePrefSubmit}
                   onDelete={handlePrefDelete}
                   onCancel={() => setSelectedPrefDate(null)}
+                  presets={presets}
                 />
               </div>
+            </div>
+          )}
+
+          {/* 管理者: 希望承認リスト */}
+          {isAdmin && (
+            <div className="mt-4">
+              <ShiftPreferenceAdminList
+                preferences={displayedPreferences}
+                memberNames={memberNames}
+                onApprove={handleApprovePreference}
+                onReject={handleRejectPreference}
+                onRefresh={fetchPreferenceRange}
+              />
             </div>
           )}
         </div>
@@ -296,7 +309,7 @@ export function ShiftPage() {
               ) : (
                 <button
                   onClick={() => setShowLeaveForm(true)}
-                  className="w-full px-4 py-3 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition border border-blue-200"
+                  className="w-full px-4 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition border border-blue-200 dark:border-blue-800"
                 >
                   + 休暇申請
                 </button>

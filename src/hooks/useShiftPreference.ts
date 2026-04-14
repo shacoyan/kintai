@@ -79,9 +79,62 @@ export function useShiftPreference(tenantId: string) {
     if (error) throw new Error(`シフト希望の削除に失敗しました: ${error.message}`);
   }, []);
 
+  // 管理者: 希望を承認し、shiftsテーブルにシフトを自動作成
+  const approvePreference = useCallback(async (
+    preferenceId: string,
+    overrideStartTime?: string,
+    overrideEndTime?: string,
+  ) => {
+    // 希望レコードを取得
+    const { data: pref, error: fetchError } = await supabase
+      .from('shift_preferences')
+      .select('*')
+      .eq('id', preferenceId)
+      .single();
+    if (fetchError || !pref) throw new Error(`希望の取得に失敗しました: ${fetchError?.message}`);
+
+    const startTime = overrideStartTime ?? pref.start_time;
+    const endTime = overrideEndTime ?? pref.end_time;
+
+    if (!startTime || !endTime) {
+      throw new Error('開始・終了時刻が設定されていません');
+    }
+
+    // ステータスを承認済みに更新
+    const { error: updateError } = await supabase
+      .from('shift_preferences')
+      .update({ status: 'approved' })
+      .eq('id', preferenceId);
+    if (updateError) throw new Error(`希望の承認に失敗しました: ${updateError.message}`);
+
+    // shiftsテーブルにシフトを作成
+    const { error: insertError } = await supabase
+      .from('shifts')
+      .insert({
+        tenant_id: pref.tenant_id,
+        user_id: pref.user_id,
+        date: pref.date,
+        start_time: startTime,
+        end_time: endTime,
+        status: 'approved',
+        note: pref.note || null,
+      });
+    if (insertError) throw new Error(`シフト作成に失敗しました: ${insertError.message}`);
+  }, []);
+
+  // 管理者: 希望を却下
+  const rejectPreference = useCallback(async (preferenceId: string) => {
+    const { error } = await supabase
+      .from('shift_preferences')
+      .update({ status: 'rejected' })
+      .eq('id', preferenceId);
+    if (error) throw new Error(`希望の却下に失敗しました: ${error.message}`);
+  }, []);
+
   return {
     myPreferences, allPreferences, loading,
     fetchMyPreferences, fetchAllPreferences,
     submitPreference, deletePreference,
+    approvePreference, rejectPreference,
   };
 }

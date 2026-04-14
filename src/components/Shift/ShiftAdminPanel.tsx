@@ -20,10 +20,10 @@ for (let h = 0; h < 24; h++) {
 }
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  pending: { label: '申請中', className: 'bg-yellow-100 text-yellow-800' },
-  approved: { label: '承認済', className: 'bg-green-100 text-green-800' },
-  rejected: { label: '却下', className: 'bg-red-100 text-red-800' },
-  modified: { label: '修正', className: 'bg-blue-100 text-blue-800' },
+  pending: { label: '申請中', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
+  approved: { label: '承認済', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
+  rejected: { label: '却下', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
+  modified: { label: '修正', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
 };
 
 export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify, onBulkApprove, onDelete, onRefresh }: ShiftAdminPanelProps) {
@@ -62,12 +62,12 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
   };
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">シフト承認</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">シフト承認</h2>
           {pendingShifts.length > 0 && (
-            <p className="text-sm text-gray-500 mt-0.5">{pendingShifts.length}件の承認待ち</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{pendingShifts.length}件の承認待ち</p>
           )}
         </div>
         {pendingShifts.length > 0 && (
@@ -82,31 +82,31 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
       </div>
 
       {error && (
-        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="mx-6 mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-gray-700 rounded-md">
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-gray-200 dark:divide-gray-700">
         {shifts.length === 0 ? (
-          <div className="px-6 py-8 text-center text-gray-500">シフト申請はありません</div>
+          <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">シフト申請はありません</div>
         ) : (
           shifts.map((shift) => {
             const badge = STATUS_BADGE[shift.status] || STATUS_BADGE.pending;
             const isModifying = modifyingId === shift.id;
 
             return (
-              <div key={shift.id} className="px-6 py-3 hover:bg-gray-50 transition-colors">
+              <div key={shift.id} className="px-6 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {memberMap.get(shift.user_id) || '不明'}
                     </span>
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
                       {badge.label}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-500">{shift.date}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{shift.date}</span>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -115,7 +115,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       <select
                         value={modStart}
                         onChange={(e) => setModStart(e.target.value)}
-                        className="px-2 py-1 text-sm border border-blue-400 rounded bg-blue-50"
+                        className="px-2 py-1 text-sm border border-blue-400 rounded bg-blue-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                       >
                         {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
                       </select>
@@ -123,7 +123,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       <select
                         value={modEnd}
                         onChange={(e) => setModEnd(e.target.value)}
-                        className="px-2 py-1 text-sm border border-blue-400 rounded bg-blue-50"
+                        className="px-2 py-1 text-sm border border-blue-400 rounded bg-blue-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                       >
                         {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
                       </select>
@@ -136,13 +136,13 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       </button>
                       <button
                         onClick={() => setModifyingId(null)}
-                        className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition"
+                        className="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition"
                       >
                         取消
                       </button>
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
                       {shift.original_start_time && (
                         <span className="text-xs text-gray-400 ml-2">
@@ -164,14 +164,14 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       <button
                         onClick={() => handleModifyStart(shift)}
                         disabled={processing}
-                        className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 disabled:opacity-50 transition"
+                        className="px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 disabled:opacity-50 transition"
                       >
                         修正
                       </button>
                       <button
                         onClick={() => handleAction(() => onReject(shift.id))}
                         disabled={processing}
-                        className="px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 rounded hover:bg-red-100 disabled:opacity-50 transition"
+                        className="px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded hover:bg-red-100 dark:hover:bg-red-900/30 disabled:opacity-50 transition"
                       >
                         却下
                       </button>
@@ -191,7 +191,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           </button>
                           <button
                             onClick={() => setDeletingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition"
                           >
                             戻す
                           </button>
@@ -199,7 +199,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       ) : (
                         <button
                           onClick={() => setDeletingId(shift.id)}
-                          className="px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 rounded hover:bg-red-100 transition"
+                          className="px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                         >
                           削除
                         </button>
@@ -209,7 +209,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                 </div>
 
                 {shift.note && (
-                  <p className="text-xs text-gray-500 mt-1">{shift.note}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{shift.note}</p>
                 )}
               </div>
             );

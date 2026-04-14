@@ -83,22 +83,22 @@ export function ShiftPreferenceCalendar({
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate(-1)}
-            className="p-1.5 rounded-md hover:bg-gray-100 transition"
+            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             aria-label="前月"
           >
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="text-sm font-semibold text-gray-900 min-w-[120px] text-center">
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 min-w-[120px] text-center">
             {format(baseDate, 'yyyy年M月', { locale: ja })}
           </span>
           <button
             onClick={() => navigate(1)}
-            className="p-1.5 rounded-md hover:bg-gray-100 transition"
+            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             aria-label="次月"
           >
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -112,14 +112,14 @@ export function ShiftPreferenceCalendar({
       </div>
 
       {/* カレンダーグリッド */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         {/* ヘッダー */}
-        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+        <div className="grid grid-cols-7 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
           {weekDays.map((d, i) => (
             <div
               key={i}
               className={`text-center py-2 text-xs font-medium ${
-                i === 5 ? 'text-blue-600' : i === 6 ? 'text-red-600' : 'text-gray-500'
+                i === 5 ? 'text-blue-600 dark:text-blue-400' : i === 6 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
               }`}
             >
               {d}
@@ -139,15 +139,15 @@ export function ShiftPreferenceCalendar({
               <div
                 key={dateStr}
                 onClick={() => onDateClick(dateStr)}
-                className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-gray-100 p-1 cursor-pointer hover:bg-gray-50 transition ${
-                  !isCurrentMonth ? 'bg-gray-50 opacity-50' : ''
+                className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-gray-100 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition ${
+                  !isCurrentMonth ? 'bg-gray-50 dark:bg-gray-700 opacity-50' : ''
                 }`}
               >
                 <div
                   className={`text-xs font-medium mb-0.5 ${
                     isToday
                       ? 'bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center'
-                      : 'text-gray-700'
+                      : 'text-gray-700 dark:text-gray-300'
                   }`}
                 >
                   {format(d, 'd')}
@@ -182,17 +182,17 @@ export function ShiftPreferenceCalendar({
                         <div key={pref.id} className="space-y-0.5">
                           <div className="flex items-center gap-0.5">
                             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${style.dot}`} />
-                            <span className="text-[11px] font-semibold text-gray-700">{style.icon}</span>
+                            <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{style.icon}</span>
                           </div>
                           {timeLabel && (
-                            <div className="text-[9px] text-gray-500 leading-tight">{timeLabel}</div>
+                            <div className="text-[9px] text-gray-500 dark:text-gray-400 leading-tight">{timeLabel}</div>
                           )}
                         </div>
                       );
                     })
                   )}
                   {isAdmin && dayPrefs.length > 3 && (
-                    <div className="text-[10px] text-gray-500">+{dayPrefs.length - 3}件</div>
+                    <div className="text-[10px] text-gray-500 dark:text-gray-400">+{dayPrefs.length - 3}件</div>
                   )}
                 </div>
               </div>
@@ -207,7 +207,7 @@ export function ShiftPreferenceCalendar({
           [...userColorMap.entries()].map(([uid, color]) => (
             <div key={uid} className="flex items-center gap-1">
               <div className={`w-2.5 h-2.5 rounded-full ${color.bg}`} />
-              <span className="text-gray-600">{memberNames.get(uid) || '不明'}</span>
+              <span className="text-gray-600 dark:text-gray-400">{memberNames.get(uid) || '不明'}</span>
             </div>
           ))
         ) : (

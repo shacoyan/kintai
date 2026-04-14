@@ -12,7 +12,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem('kintai_theme') as Theme) || 'system';
+    return (localStorage.getItem('kintai_theme') as Theme) || 'light';
   });
 
   const [isDark, setIsDark] = useState(false);

@@ -115,15 +115,15 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">勤怠記録検索</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">勤怠記録検索</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="sm:col-span-2 lg:col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">メンバー</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">メンバー</label>
             <select
               value={selectedUserId}
               onChange={(e) => setSelectedUserId(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
               <option value="">選択してください</option>
               {members.map((m) => (
@@ -132,12 +132,12 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">開始日</label>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">開始日</label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">終了日</label>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">終了日</label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600" />
           </div>
           <div className="flex items-end">
             <button
@@ -152,38 +152,38 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       </div>
 
       {searched && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-800">検索結果</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">検索結果</h3>
           </div>
           {memberAttendance.length === 0 ? (
-            <div className="p-6 text-center text-gray-500">該当する勤怠記録がありません</div>
+            <div className="p-6 text-center text-gray-500 dark:text-gray-400">該当する勤怠記録がありません</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日付</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">出勤時刻</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">退勤時刻</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">休憩</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">労働時間</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">日付</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">出勤時刻</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">退勤時刻</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">休憩</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">労働時間</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">操作</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {memberAttendance.map((record) => {
                     const breakMin = calcBreakMinutes(record);
                     const hasEdit = !!edits[record.id];
                     return (
-                      <tr key={record.id} className={hasEdit ? 'bg-yellow-50' : 'hover:bg-gray-50'}>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{record.date}</td>
+                      <tr key={record.id} className={hasEdit ? 'bg-yellow-50 dark:bg-yellow-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{record.date}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
                           <input
                             type="datetime-local"
                             value={getEditValue(record, 'clock_in')}
                             onChange={(e) => handleFieldChange(record.id, 'clock_in', e.target.value)}
-                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                           />
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
@@ -191,11 +191,11 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                             type="datetime-local"
                             value={getEditValue(record, 'clock_out')}
                             onChange={(e) => handleFieldChange(record.id, 'clock_out', e.target.value)}
-                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                           />
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{fmtMinutes(breakMin)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{fmtMinutes(record.total_work_minutes || 0)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{fmtMinutes(breakMin)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{fmtMinutes(record.total_work_minutes || 0)}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm space-x-2">
                           <button
                             onClick={() => handleSave(record.id)}
@@ -214,7 +214,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                               </button>
                               <button
                                 onClick={() => setConfirmDeleteId(null)}
-                                className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-400 transition"
+                                className="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-2 py-1 rounded text-xs hover:bg-gray-400 dark:hover:bg-gray-500 transition"
                               >
                                 戻す
                               </button>

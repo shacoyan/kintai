@@ -14,24 +14,24 @@ interface ShiftCalendarProps {
 }
 
 const MEMBER_COLORS = [
-  'bg-blue-100 border-blue-300 text-blue-800',
-  'bg-emerald-100 border-emerald-300 text-emerald-800',
-  'bg-purple-100 border-purple-300 text-purple-800',
-  'bg-orange-100 border-orange-300 text-orange-800',
-  'bg-pink-100 border-pink-300 text-pink-800',
-  'bg-cyan-100 border-cyan-300 text-cyan-800',
-  'bg-amber-100 border-amber-300 text-amber-800',
-  'bg-indigo-100 border-indigo-300 text-indigo-800',
-  'bg-rose-100 border-rose-300 text-rose-800',
-  'bg-teal-100 border-teal-300 text-teal-800',
+  'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
+  'bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300',
+  'bg-purple-100 border-purple-300 text-purple-800 dark:bg-purple-900/30 dark:border-purple-700 dark:text-purple-300',
+  'bg-orange-100 border-orange-300 text-orange-800 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-300',
+  'bg-pink-100 border-pink-300 text-pink-800 dark:bg-pink-900/30 dark:border-pink-700 dark:text-pink-300',
+  'bg-cyan-100 border-cyan-300 text-cyan-800 dark:bg-cyan-900/30 dark:border-cyan-700 dark:text-cyan-300',
+  'bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300',
+  'bg-indigo-100 border-indigo-300 text-indigo-800 dark:bg-indigo-900/30 dark:border-indigo-700 dark:text-indigo-300',
+  'bg-rose-100 border-rose-300 text-rose-800 dark:bg-rose-900/30 dark:border-rose-700 dark:text-rose-300',
+  'bg-teal-100 border-teal-300 text-teal-800 dark:bg-teal-900/30 dark:border-teal-700 dark:text-teal-300',
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-100 border-yellow-300 text-yellow-800',
-  approved: 'bg-green-100 border-green-300 text-green-800',
-  rejected: 'bg-red-100 border-red-300 text-red-800',
-  modified: 'bg-blue-100 border-blue-300 text-blue-800',
-  cancelled: 'bg-gray-100 border-gray-300 text-gray-500',
+  pending: 'bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900/30 dark:border-yellow-700 dark:text-yellow-300',
+  approved: 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300',
+  rejected: 'bg-red-100 border-red-300 text-red-800 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300',
+  modified: 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
+  cancelled: 'bg-gray-100 border-gray-300 text-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400',
 };
 
 const STATUS_DOT: Record<string, string> = {
@@ -104,31 +104,31 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} className="p-1.5 rounded-md hover:bg-gray-100 transition">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={() => navigate(-1)} className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="text-sm font-semibold text-gray-900 min-w-[120px] text-center">
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 min-w-[120px] text-center">
             {viewMode === 'month'
               ? format(baseDate, 'yyyy年M月', { locale: ja })
               : `${format(dates[0], 'M/d')} - ${format(dates[dates.length - 1], 'M/d')}`
             }
           </span>
-          <button onClick={() => navigate(1)} className="p-1.5 rounded-md hover:bg-gray-100 transition">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button onClick={() => navigate(1)} className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
           <button
             onClick={() => setBaseDate(new Date())}
-            className="px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition"
+            className="px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
           >
             今日
           </button>
         </div>
 
-        <div className="flex rounded-md overflow-hidden border border-gray-300">
+        <div className="flex rounded-md overflow-hidden border border-gray-300 dark:border-gray-600">
           {(['week', '2week', 'month'] as ViewMode[]).map((mode) => (
             <button
               key={mode}
@@ -136,7 +136,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
               className={`px-2.5 py-1 text-xs font-medium transition-colors ${
                 viewMode === mode
                   ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
               {mode === 'week' ? '週' : mode === '2week' ? '2週' : '月'}
@@ -146,12 +146,12 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
       </div>
 
       {/* Calendar grid */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         {/* Header */}
-        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+        <div className="grid grid-cols-7 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-700">
           {weekDays.map((d, i) => (
             <div key={i} className={`text-center py-2 text-xs font-medium ${
-              i === 5 ? 'text-blue-600' : i === 6 ? 'text-red-600' : 'text-gray-500'
+              i === 5 ? 'text-blue-600 dark:text-blue-400' : i === 6 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
             }`}>
               {d}
             </div>
@@ -170,12 +170,12 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
               <div
                 key={dateStr}
                 onClick={() => onDateClick(dateStr)}
-                className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-gray-100 p-1 cursor-pointer hover:bg-gray-50 transition ${
-                  !isCurrentMonth ? 'bg-gray-50 opacity-50' : ''
+                className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-gray-100 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition ${
+                  !isCurrentMonth ? 'bg-gray-50 dark:bg-gray-700/50 opacity-50' : ''
                 }`}
               >
                 <div className={`text-xs font-medium mb-0.5 ${
-                  isToday ? 'bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center' : 'text-gray-700'
+                  isToday ? 'bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center' : 'text-gray-700 dark:text-gray-300'
                 }`}>
                   {format(d, 'd')}
                 </div>
@@ -199,7 +199,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
                     );
                   })}
                   {dayShifts.length > 3 && (
-                    <div className="text-[10px] text-gray-500">+{dayShifts.length - 3}件</div>
+                    <div className="text-[10px] text-gray-500 dark:text-gray-400">+{dayShifts.length - 3}件</div>
                   )}
                 </div>
               </div>
@@ -216,7 +216,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
             return (
               <div key={uid} className="flex items-center gap-1">
                 <div className={`w-2.5 h-2.5 rounded-full ${bgClass.replace('100', '400')}`} />
-                <span className="text-gray-600">{memberNames.get(uid) || '不明'}</span>
+                <span className="text-gray-600 dark:text-gray-400">{memberNames.get(uid) || '不明'}</span>
               </div>
             );
           })
@@ -224,7 +224,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
           Object.entries({ pending: '申請中', approved: '承認済', rejected: '却下', modified: '修正', cancelled: '取消' }).map(([key, label]) => (
             <div key={key} className="flex items-center gap-1">
               <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[key]}`} />
-              <span className="text-gray-600">{label}</span>
+              <span className="text-gray-600 dark:text-gray-400">{label}</span>
             </div>
           ))
         )}

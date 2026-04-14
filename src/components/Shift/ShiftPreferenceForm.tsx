@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ShiftPreference, ShiftPreferenceType } from '../../types';
+import type { ShiftPreference, ShiftPreferenceType, ShiftPreset } from '../../types';
 
 interface ShiftPreferenceFormProps {
   date: string;
@@ -13,6 +13,7 @@ interface ShiftPreferenceFormProps {
   ) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   onCancel: () => void;
+  presets?: ShiftPreset[];
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -34,6 +35,7 @@ export function ShiftPreferenceForm({
   onSubmit,
   onDelete,
   onCancel,
+  presets,
 }: ShiftPreferenceFormProps) {
   const [preferenceType, setPreferenceType] = useState<ShiftPreferenceType>(
     existingPreference?.preference_type ?? 'available',
@@ -88,18 +90,18 @@ export function ShiftPreferenceForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-gray-900">{date} のシフト希望</h3>
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-4">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{date} のシフト希望</h3>
 
       {error && (
-        <div className="p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600">
+        <div className="p-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded text-sm text-red-600 dark:text-red-400">
           {error}
         </div>
       )}
 
       {/* 希望タイプ選択 */}
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-2">希望タイプ</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">希望タイプ</label>
         <div className="grid grid-cols-3 gap-2">
           {PREFERENCE_OPTIONS.map((opt) => (
             <button
@@ -109,7 +111,7 @@ export function ShiftPreferenceForm({
               className={`flex flex-col items-center gap-1 px-3 py-3 rounded-lg border-2 text-sm font-medium transition ${
                 preferenceType === opt.value
                   ? opt.colorClass + ' border-opacity-100'
-                  : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
+                  : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
               }`}
             >
               <span className="text-lg leading-none">{opt.icon}</span>
@@ -119,15 +121,39 @@ export function ShiftPreferenceForm({
         </div>
       </div>
 
+      {/* プリセットボタン（出勤不可以外） */}
+      {showTimeFields && presets && presets.length > 0 && (
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+            プリセット
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {presets.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => {
+                  setStartTime(p.start_time.slice(0, 5));
+                  setEndTime(p.end_time.slice(0, 5));
+                }}
+                className="px-3 py-1.5 text-xs font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
+              >
+                {p.name} ({p.start_time.slice(0, 5)}-{p.end_time.slice(0, 5)})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 時刻フィールド（出勤不可以外） */}
       {showTimeFields && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">開始時刻</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">開始時刻</label>
             <select
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               {TIME_OPTIONS.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -135,11 +161,11 @@ export function ShiftPreferenceForm({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">終了時刻</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">終了時刻</label>
             <select
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             >
               {TIME_OPTIONS.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -151,12 +177,12 @@ export function ShiftPreferenceForm({
 
       {/* メモ */}
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">メモ（任意）</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">メモ（任意）</label>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
-          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
           placeholder="備考があれば入力"
         />
       </div>
@@ -183,7 +209,7 @@ export function ShiftPreferenceForm({
           type="button"
           onClick={onCancel}
           disabled={submitting || deleting}
-          className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 transition"
+          className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition"
         >
           キャンセル
         </button>

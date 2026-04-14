@@ -9,9 +9,9 @@ interface MemberManagementProps {
 }
 
 const roleBadge: Record<string, { label: string; className: string }> = {
-  owner: { label: 'オーナー', className: 'bg-blue-100 text-blue-800' },
-  admin: { label: '管理者', className: 'bg-green-100 text-green-800' },
-  staff: { label: 'スタッフ', className: 'bg-gray-100 text-gray-800' },
+  owner: { label: 'オーナー', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
+  admin: { label: '管理者', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
+  staff: { label: 'スタッフ', className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' },
 };
 
 export function MemberManagement({ tenantId }: MemberManagementProps) {
@@ -121,7 +121,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
 
   if (myRole !== 'owner' && myRole !== 'admin') {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center dark:bg-yellow-900/20 dark:border-yellow-800">
         <p className="text-yellow-700">この機能を使用する権限がありません</p>
       </div>
     );
@@ -137,24 +137,24 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-        <p className="text-red-600">{error}</p>
-        <button onClick={fetchMembers} className="mt-2 text-sm text-blue-600 hover:underline">再読み込み</button>
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center dark:bg-red-900/20 dark:border-gray-700">
+        <p className="text-red-600 dark:text-red-400">{error}</p>
+        <button onClick={fetchMembers} className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">再読み込み</button>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">メンバー管理</h2>
-        <p className="mt-1 text-sm text-gray-500">各メンバーの時給・深夜給を設定できます</p>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">メンバー管理</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">各メンバーの時給・深夜給を設定できます</p>
       </div>
 
       {/* カード型レイアウト（モバイル対応） */}
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-gray-200 dark:divide-gray-700">
         {members.length === 0 ? (
-          <div className="px-6 py-8 text-center text-gray-500">メンバーがいません</div>
+          <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">メンバーがいません</div>
         ) : (
           members.map((member) => {
             const badge = roleBadge[member.role] || roleBadge.staff;
@@ -162,15 +162,15 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
             const rate = member.hourly_rate ?? 0;
 
             return (
-              <div key={member.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+              <div key={member.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                 {/* 上段: 名前・ロール・参加日 */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-700 dark:text-blue-300 font-bold text-sm shrink-0">
                       {member.display_name.charAt(0)}
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{member.display_name}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{member.display_name}</p>
                       <p className="text-xs text-gray-400">{new Date(member.created_at).toLocaleDateString('ja-JP')} 参加</p>
                     </div>
                   </div>
@@ -184,8 +184,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         disabled={togglingRoleId === member.id}
                         className={`px-2 py-0.5 text-xs font-medium rounded transition ${
                           member.role === 'admin'
-                            ? 'text-gray-600 bg-gray-100 hover:bg-gray-200'
-                            : 'text-green-700 bg-green-50 hover:bg-green-100'
+                            ? 'text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            : 'text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50'
                         } disabled:opacity-50`}
                         title={member.role === 'admin' ? 'スタッフに変更' : '管理者に変更'}
                       >
@@ -211,7 +211,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           </button>
                           <button
                             onClick={() => setDeletingId(null)}
-                            className="px-2 py-0.5 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition"
+                            className="px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition"
                           >
                             戻す
                           </button>
@@ -235,14 +235,14 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                 <div className="space-y-2 ml-12">
                   {/* 給与タイプ切替 */}
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-500 w-14">給与形態</span>
-                    <div className="flex rounded-md overflow-hidden border border-gray-300">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 w-14">給与形態</span>
+                    <div className="flex rounded-md overflow-hidden border border-gray-300 dark:border-gray-600">
                       <button
                         onClick={() => handlePayTypeChange(member, 'hourly')}
                         className={`px-3 py-1 text-xs font-medium transition-colors ${
                           (member.pay_type ?? 'hourly') === 'hourly'
                             ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                            : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
                         }`}
                       >
                         時給
@@ -252,7 +252,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         className={`px-3 py-1 text-xs font-medium transition-colors ${
                           member.pay_type === 'monthly'
                             ? 'bg-blue-600 text-white'
-                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                            : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
                         }`}
                       >
                         月給
@@ -264,16 +264,16 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     {/* 時給/月給入力 */}
                     {(member.pay_type ?? 'hourly') === 'hourly' ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 w-14">時給</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 w-14">時給</span>
                         {isEditing ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-sm text-gray-500">¥</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">¥</span>
                             <input
                               type="number"
                               value={editRate}
                               onChange={(e) => setEditRate(e.target.value)}
                               onKeyDown={(e) => handleKeyDown(e, member.id)}
-                              className="w-24 px-2 py-1.5 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50"
+                              className="w-24 px-2 py-1.5 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                               autoFocus
                               disabled={saving}
                               min="0"
@@ -288,7 +288,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             </button>
                             <button
                               onClick={handleCancel}
-                              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                             >
                               取消
                             </button>
@@ -298,7 +298,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             onClick={() => handleStartEdit(member)}
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors ${
                               rate > 0
-                                ? 'text-gray-900 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                ? 'text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30'
                                 : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
                             }`}
                           >
@@ -315,16 +315,16 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 w-14">月給</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 w-14">月給</span>
                         {editingMonthlySalaryId === member.id ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-sm text-gray-500">¥</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">¥</span>
                             <input
                               type="number"
                               value={editMonthlySalary}
                               onChange={(e) => setEditMonthlySalary(e.target.value)}
                               onKeyDown={(e) => handleMonthlySalaryKeyDown(e, member.id)}
-                              className="w-28 px-2 py-1.5 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50"
+                              className="w-28 px-2 py-1.5 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                               autoFocus
                               disabled={saving}
                               min="0"
@@ -339,7 +339,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             </button>
                             <button
                               onClick={() => setEditingMonthlySalaryId(null)}
-                              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                              className="px-2.5 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                             >
                               取消
                             </button>
@@ -349,7 +349,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             onClick={() => handleStartEditMonthlySalary(member)}
                             className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors ${
                               (member.monthly_salary ?? 0) > 0
-                                ? 'text-gray-900 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                ? 'text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30'
                                 : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
                             }`}
                           >
@@ -373,9 +373,9 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           type="checkbox"
                           checked={member.night_shift_enabled ?? false}
                           onChange={() => handleNightShiftToggle(member)}
-                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                          className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 cursor-pointer"
                         />
-                        <span className="text-xs text-gray-600">深夜給 <span className="font-medium">1.25x</span></span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">深夜給 <span className="font-medium">1.25x</span></span>
                       </label>
                     </div>
                   </div>
@@ -386,8 +386,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
         )}
       </div>
 
-      <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
-        <p className="text-xs text-gray-500">深夜給: 22:00〜翌5:00 の勤務時間に対して時給1.25倍で計算されます</p>
+      <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-700">
+        <p className="text-xs text-gray-500 dark:text-gray-400">深夜給: 22:00〜翌5:00 の勤務時間に対して時給1.25倍で計算されます</p>
       </div>
     </div>
   );

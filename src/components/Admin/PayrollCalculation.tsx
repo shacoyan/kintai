@@ -162,30 +162,30 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   const monthOpts = Array.from({ length: 12 }, (_, i) => i + 1);
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">給与計算</h2>
-        <p className="mt-1 text-sm text-gray-500">月次の勤怠データから給与を計算します</p>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">給与計算</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">月次の勤怠データから給与を計算します</p>
       </div>
 
-      <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+      <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">年</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">年</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="block w-28 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="block w-28 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
               {yearOpts.map((y) => <option key={y} value={y}>{y}年</option>)}
             </select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">月</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">月</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="block w-24 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="block w-24 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
               {monthOpts.map((m) => <option key={m} value={m}>{m}月</option>)}
             </select>
@@ -203,7 +203,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                 const csv = generatePayrollCsv(allAttendance, members);
                 downloadCsv(csv, `給与計算_${selectedYear}年${selectedMonth}月.csv`);
               }}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition"
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-md hover:bg-green-100 dark:hover:bg-green-900/50 transition"
             >
               <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -215,59 +215,59 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
       </div>
 
       {error && (
-        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
+        <div className="mx-6 mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-gray-700 rounded-md">
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 
       {calculated && (
         <div className="overflow-x-auto">
           {allAttendance.length === 0 ? (
-            <div className="px-6 py-12 text-center text-gray-500">
+            <div className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
               {selectedYear}年{selectedMonth}月の勤怠データはありません
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">名前</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">稼働日数</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">通常時間</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">深夜時間</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">時給/月給</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">支払額</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">名前</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">稼働日数</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">通常時間</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">深夜時間</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">時給/月給</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">支払額</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {payrollData.map((row) => (
-                  <tr key={row.userId} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{row.displayName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">{row.workDays}日</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">{fmtTime(row.normalMinutes)}</td>
+                  <tr key={row.userId} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{row.displayName}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">{row.workDays}日</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">{fmtTime(row.normalMinutes)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                       {row.nightMinutes > 0 ? (
-                        <span className="text-purple-700 font-medium">{fmtTime(row.nightMinutes)}</span>
+                        <span className="text-purple-700 dark:text-purple-300 font-medium">{fmtTime(row.nightMinutes)}</span>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">
                       {row.payType === 'monthly' ? (
                         <span>¥{row.monthlySalary.toLocaleString()}/月</span>
                       ) : (
                         <span>¥{row.hourlyRate.toLocaleString()}/時</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">¥{row.payment.toLocaleString()}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right font-medium">¥{row.payment.toLocaleString()}</td>
                   </tr>
                 ))}
-                <tr className="bg-gray-50 border-t-2 border-gray-300">
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900">合計</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900 text-right">-</td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900 text-right">{fmtTime(totalMinutes - totalNightMinutes)}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-purple-700 text-right">{totalNightMinutes > 0 ? fmtTime(totalNightMinutes) : '-'}</td>
+                <tr className="bg-gray-50 dark:bg-gray-700 border-t-2 border-gray-300 dark:border-gray-600">
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-100">合計</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-100 text-right">-</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-100 text-right">{fmtTime(totalMinutes - totalNightMinutes)}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-purple-700 dark:text-purple-300 text-right">{totalNightMinutes > 0 ? fmtTime(totalNightMinutes) : '-'}</td>
                   <td className="px-6 py-4 text-right">-</td>
-                  <td className="px-6 py-4 text-base font-bold text-gray-900 text-right">¥{totalPayment.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-base font-bold text-gray-900 dark:text-gray-100 text-right">¥{totalPayment.toLocaleString()}</td>
                 </tr>
               </tbody>
             </table>

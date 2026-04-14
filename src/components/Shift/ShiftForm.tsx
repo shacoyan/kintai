@@ -42,11 +42,11 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-gray-900">{date} のシフト申請</h3>
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-4">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{date} のシフト申請</h3>
 
       {error && (
-        <div className="p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600">{error}</div>
+        <div className="p-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded text-sm text-red-600 dark:text-red-400">{error}</div>
       )}
 
       {presets && presets.length > 0 && (
@@ -66,11 +66,11 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">開始時刻</label>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">開始時刻</label>
           <select
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           >
             {TIME_OPTIONS.map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -78,11 +78,11 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">終了時刻</label>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">終了時刻</label>
           <select
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           >
             {TIME_OPTIONS.map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -92,12 +92,12 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">メモ（任意）</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">メモ（任意）</label>
         <input
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="備考があれば入力"
         />
       </div>
@@ -113,7 +113,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition"
+          className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition"
         >
           キャンセル
         </button>

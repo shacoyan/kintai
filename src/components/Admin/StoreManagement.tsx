@@ -109,21 +109,21 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* 左側: 店舗一覧 + 作成フォーム */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">店舗一覧</h2>
-          <p className="mt-1 text-sm text-gray-500">店舗を選択するとメンバー管理ができます</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">店舗一覧</h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">店舗を選択するとメンバー管理ができます</p>
         </div>
 
         {/* 作成フォーム */}
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
           <div className="flex gap-2">
             <input
               type="text"
               value={newStoreName}
               onChange={(e) => setNewStoreName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleCreateStore()}
-              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               placeholder="店舗名を入力"
             />
             <button
@@ -137,19 +137,19 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
         </div>
 
         {/* 店舗リスト */}
-        <div className="divide-y divide-gray-200">
+        <div className="divide-y divide-gray-200 dark:divide-gray-700">
           {loading && stores.length === 0 ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
             </div>
           ) : stores.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-500">店舗が未登録です</div>
+            <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">店舗が未登録です</div>
           ) : (
             stores.map((store) => (
               <div
                 key={store.id}
-                className={`px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  selectedStore?.id === store.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                className={`px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                  selectedStore?.id === store.id ? 'bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500' : ''
                 }`}
                 onClick={() => setSelectedStore(store)}
               >
@@ -164,7 +164,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                         if (e.key === 'Escape') setEditingStoreId(null);
                       }}
                       autoFocus
-                      className="flex-1 px-2 py-1 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-2 py-1 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     />
                     <button
                       onClick={() => handleSaveEdit(store.id)}
@@ -175,24 +175,24 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                     </button>
                     <button
                       onClick={() => setEditingStoreId(null)}
-                      className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition"
+                      className="px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition"
                     >
                       キャンセル
                     </button>
                   </div>
                 ) : (
                   <>
-                    <span className="flex-1 text-sm font-medium text-gray-900">{store.name}</span>
+                    <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">{store.name}</span>
                     <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => handleStartEdit(store)}
-                        className="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition"
+                        className="px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
                       >
                         編集
                       </button>
                       <button
                         onClick={() => handleDeleteStore(store)}
-                        className="px-3 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition"
+                        className="px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                       >
                         削除
                       </button>
@@ -206,12 +206,12 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
       </div>
 
       {/* 右側: メンバー管理 */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {selectedStore ? `${selectedStore.name} のメンバー` : 'メンバー管理'}
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {selectedStore
               ? 'チェックを入れるとこの店舗に所属します'
               : '左の一覧から店舗を選択してください'}
@@ -227,27 +227,27 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
             <p className="text-sm">店舗を選択してください</p>
           </div>
         ) : allMembers.length === 0 ? (
-          <div className="px-6 py-8 text-center text-gray-500">テナントにメンバーがいません</div>
+          <div className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">テナントにメンバーがいません</div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {allMembers.map((member) => {
               const assigned = isMemberAssigned(member.id);
               const toggling = togglingMember === member.id;
               return (
                 <label
                   key={member.id}
-                  className="flex items-center gap-3 px-6 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="flex items-center gap-3 px-6 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                 >
                   <input
                     type="checkbox"
                     checked={assigned}
                     disabled={toggling}
                     onChange={() => handleToggleMember(member.id)}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer disabled:opacity-50"
+                    className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500 cursor-pointer disabled:opacity-50"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{member.display_name}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{member.display_name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {member.role === 'owner' ? 'オーナー' : member.role === 'admin' ? '管理者' : 'スタッフ'}
                     </p>
                   </div>
@@ -255,7 +255,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 flex-shrink-0"></div>
                   )}
                   {!toggling && assigned && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700 flex-shrink-0">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex-shrink-0">
                       所属中
                     </span>
                   )}

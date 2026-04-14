@@ -137,5 +137,6 @@ export interface ShiftPreference {
   start_time: string | null;
   end_time: string | null;
   note: string | null;
+  status: 'pending' | 'approved' | 'rejected';
   created_at: string;
 }
