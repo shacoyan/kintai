@@ -48,6 +48,7 @@ export function LeaveForm({ onSubmit, onCancel }: LeaveFormProps) {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
+          aria-label="休暇申請日"
           className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -57,6 +58,7 @@ export function LeaveForm({ onSubmit, onCancel }: LeaveFormProps) {
         <select
           value={leaveType}
           onChange={(e) => setLeaveType(e.target.value as LeaveType)}
+          aria-label="休暇種類"
           className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
         >
           {LEAVE_TYPE_OPTIONS.map((o) => (
@@ -71,6 +73,7 @@ export function LeaveForm({ onSubmit, onCancel }: LeaveFormProps) {
           type="text"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
+          aria-label="休暇理由（任意）"
           className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="理由があれば入力"
         />

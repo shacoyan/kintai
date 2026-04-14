@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Shift } from '../../types';
 
 interface ShiftEditModalProps {
@@ -51,9 +51,18 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
 
   const status = STATUS_LABEL[shift.status] || STATUS_LABEL.pending;
 
+  // Close on Escape key
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !processing) onClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [processing, onClose]);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
-      <div role="dialog" aria-modal="true" className="w-full max-w-sm mx-4 bg-white rounded-lg shadow-xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+      <div role="dialog" aria-modal="true" aria-label={`${shift.date} のシフト`} className="w-full max-w-sm mx-4 bg-white rounded-lg shadow-xl" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
         <div className="px-5 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-gray-900">{shift.date} のシフト</h3>
@@ -194,6 +203,7 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
         <div className="px-5 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
           <button
             onClick={onClose}
+            aria-label="ダイアログを閉じる"
             className="w-full px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
           >
             閉じる

@@ -5,6 +5,7 @@ import { useShift } from '../hooks/useShift';
 import { useLeave } from '../hooks/useLeave';
 import { useAdmin } from '../hooks/useAdmin';
 import { useShiftPreset } from '../hooks/useShiftPreset';
+import { useShiftPreference } from '../hooks/useShiftPreference';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftForm } from '../components/Shift/ShiftForm';
 import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
@@ -12,8 +13,10 @@ import { ShiftAdminPanel } from '../components/Shift/ShiftAdminPanel';
 import { LaborCostSummary } from '../components/Shift/LaborCostSummary';
 import { LeaveForm } from '../components/Leave/LeaveForm';
 import { LeaveList } from '../components/Leave/LeaveList';
+import { ShiftPreferenceCalendar } from '../components/Shift/ShiftPreferenceCalendar';
+import { ShiftPreferenceForm } from '../components/Shift/ShiftPreferenceForm';
 
-type TabId = 'shift' | 'leave';
+type TabId = 'shift' | 'leave' | 'preference';
 
 export function ShiftPage() {
   const { currentTenant, myRole } = useTenant();
@@ -24,11 +27,14 @@ export function ShiftPage() {
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useAdmin(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId);
+  const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference } = useShiftPreference(tenantId);
 
   const [activeTab, setActiveTab] = useState<TabId>('shift');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
+  const [selectedPrefDate, setSelectedPrefDate] = useState<string | null>(null);
+  const [showAllMembersPrefs, setShowAllMembersPrefs] = useState(false);
 
   const fetchRange = useCallback(() => {
     const now = new Date();
@@ -44,12 +50,29 @@ export function ShiftPage() {
     }
   }, [isAdmin, getAllShifts, getAllLeaves, getMyShifts, getMyLeaves, fetchMembers]);
 
+  const fetchPreferenceRange = useCallback(() => {
+    const now = new Date();
+    const start = format(startOfMonth(now), 'yyyy-MM-dd');
+    const end = format(endOfMonth(addWeeks(now, 4)), 'yyyy-MM-dd');
+    if (isAdmin && showAllMembersPrefs) {
+      fetchAllPreferences(start, end);
+    } else {
+      fetchMyPreferences(start, end);
+    }
+  }, [isAdmin, showAllMembersPrefs, fetchAllPreferences, fetchMyPreferences]);
+
   useEffect(() => {
     if (tenantId) {
       fetchRange();
       fetchPresets();
     }
   }, [tenantId, fetchRange, fetchPresets]);
+
+  useEffect(() => {
+    if (tenantId && activeTab === 'preference') {
+      fetchPreferenceRange();
+    }
+  }, [tenantId, activeTab, fetchPreferenceRange]);
 
   const shifts = isAdmin ? allShifts : myShifts;
   const leaves = isAdmin ? allLeaves : myLeaves;
@@ -72,6 +95,24 @@ export function ShiftPage() {
     fetchRange();
   };
 
+  const handlePrefSubmit = async (
+    date: string,
+    type: import('../types').ShiftPreferenceType,
+    startTime?: string,
+    endTime?: string,
+    note?: string,
+  ) => {
+    await submitPreference(date, type, startTime, endTime, note);
+    setSelectedPrefDate(null);
+    fetchPreferenceRange();
+  };
+
+  const handlePrefDelete = async (id: string) => {
+    await deletePreference(id);
+    setSelectedPrefDate(null);
+    fetchPreferenceRange();
+  };
+
   const laborEstimates = useMemo(() => {
     if (!isAdmin || members.length === 0) return [];
     return getLaborCostEstimate(shifts, members);
@@ -88,6 +129,7 @@ export function ShiftPage() {
           {([
             { id: 'shift' as TabId, label: 'シフト' },
             { id: 'leave' as TabId, label: '休暇' },
+            { id: 'preference' as TabId, label: '希望' },
           ]).map((tab) => (
             <button
               key={tab.id}
@@ -166,6 +208,72 @@ export function ShiftPage() {
 
               <LaborCostSummary estimates={laborEstimates} />
             </>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'preference' && (
+        <div className="space-y-4">
+          {prefLoading && (
+            <div className="flex justify-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            </div>
+          )}
+
+          {/* 管理者: 全員表示トグル */}
+          {isAdmin && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">表示:</span>
+              <button
+                onClick={() => setShowAllMembersPrefs(false)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
+                  !showAllMembersPrefs
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                自分の希望
+              </button>
+              <button
+                onClick={() => setShowAllMembersPrefs(true)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
+                  showAllMembersPrefs
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                全員の希望
+              </button>
+            </div>
+          )}
+
+          <ShiftPreferenceCalendar
+            preferences={isAdmin && showAllMembersPrefs ? allPreferences : myPreferences}
+            onDateClick={(date) => setSelectedPrefDate(date)}
+            memberNames={isAdmin && showAllMembersPrefs ? memberNames : undefined}
+            isAdmin={isAdmin && showAllMembersPrefs}
+          />
+
+          {selectedPrefDate && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+              onClick={() => setSelectedPrefDate(null)}
+            >
+              <div
+                role="dialog"
+                aria-modal="true"
+                className="w-full max-w-md mx-4"
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              >
+                <ShiftPreferenceForm
+                  date={selectedPrefDate}
+                  existingPreference={myPreferences.find((p) => p.date === selectedPrefDate)}
+                  onSubmit={handlePrefSubmit}
+                  onDelete={handlePrefDelete}
+                  onCancel={() => setSelectedPrefDate(null)}
+                />
+              </div>
+            </div>
           )}
         </div>
       )}

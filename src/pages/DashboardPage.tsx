@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTenant } from '../hooks/useTenant';
 import { useAttendance } from '../hooks/useAttendance';
+import { useShift } from '../hooks/useShift';
 import { ClockButton } from '../components/Attendance/ClockButton';
 import { BreakButton } from '../components/Attendance/BreakButton';
-import { format, parseISO, differenceInMinutes } from 'date-fns';
+import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 export function DashboardPage() {
@@ -24,6 +25,8 @@ export function DashboardPage() {
     loading,
   } = useAttendance(tenantId);
 
+  const { myShifts, getMyShifts } = useShift(tenantId);
+
   // 勤務中の労働時間をリアルタイム更新するためのタイマー
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -32,6 +35,13 @@ export function DashboardPage() {
     const timer = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
   }, [status]);
+
+  // 今週のシフトを取得
+  useEffect(() => {
+    const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    getMyShifts(weekStart, weekEnd);
+  }, [getMyShifts]);
 
   if (loading) {
     return (
@@ -96,6 +106,21 @@ export function DashboardPage() {
   // 日跨ぎの未退勤レコード
   const carryOverRecord = activeRecord && activeRecord.date !== todayStr ? activeRecord : null;
 
+  // 今日の労働時間を "Xh Ym" 形式に変換
+  const todayTotalHours = (() => {
+    const h = Math.floor(totalWorkMinutes / 60);
+    const m = totalWorkMinutes % 60;
+    if (h === 0 && m === 0) return '0分';
+    if (h === 0) return `${m}分`;
+    if (m === 0) return `${h}時間`;
+    return `${h}時間${m}分`;
+  })();
+
+  // 今週の残りシフト（今日以降）
+  const upcomingShifts = myShifts
+    .filter((s) => s.date >= todayStr && s.status !== 'cancelled' && s.status !== 'rejected')
+    .slice(0, 3);
+
   return (
     <div className="max-w-md mx-auto space-y-6">
       <div className="text-center pt-6">
@@ -147,6 +172,44 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Today's summary cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">本日の労働時間</p>
+          <p className="text-xl font-bold text-gray-900">{todayTotalHours}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">セッション数</p>
+          <p className="text-xl font-bold text-gray-900">{todayRecords.filter((r) => r.clock_in).length}</p>
+        </div>
+      </div>
+
+      {/* 今週のシフト */}
+      {upcomingShifts.length > 0 && (
+        <div className="bg-white rounded-lg shadow p-4 space-y-2">
+          <h3 className="text-sm font-semibold text-gray-700">今週のシフト</h3>
+          <div className="space-y-1.5">
+            {upcomingShifts.map((shift) => (
+              <div key={shift.id} className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 font-medium">
+                  {format(new Date(shift.date), 'M/d(E)', { locale: ja })}
+                </span>
+                <span className="text-gray-800">
+                  {shift.start_time.slice(0, 5)} 〜 {shift.end_time.slice(0, 5)}
+                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  shift.status === 'approved' ? 'bg-green-100 text-green-700' :
+                  shift.status === 'pending'  ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-gray-100 text-gray-500'
+                }`}>
+                  {shift.status === 'approved' ? '承認済' : shift.status === 'pending' ? '申請中' : shift.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

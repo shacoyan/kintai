@@ -2,6 +2,8 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useTenant } from '../../hooks/useTenant';
+import { useTheme } from '../../contexts/ThemeContext';
+import { StoreSelector } from '../Store/StoreSelector';
 
 const ClockIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,10 +30,22 @@ const CogIcon = () => (
   </svg>
 );
 
+type Theme = 'light' | 'dark' | 'system';
+
+const THEME_CYCLE: Theme[] = ['light', 'dark', 'system'];
+const THEME_LABEL: Record<Theme, string> = { light: '☀️', dark: '🌙', system: '💻' };
+const THEME_TITLE: Record<Theme, string> = { light: 'ライトモード', dark: 'ダークモード', system: 'システム設定' };
+
 export const Header: React.FC = () => {
   const { user, signOut } = useAuth();
   const { myRole } = useTenant();
+  const { theme, setTheme } = useTheme();
   const location = useLocation();
+
+  const cycleTheme = () => {
+    const idx = THEME_CYCLE.indexOf(theme);
+    setTheme(THEME_CYCLE[(idx + 1) % THEME_CYCLE.length]);
+  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -70,11 +84,19 @@ export const Header: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-4">
+              <StoreSelector />
               {user && (
                 <span className="hidden sm:block text-sm text-blue-200 truncate max-w-xs">
                   {user.email}
                 </span>
               )}
+              <button
+                onClick={cycleTheme}
+                title={THEME_TITLE[theme]}
+                className="px-2 py-2 rounded-md text-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-blue-800"
+              >
+                {THEME_LABEL[theme]}
+              </button>
               <button
                 onClick={() => signOut()}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-blue-800"
@@ -87,7 +109,7 @@ export const Header: React.FC = () => {
       </header>
 
       {/* モバイルボトムナビ */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 z-50 safe-area-bottom">
         <div className="flex justify-around items-center h-16">
           {navLinks.map((link) => (
             <Link

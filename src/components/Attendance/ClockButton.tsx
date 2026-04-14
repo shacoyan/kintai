@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { AttendanceRecord } from '../../types';
@@ -16,14 +16,37 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
   const { showToast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [processing, setProcessing] = useState(false);
+  const [flashGreen, setFlashGreen] = useState(false);
+  const prevStatusRef = useRef(status);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  // ステータス変化時に成功フラッシュ
+  useEffect(() => {
+    const prev = prevStatusRef.current;
+    if (
+      (prev === 'not_started' && status === 'working') ||
+      (prev === 'working' && status === 'not_started')
+    ) {
+      setFlashGreen(true);
+      const t = setTimeout(() => setFlashGreen(false), 600);
+      return () => clearTimeout(t);
+    }
+    prevStatusRef.current = status;
+  }, [status]);
+
+  const triggerHaptic = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(50);
+    }
+  };
+
   const handleClick = async () => {
     if (processing) return;
+    triggerHaptic();
     setProcessing(true);
     try {
       if (status === 'not_started') {
@@ -60,11 +83,13 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="text-5xl font-bold text-gray-800">{format(currentTime, 'HH:mm')}</div>
+      <div className="text-5xl md:text-6xl font-bold font-mono text-gray-800 tabular-nums tracking-tight">
+        {format(currentTime, 'HH:mm:ss')}
+      </div>
       <button
         onClick={handleClick}
         disabled={config.disabled || processing}
-        className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg transition-all ${config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
+        className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg transition-all duration-300 ${flashGreen ? 'bg-green-400 scale-105' : config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
       >
         {processing ? '処理中...' : config.label}
       </button>

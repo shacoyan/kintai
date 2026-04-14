@@ -3,6 +3,7 @@ import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { TenantProvider } from './contexts/TenantContext';
+import { StoreProvider } from './contexts/StoreContext';
 import { ProtectedRoute } from './components/Auth/ProtectedRoute';
 import { RequireTenant } from './components/Auth/RequireTenant';
 import { Layout } from './components/Layout/Layout';
@@ -18,6 +19,7 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <TenantProvider>
+        <StoreProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route
@@ -82,6 +84,7 @@ const App: React.FC = () => {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </StoreProvider>
       </TenantProvider>
     </AuthProvider>
   );

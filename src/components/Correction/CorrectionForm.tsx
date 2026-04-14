@@ -120,8 +120,8 @@ export function CorrectionForm({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={submitting ? undefined : onClose}>
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={submitting ? undefined : onClose} aria-hidden="false">
+      <div role="dialog" aria-modal="true" aria-label={isDelete ? '勤怠削除依頼' : '勤怠修正申請'} className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-900">
             {isDelete ? '勤怠削除依頼' : '勤怠修正申請'}
@@ -129,6 +129,7 @@ export function CorrectionForm({
           <button
             onClick={onClose}
             disabled={submitting}
+            aria-label="閉じる"
             className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

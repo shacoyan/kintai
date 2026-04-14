@@ -110,3 +110,32 @@ export interface CorrectionRequest {
   reviewed_at: string | null;
   created_at: string;
 }
+
+export interface Store {
+  id: string;
+  tenant_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface StoreMember {
+  id: string;
+  store_id: string;
+  member_id: string;
+  is_primary: boolean;
+  created_at: string;
+}
+
+export type ShiftPreferenceType = 'available' | 'preferred' | 'unavailable';
+
+export interface ShiftPreference {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  date: string;
+  preference_type: ShiftPreferenceType;
+  start_time: string | null;
+  end_time: string | null;
+  note: string | null;
+  created_at: string;
+}

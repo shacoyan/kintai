@@ -2,6 +2,7 @@ import { eachDayOfInterval, startOfMonth, endOfMonth, format, parseISO, differen
 import { formatInTimeZone } from 'date-fns-tz';
 import { ja } from 'date-fns/locale';
 import { AttendanceRecord } from '../../types';
+import { EmptyState } from '../ui/EmptyState';
 
 interface DailyListProps {
   records: AttendanceRecord[];
@@ -47,6 +48,16 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
     const existing = recordsByDate.get(record.date) || [];
     existing.push(record);
     recordsByDate.set(record.date, existing);
+  }
+
+  if (records.length === 0) {
+    return (
+      <EmptyState
+        icon="📊"
+        title="勤怠記録がありません"
+        description="出勤すると、ここに記録が表示されます"
+      />
+    );
   }
 
   return (
