@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useShiftPreset } from '../../hooks/useShiftPreset';
+import { useToast } from '../../contexts/ToastContext';
 
 interface ShiftPresetManagerProps {
   tenantId: string;
@@ -13,12 +14,12 @@ for (let h = 0; h < 24; h++) {
 }
 
 export function ShiftPresetManager({ tenantId }: ShiftPresetManagerProps) {
+  const { showToast } = useToast();
   const { presets, loading, fetchPresets, addPreset, deletePreset } = useShiftPreset(tenantId);
   const [name, setName] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPresets();
@@ -27,12 +28,12 @@ export function ShiftPresetManager({ tenantId }: ShiftPresetManagerProps) {
   const handleAdd = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    setError(null);
     try {
       await addPreset(name.trim(), startTime, endTime);
       setName('');
+      showToast('プリセットを追加しました', 'success');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'プリセットの追加に失敗しました');
+      showToast(err instanceof Error ? err.message : 'プリセットの追加に失敗しました', 'error');
     } finally {
       setSaving(false);
     }
@@ -41,8 +42,9 @@ export function ShiftPresetManager({ tenantId }: ShiftPresetManagerProps) {
   const handleDelete = async (id: string) => {
     try {
       await deletePreset(id);
+      showToast('プリセットを削除しました', 'success');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'プリセットの削除に失敗しました');
+      showToast(err instanceof Error ? err.message : 'プリセットの削除に失敗しました', 'error');
     }
   };
 
@@ -52,12 +54,6 @@ export function ShiftPresetManager({ tenantId }: ShiftPresetManagerProps) {
         <h2 className="text-lg font-semibold text-gray-900">シフトプリセット</h2>
         <p className="mt-1 text-sm text-gray-500">よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます</p>
       </div>
-
-      {error && (
-        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
-      )}
 
       {/* 追加フォーム */}
       <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">

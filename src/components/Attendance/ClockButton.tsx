@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { AttendanceRecord } from '../../types';
+import { useToast } from '../../contexts/ToastContext';
 
 interface ClockButtonProps {
   status: 'not_started' | 'working' | 'on_break';
@@ -12,9 +13,9 @@ interface ClockButtonProps {
 }
 
 export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRecord }: ClockButtonProps) {
+  const { showToast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -24,7 +25,6 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
   const handleClick = async () => {
     if (processing) return;
     setProcessing(true);
-    setError(null);
     try {
       if (status === 'not_started') {
         await clockIn();
@@ -32,7 +32,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
         await clockOut();
       }
     } catch (err: any) {
-      setError(err.message || 'エラーが発生しました');
+      showToast(err.message || 'エラーが発生しました', 'error');
     } finally {
       setProcessing(false);
     }
@@ -68,7 +68,6 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
       >
         {processing ? '処理中...' : config.label}
       </button>
-      {error && <p className="text-sm text-red-500">{error}</p>}
 
       {activeRecord?.clock_in && (
         <div className="flex gap-6 text-sm text-gray-500">

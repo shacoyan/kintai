@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAdmin } from '../../hooks/useAdmin';
 import { useTenant } from '../../hooks/useTenant';
 import type { TenantMember } from '../../types';
+import { useToast } from '../../contexts/ToastContext';
 
 interface MemberManagementProps {
   tenantId: string;
@@ -14,6 +15,7 @@ const roleBadge: Record<string, { label: string; className: string }> = {
 };
 
 export function MemberManagement({ tenantId }: MemberManagementProps) {
+  const { showToast } = useToast();
   const { myRole } = useTenant();
   const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary, deleteMember, updateRole } = useAdmin(tenantId);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -23,24 +25,14 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const [editMonthlySalary, setEditMonthlySalary] = useState<string>('');
   const [editingMonthlySalaryId, setEditingMonthlySalaryId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMembers();
   }, [fetchMembers]);
 
-  // エラーは3秒後に自動消去
-  useEffect(() => {
-    if (saveError) {
-      const timer = setTimeout(() => setSaveError(null), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [saveError]);
-
   const handleStartEdit = (member: TenantMember) => {
     setEditingId(member.id);
     setEditRate(String(member.hourly_rate ?? 0));
-    setSaveError(null);
   };
 
   const handleSave = async (memberId: string) => {
@@ -50,12 +42,12 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
       return;
     }
     setSaving(true);
-    setSaveError(null);
     try {
       await updateHourlyRate(memberId, rate);
       setEditingId(null);
+      showToast('時給を保存しました', 'success');
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : '時給の保存に失敗しました');
+      showToast(err instanceof Error ? err.message : '時給の保存に失敗しました', 'error');
     } finally {
       setSaving(false);
     }
@@ -64,7 +56,6 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const handleCancel = () => {
     setEditingId(null);
     setEditRate('');
-    setSaveError(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, memberId: string) => {
@@ -73,18 +64,16 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   };
 
   const handlePayTypeChange = async (member: TenantMember, payType: 'hourly' | 'monthly') => {
-    setSaveError(null);
     try {
       await updatePayType(member.id, payType);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : '給与タイプの更新に失敗しました');
+      showToast(err instanceof Error ? err.message : '給与タイプの更新に失敗しました', 'error');
     }
   };
 
   const handleStartEditMonthlySalary = (member: TenantMember) => {
     setEditingMonthlySalaryId(member.id);
     setEditMonthlySalary(String(member.monthly_salary ?? 0));
-    setSaveError(null);
   };
 
   const handleSaveMonthlySalary = async (memberId: string) => {
@@ -94,12 +83,12 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
       return;
     }
     setSaving(true);
-    setSaveError(null);
     try {
       await updateMonthlySalary(memberId, salary);
       setEditingMonthlySalaryId(null);
+      showToast('月給を保存しました', 'success');
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : '月給の保存に失敗しました');
+      showToast(err instanceof Error ? err.message : '月給の保存に失敗しました', 'error');
     } finally {
       setSaving(false);
     }
@@ -113,22 +102,20 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const handleRoleToggle = async (member: TenantMember) => {
     const newRole = member.role === 'admin' ? 'staff' : 'admin';
     setTogglingRoleId(member.id);
-    setSaveError(null);
     try {
       await updateRole(member.id, newRole);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : '権限の更新に失敗しました');
+      showToast(err instanceof Error ? err.message : '権限の更新に失敗しました', 'error');
     } finally {
       setTogglingRoleId(null);
     }
   };
 
   const handleNightShiftToggle = async (member: TenantMember) => {
-    setSaveError(null);
     try {
       await updateNightShift(member.id, !member.night_shift_enabled);
     } catch (err) {
-      setSaveError(err instanceof Error ? err.message : '深夜給設定の更新に失敗しました');
+      showToast(err instanceof Error ? err.message : '深夜給設定の更新に失敗しました', 'error');
     }
   };
 
@@ -163,12 +150,6 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
         <h2 className="text-lg font-semibold text-gray-900">メンバー管理</h2>
         <p className="mt-1 text-sm text-gray-500">各メンバーの時給・深夜給を設定できます</p>
       </div>
-
-      {saveError && (
-        <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{saveError}</p>
-        </div>
-      )}
 
       {/* カード型レイアウト（モバイル対応） */}
       <div className="divide-y divide-gray-200">
@@ -216,11 +197,11 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={async () => {
-                              setSaveError(null);
                               try {
                                 await deleteMember(member.id);
+                                showToast('メンバーを削除しました', 'success');
                               } catch (err) {
-                                setSaveError(err instanceof Error ? err.message : 'メンバーの削除に失敗しました');
+                                showToast(err instanceof Error ? err.message : 'メンバーの削除に失敗しました', 'error');
                               }
                               setDeletingId(null);
                             }}

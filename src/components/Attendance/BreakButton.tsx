@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { AttendanceRecord, Break } from '../../types';
+import { useToast } from '../../contexts/ToastContext';
 
 interface BreakButtonProps {
   status: 'not_started' | 'working' | 'on_break';
@@ -11,8 +12,8 @@ interface BreakButtonProps {
 }
 
 export function BreakButton({ status, breakStart, breakEnd, activeRecord, activeBreak }: BreakButtonProps) {
+  const { showToast } = useToast();
   const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   if (status !== 'working' && status !== 'on_break') return null;
   if (!activeRecord) return null;
@@ -22,11 +23,10 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
   const handleBreakStart = async () => {
     if (processing) return;
     setProcessing(true);
-    setError(null);
     try {
       await breakStart();
     } catch (err: any) {
-      setError(err.message || '休憩開始に失敗しました');
+      showToast(err.message || '休憩開始に失敗しました', 'error');
     } finally {
       setProcessing(false);
     }
@@ -35,11 +35,10 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
   const handleBreakEnd = async () => {
     if (processing) return;
     setProcessing(true);
-    setError(null);
     try {
       await breakEnd();
     } catch (err: any) {
-      setError(err.message || '休憩終了に失敗しました');
+      showToast(err.message || '休憩終了に失敗しました', 'error');
     } finally {
       setProcessing(false);
     }
@@ -70,8 +69,6 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
           )}
         </>
       )}
-
-      {error && <p className="text-sm text-red-500">{error}</p>}
 
       {activeRecord?.breaks && activeRecord.breaks.filter(b => b.end_time !== null).length > 0 && (
         <div className="mt-2 w-full max-w-xs">

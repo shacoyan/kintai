@@ -110,7 +110,20 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       if (authError || !authUser) throw new Error('認証情報の取得に失敗しました');
 
-      const inviteCode = crypto.randomUUID().substring(0, 6).toUpperCase();
+      let inviteCode: string | null = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const candidate = crypto.randomUUID().substring(0, 6).toUpperCase();
+        const { data: existing } = await supabase
+          .from('tenants')
+          .select('id')
+          .eq('invite_code', candidate)
+          .maybeSingle();
+        if (!existing) {
+          inviteCode = candidate;
+          break;
+        }
+      }
+      if (!inviteCode) throw new Error('招待コードの生成に失敗しました。再度お試しください。');
 
       const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')

@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAdmin } from '../../hooks/useAdmin';
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import type { AttendanceRecord } from '../../types';
+import { useToast } from '../../contexts/ToastContext';
 
 interface AttendanceAdminProps {
   tenantId: string;
 }
 
 export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
+  const { showToast } = useToast();
   const { members, memberAttendance, loading, fetchMembers, fetchMemberAttendance, updateAttendance, deleteAttendance } = useAdmin(tenantId);
 
   const now = new Date();
@@ -16,7 +18,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
   const [endDate, setEndDate] = useState(format(now, 'yyyy-MM-dd'));
   const [searched, setSearched] = useState(false);
   const [edits, setEdits] = useState<Record<string, { clock_in: string; clock_out: string }>>({});
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMembers();
@@ -82,7 +84,6 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       totalWorkMinutes = Math.max(0, differenceInMinutes(parseISO(clockOutISO), parseISO(clockInISO)) - breakMin);
     }
 
-    setActionError(null);
     try {
       await updateAttendance(recordId, {
         ...(edit.clock_in ? { clock_in: new Date(edit.clock_in).toISOString() } : {}),
@@ -94,20 +95,21 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
         delete next[recordId];
         return next;
       });
+      showToast('勤怠記録を更新しました', 'success');
       await fetchMemberAttendance(selectedUserId, startDate, endDate);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : '勤怠記録の更新に失敗しました');
+      showToast(err instanceof Error ? err.message : '勤怠記録の更新に失敗しました', 'error');
     }
   };
 
-  const handleDelete = async (recordId: string) => {
-    if (!window.confirm('この勤怠記録を削除しますか？')) return;
-    setActionError(null);
+  const handleDeleteConfirm = async (recordId: string) => {
+    setConfirmDeleteId(null);
     try {
       await deleteAttendance(recordId);
+      showToast('勤怠記録を削除しました', 'success');
       await fetchMemberAttendance(selectedUserId, startDate, endDate);
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : '勤怠記録の削除に失敗しました');
+      showToast(err instanceof Error ? err.message : '勤怠記録の削除に失敗しました', 'error');
     }
   };
 
@@ -148,12 +150,6 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           </div>
         </div>
       </div>
-
-      {actionError && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{actionError}</p>
-        </div>
-      )}
 
       {searched && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -208,12 +204,29 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                           >
                             保存
                           </button>
-                          <button
-                            onClick={() => handleDelete(record.id)}
-                            className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 transition"
-                          >
-                            削除
-                          </button>
+                          {confirmDeleteId === record.id ? (
+                            <span className="inline-flex items-center gap-1">
+                              <button
+                                onClick={() => handleDeleteConfirm(record.id)}
+                                className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition"
+                              >
+                                確認
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="bg-gray-300 text-gray-700 px-2 py-1 rounded text-xs hover:bg-gray-400 transition"
+                              >
+                                戻す
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmDeleteId(record.id)}
+                              className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700 transition"
+                            >
+                              削除
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );

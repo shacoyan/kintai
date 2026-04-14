@@ -1,5 +1,5 @@
 // FILE: App.tsx
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { TenantProvider } from './contexts/TenantContext';
@@ -10,8 +10,9 @@ import { LoginPage } from './pages/LoginPage';
 import TenantPage from './pages/TenantPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { HistoryPage } from './pages/HistoryPage';
-import { AdminPage } from './pages/AdminPage';
-import { ShiftPage } from './pages/ShiftPage';
+
+const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
+const ShiftPage = lazy(() => import('./pages/ShiftPage').then(m => ({ default: m.ShiftPage })));
 
 const App: React.FC = () => {
   return (
@@ -57,7 +58,9 @@ const App: React.FC = () => {
               <ProtectedRoute>
                 <RequireTenant>
                   <Layout>
-                    <ShiftPage />
+                    <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>}>
+                      <ShiftPage />
+                    </Suspense>
                   </Layout>
                 </RequireTenant>
               </ProtectedRoute>
@@ -69,7 +72,9 @@ const App: React.FC = () => {
               <ProtectedRoute>
                 <RequireTenant>
                   <Layout>
-                    <AdminPage />
+                    <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>}>
+                      <AdminPage />
+                    </Suspense>
                   </Layout>
                 </RequireTenant>
               </ProtectedRoute>

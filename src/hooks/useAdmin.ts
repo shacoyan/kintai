@@ -15,17 +15,20 @@ export function useAdmin(tenantId: string) {
   const fetchMembers = useCallback(async () => {
     startLoading();
     setError(null);
-    const { data, error: e } = await supabase
-      .from('tenant_members')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: true });
-    if (e) {
-      setError(e.message);
-    } else {
-      setMembers((data as TenantMember[]) || []);
+    try {
+      const { data, error: e } = await supabase
+        .from('tenant_members')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: true });
+      if (e) {
+        setError(e.message);
+      } else {
+        setMembers((data as TenantMember[]) || []);
+      }
+    } finally {
+      stopLoading();
     }
-    stopLoading();
   }, [tenantId]);
 
   const updateHourlyRate = useCallback(async (memberId: string, rate: number) => {
@@ -43,42 +46,48 @@ export function useAdmin(tenantId: string) {
   const fetchAllAttendance = useCallback(async (year: number, month: number) => {
     startLoading();
     setError(null);
-    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-    const lastDay = new Date(year, month, 0).getDate();
-    const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    const { data, error: e } = await supabase
-      .from('attendance_records')
-      .select('*, breaks(*)')
-      .eq('tenant_id', tenantId)
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: true });
-    if (e) {
-      setError(e.message);
-    } else {
-      setAllAttendance((data as AttendanceRecord[]) || []);
+    try {
+      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month, 0).getDate();
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      const { data, error: e } = await supabase
+        .from('attendance_records')
+        .select('*, breaks(*)')
+        .eq('tenant_id', tenantId)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true });
+      if (e) {
+        setError(e.message);
+      } else {
+        setAllAttendance((data as AttendanceRecord[]) || []);
+      }
+    } finally {
+      stopLoading();
     }
-    stopLoading();
   }, [tenantId]);
 
   const fetchMemberAttendance = useCallback(async (userId: string, startDate: string, endDate: string) => {
     startLoading();
     setError(null);
-    const { data, error: e } = await supabase
-      .from('attendance_records')
-      .select('*, breaks(*)')
-      .eq('tenant_id', tenantId)
-      .eq('user_id', userId)
-      .gte('date', startDate)
-      .lte('date', endDate)
-      .order('date', { ascending: true })
-      .order('clock_in', { ascending: true });
-    if (e) {
-      setError(e.message);
-    } else {
-      setMemberAttendance((data as AttendanceRecord[]) || []);
+    try {
+      const { data, error: e } = await supabase
+        .from('attendance_records')
+        .select('*, breaks(*)')
+        .eq('tenant_id', tenantId)
+        .eq('user_id', userId)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true })
+        .order('clock_in', { ascending: true });
+      if (e) {
+        setError(e.message);
+      } else {
+        setMemberAttendance((data as AttendanceRecord[]) || []);
+      }
+    } finally {
+      stopLoading();
     }
-    stopLoading();
   }, [tenantId]);
 
   const updateAttendance = useCallback(async (recordId: string, data: { clock_in?: string; clock_out?: string; total_work_minutes?: number }) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { AttendanceRecord, Break } from '../types';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
@@ -8,6 +8,7 @@ export function useAttendance(tenantId: string) {
   const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
   const [monthlyRecords, setMonthlyRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const busyRef = useRef(false);
   const [today, setToday] = useState(() => formatInTimeZone(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd'));
 
   useEffect(() => {
@@ -134,113 +135,137 @@ export function useAttendance(tenantId: string) {
   }, [fetchTodayRecords]);
 
   async function clockIn() {
-    if (activeRecord) {
-      throw new Error('終了していない勤務セッションがあります');
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      if (activeRecord) {
+        throw new Error('終了していない勤務セッションがあります');
+      }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const now = new Date().toISOString();
+      const { error } = await supabase.from('attendance_records').insert({
+        tenant_id: tenantId,
+        user_id: user.id,
+        date: today,
+        clock_in: now,
+      });
+      if (error) {
+        console.error('Clock in error:', error.message);
+        throw error;
+      }
+      await fetchTodayRecords();
+    } finally {
+      busyRef.current = false;
     }
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-    const now = new Date().toISOString();
-    const { error } = await supabase.from('attendance_records').insert({
-      tenant_id: tenantId,
-      user_id: user.id,
-      date: today,
-      clock_in: now,
-    });
-    if (error) {
-      console.error('Clock in error:', error.message);
-      throw error;
-    }
-    await fetchTodayRecords();
   }
 
   async function clockOut() {
-    if (!activeRecord?.clock_in) return;
-    const now = new Date();
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      if (!activeRecord?.clock_in) return;
+      const now = new Date();
 
-    // 進行中の休憩があれば自動的に終了する
-    if (activeBreak) {
-      const { error: breakError } = await supabase
-        .from('breaks')
-        .update({ end_time: now.toISOString() })
-        .eq('id', activeBreak.id);
-      if (breakError) {
-        console.error('Auto break end error:', breakError.message);
-        throw breakError;
+      // 進行中の休憩があれば自動的に終了する
+      if (activeBreak) {
+        const { error: breakError } = await supabase
+          .from('breaks')
+          .update({ end_time: now.toISOString() })
+          .eq('id', activeBreak.id);
+        if (breakError) {
+          console.error('Auto break end error:', breakError.message);
+          throw breakError;
+        }
       }
-    }
 
-    // 休憩時間をローカルで計算（自動終了した休憩も含む）
-    let totalBreakMinutes = 0;
-    if (activeRecord.breaks && activeRecord.breaks.length > 0) {
-      totalBreakMinutes = activeRecord.breaks.reduce((sum, b) => {
-        if (b.start_time && b.end_time) {
-          return sum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
-        }
-        // 自動終了した休憩（end_time が null だった → now で終了）
-        if (b.start_time && !b.end_time) {
-          return sum + differenceInMinutes(now, parseISO(b.start_time));
-        }
-        return sum;
-      }, 0);
-    }
+      // 休憩時間をローカルで計算（自動終了した休憩も含む）
+      let totalBreakMinutes = 0;
+      if (activeRecord.breaks && activeRecord.breaks.length > 0) {
+        totalBreakMinutes = activeRecord.breaks.reduce((sum, b) => {
+          if (b.start_time && b.end_time) {
+            return sum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
+          }
+          // 自動終了した休憩（end_time が null だった → now で終了）
+          if (b.start_time && !b.end_time) {
+            return sum + differenceInMinutes(now, parseISO(b.start_time));
+          }
+          return sum;
+        }, 0);
+      }
 
-    const totalWorkMinutes =
-      Math.max(0, differenceInMinutes(now, parseISO(activeRecord.clock_in)) - totalBreakMinutes);
+      const totalWorkMinutes =
+        Math.max(0, differenceInMinutes(now, parseISO(activeRecord.clock_in)) - totalBreakMinutes);
 
-    const { error } = await supabase
-      .from('attendance_records')
-      .update({
-        clock_out: now.toISOString(),
-        total_work_minutes: totalWorkMinutes,
-      })
-      .eq('id', activeRecord.id);
-    if (error) {
-      console.error('Clock out error:', error.message);
-      throw error;
+      const { error } = await supabase
+        .from('attendance_records')
+        .update({
+          clock_out: now.toISOString(),
+          total_work_minutes: totalWorkMinutes,
+        })
+        .eq('id', activeRecord.id);
+      if (error) {
+        console.error('Clock out error:', error.message);
+        throw error;
+      }
+      await fetchTodayRecords();
+    } finally {
+      busyRef.current = false;
     }
-    await fetchTodayRecords();
   }
 
   async function breakStart() {
-    if (!activeRecord) return;
-    const { error } = await supabase.from('breaks').insert({
-      attendance_record_id: activeRecord.id,
-      start_time: new Date().toISOString(),
-    });
-    if (error) {
-      console.error('Break start error:', error.message);
-      throw error;
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      if (!activeRecord) return;
+      const { error } = await supabase.from('breaks').insert({
+        attendance_record_id: activeRecord.id,
+        start_time: new Date().toISOString(),
+      });
+      if (error) {
+        console.error('Break start error:', error.message);
+        throw error;
+      }
+      await fetchTodayRecords();
+    } finally {
+      busyRef.current = false;
     }
-    await fetchTodayRecords();
   }
 
   async function breakEnd() {
-    if (!activeRecord) return;
+    if (busyRef.current) return;
+    busyRef.current = true;
+    try {
+      if (!activeRecord) return;
 
-    const { data, error: fetchError } = await supabase
-      .from('breaks')
-      .select('id')
-      .eq('attendance_record_id', activeRecord.id)
-      .is('end_time', null)
-      .order('start_time', { ascending: false })
-      .limit(1);
-    if (fetchError) {
-      console.error('Find active break error:', fetchError.message);
-      throw fetchError;
-    }
-    if (!data || data.length === 0) return;
+      const { data, error: fetchError } = await supabase
+        .from('breaks')
+        .select('id')
+        .eq('attendance_record_id', activeRecord.id)
+        .is('end_time', null)
+        .order('start_time', { ascending: false })
+        .limit(1);
+      if (fetchError) {
+        console.error('Find active break error:', fetchError.message);
+        throw fetchError;
+      }
+      if (!data || data.length === 0) return;
 
-    const { error } = await supabase
-      .from('breaks')
-      .update({ end_time: new Date().toISOString() })
-      .eq('id', data[0].id);
-    if (error) {
-      console.error('Break end error:', error.message);
-      throw error;
+      const { error } = await supabase
+        .from('breaks')
+        .update({ end_time: new Date().toISOString() })
+        .eq('id', data[0].id);
+      if (error) {
+        console.error('Break end error:', error.message);
+        throw error;
+      }
+      await fetchTodayRecords();
+    } finally {
+      busyRef.current = false;
     }
-    await fetchTodayRecords();
   }
 
   const fetchRecords = useCallback(
