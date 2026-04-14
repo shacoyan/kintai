@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
+import { supabase } from '../../lib/supabase';
 import { MemberManagement } from './MemberManagement';
 import { PayrollCalculation } from './PayrollCalculation';
 import { AttendanceAdmin } from './AttendanceAdmin';
@@ -11,6 +12,9 @@ import { CorrectionList } from '../Correction/CorrectionList';
 import { LeaveList } from '../Leave/LeaveList';
 import { ShiftPresetManager } from './ShiftPresetManager';
 import { StoreManagement } from './StoreManagement';
+import { ShiftMismatchAlert } from './ShiftMismatchAlert';
+import { detectMismatches } from '../../utils/shiftMismatch';
+import type { Shift, AttendanceRecord } from '../../types';
 
 interface AdminDashboardProps {
   tenantId: string;
@@ -24,6 +28,7 @@ const tabs = [
   { id: 'leaves', label: '休暇管理' },
   { id: 'presets', label: 'シフトプリセット' },
   { id: 'stores', label: '店舗管理' },
+  { id: 'mismatch', label: 'シフト不一致' },
 ] as const;
 
 type TabId = typeof tabs[number]['id'];
@@ -57,6 +62,67 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   }, [adminMembers]);
 
   const pendingLeaves = allLeaves.filter(l => l.status === 'pending');
+
+  // ---- Mismatch detection ----
+  const [mismatchShifts, setMismatchShifts] = useState<Shift[]>([]);
+  const [mismatchAttendance, setMismatchAttendance] = useState<AttendanceRecord[]>([]);
+  const [mismatchLoading, setMismatchLoading] = useState(false);
+
+  const fetchMismatchData = useCallback(async () => {
+    setMismatchLoading(true);
+    try {
+      const now = new Date();
+      const startDate = format(startOfMonth(now), 'yyyy-MM-dd');
+      const endDate = format(endOfMonth(now), 'yyyy-MM-dd');
+
+      const [shiftsRes, attendanceRes] = await Promise.all([
+        supabase
+          .from('shifts')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .eq('status', 'approved')
+          .gte('date', startDate)
+          .lte('date', endDate)
+          .order('date', { ascending: true }),
+        supabase
+          .from('attendance_records')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .gte('date', startDate)
+          .lte('date', endDate)
+          .order('date', { ascending: true })
+          .order('clock_in', { ascending: true }),
+      ]);
+
+      if (shiftsRes.error) throw shiftsRes.error;
+      if (attendanceRes.error) throw attendanceRes.error;
+
+      setMismatchShifts((shiftsRes.data as Shift[]) || []);
+      setMismatchAttendance((attendanceRes.data as AttendanceRecord[]) || []);
+    } catch (err) {
+      console.error('mismatch fetch error:', err);
+    } finally {
+      setMismatchLoading(false);
+    }
+  }, [tenantId]);
+
+  useEffect(() => {
+    if (activeTab === 'mismatch') {
+      fetchMismatchData();
+    }
+  }, [activeTab, fetchMismatchData]);
+
+  const mismatches = useMemo(
+    () => detectMismatches(mismatchShifts, mismatchAttendance),
+    [mismatchShifts, mismatchAttendance],
+  );
+
+  const mismatchMemberNames = useMemo(() => {
+    const map = new Map<string, string>();
+    adminMembers.forEach(m => map.set(m.user_id, m.display_name));
+    return map;
+  }, [adminMembers]);
+  // ---- end Mismatch detection ----
 
   const handleCopyCode = async () => {
     if (!currentTenant?.invite_code) return;
@@ -153,6 +219,35 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
         {activeTab === 'stores' && (
           <StoreManagement tenantId={tenantId} />
         )}
+        {activeTab === 'mismatch' && (
+          <div className="space-y-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">シフト不一致アラート</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  今月の承認済みシフトと実績の差異を表示します（猶予15分）
+                </p>
+              </div>
+              <button
+                onClick={fetchMismatchData}
+                disabled={mismatchLoading}
+                className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 disabled:opacity-50"
+              >
+                {mismatchLoading ? '読み込み中…' : '再読込'}
+              </button>
+            </div>
+            {mismatchLoading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              </div>
+            ) : (
+              <ShiftMismatchAlert
+                mismatches={mismatches}
+                memberNames={mismatchMemberNames}
+              />
+            )}
+          </div>
+        )}
       </>
     );
   }
@@ -200,6 +295,11 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   {pendingRequests.length}
                 </span>
               )}
+              {tab.id === 'mismatch' && mismatches.length > 0 && (
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                  {mismatches.length}
+                </span>
+              )}
             </button>
           ))}
         </nav>
@@ -234,6 +334,11 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 {tab.id === 'corrections' && pendingRequests.length > 0 && (
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
                     {pendingRequests.length}
+                  </span>
+                )}
+                {tab.id === 'mismatch' && mismatches.length > 0 && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                    {mismatches.length}
                   </span>
                 )}
               </button>
