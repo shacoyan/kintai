@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import type { LeaveType } from '../../types';
+import { ErrorBanner } from '../ui/ErrorBanner';
 
 interface LeaveFormProps {
   onSubmit: (date: string, leaveType: LeaveType, reason?: string) => Promise<void>;
@@ -35,31 +36,31 @@ export function LeaveForm({ onSubmit, onCancel }: LeaveFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-gray-900">休暇申請</h3>
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/30 border border-transparent dark:border-gray-700 p-4 space-y-4">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">休暇申請</h3>
 
       {error && (
-        <div className="p-2 bg-red-50 border border-red-200 rounded text-sm text-red-600">{error}</div>
+        <ErrorBanner message={error} />
       )}
 
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">日付</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">日付</label>
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           aria-label="休暇申請日"
-          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:placeholder-gray-400"
         />
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">種類</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">種類</label>
         <select
           value={leaveType}
           onChange={(e) => setLeaveType(e.target.value as LeaveType)}
           aria-label="休暇種類"
-          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
         >
           {LEAVE_TYPE_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -68,13 +69,13 @@ export function LeaveForm({ onSubmit, onCancel }: LeaveFormProps) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">理由（任意）</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">理由（任意）</label>
         <input
           type="text"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           aria-label="休暇理由（任意）"
-          className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder-gray-400 dark:placeholder-gray-500"
           placeholder="理由があれば入力"
         />
       </div>
@@ -83,14 +84,14 @@ export function LeaveForm({ onSubmit, onCancel }: LeaveFormProps) {
         <button
           type="submit"
           disabled={submitting}
-          className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition"
+          className="btn-primary flex-1 disabled:opacity-50"
         >
           {submitting ? '送信中...' : '申請'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition"
+          className="btn-ghost"
         >
           キャンセル
         </button>

@@ -1,6 +1,7 @@
 // FILE: components/Tenant/JoinTenant.tsx
 import React, { useState } from 'react';
 import type { Tenant } from '../../types';
+import { ErrorBanner } from '../ui/ErrorBanner';
 
 interface JoinTenantProps {
   onJoin: (tenant: Tenant) => void;
@@ -45,19 +46,19 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
   const displayError = error;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md border border-gray-100">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">招待コードで参加</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">招待コードで参加</h2>
 
         {displayError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700">{displayError}</p>
+          <div className="mb-4">
+            <ErrorBanner message={displayError} />
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="inviteCode" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="inviteCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               招待コード <span className="text-red-500">*</span>
             </label>
             <input
@@ -66,14 +67,14 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
               maxLength={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm font-mono text-lg tracking-widest text-center uppercase focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm font-mono text-lg tracking-widest text-center uppercase bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="ABC123"
               disabled={loading}
             />
           </div>
 
           <div>
-            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               表示名 <span className="text-red-500">*</span>
             </label>
             <input
@@ -81,7 +82,7 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="例: 山田 太郎"
               disabled={loading}
             />
@@ -91,14 +92,14 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 py-2.5 px-4 text-gray-700 font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              className="btn-ghost flex-1 py-2.5 px-4"
               disabled={loading}
             >
               戻る
             </button>
             <button
               type="submit"
-              className="flex-1 py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary flex-1 py-2.5 px-4"
               disabled={loading}
             >
               {loading ? '参加中...' : '参加する'}

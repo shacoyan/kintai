@@ -1,6 +1,8 @@
 // FILE: components/Tenant/CreateTenant.tsx
 import React, { useState } from 'react';
 import type { Tenant } from '../../types';
+import { CheckCircle2, Copy, Check } from 'lucide-react';
+import { ErrorBanner } from '../ui/ErrorBanner';
 
 interface CreateTenantProps {
   onCreate: (tenant: Tenant) => void;
@@ -14,6 +16,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdTenant, setCreatedTenant] = useState<Tenant | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +46,8 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
     if (createdTenant) {
       try {
         await navigator.clipboard.writeText(createdTenant.invite_code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
       } catch {
         // HTTPS以外の環境ではclipboard APIが使えないため無視
       }
@@ -53,36 +58,35 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
 
   if (createdTenant) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md border border-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
           <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-              <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-              </svg>
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
+              <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900">ワークスペースを作成しました</h2>
-            <p className="mt-2 text-sm text-gray-600">以下の招待コードをチームメンバーに共有してください</p>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">ワークスペースを作成しました</h2>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">以下の招待コードをチームメンバーに共有してください</p>
           </div>
 
-          <div className="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <p className="text-xs font-medium text-gray-500 mb-2">招待コード</p>
+          <div className="mt-6 bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">招待コード</p>
             <div className="flex items-center gap-3">
-              <p className="text-3xl font-mono font-bold tracking-widest text-gray-900 flex-1 text-center">
+              <p className="text-3xl font-mono font-bold tracking-widest text-gray-900 dark:text-gray-100 flex-1 text-center">
                 {createdTenant.invite_code}
               </p>
               <button
                 onClick={handleCopy}
-                className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                className="px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors inline-flex items-center"
               >
-                コピー
+                {copied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
+                {copied ? 'コピー済' : 'コピー'}
               </button>
             </div>
           </div>
 
           <button
             onClick={() => onCreate(createdTenant)}
-            className="mt-6 w-full py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="mt-6 w-full btn-primary py-2.5 px-4 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
           >
             ワークスペースに進む
           </button>
@@ -92,19 +96,19 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-md border border-gray-100">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">新しいワークスペースを作成</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">新しいワークスペースを作成</h2>
 
         {displayError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700">{displayError}</p>
+          <div className="mb-4">
+            <ErrorBanner message={displayError} />
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               ワークスペース名 <span className="text-red-500">*</span>
             </label>
             <input
@@ -112,14 +116,14 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
               placeholder="例: 営業部"
               disabled={loading}
             />
           </div>
 
           <div>
-            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               表示名 <span className="text-red-500">*</span>
             </label>
             <input
@@ -127,7 +131,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
               placeholder="例: 山田 太郎"
               disabled={loading}
             />
@@ -137,14 +141,14 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 py-2.5 px-4 text-gray-700 font-medium bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+              className="flex-1 btn-ghost py-2.5 px-4 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
               disabled={loading}
             >
               戻る
             </button>
             <button
               type="submit"
-              className="flex-1 py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 btn-primary py-2.5 px-4 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? '作成中...' : '作成する'}

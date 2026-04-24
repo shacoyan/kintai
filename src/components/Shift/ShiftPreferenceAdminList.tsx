@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { CheckCircle2, XCircle, Circle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { ShiftPreference } from '../../types';
 
 interface ShiftPreferenceAdminListProps {
@@ -16,10 +18,10 @@ for (let h = 0; h < 24; h++) {
   }
 }
 
-const PREFERENCE_ICON: Record<string, string> = {
-  preferred: '◎',
-  available: '○',
-  unavailable: '✕',
+const PREFERENCE_ICON: Record<string, LucideIcon> = {
+  preferred: CheckCircle2,
+  available: Circle,
+  unavailable: XCircle,
 };
 
 const PREFERENCE_LABEL: Record<string, string> = {
@@ -140,7 +142,7 @@ export function ShiftPreferenceAdminList({
         {displayed.map((pref) => {
           const state = getState(pref.id, pref);
           const memberName = memberNames.get(pref.user_id) ?? '不明';
-          const icon = PREFERENCE_ICON[pref.preference_type] ?? '?';
+          const Ic = PREFERENCE_ICON[pref.preference_type] ?? Circle;
           const label = PREFERENCE_LABEL[pref.preference_type] ?? '';
           const timeLabel =
             pref.preference_type !== 'unavailable' && pref.start_time && pref.end_time
@@ -181,7 +183,7 @@ export function ShiftPreferenceAdminList({
                           : 'text-red-600 dark:text-red-400'
                       }`}
                     >
-                      {icon}
+                      <Ic className="w-4 h-4" />
                     </span>
                     <span className="text-xs text-gray-600 dark:text-gray-300">{label}</span>
                     {timeLabel && (
@@ -197,12 +199,12 @@ export function ShiftPreferenceAdminList({
                 <div className="flex-shrink-0">
                   {isApproved && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200">
-                      ✅ 承認済
+                      <CheckCircle2 className="w-3 h-3" />承認済
                     </span>
                   )}
                   {isRejected && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                      ❌ 却下済
+                      <XCircle className="w-3 h-3" />却下済
                     </span>
                   )}
                   {isPending && (
@@ -265,7 +267,7 @@ export function ShiftPreferenceAdminList({
                       type="button"
                       disabled={state.loading}
                       onClick={() => handleApprove(pref)}
-                      className="px-3 py-1 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition dark:bg-green-700 dark:hover:bg-green-600"
+                      className="btn-primary px-3 py-1 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition dark:bg-green-700 dark:hover:bg-green-600"
                     >
                       {state.loading ? '処理中...' : '承認'}
                     </button>
@@ -277,7 +279,7 @@ export function ShiftPreferenceAdminList({
                       type="button"
                       disabled={state.loading}
                       onClick={() => setState(pref.id, { showTimeEditor: true })}
-                      className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 disabled:opacity-50 transition dark:text-blue-300 dark:bg-blue-900 dark:border-blue-700 dark:hover:bg-blue-800"
+                      className="btn-ghost px-3 py-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 disabled:opacity-50 transition dark:text-blue-300 dark:bg-blue-900 dark:border-blue-700 dark:hover:bg-blue-800"
                     >
                       時間指定承認
                     </button>
@@ -290,7 +292,7 @@ export function ShiftPreferenceAdminList({
                         type="button"
                         disabled={state.loading}
                         onClick={() => handleApprove(pref, true)}
-                        className="px-3 py-1 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition dark:bg-green-700 dark:hover:bg-green-600"
+                        className="btn-primary px-3 py-1 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition dark:bg-green-700 dark:hover:bg-green-600"
                       >
                         {state.loading ? '処理中...' : '時間指定で承認'}
                       </button>
@@ -298,7 +300,7 @@ export function ShiftPreferenceAdminList({
                         type="button"
                         disabled={state.loading}
                         onClick={() => setState(pref.id, { showTimeEditor: false })}
-                        className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 transition dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
+                        className="btn-ghost px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 transition dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
                       >
                         キャンセル
                       </button>
@@ -311,7 +313,7 @@ export function ShiftPreferenceAdminList({
                       type="button"
                       disabled={state.loading}
                       onClick={() => handleReject(pref)}
-                      className="px-3 py-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50 transition dark:text-red-300 dark:bg-red-900 dark:border-red-700 dark:hover:bg-red-800"
+                      className="btn-danger px-3 py-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50 transition dark:text-red-300 dark:bg-red-900 dark:border-red-700 dark:hover:bg-red-800"
                     >
                       {state.loading ? '処理中...' : '却下'}
                     </button>

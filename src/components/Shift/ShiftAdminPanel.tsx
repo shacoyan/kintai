@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Shift, TenantMember } from '../../types';
+import { Loader2 } from 'lucide-react';
 
 interface ShiftAdminPanelProps {
   shifts: Shift[];
@@ -74,9 +75,11 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
           <button
             onClick={() => handleAction(() => onBulkApprove(pendingShifts.map(s => s.id)))}
             disabled={processing}
-            className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition"
+            className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition flex items-center"
           >
-            一括承認
+            {processing && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+            <span>一括承認</span>
+            <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-green-500 rounded-full tabular-nums">{pendingShifts.length}</span>
           </button>
         )}
       </div>
@@ -142,7 +145,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       </button>
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                    <span className="text-sm text-gray-700 dark:text-gray-300 tabular-nums">
                       {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
                       {shift.original_start_time && (
                         <span className="text-xs text-gray-400 ml-2">

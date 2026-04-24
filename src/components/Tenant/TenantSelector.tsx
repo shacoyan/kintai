@@ -1,5 +1,7 @@
 // FILE: components/Tenant/TenantSelector.tsx
 import React from 'react';
+import { Building2, UserPlus } from 'lucide-react';
+import { EmptyState } from '../ui/EmptyState';
 import type { TenantWithRole } from '../../types';
 
 interface TenantSelectorProps {
@@ -11,9 +13,9 @@ interface TenantSelectorProps {
 
 const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCreateNew, onJoin }) => {
   const roleColors: Record<string, string> = {
-    owner: 'bg-blue-100 text-blue-800',
-    admin: 'bg-green-100 text-green-800',
-    staff: 'bg-gray-100 text-gray-800',
+    owner: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+    admin: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    staff: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
   };
 
   const roleLabels: Record<string, string> = {
@@ -23,11 +25,11 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">ワークスペースを選択</h1>
-          <p className="mt-2 text-sm text-gray-600">参加するワークスペースを選んでください</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">ワークスペースを選択</h1>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">参加するワークスペースを選んでください</p>
         </div>
 
         {tenants.length > 0 ? (
@@ -36,11 +38,11 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
               <button
                 key={tenant.id}
                 onClick={() => onSelect(tenant)}
-                className="w-full flex items-center justify-between p-4 bg-white shadow-sm rounded-lg border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <div className="min-w-0">
-                  <p className="text-base font-semibold text-gray-900 truncate">{tenant.name}</p>
-                  <p className="text-sm text-gray-500 truncate">{tenant.display_name}</p>
+                  <p className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate">{tenant.name}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{tenant.display_name}</p>
                 </div>
                 <span className={`ml-4 px-3 py-1 text-xs font-medium rounded-full ${roleColors[tenant.role] || roleColors.staff}`}>
                   {roleLabels[tenant.role] || roleLabels.staff}
@@ -49,22 +51,26 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
-            <p className="text-gray-500">所属しているワークスペースがありません</p>
-          </div>
+          <EmptyState
+            icon={<Building2 className="w-12 h-12 text-slate-400" />}
+            title="参加中のワークスペースがありません"
+            description="新しく作成するか、招待コードで既存のワークスペースに参加してください"
+          />
         )}
 
-        <div className="space-y-3 pt-4 border-t border-gray-200">
+        <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onCreateNew}
-            className="w-full py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="w-full btn-primary flex items-center justify-center"
           >
+            <Building2 className="w-4 h-4 mr-2" />
             新しいワークスペースを作成
           </button>
           <button
             onClick={onJoin}
-            className="w-full py-2.5 px-4 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            className="w-full btn-secondary flex items-center justify-center"
           >
+            <UserPlus className="w-4 h-4 mr-2" />
             招待コードで参加
           </button>
         </div>

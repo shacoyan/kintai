@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { format, startOfWeek, addDays, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Shift } from '../../types';
 
 type ViewMode = 'week' | '2week' | 'month';
@@ -104,10 +105,8 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+          <button onClick={() => navigate(-1)} aria-label="前月" className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 min-w-[120px] text-center">
             {viewMode === 'month'
@@ -115,10 +114,8 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
               : `${format(dates[0], 'M/d')} - ${format(dates[dates.length - 1], 'M/d')}`
             }
           </span>
-          <button onClick={() => navigate(1)} className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition">
-            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+          <button onClick={() => navigate(1)} aria-label="次月" className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
           <button
             onClick={() => setBaseDate(new Date())}
@@ -128,11 +125,13 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
           </button>
         </div>
 
-        <div className="flex rounded-md overflow-hidden border border-gray-300 dark:border-gray-600">
+        <div className="flex rounded-md overflow-hidden border border-gray-300 dark:border-gray-600" role="tablist">
           {(['week', '2week', 'month'] as ViewMode[]).map((mode) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
+              role="tab"
+              aria-selected={viewMode === mode}
               className={`px-2.5 py-1 text-xs font-medium transition-colors ${
                 viewMode === mode
                   ? 'bg-blue-600 text-white'
@@ -165,13 +164,20 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
             const isToday = dateStr === today;
             const dayShifts = shiftsByDate.get(dateStr) || [];
             const isCurrentMonth = viewMode === 'month' ? d.getMonth() === baseDate.getMonth() : true;
+            const dayOfWeek = d.getDay();
 
             return (
               <div
                 key={dateStr}
                 onClick={() => onDateClick(dateStr)}
-                className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-gray-100 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition ${
+                className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-gray-100 dark:border-gray-700 p-1 cursor-pointer transition ${
                   !isCurrentMonth ? 'bg-gray-50 dark:bg-gray-700/50 opacity-50' : ''
+                } ${
+                  isCurrentMonth && dayOfWeek === 6 ? 'bg-sky-50/40 dark:bg-sky-900/10' : ''
+                } ${
+                  isCurrentMonth && dayOfWeek === 0 ? 'bg-rose-50/40 dark:bg-rose-900/10' : ''
+                } ${
+                  isCurrentMonth ? 'hover:bg-gray-50 dark:hover:bg-gray-700' : ''
                 }`}
               >
                 <div className={`text-xs font-medium mb-0.5 ${

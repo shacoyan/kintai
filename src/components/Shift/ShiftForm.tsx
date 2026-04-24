@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Clock } from 'lucide-react';
 import type { ShiftPreset } from '../../types';
 
 interface ShiftFormProps {
@@ -56,8 +57,9 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
               key={p.id}
               type="button"
               onClick={() => { setStartTime(p.start_time.slice(0, 5)); setEndTime(p.end_time.slice(0, 5)); }}
-              className="px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-full hover:bg-blue-100 transition"
+              className="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded-full hover:bg-blue-100 transition"
             >
+              <Clock className="w-3.5 h-3.5 mr-1" />
               {p.name} ({p.start_time.slice(0, 5)}-{p.end_time.slice(0, 5)})
             </button>
           ))}
@@ -106,14 +108,14 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
         <button
           type="submit"
           disabled={submitting}
-          className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition"
+          className="btn-primary flex-1 disabled:opacity-50 transition"
         >
           {submitting ? '送信中...' : '申請'}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+          className="btn-ghost"
         >
           キャンセル
         </button>

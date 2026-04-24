@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { format, startOfWeek, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Circle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { ShiftPreference, ShiftPreferenceType } from '../../types';
 
 interface ShiftPreferenceCalendarProps {
@@ -23,10 +25,10 @@ const MEMBER_COLORS = [
   { bg: 'bg-teal-400', text: 'text-teal-700', light: 'bg-teal-100' },
 ];
 
-const PREFERENCE_STYLE: Record<ShiftPreferenceType, { icon: string; dot: string; label: string }> = {
-  preferred: { icon: '◎', dot: 'bg-blue-500', label: '希望' },
-  available: { icon: '○', dot: 'bg-green-500', label: '出勤可' },
-  unavailable: { icon: '✕', dot: 'bg-red-500', label: '出勤不可' },
+const PREFERENCE_STYLE: Record<ShiftPreferenceType, { Icon: LucideIcon; dot: string; label: string }> = {
+  preferred: { Icon: CheckCircle2, dot: 'bg-blue-500', label: '希望' },
+  available: { Icon: Circle, dot: 'bg-green-500', label: '出勤可' },
+  unavailable: { Icon: XCircle, dot: 'bg-red-500', label: '出勤不可' },
 };
 
 export function ShiftPreferenceCalendar({
@@ -86,9 +88,7 @@ export function ShiftPreferenceCalendar({
             className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             aria-label="前月"
           >
-            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
           <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 min-w-[120px] text-center">
             {format(baseDate, 'yyyy年M月', { locale: ja })}
@@ -98,9 +98,7 @@ export function ShiftPreferenceCalendar({
             className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             aria-label="次月"
           >
-            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
           <button
             onClick={() => setBaseDate(new Date())}
@@ -129,18 +127,25 @@ export function ShiftPreferenceCalendar({
 
         {/* セル */}
         <div className="grid grid-cols-7">
-          {dates.map((d) => {
+          {dates.map((d, index) => {
             const dateStr = format(d, 'yyyy-MM-dd');
             const isToday = dateStr === today;
             const isCurrentMonth = d.getMonth() === baseDate.getMonth();
             const dayPrefs = preferencesByDate.get(dateStr) || [];
+            const dayOfWeek = index % 7;
 
             return (
               <div
                 key={dateStr}
                 onClick={() => onDateClick(dateStr)}
-                className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-gray-100 dark:border-gray-700 p-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition ${
-                  !isCurrentMonth ? 'bg-gray-50 dark:bg-gray-700 opacity-50' : ''
+                className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-gray-100 dark:border-gray-700 p-1 cursor-pointer transition ${
+                  !isCurrentMonth
+                    ? 'bg-gray-50 dark:bg-gray-700 opacity-50'
+                    : dayOfWeek === 5
+                    ? 'bg-sky-50/40 dark:bg-sky-900/10 hover:bg-sky-100/50 dark:hover:bg-sky-900/20'
+                    : dayOfWeek === 6
+                    ? 'bg-rose-50/40 dark:bg-rose-900/10 hover:bg-rose-100/50 dark:hover:bg-rose-900/20'
+                    : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 <div
@@ -166,7 +171,7 @@ export function ShiftPreferenceCalendar({
                           className={`flex items-center gap-0.5 text-[10px] leading-tight px-1 py-0.5 rounded truncate ${color.light} ${color.text}`}
                         >
                           <span className="font-bold">{initial}</span>
-                          <span>{style.icon}</span>
+                          <style.Icon className="w-3 h-3" />
                         </div>
                       );
                     })
@@ -182,7 +187,9 @@ export function ShiftPreferenceCalendar({
                         <div key={pref.id} className="space-y-0.5">
                           <div className="flex items-center gap-0.5">
                             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${style.dot}`} />
-                            <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">{style.icon}</span>
+                            <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">
+                              <style.Icon className="w-3 h-3" />
+                            </span>
                           </div>
                           {timeLabel && (
                             <div className="text-[9px] text-gray-500 dark:text-gray-400 leading-tight">{timeLabel}</div>

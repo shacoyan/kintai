@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { CheckCircle2, XCircle, Circle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { ShiftPreference, ShiftPreferenceType, ShiftPreset } from '../../types';
 
 interface ShiftPreferenceFormProps {
@@ -23,10 +25,10 @@ for (let h = 0; h < 24; h++) {
   }
 }
 
-const PREFERENCE_OPTIONS: { value: ShiftPreferenceType; label: string; icon: string; colorClass: string }[] = [
-  { value: 'preferred', label: '希望', icon: '◎', colorClass: 'border-blue-400 bg-blue-50 text-blue-700' },
-  { value: 'available', label: '出勤可能', icon: '○', colorClass: 'border-green-400 bg-green-50 text-green-700' },
-  { value: 'unavailable', label: '出勤不可', icon: '✕', colorClass: 'border-red-400 bg-red-50 text-red-700' },
+const PREFERENCE_OPTIONS: { value: ShiftPreferenceType; label: string; Icon: LucideIcon; colorClass: string }[] = [
+  { value: 'preferred', label: '希望', Icon: CheckCircle2, colorClass: 'border-blue-400 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' },
+  { value: 'available', label: '出勤可能', Icon: Circle, colorClass: 'border-green-400 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300' },
+  { value: 'unavailable', label: '出勤不可', Icon: XCircle, colorClass: 'border-red-400 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300' },
 ];
 
 export function ShiftPreferenceForm({
@@ -110,12 +112,14 @@ export function ShiftPreferenceForm({
               onClick={() => setPreferenceType(opt.value)}
               className={`flex flex-col items-center gap-1 px-3 py-3 rounded-lg border-2 text-sm font-medium transition ${
                 preferenceType === opt.value
-                  ? opt.colorClass + ' border-opacity-100'
+                  ? opt.colorClass + ' border-opacity-100 ring-2 ring-offset-1'
                   : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
               }`}
             >
-              <span className="text-lg leading-none">{opt.icon}</span>
-              <span className="text-xs">{opt.label}</span>
+              <span className="inline-flex items-center text-xs">
+                <opt.Icon className="w-4 h-4 mr-1" />
+                {opt.label}
+              </span>
             </button>
           ))}
         </div>
@@ -191,7 +195,7 @@ export function ShiftPreferenceForm({
         <button
           type="submit"
           disabled={submitting || deleting}
-          className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition"
+          className="btn-primary flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition"
         >
           {submitting ? '送信中...' : existingPreference ? '更新' : '登録'}
         </button>
@@ -209,7 +213,7 @@ export function ShiftPreferenceForm({
           type="button"
           onClick={onCancel}
           disabled={submitting || deleting}
-          className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition"
+          className="btn-ghost px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition"
         >
           キャンセル
         </button>

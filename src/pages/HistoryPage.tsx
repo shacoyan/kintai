@@ -17,6 +17,9 @@ import {
   parseISO,
   differenceInMinutes,
 } from 'date-fns';
+import { ja } from 'date-fns/locale';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ListRowSkeleton } from '../components/ui/Skeleton';
 
 interface CorrectionModalState {
   isOpen: boolean;
@@ -267,21 +270,17 @@ export function HistoryPage() {
             aria-label="前月"
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-            {format(currentDate, 'yyyy年M月')}
+            {format(currentDate, 'yyyy年M月', { locale: ja })}
           </h2>
           <button
             onClick={handleNextMonth}
             aria-label="翌月"
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
@@ -316,8 +315,10 @@ export function HistoryPage() {
       <MonthlySummary summary={monthlySummary} />
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
+          <ListRowSkeleton />
+          <ListRowSkeleton />
+          <ListRowSkeleton />
         </div>
       ) : viewMode === 'list' ? (
         /* リストビュー */

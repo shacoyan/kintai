@@ -64,7 +64,7 @@ export const LoginForm: React.FC = () => {
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             パスワード
           </label>
           <input
@@ -81,7 +81,7 @@ export const LoginForm: React.FC = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+          className="w-full btn-primary"
         >
           {loading ? '処理中...' : isLogin ? 'ログイン' : '新規登録'}
         </button>
@@ -93,7 +93,7 @@ export const LoginForm: React.FC = () => {
             setIsLogin(!isLogin);
             setError(null);
           }}
-          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline focus:outline-none font-medium"
+          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 font-medium"
         >
           {isLogin ? 'アカウントをお持ちでない方はこちら' : '既にアカウントをお持ちの方はこちら'}
         </button>
