@@ -273,7 +273,7 @@ export function HistoryPage() {
             <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-            {format(currentDate, 'yyyy年M月', { locale: ja })}
+            {format(currentDate, 'yyyy年M月(E)', { locale: ja })}
           </h2>
           <button
             onClick={handleNextMonth}
