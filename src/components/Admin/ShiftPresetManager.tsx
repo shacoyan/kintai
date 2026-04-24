@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
+import { Clock, CalendarClock, Trash2 } from 'lucide-react';
 import { useShiftPreset } from '../../hooks/useShiftPreset';
 import { useToast } from '../../contexts/ToastContext';
+import { PageSkeleton } from '../ui/Skeleton';
+import { EmptyState } from '../ui/EmptyState';
 
 interface ShiftPresetManagerProps {
   tenantId: string;
@@ -49,31 +52,31 @@ export function ShiftPresetManager({ tenantId }: ShiftPresetManagerProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">シフトプリセット</h2>
-        <p className="mt-1 text-sm text-gray-500">よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます</p>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">シフトプリセット</h2>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます</p>
       </div>
 
       {/* 追加フォーム */}
-      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[120px]">
-            <label className="block text-xs font-medium text-gray-600 mb-1">プリセット名</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">プリセット名</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               placeholder="例: 早番"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">開始</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">開始</label>
             <select
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="block px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="block px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
               {TIME_OPTIONS.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -81,11 +84,11 @@ export function ShiftPresetManager({ tenantId }: ShiftPresetManagerProps) {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">終了</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">終了</label>
             <select
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="block px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="block px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
             >
               {TIME_OPTIONS.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -103,28 +106,32 @@ export function ShiftPresetManager({ tenantId }: ShiftPresetManagerProps) {
       </div>
 
       {/* プリセット一覧 */}
-      <div className="divide-y divide-gray-200">
+      <div className="divide-y divide-gray-200 dark:divide-gray-700">
         {loading && presets.length === 0 ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-          </div>
+          <PageSkeleton />
         ) : presets.length === 0 ? (
-          <div className="px-6 py-8 text-center text-gray-500">プリセットが未登録です</div>
+          <EmptyState
+            icon={<CalendarClock className="w-12 h-12 text-slate-400" />}
+            title="プリセットが未登録です"
+            description="よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます"
+          />
         ) : (
           presets.map((preset) => (
-            <div key={preset.id} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
+            <div key={preset.id} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
               <div className="flex items-center gap-3">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-sm font-medium">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium">
                   {preset.name}
                 </span>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-gray-300 inline-flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
                   {preset.start_time.slice(0, 5)} - {preset.end_time.slice(0, 5)}
                 </span>
               </div>
               <button
                 onClick={() => handleDelete(preset.id)}
-                className="px-3 py-1 text-xs font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition"
+                className="btn-danger inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition"
               >
+                <Trash2 className="w-3.5 h-3.5" />
                 削除
               </button>
             </div>

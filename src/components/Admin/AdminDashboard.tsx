@@ -14,6 +14,9 @@ import { ShiftPresetManager } from './ShiftPresetManager';
 import { StoreManagement } from './StoreManagement';
 import { ShiftMismatchAlert } from './ShiftMismatchAlert';
 import { detectMismatches } from '../../utils/shiftMismatch';
+import { QrCode, Check, Copy } from 'lucide-react';
+import { PageSkeleton } from '../ui/Skeleton';
+import { ErrorBanner } from '../ui/ErrorBanner';
 import type { Shift, AttendanceRecord } from '../../types';
 
 interface AdminDashboardProps {
@@ -171,14 +174,10 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 )}
               </div>
               {reviewError && (
-                <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-900/20 dark:border-red-800">
-                  <p className="text-sm text-red-600 dark:text-red-400">{reviewError}</p>
-                </div>
+                <ErrorBanner message={reviewError} />
               )}
               {correctionLoading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                </div>
+                <PageSkeleton />
               ) : (
                 <CorrectionList requests={pendingRequests} onReview={handleReview} />
               )}
@@ -197,9 +196,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
         {activeTab === 'leaves' && (
           <div className="space-y-6">
             {leaveLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              </div>
+              <PageSkeleton />
             ) : (
               <LeaveList
                 leaves={allLeaves}
@@ -237,9 +234,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               </button>
             </div>
             {mismatchLoading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              </div>
+              <PageSkeleton />
             ) : (
               <ShiftMismatchAlert
                 mismatches={mismatches}
@@ -256,33 +251,51 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
     <div className="space-y-6">
       {currentTenant && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">招待コード（メンバーに共有してください）</p>
-            <p className="text-2xl font-mono font-bold tracking-widest text-gray-900 dark:text-gray-100">
-              {currentTenant.invite_code}
-            </p>
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg">
+              <QrCode className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">招待コード（メンバーに共有してください）</p>
+              <p className="text-2xl font-mono font-bold tracking-widest text-gray-900 dark:text-gray-100">
+                {currentTenant.invite_code}
+              </p>
+            </div>
           </div>
           <button
             onClick={handleCopyCode}
-            className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+            className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 inline-flex items-center space-x-2"
           >
-            {copied ? 'コピーしました' : 'コピー'}
+            {copied ? (
+              <>
+                <Check className="w-4 h-4" />
+                <span>コピーしました</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                <span>コピー</span>
+              </>
+            )}
           </button>
         </div>
       )}
 
       {/* Mobile tabs - horizontal scroll */}
       <div className="md:hidden border-b border-gray-200 dark:border-gray-700 overflow-x-auto -mx-4 px-4">
-        <nav className="flex space-x-4 min-w-max">
+        <nav role="tablist" className="flex space-x-4 min-w-max" style={{ scrollSnapType: 'x mandatory' }}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              role="tab"
+              aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition ${
                 activeTab === tab.id
                   ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
               }`}
+              style={{ scrollSnapAlign: 'start' }}
             >
               {tab.label}
               {tab.id === 'leaves' && pendingLeaves.length > 0 && (
@@ -306,7 +319,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       </div>
 
       {/* Mobile content */}
-      <div className="md:hidden">
+      <div className="md:hidden" role="tabpanel">
         {renderContent()}
       </div>
 
@@ -319,6 +332,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                aria-current={activeTab === tab.id ? 'page' : undefined}
                 className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
                   activeTab === tab.id
                     ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium border-l-2 border-blue-600 dark:border-blue-400 rounded-l-none'
@@ -347,7 +361,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
         </nav>
 
         {/* Content */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0" role="tabpanel">
           {renderContent()}
         </div>
       </div>

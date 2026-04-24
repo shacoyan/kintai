@@ -1,6 +1,8 @@
 import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { Ban, AlertTriangle, Clock, UserX } from 'lucide-react';
 import type { ShiftMismatch } from '../../utils/shiftMismatch';
+import { EmptyState } from '../ui/EmptyState';
 
 interface ShiftMismatchAlertProps {
   mismatches: ShiftMismatch[];
@@ -8,13 +10,13 @@ interface ShiftMismatchAlertProps {
   onRequestCorrection?: (userId: string, date: string) => void;
 }
 
-function typeIcon(type: ShiftMismatch['type']): string {
+function typeIcon(type: ShiftMismatch['type']): React.ReactNode {
   switch (type) {
-    case 'no_record': return '🚫';
-    case 'late':      return '⚠️';
-    case 'early_leave': return '⏰';
-    case 'absent':    return '🚫';
-    default:          return '⚠️';
+    case 'no_record':   return <Ban className="w-4 h-4 text-red-600 dark:text-red-400" />;
+    case 'late':        return <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />;
+    case 'early_leave': return <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />;
+    case 'absent':      return <UserX className="w-4 h-4 text-red-600 dark:text-red-400" />;
+    default:            return <AlertTriangle className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
   }
 }
 
@@ -71,9 +73,10 @@ export function ShiftMismatchAlert({
 }: ShiftMismatchAlertProps) {
   if (mismatches.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-        <p className="text-gray-500 dark:text-gray-400 text-sm">シフト不一致はありません</p>
-      </div>
+      <EmptyState
+        title="シフト不一致はありません"
+        description="今月のシフトと実績は一致しています"
+      />
     );
   }
 
@@ -119,7 +122,7 @@ export function ShiftMismatchAlert({
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="text-base">{typeIcon(m.type)}</span>
+                          {typeIcon(m.type)}
                           <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">{name}</span>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeClass(m.type)}`}>
                             {typeLabel(m.type)}

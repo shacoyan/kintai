@@ -1,9 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
+import type React from 'react';
 import { useAdmin } from '../../hooks/useAdmin';
 import { format, parseISO, differenceInMinutes, getDaysInMonth } from 'date-fns';
 import type { AttendanceRecord, Shift } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
+import { AlertTriangle, Users } from 'lucide-react';
+import { BottomSheet } from '../ui/BottomSheet';
+import { EmptyState } from '../ui/EmptyState';
 
 interface AttendanceAdminProps {
   tenantId: string;
@@ -161,7 +165,6 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
     const record = attendanceMap.get(key) || null;
 
     if (selectedCell?.userId === userId && selectedCell?.date === dateStr) {
-      // 同じセルをクリックしたら閉じる
       setSelectedCell(null);
       return;
     }
@@ -180,7 +183,6 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
     setSaving(true);
     try {
       if (selectedCell.record) {
-        // 既存レコードを更新
         const clockInISO = edit.clock_in ? new Date(edit.clock_in).toISOString() : selectedCell.record.clock_in;
         const clockOutISO = edit.clock_out ? new Date(edit.clock_out).toISOString() : selectedCell.record.clock_out;
         let totalWorkMinutes: number | undefined;
@@ -198,7 +200,6 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
         });
         showToast('勤怠記録を更新しました', 'success');
       } else {
-        // 新規レコードを作成
         if (!edit.clock_in) {
           showToast('出勤時刻を入力してください', 'error');
           setSaving(false);
@@ -308,15 +309,15 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
         {/* 凡例 */}
         <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded bg-green-100 dark:bg-green-900/40 border border-green-300 dark:border-green-700" />
+            <span className="inline-block w-3 h-3 rounded bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700" />
             出勤（〜8h）
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded bg-purple-100 dark:bg-purple-900/40 border border-purple-300 dark:border-purple-700" />
+            <span className="inline-block w-3 h-3 rounded bg-purple-50 dark:bg-purple-900/30 border border-purple-300 dark:border-purple-700" />
             残業（8h超）
           </span>
           <span className="flex items-center gap-1">
-            <span className="text-red-500">⚠️</span>
+            <AlertTriangle className="w-4 h-4 text-red-500" aria-hidden="true" />
             シフトあり・勤怠なし
           </span>
           <span className="flex items-center gap-1">
@@ -330,10 +331,9 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       {loaded && members.length > 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="border-collapse text-xs" style={{ minWidth: `${40 + daysInMonth * 52}px` }}>
+            <table className="border-collapse text-xs tabular-nums" style={{ minWidth: `${40 + daysInMonth * 52}px` }}>
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700">
-                  {/* スタッフ名列（sticky） */}
                   <th
                     className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-700 border-b border-r border-gray-200 dark:border-gray-600 px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap"
                     style={{ minWidth: '100px' }}
@@ -348,7 +348,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                         key={day}
                         className={`border-b border-r border-gray-200 dark:border-gray-600 py-1 font-medium text-center whitespace-nowrap ${
                           weekend
-                            ? 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
+                            ? 'text-red-500 dark:text-red-400 bg-rose-50/50 dark:bg-rose-900/10'
                             : 'text-gray-600 dark:text-gray-300'
                         }`}
                         style={{ minWidth: '48px', width: '48px' }}
@@ -371,7 +371,6 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                   const { workDays, totalMin } = getMemberSummary(member.user_id);
                   return (
                     <tr key={member.user_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      {/* スタッフ名（sticky） */}
                       <td
                         className="sticky left-0 z-10 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-600 px-3 py-2 font-medium text-gray-800 dark:text-gray-200 whitespace-nowrap"
                         style={{ minWidth: '100px' }}
@@ -379,7 +378,6 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                         {member.display_name}
                       </td>
 
-                      {/* 各日のセル */}
                       {days.map((day) => {
                         const dateStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                         const key = `${member.user_id}__${dateStr}`;
@@ -391,7 +389,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
                         let cellContent: React.ReactNode = null;
                         let cellBg = weekend
-                          ? 'bg-red-50 dark:bg-red-900/10'
+                          ? 'bg-rose-50/50 dark:bg-rose-900/10'
                           : 'bg-white dark:bg-gray-800';
                         let textColor = '';
 
@@ -400,23 +398,23 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                           const isOvertime = workMin > OVERTIME_THRESHOLD_MINUTES;
                           cellBg = isOvertime
                             ? 'bg-purple-50 dark:bg-purple-900/30'
-                            : 'bg-green-50 dark:bg-green-900/30';
+                            : 'bg-emerald-50 dark:bg-emerald-900/30';
                           textColor = isOvertime
                             ? 'text-purple-700 dark:text-purple-300 font-semibold'
-                            : 'text-green-700 dark:text-green-300 font-semibold';
+                            : 'text-emerald-700 dark:text-emerald-300 font-semibold';
                           cellContent = (
                             <span className={textColor}>{fmtMinutes(workMin)}</span>
                           );
                         } else if (hasShift) {
-                          // シフトあり・勤怠なし
-                          cellContent = <span className="text-red-500 text-sm">⚠️</span>;
-                          cellBg = 'bg-red-50 dark:bg-red-900/20';
+                          cellContent = <AlertTriangle className="w-4 h-4 text-red-500 mx-auto" aria-label="シフトあり・勤怠なし" />;
+                          cellBg = 'bg-rose-50 dark:bg-rose-900/20';
                         }
 
                         return (
                           <td
                             key={day}
                             onClick={() => handleCellClick(member.user_id, day)}
+                            aria-selected={isSelected}
                             className={`
                               border-r border-gray-200 dark:border-gray-600 p-1 text-center cursor-pointer
                               transition-all select-none
@@ -430,7 +428,6 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                         );
                       })}
 
-                      {/* 集計列 */}
                       <td className="border-r border-gray-200 dark:border-gray-600 px-2 py-2 text-center text-gray-700 dark:text-gray-300 whitespace-nowrap">
                         {workDays}日
                       </td>
@@ -447,139 +444,137 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       )}
 
       {loaded && members.length === 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center text-gray-500 dark:text-gray-400">
-          メンバーが登録されていません
-        </div>
+        <EmptyState
+          icon={<Users className="w-12 h-12 text-slate-400" />}
+          title="メンバーが登録されていません"
+          description="メンバー管理タブからメンバーを追加してください"
+        />
       )}
 
-      {/* 詳細・編集パネル */}
-      {selectedCell && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-blue-200 dark:border-blue-700 p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-base font-semibold text-gray-800 dark:text-gray-200">
-              {selectedMemberName} — {selectedCell.date}
-              {selectedCell.record ? (
-                <span className="ml-2 text-xs font-normal text-green-600 dark:text-green-400">記録あり</span>
-              ) : (
-                <span className="ml-2 text-xs font-normal text-gray-400 dark:text-gray-500">記録なし（新規登録）</span>
+      {/* 詳細・編集 BottomSheet */}
+      <BottomSheet
+        isOpen={!!selectedCell}
+        onClose={() => setSelectedCell(null)}
+        title={selectedCell ? `${selectedMemberName} - ${selectedCell.date}` : ''}
+        description={
+          selectedCell
+            ? selectedCell.record
+              ? '記録あり'
+              : '新規登録'
+            : undefined
+        }
+        footer={
+          selectedCell ? (
+            <div className="flex items-center gap-3 flex-wrap">
+              <button
+                onClick={handleSave}
+                disabled={saving || (!edit.clock_in && !selectedCell.record)}
+                className="bg-blue-600 text-white px-5 py-2 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {saving ? '保存中...' : selectedCell.record ? '更新' : '登録'}
+              </button>
+
+              {selectedCell.record && (
+                confirmDelete ? (
+                  <span className="inline-flex items-center gap-2">
+                    <button
+                      onClick={handleDelete}
+                      disabled={saving}
+                      className="btn-danger bg-red-600 text-white px-4 py-2 rounded-md text-sm hover:bg-red-700 disabled:opacity-50 transition"
+                    >
+                      削除確認
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-md text-sm hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                    >
+                      キャンセル
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setConfirmDelete(true)}
+                    className="btn-danger bg-red-600 text-white px-4 py-2 rounded-md text-sm hover:bg-red-700 transition"
+                  >
+                    削除
+                  </button>
+                )
               )}
-            </h4>
-            <button
-              onClick={() => setSelectedCell(null)}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl leading-none"
-              aria-label="閉じる"
-            >
-              ×
-            </button>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">出勤時刻</label>
-              <input
-                type="datetime-local"
-                value={edit.clock_in}
-                onChange={(e) => setEdit((prev) => ({ ...prev, clock_in: e.target.value }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              />
+              <button
+                onClick={() => setSelectedCell(null)}
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition"
+              >
+                閉じる
+              </button>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">退勤時刻</label>
-              <input
-                type="datetime-local"
-                value={edit.clock_out}
-                onChange={(e) => setEdit((prev) => ({ ...prev, clock_out: e.target.value }))}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
-              />
-            </div>
-          </div>
-
-          {/* 既存レコードがある場合は休憩も表示 */}
-          {selectedCell.record && selectedCell.record.breaks && selectedCell.record.breaks.length > 0 && (
-            <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">休憩</p>
-              <div className="space-y-1">
-                {selectedCell.record.breaks.map((b, idx) => (
-                  <div key={b.id} className="text-sm text-gray-600 dark:text-gray-400 flex gap-2">
-                    <span>#{idx + 1}</span>
-                    <span>{b.start_time ? format(parseISO(b.start_time), 'HH:mm') : '—'}</span>
-                    <span>〜</span>
-                    <span>{b.end_time ? format(parseISO(b.end_time), 'HH:mm') : '打刻中'}</span>
-                    {b.start_time && b.end_time && (
-                      <span className="text-gray-400">
-                        ({fmtMinutes(differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time)))})
-                      </span>
-                    )}
-                  </div>
-                ))}
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  合計休憩: {fmtMinutes(calcBreakMinutes(selectedCell.record))}
-                </p>
+          ) : undefined
+        }
+      >
+        {selectedCell && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">出勤時刻</label>
+                <input
+                  type="datetime-local"
+                  value={edit.clock_in}
+                  onChange={(e) => setEdit((prev) => ({ ...prev, clock_in: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">退勤時刻</label>
+                <input
+                  type="datetime-local"
+                  value={edit.clock_out}
+                  onChange={(e) => setEdit((prev) => ({ ...prev, clock_out: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                />
               </div>
             </div>
-          )}
 
-          {/* 労働時間プレビュー */}
-          {edit.clock_in && edit.clock_out && (() => {
-            const grossMin = differenceInMinutes(
-              new Date(edit.clock_out),
-              new Date(edit.clock_in)
-            );
-            const breakMin = selectedCell.record ? calcBreakMinutes(selectedCell.record) : 0;
-            const workMin = Math.max(0, grossMin - breakMin);
-            return (
-              <p className="text-sm text-blue-600 dark:text-blue-400">
-                労働時間（予算）: {fmtMinutes(workMin)}
-                {breakMin > 0 && ` (休憩 ${fmtMinutes(breakMin)} 除く)`}
-              </p>
-            );
-          })()}
-
-          <div className="flex items-center gap-3 flex-wrap">
-            <button
-              onClick={handleSave}
-              disabled={saving || (!edit.clock_in && !selectedCell.record)}
-              className="bg-blue-600 text-white px-5 py-2 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              {saving ? '保存中...' : selectedCell.record ? '更新' : '登録'}
-            </button>
-
-            {selectedCell.record && (
-              confirmDelete ? (
-                <span className="inline-flex items-center gap-2">
-                  <button
-                    onClick={handleDelete}
-                    disabled={saving}
-                    className="bg-red-600 text-white px-4 py-2 rounded-md text-sm hover:bg-red-700 disabled:opacity-50 transition"
-                  >
-                    削除確認
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(false)}
-                    className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-md text-sm hover:bg-gray-300 dark:hover:bg-gray-500 transition"
-                  >
-                    キャンセル
-                  </button>
-                </span>
-              ) : (
-                <button
-                  onClick={() => setConfirmDelete(true)}
-                  className="bg-red-600 text-white px-4 py-2 rounded-md text-sm hover:bg-red-700 transition"
-                >
-                  削除
-                </button>
-              )
+            {selectedCell.record && selectedCell.record.breaks && selectedCell.record.breaks.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">休憩</p>
+                <div className="space-y-1">
+                  {selectedCell.record.breaks.map((b, idx) => (
+                    <div key={b.id} className="text-sm text-gray-600 dark:text-gray-400 flex gap-2 tabular-nums">
+                      <span>#{idx + 1}</span>
+                      <span>{b.start_time ? format(parseISO(b.start_time), 'HH:mm') : '—'}</span>
+                      <span>〜</span>
+                      <span>{b.end_time ? format(parseISO(b.end_time), 'HH:mm') : '打刻中'}</span>
+                      {b.start_time && b.end_time && (
+                        <span className="text-gray-400">
+                          ({fmtMinutes(differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time)))})
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                  <p className="text-sm text-gray-500 dark:text-gray-400 tabular-nums">
+                    合計休憩: {fmtMinutes(calcBreakMinutes(selectedCell.record))}
+                  </p>
+                </div>
+              </div>
             )}
 
-            <button
-              onClick={() => setSelectedCell(null)}
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition"
-            >
-              閉じる
-            </button>
+            {edit.clock_in && edit.clock_out && (() => {
+              const grossMin = differenceInMinutes(
+                new Date(edit.clock_out),
+                new Date(edit.clock_in)
+              );
+              const breakMin = selectedCell.record ? calcBreakMinutes(selectedCell.record) : 0;
+              const workMin = Math.max(0, grossMin - breakMin);
+              return (
+                <p className="text-sm text-blue-600 dark:text-blue-400 tabular-nums">
+                  労働時間（予算）: {fmtMinutes(workMin)}
+                  {breakMin > 0 && ` (休憩 ${fmtMinutes(breakMin)} 除く)`}
+                </p>
+              );
+            })()}
           </div>
-        </div>
-      )}
+        )}
+      </BottomSheet>
     </div>
   );
 }
