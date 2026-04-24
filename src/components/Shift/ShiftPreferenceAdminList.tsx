@@ -9,6 +9,7 @@ interface ShiftPreferenceAdminListProps {
   onApprove: (id: string, startTime?: string, endTime?: string) => Promise<void>;
   onReject: (id: string) => Promise<void>;
   onRefresh: () => void;
+  historyMode?: boolean;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -44,11 +45,12 @@ export function ShiftPreferenceAdminList({
   onApprove,
   onReject,
   onRefresh,
+  historyMode = false,
 }: ShiftPreferenceAdminListProps) {
   const [showAll, setShowAll] = useState(false);
   const [cardStates, setCardStates] = useState<Map<string, CardState>>(new Map());
 
-  const displayed = showAll ? preferences : preferences.filter((p) => p.status === 'pending');
+  const displayed = historyMode ? preferences : (showAll ? preferences : preferences.filter((p) => p.status === 'pending'));
 
   function getState(id: string, pref: ShiftPreference): CardState {
     return cardStates.get(id) ?? {
@@ -117,24 +119,32 @@ export function ShiftPreferenceAdminList({
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-          シフト希望の承認
-          {pendingCount > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-              {pendingCount}件 未対応
+          {historyMode ? 'シフト希望の履歴' : 'シフト希望の承認'}
+          {historyMode ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+              全 {preferences.length} 件
             </span>
+          ) : (
+            pendingCount > 0 && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                {pendingCount}件 未対応
+              </span>
+            )
           )}
         </h3>
-        <button
-          onClick={() => setShowAll((v) => !v)}
-          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          {showAll ? '未対応のみ表示' : '全て表示'}
-        </button>
+        {!historyMode && (
+          <button
+            onClick={() => setShowAll((v) => !v)}
+            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            {showAll ? '未対応のみ表示' : '全て表示'}
+          </button>
+        )}
       </div>
 
       {displayed.length === 0 && (
         <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
-          {showAll ? '希望がありません' : '未対応の希望はありません'}
+          {historyMode ? '履歴はありません' : (showAll ? '希望がありません' : '未対応の希望はありません')}
         </p>
       )}
 
@@ -216,12 +226,12 @@ export function ShiftPreferenceAdminList({
               </div>
 
               {/* エラー表示 */}
-              {state.error && (
+              {!historyMode && state.error && (
                 <p className="text-xs text-red-600 dark:text-red-400">{state.error}</p>
               )}
 
               {/* 時間指定エディタ */}
-              {state.showTimeEditor && isPending && (
+              {!historyMode && state.showTimeEditor && isPending && (
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
@@ -259,7 +269,7 @@ export function ShiftPreferenceAdminList({
               )}
 
               {/* アクションボタン (pending のみ) */}
-              {isPending && (
+              {!historyMode && isPending && (
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {/* 承認ボタン (出勤不可以外) */}
                   {pref.preference_type !== 'unavailable' && !state.showTimeEditor && (

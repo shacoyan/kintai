@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
+import { Clock, History, CheckCircle2, Circle, XCircle } from 'lucide-react';
 import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
 import { useLeave } from '../hooks/useLeave';
@@ -15,8 +16,10 @@ import { LeaveList } from '../components/Leave/LeaveList';
 import { ShiftPreferenceCalendar } from '../components/Shift/ShiftPreferenceCalendar';
 import { ShiftPreferenceForm } from '../components/Shift/ShiftPreferenceForm';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
+import type { ShiftPreferenceType } from '../types';
 
 type TabId = 'shift' | 'leave' | 'preference';
+type PreferenceView = 'current' | 'history';
 
 export function ShiftPage() {
   const { currentTenant, myRole } = useTenant();
@@ -34,6 +37,29 @@ export function ShiftPage() {
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [selectedPrefDate, setSelectedPrefDate] = useState<string | null>(null);
   const [showAllMembersPrefs, setShowAllMembersPrefs] = useState(false);
+  const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
+
+  const pendingPreferenceCount = useMemo(
+    () => allPreferences.filter(p => p.status === 'pending').length,
+    [allPreferences]
+  );
+
+  const preferencesForCalendar = useMemo(() => {
+    const base = isAdmin && showAllMembersPrefs ? allPreferences : myPreferences;
+    return base.filter(p => p.status !== 'rejected');
+  }, [isAdmin, showAllMembersPrefs, allPreferences, myPreferences]);
+
+  const preferencesForAdminList = useMemo(() => {
+    if (preferenceView === 'current') {
+      return allPreferences.filter(p => p.status !== 'rejected');
+    }
+    return [...allPreferences].sort((a, b) => b.date.localeCompare(a.date));
+  }, [preferenceView, allPreferences]);
+
+  const myPreferencesForHistory = useMemo(
+    () => [...myPreferences].sort((a, b) => b.date.localeCompare(a.date)),
+    [myPreferences]
+  );
 
   const fetchRange = useCallback(() => {
     const now = new Date();
@@ -90,7 +116,7 @@ export function ShiftPage() {
 
   const handlePrefSubmit = async (
     date: string,
-    type: import('../types').ShiftPreferenceType,
+    type: ShiftPreferenceType,
     startTime?: string,
     endTime?: string,
     note?: string,
@@ -109,7 +135,7 @@ export function ShiftPage() {
   const handleApprovePreference = async (id: string, startTime?: string, endTime?: string) => {
     await approvePreference(id, startTime, endTime);
     fetchPreferenceRange();
-    fetchRange(); // シフトテーブルも更新
+    fetchRange();
   };
 
   const handleRejectPreference = async (id: string) => {
@@ -123,9 +149,6 @@ export function ShiftPage() {
   }, [isAdmin, shifts, members, getLaborCostEstimate]);
 
   const pendingShifts = shifts.filter(s => s.status === 'pending');
-
-  // 管理者の希望タブ: 常に全員の希望を表示、スタッフは自分の希望のみ
-  const displayedPreferences = isAdmin ? allPreferences : myPreferences;
 
   if (!tenantId) return null;
 
@@ -153,6 +176,11 @@ export function ShiftPage() {
                   {pendingShifts.length}
                 </span>
               )}
+              {tab.id === 'preference' && isAdmin && pendingPreferenceCount > 0 && (
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                  {pendingPreferenceCount}
+                </span>
+              )}
             </button>
           ))}
         </nav>
@@ -168,7 +196,7 @@ export function ShiftPage() {
 
           <ShiftCalendar
             shifts={shifts}
-            onDateClick={() => {/* スタッフはシフトを直接申請しない */}}
+            onDateClick={() => {}}
             onShiftClick={(shift) => setSelectedShift(shift)}
             memberNames={isAdmin ? memberNames : undefined}
           />
@@ -214,79 +242,180 @@ export function ShiftPage() {
             </div>
           )}
 
-          {/* 管理者: 全員表示トグル */}
-          {isAdmin && (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600 dark:text-gray-400">カレンダー表示:</span>
-              <button
-                onClick={() => setShowAllMembersPrefs(false)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
-                  !showAllMembersPrefs
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                自分の希望
-              </button>
-              <button
-                onClick={() => setShowAllMembersPrefs(true)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
-                  showAllMembersPrefs
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
-              >
-                全員の希望
-              </button>
-            </div>
-          )}
-
-          <ShiftPreferenceCalendar
-            preferences={isAdmin && showAllMembersPrefs ? allPreferences : myPreferences}
-            onDateClick={(date) => {
-              // 管理者が全員表示中はカレンダークリックで希望フォームを開かない
-              if (isAdmin && showAllMembersPrefs) return;
-              setSelectedPrefDate(date);
-            }}
-            memberNames={isAdmin && showAllMembersPrefs ? memberNames : undefined}
-            isAdmin={isAdmin && showAllMembersPrefs}
-          />
-
-          {/* スタッフ: 希望入力フォーム */}
-          {selectedPrefDate && (
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-              onClick={() => setSelectedPrefDate(null)}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPreferenceView('current')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition ${
+                preferenceView === 'current'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
             >
-              <div
-                role="dialog"
-                aria-modal="true"
-                className="w-full max-w-md mx-4"
-                onClick={(e: React.MouseEvent) => e.stopPropagation()}
-              >
-                <ShiftPreferenceForm
-                  date={selectedPrefDate}
-                  existingPreference={myPreferences.find((p) => p.date === selectedPrefDate)}
-                  onSubmit={handlePrefSubmit}
-                  onDelete={handlePrefDelete}
-                  onCancel={() => setSelectedPrefDate(null)}
-                  presets={presets}
-                />
-              </div>
-            </div>
+              <Clock className="w-3.5 h-3.5" />
+              現在
+            </button>
+            <button
+              onClick={() => setPreferenceView('history')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition ${
+                preferenceView === 'history'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              履歴
+            </button>
+          </div>
+
+          {preferenceView === 'current' && (
+            <>
+              {isAdmin && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">カレンダー表示:</span>
+                  <button
+                    onClick={() => setShowAllMembersPrefs(false)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
+                      !showAllMembersPrefs
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    自分の希望
+                  </button>
+                  <button
+                    onClick={() => setShowAllMembersPrefs(true)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
+                      showAllMembersPrefs
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    全員の希望
+                  </button>
+                </div>
+              )}
+
+              <ShiftPreferenceCalendar
+                preferences={preferencesForCalendar}
+                onDateClick={(date) => {
+                  if (isAdmin && showAllMembersPrefs) return;
+                  setSelectedPrefDate(date);
+                }}
+                memberNames={isAdmin && showAllMembersPrefs ? memberNames : undefined}
+                isAdmin={isAdmin && showAllMembersPrefs}
+              />
+
+              {selectedPrefDate && (
+                <div
+                  className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                  onClick={() => setSelectedPrefDate(null)}
+                >
+                  <div
+                    role="dialog"
+                    aria-modal="true"
+                    className="w-full max-w-md mx-4"
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                  >
+                    <ShiftPreferenceForm
+                      date={selectedPrefDate}
+                      existingPreference={myPreferences.find((p) => p.date === selectedPrefDate)}
+                      onSubmit={handlePrefSubmit}
+                      onDelete={handlePrefDelete}
+                      onCancel={() => setSelectedPrefDate(null)}
+                      presets={presets}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {isAdmin && (
+                <div className="mt-4">
+                  <ShiftPreferenceAdminList
+                    preferences={preferencesForAdminList}
+                    memberNames={memberNames}
+                    onApprove={handleApprovePreference}
+                    onReject={handleRejectPreference}
+                    onRefresh={fetchPreferenceRange}
+                    historyMode={false}
+                  />
+                </div>
+              )}
+            </>
           )}
 
-          {/* 管理者: 希望承認リスト */}
-          {isAdmin && (
-            <div className="mt-4">
-              <ShiftPreferenceAdminList
-                preferences={displayedPreferences}
-                memberNames={memberNames}
-                onApprove={handleApprovePreference}
-                onReject={handleRejectPreference}
-                onRefresh={fetchPreferenceRange}
-              />
-            </div>
+          {preferenceView === 'history' && (
+            <>
+              {isAdmin && (
+                <div className="mt-4">
+                  <ShiftPreferenceAdminList
+                    preferences={preferencesForAdminList}
+                    memberNames={memberNames}
+                    onApprove={handleApprovePreference}
+                    onReject={handleRejectPreference}
+                    onRefresh={fetchPreferenceRange}
+                    historyMode
+                  />
+                </div>
+              )}
+
+              {!isAdmin && (
+                <div className="space-y-3">
+                  {myPreferencesForHistory.length === 0 && (
+                    <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
+                      履歴はありません
+                    </div>
+                  )}
+                  {myPreferencesForHistory.map((pref) => {
+                    const borderClass = pref.status === 'pending'
+                      ? 'border-yellow-300 dark:border-yellow-700'
+                      : pref.status === 'approved'
+                      ? 'border-green-300 dark:border-green-700'
+                      : 'border-gray-300 dark:border-gray-600';
+
+                    const typeIcon = pref.preference_type === 'available'
+                      ? <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      : pref.preference_type === 'preferred'
+                      ? <Circle className="w-4 h-4 text-blue-500" />
+                      : <XCircle className="w-4 h-4 text-gray-400" />;
+                    
+                    const typeLabel = pref.preference_type === 'available'
+                      ? '勤務可'
+                      : pref.preference_type === 'preferred'
+                      ? '勤務希望'
+                      : '勤務不可';
+
+                    const statusBadge = pref.status === 'pending'
+                      ? <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">未対応</span>
+                      : pref.status === 'approved'
+                      ? <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">承認済</span>
+                      : <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">却下済</span>;
+
+                    return (
+                      <div key={pref.id} className={`rounded-lg border p-3 ${borderClass}`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{pref.date}</span>
+                          {statusBadge}
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          {typeIcon}
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{typeLabel}</span>
+                        </div>
+                        {pref.start_time && pref.end_time && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {pref.start_time} - {pref.end_time}
+                          </div>
+                        )}
+                        {pref.note && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            {pref.note}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
