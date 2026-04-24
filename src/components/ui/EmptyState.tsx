@@ -1,7 +1,8 @@
 import React from 'react';
+import { Inbox } from 'lucide-react';
 
 interface EmptyStateProps {
-  icon?: string;
+  icon?: React.ReactNode;
   title: string;
   description?: string;
   action?: {
@@ -10,9 +11,9 @@ interface EmptyStateProps {
   };
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({ icon = '📋', title, description, action }) => (
+export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description, action }) => (
   <div className="flex flex-col items-center justify-center py-12 text-center">
-    <span className="text-4xl mb-3">{icon}</span>
+    {icon ?? <Inbox className="w-12 h-12 text-slate-400 dark:text-slate-500" />}
     <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400 mb-1">{title}</h3>
     {description && (
       <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs">{description}</p>

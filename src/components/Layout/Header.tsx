@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTenant } from '../../hooks/useTenant';
 import { useTheme } from '../../contexts/ThemeContext';
 import { StoreSelector } from '../Store/StoreSelector';
+import { Sun, Moon, Monitor } from 'lucide-react';
 
 const ClockIcon = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,8 +34,9 @@ const CogIcon = () => (
 type Theme = 'light' | 'dark' | 'system';
 
 const THEME_CYCLE: Theme[] = ['light', 'dark', 'system'];
-const THEME_LABEL: Record<Theme, string> = { light: '☀️', dark: '🌙', system: '💻' };
+const THEME_LABEL: Record<Theme, React.ReactNode> = { light: <Sun className="w-5 h-5" />, dark: <Moon className="w-5 h-5" />, system: <Monitor className="w-5 h-5" /> };
 const THEME_TITLE: Record<Theme, string> = { light: 'ライトモード', dark: 'ダークモード', system: 'システム設定' };
+const THEME_ARIA: Record<Theme, string> = { light: 'テーマ: 明るい', dark: 'テーマ: 暗い', system: 'テーマ: システム' };
 
 export const Header: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -59,11 +61,11 @@ export const Header: React.FC = () => {
   return (
     <>
       {/* デスクトップヘッダー */}
-      <header className="bg-blue-800 text-white shadow-md">
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <h1 className="text-xl font-bold tracking-wide">
+              <h1 className="text-xl font-bold tracking-wide text-slate-900 dark:text-slate-100">
                 勤怠管理
               </h1>
               <nav className="hidden md:flex space-x-4">
@@ -73,8 +75,8 @@ export const Header: React.FC = () => {
                     to={link.path}
                     className={`px-3 py-2 rounded-md text-sm font-medium transition ${
                       isActive(link.path)
-                        ? 'bg-blue-900 text-white'
-                        : 'text-blue-100 hover:bg-blue-700 hover:text-white'
+                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
                     {link.label}
@@ -86,20 +88,21 @@ export const Header: React.FC = () => {
             <div className="flex items-center space-x-4">
               <StoreSelector />
               {user && (
-                <span className="hidden sm:block text-sm text-blue-200 truncate max-w-xs">
+                <span className="hidden md:block text-sm text-slate-500 dark:text-slate-400 truncate max-w-xs">
                   {user.email}
                 </span>
               )}
               <button
                 onClick={cycleTheme}
                 title={THEME_TITLE[theme]}
-                className="px-2 py-2 rounded-md text-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-blue-800"
+                aria-label={THEME_ARIA[theme]}
+                className="p-2 rounded-md text-sm transition hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
               >
                 {THEME_LABEL[theme]}
               </button>
               <button
                 onClick={() => signOut()}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-blue-800"
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
               >
                 ログアウト
               </button>
@@ -109,20 +112,21 @@ export const Header: React.FC = () => {
       </header>
 
       {/* モバイルボトムナビ */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 z-50 safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50 safe-area-bottom">
         <div className="flex justify-around items-center h-16">
           {navLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
+              aria-current={isActive(link.path) ? 'page' : undefined}
               className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
                 isActive(link.path)
-                  ? 'text-blue-600'
-                  : 'text-gray-400 hover:text-gray-600'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-400 hover:text-slate-600'
               }`}
             >
               {link.icon}
-              <span className="text-xs mt-1 font-medium">{link.shortLabel}</span>
+              <span className="text-[10px] mt-1 font-medium">{link.shortLabel}</span>
             </Link>
           ))}
         </div>

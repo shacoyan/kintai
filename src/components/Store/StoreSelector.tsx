@@ -12,7 +12,8 @@ export function StoreSelector() {
         const store = stores.find(s => s.id === e.target.value) || null;
         setCurrentStore(store);
       }}
-      className="text-sm bg-white/10 text-white border border-white/20 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-white/30"
+      aria-label="店舗切替"
+      className="text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
     >
       <option value="">全店舗</option>
       {stores.map(s => (

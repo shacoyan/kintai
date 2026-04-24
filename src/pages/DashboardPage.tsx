@@ -4,6 +4,9 @@ import { useAttendance } from '../hooks/useAttendance';
 import { useShift } from '../hooks/useShift';
 import { ClockButton } from '../components/Attendance/ClockButton';
 import { BreakButton } from '../components/Attendance/BreakButton';
+import { AlertTriangle, Clock } from 'lucide-react';
+import { PageSkeleton, ListRowSkeleton } from '../components/ui/Skeleton';
+import { EmptyState } from '../components/ui/EmptyState';
 import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -25,7 +28,7 @@ export function DashboardPage() {
     loading,
   } = useAttendance(tenantId);
 
-  const { myShifts, getMyShifts } = useShift(tenantId);
+  const { myShifts, getMyShifts, loading: shiftLoading } = useShift(tenantId);
 
   // 勤務中の労働時間をリアルタイム更新するためのタイマー
   const [now, setNow] = useState(() => new Date());
@@ -43,10 +46,10 @@ export function DashboardPage() {
     getMyShifts(weekStart, weekEnd);
   }, [getMyShifts]);
 
-  if (loading) {
+  if (loading && todayRecords.length === 0) {
     return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="max-w-md mx-auto">
+        <PageSkeleton />
       </div>
     );
   }
@@ -124,17 +127,26 @@ export function DashboardPage() {
   return (
     <div className="max-w-md mx-auto space-y-6">
       <div className="text-center pt-6">
-        <p className="text-3xl font-bold text-gray-900">{dateDisplay}</p>
+        <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{dateDisplay}</p>
       </div>
 
       {carryOverRecord && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
-          <p className="text-sm text-amber-800 font-medium">
-            {carryOverRecord.date} から継続勤務中
-          </p>
-          <p className="text-xs text-amber-600 mt-1">
-            出勤: {formatTime(carryOverRecord.clock_in)} — 退勤ボタンで終了できます
-          </p>
+        <div className="bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-xl shadow-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-semibold">昨日の退勤打刻が未完了</p>
+              <p className="text-sm text-white/90 mt-1">
+                {carryOverRecord.date} に出勤({formatTime(carryOverRecord.clock_in)}) したまま退勤打刻がされていません
+              </p>
+              <button
+                onClick={clockOut}
+                className="mt-3 bg-white text-rose-600 font-semibold rounded-lg px-4 py-2"
+              >
+                今すぐ退勤打刻する
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -155,61 +167,79 @@ export function DashboardPage() {
         />
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 text-center">本日の記録</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">最初の出勤</p>
-            <p className="text-lg font-semibold text-gray-900">{formatTime(firstClockIn)}</p>
+      {todayRecords.length === 0 ? (
+        <EmptyState
+          icon={<Clock className="w-12 h-12 text-slate-400 dark:text-slate-500" />}
+          title="まだ本日の打刻はありません"
+          description="出勤ボタンを押して開始しましょう"
+        />
+      ) : (
+        <>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 text-center">本日の記録</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">最初の出勤</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{formatTime(firstClockIn)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">最後の退勤</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{lastClockOut ? formatTime(lastClockOut) : (activeRecord ? '勤務中' : '-')}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">労働時間</p>
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{formatDuration(totalWorkMinutes)}</p>
+              </div>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">最後の退勤</p>
-            <p className="text-lg font-semibold text-gray-900">{lastClockOut ? formatTime(lastClockOut) : (activeRecord ? '勤務中' : '-')}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">労働時間</p>
-            <p className="text-lg font-semibold text-gray-900">{formatDuration(totalWorkMinutes)}</p>
-          </div>
-        </div>
-      </div>
 
-      {/* Today's summary cards */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-white rounded-lg shadow p-4 text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">本日の労働時間</p>
-          <p className="text-xl font-bold text-gray-900">{todayTotalHours}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4 text-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">セッション数</p>
-          <p className="text-xl font-bold text-gray-900">{todayRecords.filter((r) => r.clock_in).length}</p>
-        </div>
-      </div>
+          {/* Today's summary cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">本日の労働時間</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{todayTotalHours}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">セッション数</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{todayRecords.filter((r) => r.clock_in).length}</p>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* 今週のシフト */}
-      {upcomingShifts.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-4 space-y-2">
-          <h3 className="text-sm font-semibold text-gray-700">今週のシフト</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-2">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">今週のシフト</h3>
+        {shiftLoading ? (
           <div className="space-y-1.5">
-            {upcomingShifts.map((shift) => (
-              <div key={shift.id} className="flex items-center justify-between text-sm">
-                <span className="text-gray-600 font-medium">
-                  {format(new Date(shift.date), 'M/d(E)', { locale: ja })}
-                </span>
-                <span className="text-gray-800">
-                  {shift.start_time.slice(0, 5)} 〜 {shift.end_time.slice(0, 5)}
-                </span>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  shift.status === 'approved' ? 'bg-green-100 text-green-700' :
-                  shift.status === 'pending'  ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-gray-100 text-gray-500'
-                }`}>
-                  {shift.status === 'approved' ? '承認済' : shift.status === 'pending' ? '申請中' : shift.status}
-                </span>
-              </div>
+            {Array.from({ length: 7 }).map((_, i) => (
+              <ListRowSkeleton key={i} />
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          upcomingShifts.length > 0 && (
+            <div className="space-y-1.5">
+              {upcomingShifts.map((shift) => (
+                <div key={shift.id} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-300 font-medium">
+                    {format(new Date(shift.date), 'M/d(E)', { locale: ja })}
+                  </span>
+                  <span className="text-gray-800 dark:text-gray-200">
+                    {shift.start_time.slice(0, 5)} 〜 {shift.end_time.slice(0, 5)}
+                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    shift.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
+                    shift.status === 'pending'  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' :
+                    'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                  }`}>
+                    {shift.status === 'approved' ? '承認済' : shift.status === 'pending' ? '申請中' : shift.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )
+        )}
+      </div>
     </div>
   );
 }

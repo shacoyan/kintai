@@ -56,3 +56,21 @@ export const TableSkeleton: React.FC<{ rows?: number }> = ({ rows = 5 }) => (
     ))}
   </div>
 );
+
+export const PageSkeleton: React.FC = () => (
+  <div className="w-full space-y-6">
+    <Skeleton variant="text" width="40%" height={28} />
+    <div className="space-y-4">
+      <CardSkeleton />
+      <CardSkeleton />
+      <CardSkeleton />
+    </div>
+  </div>
+);
+
+export const ListRowSkeleton: React.FC = () => (
+  <div className="py-3 px-4 border-b border-gray-100 dark:border-gray-800 space-y-2">
+    <Skeleton variant="text" width="70%" height={16} />
+    <Skeleton variant="text" width="40%" height={12} />
+  </div>
+);

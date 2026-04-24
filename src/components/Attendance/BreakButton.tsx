@@ -50,7 +50,9 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
         <button
           onClick={handleBreakStart}
           disabled={processing}
-          className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-lg transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="休憩開始"
+          aria-pressed={false}
+          className="bg-slate-600 hover:bg-slate-700 dark:bg-slate-500 text-white font-bold py-3 px-8 rounded-lg transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {processing ? '処理中...' : '休憩開始'}
         </button>
@@ -60,27 +62,29 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
           <button
             onClick={handleBreakEnd}
             disabled={processing}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="休憩終了"
+            aria-pressed={true}
+            className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 text-white font-bold py-3 px-8 rounded-lg transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {processing ? '処理中...' : '休憩終了'}
           </button>
           {activeBreak?.start_time && (
-            <p className="text-sm text-gray-500">休憩開始: {formatTime(activeBreak.start_time)}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">休憩開始: {formatTime(activeBreak.start_time)}</p>
           )}
         </>
       )}
 
       {activeRecord?.breaks && activeRecord.breaks.filter(b => b.end_time !== null).length > 0 && (
         <div className="mt-2 w-full max-w-xs">
-          <p className="text-xs text-gray-400 mb-1 text-center">休憩履歴</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-1 text-center">休憩履歴</p>
           <div className="space-y-1">
             {activeRecord.breaks.filter(b => b.end_time !== null).map((brk, index) => (
-              <div key={brk.id} className="flex items-center justify-between text-xs bg-gray-50 rounded px-2 py-1">
-                <span className="text-gray-500">休憩{index + 1}</span>
+              <div key={brk.id} className="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-700 rounded px-2 py-1">
+                <span className="text-gray-500 dark:text-gray-400">休憩{index + 1}</span>
                 <div className="flex gap-2">
-                  <span className="text-gray-700">{formatTime(brk.start_time)}</span>
-                  <span className="text-gray-400">〜</span>
-                  <span className="text-gray-700">{formatTime(brk.end_time)}</span>
+                  <span className="text-gray-700 dark:text-gray-300">{formatTime(brk.start_time)}</span>
+                  <span className="text-gray-400 dark:text-gray-500">〜</span>
+                  <span className="text-gray-700 dark:text-gray-300">{formatTime(brk.end_time)}</span>
                 </div>
               </div>
             ))}

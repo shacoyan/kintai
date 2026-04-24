@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { AttendanceRecord } from '../../types';
@@ -18,13 +18,20 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
   const [processing, setProcessing] = useState(false);
   const [flashGreen, setFlashGreen] = useState(false);
   const prevStatusRef = useRef(status);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  const TOOLTIP_TEXTS: Record<ClockButtonProps['status'], string> = {
+    not_started: '出勤する',
+    working: '退勤する',
+    on_break: '休憩終了',
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // ステータス変化時に成功フラッシュ
   useEffect(() => {
     const prev = prevStatusRef.current;
     if (
@@ -33,10 +40,28 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
     ) {
       setFlashGreen(true);
       const t = setTimeout(() => setFlashGreen(false), 600);
+      prevStatusRef.current = status;
       return () => clearTimeout(t);
     }
     prevStatusRef.current = status;
   }, [status]);
+
+  const handlePointerDown = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+    }
+    longPressTimerRef.current = setTimeout(() => {
+      setShowTooltip(true);
+    }, 500);
+  }, []);
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    setShowTooltip(false);
+  }, []);
 
   const triggerHaptic = () => {
     if ('vibrate' in navigator) {
@@ -83,19 +108,32 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="text-5xl md:text-6xl font-bold font-mono text-gray-800 tabular-nums tracking-tight">
+      <div className="text-5xl md:text-6xl font-bold font-mono text-gray-800 dark:text-gray-100 tabular-nums tracking-tight">
         {format(currentTime, 'HH:mm:ss')}
       </div>
-      <button
-        onClick={handleClick}
-        disabled={config.disabled || processing}
-        className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg transition-all duration-300 ${flashGreen ? 'bg-green-400 scale-105' : config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
-      >
-        {processing ? '処理中...' : config.label}
-      </button>
+      <div className="relative">
+        {showTooltip && (
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-800 dark:bg-gray-200 px-4 py-2 text-sm text-white dark:text-gray-800 shadow-lg z-10">
+            {TOOLTIP_TEXTS[status]}
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 dark:bg-gray-200 rotate-45"></div>
+          </div>
+        )}
+        <button
+          onClick={handleClick}
+          onPointerDown={handlePointerDown}
+          onPointerUp={clearLongPress}
+          onPointerLeave={clearLongPress}
+          disabled={config.disabled || processing}
+          aria-label={config.label}
+          aria-pressed={status !== 'not_started'}
+          className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg transition-all duration-300 select-none ${flashGreen ? 'bg-green-400 scale-105' : config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
+        >
+          {processing ? '処理中...' : config.label}
+        </button>
+      </div>
 
       {activeRecord?.clock_in && (
-        <div className="flex gap-6 text-sm text-gray-500">
+        <div className="flex gap-6 text-sm text-gray-500 dark:text-gray-400">
           <span>出勤: {formatTime(activeRecord.clock_in)}</span>
           {activeRecord.clock_out && <span>退勤: {formatTime(activeRecord.clock_out)}</span>}
         </div>
@@ -103,19 +141,19 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
 
       {todayRecords.length > 0 && (
         <div className="w-full max-w-sm mt-2">
-          <p className="text-xs text-gray-400 mb-2 text-center">セッション一覧</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 text-center">セッション一覧</p>
           <div className="space-y-1">
             {todayRecords.map((record, index) => {
               const isCrossDay = record.date !== todayStr;
               return (
-                <div key={record.id} className={`flex items-center justify-between text-sm rounded px-3 py-1.5 ${isCrossDay ? 'bg-amber-50' : 'bg-gray-50'}`}>
-                  <span className="text-gray-500">
+                <div key={record.id} className={`flex items-center justify-between text-sm rounded px-3 py-1.5 ${isCrossDay ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-gray-50 dark:bg-gray-800'}`}>
+                  <span className="text-gray-500 dark:text-gray-400">
                     {isCrossDay ? `${record.date}〜` : `${index + 1}回目`}
                   </span>
                   <div className="flex gap-3">
-                    <span className="text-gray-700">{formatTime(record.clock_in) || '-'}</span>
-                    <span className="text-gray-400">〜</span>
-                    <span className="text-gray-700">{formatTime(record.clock_out) || '勤務中'}</span>
+                    <span className="text-gray-700 dark:text-gray-300">{formatTime(record.clock_in) || '-'}</span>
+                    <span className="text-gray-400 dark:text-gray-500">〜</span>
+                    <span className="text-gray-700 dark:text-gray-300">{formatTime(record.clock_out) || '勤務中'}</span>
                   </div>
                 </div>
               );
