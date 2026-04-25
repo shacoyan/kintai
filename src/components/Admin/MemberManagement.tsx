@@ -15,7 +15,7 @@ interface MemberManagementProps {
 
 const roleBadge: Record<string, { label: string; className: string }> = {
   owner: { label: 'オーナー', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
-  admin: { label: '管理者', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
+  manager: { label: '店長', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
   staff: { label: 'スタッフ', className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' },
 };
 
@@ -105,7 +105,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   };
 
   const handleRoleToggle = async (member: TenantMember) => {
-    const newRole = member.role === 'admin' ? 'staff' : 'admin';
+    const newRole = member.role === 'manager' ? 'staff' : 'manager';
     setTogglingRoleId(member.id);
     try {
       await updateRole(member.id, newRole);
@@ -134,7 +134,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     setDeletingId(null);
   };
 
-  if (myRole !== 'owner' && myRole !== 'admin') {
+  if (myRole !== 'owner' && myRole !== 'manager') {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center dark:bg-yellow-900/20 dark:border-yellow-800">
         <p className="text-yellow-700">この機能を使用する権限がありません</p>
@@ -187,18 +187,18 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     {member.role !== 'owner' && myRole === 'owner' && (
                       <button
                         role="switch"
-                        aria-checked={member.role === 'admin'}
+                        aria-checked={member.role === 'manager'}
                         aria-label={`${member.display_name} の管理者権限`}
                         onClick={() => handleRoleToggle(member)}
                         disabled={togglingRoleId === member.id}
                         className={`px-2 py-0.5 text-xs font-medium rounded transition ${
-                          member.role === 'admin'
+                          member.role === 'manager'
                             ? 'text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
                             : 'text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50'
                         } disabled:opacity-50`}
-                        title={member.role === 'admin' ? 'スタッフに変更' : '管理者に変更'}
+                        title={member.role === 'manager' ? 'スタッフに変更' : '店長に変更'}
                       >
-                        {togglingRoleId === member.id ? '...' : member.role === 'admin' ? '→スタッフ' : '→管理者'}
+                        {togglingRoleId === member.id ? '...' : member.role === 'manager' ? '→スタッフ' : '→店長'}
                       </button>
                     )}
                     {member.role !== 'owner' && (

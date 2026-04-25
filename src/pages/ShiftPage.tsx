@@ -24,7 +24,7 @@ type PreferenceView = 'current' | 'history';
 export function ShiftPage() {
   const { currentTenant, myRole } = useTenant();
   const tenantId = currentTenant?.id || '';
-  const isAdmin = myRole === 'owner' || myRole === 'admin';
+  const isAdmin = myRole === 'owner' || myRole === 'manager';
 
   const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, bulkApprove, getLaborCostEstimate } = useShift(tenantId);
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave } = useLeave(tenantId);

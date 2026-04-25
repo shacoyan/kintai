@@ -147,7 +147,7 @@ export function useAdmin(tenantId: string) {
     await fetchMembers();
   }, [fetchMembers]);
 
-  const updateRole = useCallback(async (memberId: string, role: 'admin' | 'staff') => {
+  const updateRole = useCallback(async (memberId: string, role: 'manager' | 'staff') => {
     const { data, error: e } = await supabase
       .from('tenant_members')
       .update({ role })

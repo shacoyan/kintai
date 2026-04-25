@@ -4,7 +4,7 @@ import { AttendanceRecord, Break } from '../types';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 
-export function useAttendance(tenantId: string) {
+export function useAttendance(tenantId: string, storeId: string | null) {
   const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
   const [monthlyRecords, setMonthlyRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +70,11 @@ export function useAttendance(tenantId: string) {
   }, [monthlyRecords]);
 
   const fetchTodayRecords = useCallback(async () => {
+    if (!storeId) {
+      setTodayRecords([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const {
@@ -84,6 +89,7 @@ export function useAttendance(tenantId: string) {
         .from('attendance_records')
         .select('*, breaks(*)')
         .eq('tenant_id', tenantId)
+        .eq('store_id', storeId)
         .eq('user_id', user.id)
         .or(`date.eq.${today},clock_out.is.null`)
         .order('clock_in', { ascending: true });
@@ -94,11 +100,12 @@ export function useAttendance(tenantId: string) {
     } finally {
       setLoading(false);
     }
-  }, [tenantId, today]);
+  }, [tenantId, storeId, today]);
 
   useEffect(() => {
+    if (!storeId) return;
     const channel = supabase
-      .channel(`attendance:${tenantId}:${today}`)
+      .channel(`attendance:${tenantId}:${storeId}:${today}`)
       .on(
         'postgres_changes',
         {
@@ -128,13 +135,14 @@ export function useAttendance(tenantId: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tenantId, today, fetchTodayRecords]);
+  }, [tenantId, storeId, today, fetchTodayRecords]);
 
   useEffect(() => {
     fetchTodayRecords();
   }, [fetchTodayRecords]);
 
   async function clockIn() {
+    if (!storeId) throw new Error('店舗が選択されていません');
     if (busyRef.current) return;
     busyRef.current = true;
     try {
@@ -148,6 +156,7 @@ export function useAttendance(tenantId: string) {
       const now = new Date().toISOString();
       const { error } = await supabase.from('attendance_records').insert({
         tenant_id: tenantId,
+        store_id: storeId,
         user_id: user.id,
         date: today,
         clock_in: now,
@@ -270,6 +279,10 @@ export function useAttendance(tenantId: string) {
 
   const fetchRecords = useCallback(
     async (year: number, month: number) => {
+      if (!storeId) {
+        setMonthlyRecords([]);
+        return;
+      }
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -280,6 +293,7 @@ export function useAttendance(tenantId: string) {
         .from('attendance_records')
         .select('*, breaks(*)')
         .eq('tenant_id', tenantId)
+        .eq('store_id', storeId)
         .eq('user_id', user.id)
         .gte('date', startDate)
         .lte('date', endDate)
@@ -291,7 +305,7 @@ export function useAttendance(tenantId: string) {
       }
       setMonthlyRecords((data as AttendanceRecord[]) || []);
     },
-    [tenantId]
+    [tenantId, storeId]
   );
 
   return {

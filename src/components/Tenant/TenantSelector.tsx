@@ -14,13 +14,13 @@ interface TenantSelectorProps {
 const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCreateNew, onJoin }) => {
   const roleColors: Record<string, string> = {
     owner: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    admin: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    manager: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
     staff: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
   };
 
   const roleLabels: Record<string, string> = {
     owner: 'オーナー',
-    admin: '管理者',
+    manager: '店長',
     staff: 'スタッフ',
   };
 

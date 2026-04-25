@@ -55,7 +55,7 @@ export const Header: React.FC = () => {
     { path: '/', label: 'ダッシュボード', shortLabel: '打刻', icon: <ClockIcon /> },
     { path: '/history', label: '履歴', shortLabel: '履歴', icon: <CalendarIcon /> },
     { path: '/shift', label: 'シフト', shortLabel: 'シフト', icon: <ClipboardIcon /> },
-    ...(myRole === 'owner' || myRole === 'admin' ? [{ path: '/admin', label: '管理', shortLabel: '管理', icon: <CogIcon /> }] : []),
+    ...(myRole === 'owner' || myRole === 'manager' ? [{ path: '/admin', label: '管理', shortLabel: '管理', icon: <CogIcon /> }] : []),
   ];
 
   return (

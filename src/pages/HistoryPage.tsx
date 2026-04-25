@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTenant } from '../hooks/useTenant';
+import { useStoreContext } from '../contexts/StoreContext';
 import { useAttendance } from '../hooks/useAttendance';
 import { DailyList } from '../components/Attendance/DailyList';
 import { MonthlySummary } from '../components/Attendance/MonthlySummary';
@@ -201,7 +202,8 @@ export function HistoryPage() {
   const { currentTenant } = useTenant();
   // RequireTenant ガードにより currentTenant は必ず存在する
   const tenantId = currentTenant!.id;
-  const { fetchRecords, monthlyRecords, monthlySummary, loading } = useAttendance(tenantId);
+  const { currentStore } = useStoreContext();
+  const { fetchRecords, monthlyRecords, monthlySummary, loading } = useAttendance(tenantId, currentStore?.id ?? null);
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -262,6 +264,11 @@ export function HistoryPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {currentStore == null && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center text-sm text-amber-800">
+          履歴を表示するには上部のセレクタから店舗を選択してください。
+        </div>
+      )}
       {/* 月ナビゲーション + ビュー切り替え */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-4 py-3">
         <div className="flex items-center justify-between">

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTenant } from '../hooks/useTenant';
+import { useStoreContext } from '../contexts/StoreContext';
 import { useAttendance } from '../hooks/useAttendance';
 import { useShift } from '../hooks/useShift';
 import { ClockButton } from '../components/Attendance/ClockButton';
@@ -14,6 +15,7 @@ export function DashboardPage() {
   const { currentTenant } = useTenant();
   // RequireTenant ガードにより currentTenant は必ず存在する
   const tenantId = currentTenant!.id;
+  const { currentStore } = useStoreContext();
 
   const {
     todayRecords,
@@ -26,7 +28,7 @@ export function DashboardPage() {
     activeBreak,
     today: todayFromHook,
     loading,
-  } = useAttendance(tenantId);
+  } = useAttendance(tenantId, currentStore?.id ?? null);
 
   const { myShifts, getMyShifts, loading: shiftLoading } = useShift(tenantId);
 
@@ -151,20 +153,28 @@ export function DashboardPage() {
       )}
 
       <div className="flex flex-col items-center gap-6 py-8">
-        <ClockButton
-          status={status}
-          clockIn={clockIn}
-          clockOut={clockOut}
-          todayRecords={todayRecords}
-          activeRecord={activeRecord}
-        />
-        <BreakButton
-          status={status}
-          breakStart={breakStart}
-          breakEnd={breakEnd}
-          activeRecord={activeRecord}
-          activeBreak={activeBreak}
-        />
+        {currentStore == null ? (
+          <div className="w-full max-w-md rounded-lg border border-amber-200 bg-amber-50 p-4 text-center text-sm text-amber-800">
+            打刻するには上部のセレクタから店舗を選択してください。
+          </div>
+        ) : (
+          <>
+            <ClockButton
+              status={status}
+              clockIn={clockIn}
+              clockOut={clockOut}
+              todayRecords={todayRecords}
+              activeRecord={activeRecord}
+            />
+            <BreakButton
+              status={status}
+              breakStart={breakStart}
+              breakEnd={breakEnd}
+              activeRecord={activeRecord}
+              activeBreak={activeBreak}
+            />
+          </>
+        )}
       </div>
 
       {todayRecords.length === 0 ? (

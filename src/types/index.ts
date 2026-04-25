@@ -10,7 +10,7 @@ export interface TenantMember {
   id: string;
   tenant_id: string;
   user_id: string;
-  role: 'owner' | 'admin' | 'staff';
+  role: 'owner' | 'manager' | 'staff';
   display_name: string;
   hourly_rate: number | null;
   night_shift_enabled: boolean | null;
@@ -38,10 +38,11 @@ export interface AttendanceRecord {
   total_work_minutes: number | null;
   note: string | null;
   created_at: string;
+  store_id: string | null;
   breaks?: Break[];
 }
 
-export type UserRole = 'owner' | 'admin' | 'staff';
+export type UserRole = 'owner' | 'manager' | 'staff';
 
 export interface UserProfile {
   user_id: string;
@@ -52,6 +53,7 @@ export interface UserProfile {
 export interface TenantWithRole extends Tenant {
   role: UserRole;
   display_name: string;
+  member_id: string;
 }
 
 export interface Shift {
@@ -68,6 +70,7 @@ export interface Shift {
   reviewed_by: string | null;
   reviewed_at: string | null;
   created_at: string;
+  store_id: string | null;
 }
 
 export type LeaveType = 'paid' | 'half_paid' | 'absence' | 'other';
@@ -123,6 +126,7 @@ export interface StoreMember {
   store_id: string;
   member_id: string;
   is_primary: boolean;
+  is_manager: boolean;
   created_at: string;
 }
 
@@ -139,4 +143,5 @@ export interface ShiftPreference {
   note: string | null;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
+  store_id: string | null;
 }

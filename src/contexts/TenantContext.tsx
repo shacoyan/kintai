@@ -14,6 +14,10 @@ interface TenantContextType {
   joinTenant: (inviteCode: string, displayName: string) => Promise<Tenant>;
   loading: boolean;
   error: string | null;
+  isOwner: boolean;
+  isManager: boolean;
+  isStaff: boolean;
+  myMemberId: string | null;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -37,6 +41,14 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const myRole = currentTenant
     ? tenants.find(t => t.id === currentTenant.id)?.role ?? null
     : null;
+
+  const myMemberId = currentTenant
+    ? tenants.find(t => t.id === currentTenant.id)?.member_id ?? null
+    : null;
+
+  const isOwner = myRole === 'owner';
+  const isManager = myRole === 'manager';
+  const isStaff = myRole === 'staff';
 
   const setCurrentTenant = useCallback((tenant: Tenant | null) => {
     if (tenant) {
@@ -76,6 +88,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (fetchError) throw fetchError;
 
       interface TenantMemberWithJoin {
+        id: string;
         role: string;
         display_name: string;
         tenants: Tenant | null;
@@ -91,6 +104,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           owner_id: item.tenants!.owner_id,
           role: item.role as UserRole,
           display_name: item.display_name,
+          member_id: item.id,
         }));
 
       setTenants(mappedTenants);
@@ -252,6 +266,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       joinTenant,
       loading,
       error,
+      isOwner,
+      isManager,
+      isStaff,
+      myMemberId,
     }}>
       {children}
     </TenantContext.Provider>

@@ -16,7 +16,7 @@ export function AdminPage() {
     );
   }
 
-  if (myRole !== 'owner' && myRole !== 'admin') {
+  if (myRole !== 'owner' && myRole !== 'manager') {
     return <Navigate to="/" replace />;
   }
 
