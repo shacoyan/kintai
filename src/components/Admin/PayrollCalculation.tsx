@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useAdmin } from '../../hooks/useAdmin';
+import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useShift } from '../../hooks/useShift';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { parseISO, differenceInMinutes } from 'date-fns';
@@ -259,7 +259,7 @@ function generateShiftPayrollCsv(
 }
 
 export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
-  const { members, allAttendance, loading, error, fetchMembers, fetchAllAttendance } = useAdmin(tenantId);
+  const { members, allAttendance, loading, error, fetchMembers, fetchAllAttendance } = useTenantAdmin(tenantId);
   const { currentStore } = useStoreContext();
   const { allShifts, loading: shiftsLoading, getAllShifts } = useShift(tenantId, currentStore?.id ?? null);
   const now = new Date();

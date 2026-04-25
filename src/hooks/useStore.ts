@@ -88,9 +88,19 @@ export function useStore(tenantId: string) {
     await fetchStoreMembers(storeId);
   }, [fetchStoreMembers]);
 
+  const setStoreMemberManager = useCallback(async (storeId: string, memberId: string, isManager: boolean) => {
+    const { error } = await supabase
+      .from('store_members')
+      .update({ is_manager: isManager })
+      .eq('store_id', storeId)
+      .eq('member_id', memberId);
+    if (error) throw new Error(`店舗内権限の更新に失敗しました: ${error.message}`);
+    await fetchStoreMembers(storeId);
+  }, [fetchStoreMembers]);
+
   return {
     stores, storeMembers, loading,
     fetchStores, createStore, updateStore, deleteStore,
-    fetchStoreMembers, addStoreMember, removeStoreMember, setMemberPrimary,
+    fetchStoreMembers, addStoreMember, removeStoreMember, setMemberPrimary, setStoreMemberManager,
   };
 }

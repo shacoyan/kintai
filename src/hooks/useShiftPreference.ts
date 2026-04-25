@@ -114,14 +114,14 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
       throw new Error('開始・終了時刻が設定されていません');
     }
 
+    if (pref.store_id === null) throw new Error('シフト希望に店舗が紐付いていません');
+
     // ステータスを承認済みに更新
     const { error: updateError } = await supabase
       .from('shift_preferences')
       .update({ status: 'approved' })
       .eq('id', preferenceId);
     if (updateError) throw new Error(`希望の承認に失敗しました: ${updateError.message}`);
-
-    if (pref.store_id === null) throw new Error('シフト希望に店舗が紐付いていません');
 
     // shiftsテーブルにシフトを作成
     const { error: insertError } = await supabase

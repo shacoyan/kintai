@@ -4,7 +4,7 @@ import { Clock, History, CheckCircle2, Circle, XCircle } from 'lucide-react';
 import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
 import { useLeave } from '../hooks/useLeave';
-import { useAdmin } from '../hooks/useAdmin';
+import { useTenantAdmin } from '../hooks/useTenantAdmin';
 import { useShiftPreset } from '../hooks/useShiftPreset';
 import { useShiftPreference } from '../hooks/useShiftPreference';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
@@ -31,7 +31,7 @@ export function ShiftPage() {
 
   const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, bulkApprove, getLaborCostEstimate } = useShift(tenantId, storeId);
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave } = useLeave(tenantId);
-  const { members, fetchMembers } = useAdmin(tenantId);
+  const { members, fetchMembers } = useTenantAdmin(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
   const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference } = useShiftPreference(tenantId, storeId);
 

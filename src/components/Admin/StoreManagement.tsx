@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useStore } from '../../hooks/useStore';
-import { useAdmin } from '../../hooks/useAdmin';
+import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useToast } from '../../contexts/ToastContext';
 import type { Store } from '../../types';
 import { BottomSheet } from '../ui/BottomSheet';
 import { EmptyState } from '../ui/EmptyState';
 import { PageSkeleton } from '../ui/Skeleton';
 import { Store as StoreIcon } from 'lucide-react';
+import { useTenant } from '../../hooks/useTenant';
 
 interface StoreManagementProps {
   tenantId: string;
@@ -18,8 +19,11 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
     stores, storeMembers, loading,
     fetchStores, createStore, updateStore, deleteStore,
     fetchStoreMembers, addStoreMember, removeStoreMember,
+    setStoreMemberManager,
   } = useStore(tenantId);
-  const { members: allMembers, fetchMembers } = useAdmin(tenantId);
+  const { members: allMembers, fetchMembers } = useTenantAdmin(tenantId);
+  const { myRole } = useTenant();
+  const isOwner = myRole === 'owner';
 
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [newStoreName, setNewStoreName] = useState('');
@@ -29,6 +33,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
   const [savingEdit, setSavingEdit] = useState(false);
   const [togglingMember, setTogglingMember] = useState<string | null>(null);
   const [confirmDeleteStore, setConfirmDeleteStore] = useState<Store | null>(null);
+  const [togglingManagerId, setTogglingManagerId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStores();
@@ -110,6 +115,19 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
       showToast(err instanceof Error ? err.message : 'メンバーの変更に失敗しました', 'error');
     } finally {
       setTogglingMember(null);
+    }
+  };
+
+  const handleToggleStoreManager = async (memberId: string, nextValue: boolean) => {
+    if (!selectedStore) return;
+    setTogglingManagerId(memberId);
+    try {
+      await setStoreMemberManager(selectedStore.id, memberId, nextValue);
+      showToast(nextValue ? '店長に任命しました' : '店長権限を外しました', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '店長権限の更新に失敗しました', 'error');
+    } finally {
+      setTogglingManagerId(null);
     }
   };
 
@@ -237,6 +255,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
               {allMembers.map((member) => {
                 const assigned = isMemberAssigned(member.id);
                 const toggling = togglingMember === member.id;
+                const is_manager = storeMembers.find(sm => sm.member_id === member.id)?.is_manager === true;
                 return (
                   <label
                     key={member.id}
@@ -262,6 +281,27 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex-shrink-0">
                         所属中
                       </span>
+                    )}
+                    {assigned === true && (
+                      <button
+                        role="switch"
+                        aria-checked={is_manager}
+                        aria-label={`${member.display_name} の店長権限`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleToggleStoreManager(member.id, !is_manager);
+                        }}
+                        disabled={!isOwner || togglingManagerId === member.id}
+                        className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                          is_manager
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                        }`}
+                        title={isOwner ? (is_manager ? '店長権限を外す' : '店長に任命') : 'オーナーのみ操作可能'}
+                      >
+                        {togglingManagerId === member.id ? '...' : (is_manager ? '店長' : '→店長')}
+                      </button>
                     )}
                   </label>
                 );

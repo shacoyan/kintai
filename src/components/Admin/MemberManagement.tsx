@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAdmin } from '../../hooks/useAdmin';
+import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useTenant } from '../../hooks/useTenant';
 import type { TenantMember } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
@@ -22,7 +22,7 @@ const roleBadge: Record<string, { label: string; className: string }> = {
 export function MemberManagement({ tenantId }: MemberManagementProps) {
   const { showToast } = useToast();
   const { myRole } = useTenant();
-  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary, deleteMember, updateRole } = useAdmin(tenantId);
+  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary, deleteMember, updateRole } = useTenantAdmin(tenantId);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingRoleId, setTogglingRoleId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);

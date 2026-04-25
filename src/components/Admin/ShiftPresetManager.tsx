@@ -30,11 +30,18 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
     fetchPresets();
   }, [fetchPresets]);
 
+  // 店舗が選ばれた瞬間に scope を 'store' へ寄せる（null → 値ありの遷移時）
+  // 値あり → null（店舗解除）の遷移時は 'tenant' に戻す
+  useEffect(() => {
+    setScope(storeId ? 'store' : 'tenant');
+  }, [storeId]);
+
   const handleAdd = async () => {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await addPreset(name.trim(), startTime, endTime, scope);
+      const effectiveScope: 'store' | 'tenant' = storeId == null ? 'tenant' : scope;
+      await addPreset(name.trim(), startTime, endTime, effectiveScope);
       setName('');
       showToast('プリセットを追加しました', 'success');
     } catch (err) {
@@ -100,7 +107,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">適用範囲</label>
             <select
-              value={scope}
+              value={storeId == null ? 'tenant' : scope}
               onChange={(e) => setScope(e.target.value as 'store' | 'tenant')}
               disabled={storeId == null}
               className="block px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 disabled:opacity-50"

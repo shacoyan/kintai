@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type React from 'react';
-import { useAdmin } from '../../hooks/useAdmin';
+import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { format, parseISO, differenceInMinutes, getDaysInMonth } from 'date-fns';
 import type { AttendanceRecord, Shift } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
@@ -78,7 +78,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
     fetchAllAttendance,
     updateAttendance,
     deleteAttendance,
-  } = useAdmin(tenantId);
+  } = useTenantAdmin(tenantId);
 
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());

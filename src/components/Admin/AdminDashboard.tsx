@@ -6,7 +6,7 @@ import { PayrollCalculation } from './PayrollCalculation';
 import { AttendanceAdmin } from './AttendanceAdmin';
 import { useCorrection } from '../../hooks/useCorrection';
 import { useLeave } from '../../hooks/useLeave';
-import { useAdmin } from '../../hooks/useAdmin';
+import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useTenant } from '../../hooks/useTenant';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { CorrectionList } from '../Correction/CorrectionList';
@@ -45,7 +45,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const { currentStore } = useStoreContext();
   const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
   const { allLeaves, loading: leaveLoading, getAllLeaves, approveLeave, rejectLeave } = useLeave(tenantId);
-  const { members: adminMembers, fetchMembers: fetchAdminMembers } = useAdmin(tenantId);
+  const { members: adminMembers, fetchMembers: fetchAdminMembers } = useTenantAdmin(tenantId);
 
   const leaveRange = useMemo(() => {
     const now = new Date();
