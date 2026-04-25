@@ -5,7 +5,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 interface ShiftEditModalProps {
   shift: Shift;
   memberName?: string;
-  isAdmin: boolean;
+  canManageTenant: boolean;
   onModify: (shiftId: string, startTime: string, endTime: string, storeId?: string) => Promise<void>;
   onDelete: (shiftId: string) => Promise<void>;
   onApprove?: (shiftId: string) => Promise<void>;
@@ -32,7 +32,7 @@ const STATUS_LABEL: Record<string, { text: string; className: string }> = {
   cancelled: { text: '取消', className: 'bg-gray-100 text-gray-500 dark:bg-gray-700/30 dark:text-gray-400' },
 };
 
-export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete, onApprove, onReject, onClose, onRefresh, selectableStores, storeName, canManage }: ShiftEditModalProps) {
+export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, onDelete, onApprove, onReject, onClose, onRefresh, selectableStores, storeName, canManage }: ShiftEditModalProps) {
   const [startTime, setStartTime] = useState(shift.start_time.slice(0, 5));
   const [endTime, setEndTime] = useState(shift.end_time.slice(0, 5));
   const [editStoreId, setEditStoreId] = useState<string | null>(shift.store_id ?? null);
@@ -60,7 +60,7 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
     if (mode === 'view') {
       return (
         <div className="flex flex-wrap gap-2">
-          {isAdmin && canManage && shift.status === 'pending' && onApprove && (
+          {canManageTenant && canManage && shift.status === 'pending' && onApprove && (
             <button
               onClick={() => handleAction(() => onApprove(shift.id))}
               disabled={processing}
@@ -69,7 +69,7 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
               承認
             </button>
           )}
-          {isAdmin && canManage && shift.status === 'pending' && onReject && (
+          {canManageTenant && canManage && shift.status === 'pending' && onReject && (
             <button
               onClick={() => handleAction(() => onReject(shift.id))}
               disabled={processing}
@@ -78,7 +78,7 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
               却下
             </button>
           )}
-          {isAdmin && canManage && (
+          {canManageTenant && canManage && (
             <button
               onClick={() => setMode('edit')}
               className="btn-primary bg-blue-600 hover:bg-blue-700 transition"
@@ -86,7 +86,7 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
               修正
             </button>
           )}
-          {isAdmin && canManage && (
+          {canManageTenant && canManage && (
             <button
               onClick={() => setMode('confirmDelete')}
               className="btn-danger disabled:opacity-50 transition"
@@ -94,7 +94,7 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
               削除
             </button>
           )}
-          {isAdmin && !canManage && (
+          {canManageTenant && !canManage && (
             <p className="text-xs text-gray-500 dark:text-gray-400">この店舗の管理権限がありません</p>
           )}
           <button

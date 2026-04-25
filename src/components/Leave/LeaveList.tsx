@@ -7,7 +7,7 @@ import { ErrorBanner } from '../ui/ErrorBanner';
 interface LeaveListProps {
   leaves: LeaveRequest[];
   memberNames?: Map<string, string>;
-  isAdmin: boolean;
+  canManageTenant: boolean;
   onApprove: (leaveId: string) => Promise<void>;
   onReject: (leaveId: string) => Promise<void>;
   onCancel: (leaveId: string) => Promise<void>;
@@ -35,7 +35,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   cancelled: { label: '取消', className: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' },
 };
 
-export function LeaveList({ leaves, memberNames, isAdmin, onApprove, onReject, onCancel, onRefresh }: LeaveListProps) {
+export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onReject, onCancel, onRefresh }: LeaveListProps) {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,7 +103,7 @@ export function LeaveList({ leaves, memberNames, isAdmin, onApprove, onReject, o
 
                 {leave.status === 'pending' && (
                   <div className="flex gap-1.5 mt-1">
-                    {isAdmin ? (
+                    {canManageTenant ? (
                       <>
                         <button
                           onClick={() => handleAction(() => onApprove(leave.id))}

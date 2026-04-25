@@ -43,20 +43,27 @@ export function useTenantAdmin(tenantId: string) {
     await fetchMembers();
   }, [fetchMembers]);
 
-  const fetchAllAttendance = useCallback(async (year: number, month: number) => {
+  const fetchAllAttendance = useCallback(async (year: number, month: number, storeId: string | null) => {
     startLoading();
     setError(null);
     try {
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
       const lastDay = new Date(year, month, 0).getDate();
       const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-      const { data, error: e } = await supabase
+      
+      let query = supabase
         .from('attendance_records')
         .select('*, breaks(*)')
         .eq('tenant_id', tenantId)
         .gte('date', startDate)
-        .lte('date', endDate)
-        .order('date', { ascending: true });
+        .lte('date', endDate);
+
+      if (storeId !== null) {
+        query = query.eq('store_id', storeId);
+      }
+
+      const { data, error: e } = await query.order('date', { ascending: true });
+      
       if (e) {
         setError(e.message);
       } else {

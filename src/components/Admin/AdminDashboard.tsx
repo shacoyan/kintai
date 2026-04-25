@@ -203,7 +203,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <LeaveList
                 leaves={allLeaves}
                 memberNames={leaveMemberNames}
-                isAdmin={true}
+                canManageTenant={true}
                 onApprove={approveLeave}
                 onReject={rejectLeave}
                 onCancel={async () => {}}

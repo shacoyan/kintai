@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { AlertTriangle, Users } from 'lucide-react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { EmptyState } from '../ui/EmptyState';
+import { useStoreContext } from '../../contexts/StoreContext';
 
 interface AttendanceAdminProps {
   tenantId: string;
@@ -70,6 +71,7 @@ function isWeekend(day: number, year: number, month: number): boolean {
 
 export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
   const { showToast } = useToast();
+  const { currentStore } = useStoreContext();
   const {
     members,
     allAttendance,
@@ -104,24 +106,30 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-    const { data } = await supabase
+    let query = supabase
       .from('shifts')
       .select('*')
       .eq('tenant_id', tenantId)
       .eq('status', 'approved')
       .gte('date', startDate)
       .lte('date', endDate);
+      
+    if (currentStore?.id) {
+      query = query.eq('store_id', currentStore.id);
+    }
+    
+    const { data } = await query;
     setApprovedShifts((data as Shift[]) || []);
-  }, [tenantId]);
+  }, [tenantId, currentStore?.id]);
 
   const handleLoad = useCallback(async () => {
     await Promise.all([
-      fetchAllAttendance(selectedYear, selectedMonth),
+      fetchAllAttendance(selectedYear, selectedMonth, currentStore?.id ?? null),
       fetchShifts(selectedYear, selectedMonth),
     ]);
     setLoaded(true);
     setSelectedCell(null);
-  }, [fetchAllAttendance, fetchShifts, selectedYear, selectedMonth]);
+  }, [fetchAllAttendance, fetchShifts, selectedYear, selectedMonth, currentStore?.id]);
 
   // 年月が変わったら再ロード
   useEffect(() => {
@@ -129,7 +137,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       setLoaded(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedYear, selectedMonth]);
+  }, [selectedYear, selectedMonth, currentStore?.id]);
 
   // カレンダーデータ構築
   const daysInMonth = getDaysInMonth(new Date(selectedYear, selectedMonth - 1));
@@ -228,7 +236,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
         showToast('勤怠記録を登録しました', 'success');
       }
       await Promise.all([
-        fetchAllAttendance(selectedYear, selectedMonth),
+        fetchAllAttendance(selectedYear, selectedMonth, currentStore?.id ?? null),
         fetchShifts(selectedYear, selectedMonth),
       ]);
       setSelectedCell(null);
@@ -247,7 +255,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       await deleteAttendance(selectedCell.record.id);
       showToast('勤怠記録を削除しました', 'success');
       await Promise.all([
-        fetchAllAttendance(selectedYear, selectedMonth),
+        fetchAllAttendance(selectedYear, selectedMonth, currentStore?.id ?? null),
         fetchShifts(selectedYear, selectedMonth),
       ]);
       setSelectedCell(null);
@@ -272,6 +280,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       {/* 月選択ヘッダー */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">月次勤怠カレンダー</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">対象店舗: {currentStore?.name ?? '全店舗'}</p>
         <div className="flex flex-wrap items-end gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">年</label>

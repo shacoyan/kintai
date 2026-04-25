@@ -25,7 +25,7 @@ type PreferenceView = 'current' | 'history';
 export function ShiftPage() {
   const { currentTenant, myRole, isOwner } = useTenant();
   const tenantId = currentTenant?.id || '';
-  const isAdmin = myRole === 'owner' || myRole === 'manager';
+  const canManageTenant = myRole === 'owner' || myRole === 'manager';
   const { currentStore, stores, isManagerOf } = useStoreContext();
   const storeId = currentStore?.id ?? null;
 
@@ -48,9 +48,9 @@ export function ShiftPage() {
   );
 
   const preferencesForCalendar = useMemo(() => {
-    const base = isAdmin && showAllMembersPrefs ? allPreferences : myPreferences;
+    const base = canManageTenant && showAllMembersPrefs ? allPreferences : myPreferences;
     return base.filter(p => p.status !== 'rejected');
-  }, [isAdmin, showAllMembersPrefs, allPreferences, myPreferences]);
+  }, [canManageTenant, showAllMembersPrefs, allPreferences, myPreferences]);
 
   const preferencesForAdminList = useMemo(() => {
     if (preferenceView === 'current') {
@@ -68,7 +68,7 @@ export function ShiftPage() {
     const now = new Date();
     const start = format(startOfMonth(addWeeks(now, -2)), 'yyyy-MM-dd');
     const end = format(endOfMonth(addWeeks(now, 4)), 'yyyy-MM-dd');
-    if (isAdmin) {
+    if (canManageTenant) {
       getAllShifts(start, end);
       getAllLeaves(start, end);
       fetchMembers();
@@ -76,18 +76,18 @@ export function ShiftPage() {
       getMyShifts(start, end);
       getMyLeaves(start, end);
     }
-  }, [isAdmin, getAllShifts, getAllLeaves, getMyShifts, getMyLeaves, fetchMembers]);
+  }, [canManageTenant, getAllShifts, getAllLeaves, getMyShifts, getMyLeaves, fetchMembers]);
 
   const fetchPreferenceRange = useCallback(() => {
     const now = new Date();
     const start = format(startOfMonth(now), 'yyyy-MM-dd');
     const end = format(endOfMonth(addWeeks(now, 4)), 'yyyy-MM-dd');
-    if (isAdmin) {
+    if (canManageTenant) {
       fetchAllPreferences(start, end);
     } else {
       fetchMyPreferences(start, end);
     }
-  }, [isAdmin, fetchAllPreferences, fetchMyPreferences]);
+  }, [canManageTenant, fetchAllPreferences, fetchMyPreferences]);
 
   useEffect(() => {
     if (tenantId) {
@@ -102,8 +102,8 @@ export function ShiftPage() {
     }
   }, [tenantId, activeTab, fetchPreferenceRange]);
 
-  const shifts = isAdmin ? allShifts : myShifts;
-  const leaves = isAdmin ? allLeaves : myLeaves;
+  const shifts = canManageTenant ? allShifts : myShifts;
+  const leaves = canManageTenant ? allLeaves : myLeaves;
 
   const memberNames = useMemo(() => {
     const map = new Map<string, string>();
@@ -148,9 +148,9 @@ export function ShiftPage() {
   };
 
   const laborEstimates = useMemo(() => {
-    if (!isAdmin || members.length === 0) return [];
+    if (!canManageTenant || members.length === 0) return [];
     return getLaborCostEstimate(shifts, members);
-  }, [isAdmin, shifts, members, getLaborCostEstimate]);
+  }, [canManageTenant, shifts, members, getLaborCostEstimate]);
 
   const pendingShifts = shifts.filter(s => s.status === 'pending');
 
@@ -187,12 +187,12 @@ export function ShiftPage() {
               }`}
             >
               {tab.label}
-              {tab.id === 'shift' && isAdmin && pendingShifts.length > 0 && (
+              {tab.id === 'shift' && canManageTenant && pendingShifts.length > 0 && (
                 <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
                   {pendingShifts.length}
                 </span>
               )}
-              {tab.id === 'preference' && isAdmin && pendingPreferenceCount > 0 && (
+              {tab.id === 'preference' && canManageTenant && pendingPreferenceCount > 0 && (
                 <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
                   {pendingPreferenceCount}
                 </span>
@@ -214,14 +214,14 @@ export function ShiftPage() {
             shifts={shifts}
             onDateClick={() => {}}
             onShiftClick={(shift) => setSelectedShift(shift)}
-            memberNames={isAdmin ? memberNames : undefined}
+            memberNames={canManageTenant ? memberNames : undefined}
           />
 
-          {selectedShift && isAdmin && (
+          {selectedShift && canManageTenant && (
             <ShiftEditModal
               shift={selectedShift}
               memberName={memberNames.get(selectedShift.user_id)}
-              isAdmin={isAdmin}
+              canManageTenant={canManageTenant}
               onModify={modifyShift}
               onDelete={deleteShift}
               onApprove={approveShift}
@@ -234,7 +234,7 @@ export function ShiftPage() {
             />
           )}
 
-          {isAdmin && (
+          {canManageTenant && (
             <>
               <ShiftAdminPanel
                 shifts={shifts.filter(s => s.status !== 'cancelled')}
@@ -289,7 +289,7 @@ export function ShiftPage() {
 
           {preferenceView === 'current' && (
             <>
-              {isAdmin && (
+              {canManageTenant && (
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-600 dark:text-gray-400">カレンダー表示:</span>
                   <button
@@ -318,11 +318,11 @@ export function ShiftPage() {
               <ShiftPreferenceCalendar
                 preferences={preferencesForCalendar}
                 onDateClick={(date) => {
-                  if (isAdmin && showAllMembersPrefs) return;
+                  if (canManageTenant && showAllMembersPrefs) return;
                   setSelectedPrefDate(date);
                 }}
-                memberNames={isAdmin && showAllMembersPrefs ? memberNames : undefined}
-                isAdmin={isAdmin && showAllMembersPrefs}
+                memberNames={canManageTenant && showAllMembersPrefs ? memberNames : undefined}
+                canManageTenant={canManageTenant && showAllMembersPrefs}
               />
 
               {selectedPrefDate && (
@@ -350,7 +350,7 @@ export function ShiftPage() {
                 </div>
               )}
 
-              {isAdmin && (
+              {canManageTenant && (
                 <div className="mt-4">
                   <ShiftPreferenceAdminList
                     preferences={preferencesForAdminList}
@@ -368,7 +368,7 @@ export function ShiftPage() {
 
           {preferenceView === 'history' && (
             <>
-              {isAdmin && (
+              {canManageTenant && (
                 <div className="mt-4">
                   <ShiftPreferenceAdminList
                     preferences={preferencesForAdminList}
@@ -382,7 +382,7 @@ export function ShiftPage() {
                 </div>
               )}
 
-              {!isAdmin && (
+              {!canManageTenant && (
                 <div className="space-y-3">
                   {myPreferencesForHistory.length === 0 && (
                     <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
@@ -452,7 +452,7 @@ export function ShiftPage() {
             </div>
           )}
 
-          {!isAdmin && (
+          {!canManageTenant && (
             <div>
               {showLeaveForm ? (
                 <LeaveForm
@@ -472,8 +472,8 @@ export function ShiftPage() {
 
           <LeaveList
             leaves={leaves}
-            memberNames={isAdmin ? memberNames : undefined}
-            isAdmin={isAdmin}
+            memberNames={canManageTenant ? memberNames : undefined}
+            canManageTenant={canManageTenant}
             onApprove={approveLeave}
             onReject={rejectLeave}
             onCancel={cancelLeave}

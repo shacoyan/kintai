@@ -272,6 +272,11 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
     fetchMembers();
   }, [fetchMembers]);
 
+  // currentStore 変更時に calculated を false に戻す
+  useEffect(() => {
+    setCalculated(false);
+  }, [currentStore?.id]);
+
   const handleCalculate = async () => {
     setCalculated(false);
     const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`;
@@ -279,7 +284,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
     const endDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
     if (payrollMode === 'actual') {
-      await fetchAllAttendance(selectedYear, selectedMonth);
+      await fetchAllAttendance(selectedYear, selectedMonth, currentStore?.id ?? null);
     } else {
       await getAllShifts(startDate, endDate);
     }
@@ -320,6 +325,9 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   // データが存在するかどうかの判定
   const hasData =
     payrollMode === 'actual' ? allAttendance.length > 0 : allShifts.length > 0;
+
+  // CSVファイル名用の店舗名
+  const storeLabel = currentStore?.name ?? '全店舗';
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
@@ -393,10 +401,10 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                 let filename: string;
                 if (payrollMode === 'shift') {
                   csv = generateShiftPayrollCsv(payrollData, selectedYear, selectedMonth);
-                  filename = `給与計算_シフトベース_${selectedYear}年${selectedMonth}月.csv`;
+                  filename = `給与計算_シフトベース_${storeLabel}_${selectedYear}年${selectedMonth}月.csv`;
                 } else {
                   csv = generatePayrollCsv(allAttendance, members);
-                  filename = `給与計算_${selectedYear}年${selectedMonth}月.csv`;
+                  filename = `給与計算_${storeLabel}_${selectedYear}年${selectedMonth}月.csv`;
                 }
                 downloadCsv(csv, filename);
               }}

@@ -9,7 +9,7 @@ interface ShiftPreferenceCalendarProps {
   preferences: ShiftPreference[];
   onDateClick: (date: string) => void;
   memberNames?: Map<string, string>;
-  isAdmin?: boolean;
+  canManageTenant?: boolean;
 }
 
 const MEMBER_COLORS = [
@@ -35,7 +35,7 @@ export function ShiftPreferenceCalendar({
   preferences,
   onDateClick,
   memberNames,
-  isAdmin,
+  canManageTenant,
 }: ShiftPreferenceCalendarProps) {
   const [baseDate, setBaseDate] = useState(() => new Date());
 
@@ -159,7 +159,7 @@ export function ShiftPreferenceCalendar({
                 </div>
 
                 <div className="space-y-0.5">
-                  {isAdmin && memberNames ? (
+                  {canManageTenant && memberNames ? (
                     // 店長ビュー: メンバーの頭文字 + タイプアイコン
                     dayPrefs.slice(0, 3).map((pref) => {
                       const color = userColorMap.get(pref.user_id) || MEMBER_COLORS[0];
@@ -198,7 +198,7 @@ export function ShiftPreferenceCalendar({
                       );
                     })
                   )}
-                  {isAdmin && dayPrefs.length > 3 && (
+                  {canManageTenant && dayPrefs.length > 3 && (
                     <div className="text-[10px] text-gray-500 dark:text-gray-400">+{dayPrefs.length - 3}件</div>
                   )}
                 </div>
@@ -210,7 +210,7 @@ export function ShiftPreferenceCalendar({
 
       {/* 凡例 */}
       <div className="flex flex-wrap gap-3 text-xs">
-        {isAdmin && memberNames ? (
+        {canManageTenant && memberNames ? (
           [...userColorMap.entries()].map(([uid, color]) => (
             <div key={uid} className="flex items-center gap-1">
               <div className={`w-2.5 h-2.5 rounded-full ${color.bg}`} />

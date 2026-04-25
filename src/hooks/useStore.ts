@@ -89,12 +89,35 @@ export function useStore(tenantId: string) {
   }, [fetchStoreMembers]);
 
   const setStoreMemberManager = useCallback(async (storeId: string, memberId: string, isManager: boolean) => {
-    const { error } = await supabase
+    // store_members から対象レコードの id を解決
+    const { data: targetRecord, error: selectError } = await supabase
       .from('store_members')
-      .update({ is_manager: isManager })
+      .select('id')
       .eq('store_id', storeId)
-      .eq('member_id', memberId);
-    if (error) throw new Error(`店舗内権限の更新に失敗しました: ${error.message}`);
+      .eq('member_id', memberId)
+      .maybeSingle();
+
+    if (selectError) {
+      throw new Error(`店舗内権限の更新に失敗しました: ${selectError.message}`);
+    }
+    if (!targetRecord) {
+      throw new Error('店舗内権限の更新に失敗しました: 対象メンバーが見つかりません');
+    }
+
+    // RPC を呼び出して is_manager を更新
+    const { error: rpcError } = await supabase.rpc('set_store_member_manager', {
+      target_store_member_id: targetRecord.id,
+      new_is_manager: isManager,
+    });
+
+    if (rpcError) {
+      // 特定エラーメッセージの翻訳
+      if (rpcError.message === 'Only tenant owner can change is_manager') {
+        throw new Error('店長権限の変更はオーナーのみ可能です');
+      }
+      throw new Error(`店舗内権限の更新に失敗しました: ${rpcError.message}`);
+    }
+
     await fetchStoreMembers(storeId);
   }, [fetchStoreMembers]);
 
