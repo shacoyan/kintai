@@ -1,17 +1,20 @@
 import { useState } from 'react';
-import type { Shift } from '../../types';
+import type { Shift, Store } from '../../types';
 import { BottomSheet } from '../ui/BottomSheet';
 
 interface ShiftEditModalProps {
   shift: Shift;
   memberName?: string;
   isAdmin: boolean;
-  onModify: (shiftId: string, startTime: string, endTime: string) => Promise<void>;
+  onModify: (shiftId: string, startTime: string, endTime: string, storeId?: string) => Promise<void>;
   onDelete: (shiftId: string) => Promise<void>;
   onApprove?: (shiftId: string) => Promise<void>;
   onReject?: (shiftId: string) => Promise<void>;
   onClose: () => void;
   onRefresh: () => void;
+  selectableStores: Store[];
+  storeName?: string;
+  canManage: boolean;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -29,9 +32,10 @@ const STATUS_LABEL: Record<string, { text: string; className: string }> = {
   cancelled: { text: '取消', className: 'bg-gray-100 text-gray-500 dark:bg-gray-700/30 dark:text-gray-400' },
 };
 
-export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete, onApprove, onReject, onClose, onRefresh }: ShiftEditModalProps) {
+export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete, onApprove, onReject, onClose, onRefresh, selectableStores, storeName, canManage }: ShiftEditModalProps) {
   const [startTime, setStartTime] = useState(shift.start_time.slice(0, 5));
   const [endTime, setEndTime] = useState(shift.end_time.slice(0, 5));
+  const [editStoreId, setEditStoreId] = useState<string | null>(shift.store_id ?? null);
   const [mode, setMode] = useState<'view' | 'edit' | 'confirmDelete'>('view');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +60,7 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
     if (mode === 'view') {
       return (
         <div className="flex flex-wrap gap-2">
-          {isAdmin && shift.status === 'pending' && onApprove && (
+          {isAdmin && canManage && shift.status === 'pending' && onApprove && (
             <button
               onClick={() => handleAction(() => onApprove(shift.id))}
               disabled={processing}
@@ -65,7 +69,7 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
               承認
             </button>
           )}
-          {isAdmin && shift.status === 'pending' && onReject && (
+          {isAdmin && canManage && shift.status === 'pending' && onReject && (
             <button
               onClick={() => handleAction(() => onReject(shift.id))}
               disabled={processing}
@@ -74,7 +78,7 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
               却下
             </button>
           )}
-          {isAdmin && (
+          {isAdmin && canManage && (
             <button
               onClick={() => setMode('edit')}
               className="btn-primary bg-blue-600 hover:bg-blue-700 transition"
@@ -82,13 +86,16 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
               修正
             </button>
           )}
-          {isAdmin && (
+          {isAdmin && canManage && (
             <button
               onClick={() => setMode('confirmDelete')}
               className="btn-danger disabled:opacity-50 transition"
             >
               削除
             </button>
+          )}
+          {isAdmin && !canManage && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">この店舗の管理権限がありません</p>
           )}
           <button
             onClick={onClose}
@@ -104,7 +111,7 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
       return (
         <div className="flex gap-2">
           <button
-            onClick={() => handleAction(() => onModify(shift.id, startTime, endTime))}
+            onClick={() => handleAction(() => onModify(shift.id, startTime, endTime, editStoreId ?? undefined))}
             disabled={processing}
             className="btn-primary disabled:opacity-50 transition"
           >
@@ -165,6 +172,9 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
 
       {mode === 'view' && (
         <div className="space-y-4">
+          {storeName && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">店舗: <span className="font-medium text-gray-700 dark:text-gray-300">{storeName}</span></p>
+          )}
           <div className="flex items-center gap-3">
             <div className="flex-1">
               <p className="text-xs text-gray-500 dark:text-gray-400">開始</p>
@@ -183,6 +193,19 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
       )}
 
       {mode === 'edit' && (
+        <>
+        {selectableStores.length >= 1 && (
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">店舗</label>
+            <select
+              value={editStoreId ?? ''}
+              onChange={(e) => setEditStoreId(e.target.value || null)}
+              className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            >
+              {selectableStores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">開始時刻</label>
@@ -205,6 +228,7 @@ export function ShiftEditModal({ shift, memberName, isAdmin, onModify, onDelete,
             </select>
           </div>
         </div>
+        </>
       )}
 
       {mode === 'confirmDelete' && (

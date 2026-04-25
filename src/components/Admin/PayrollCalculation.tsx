@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useAdmin } from '../../hooks/useAdmin';
 import { useShift } from '../../hooks/useShift';
+import { useStoreContext } from '../../contexts/StoreContext';
 import { parseISO, differenceInMinutes } from 'date-fns';
 import type { AttendanceRecord, TenantMember, Shift } from '../../types';
 import { generatePayrollCsv, downloadCsv } from '../../utils/csvExport';
@@ -259,7 +260,8 @@ function generateShiftPayrollCsv(
 
 export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   const { members, allAttendance, loading, error, fetchMembers, fetchAllAttendance } = useAdmin(tenantId);
-  const { allShifts, loading: shiftsLoading, getAllShifts } = useShift(tenantId);
+  const { currentStore } = useStoreContext();
+  const { allShifts, loading: shiftsLoading, getAllShifts } = useShift(tenantId, currentStore?.id ?? null);
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);

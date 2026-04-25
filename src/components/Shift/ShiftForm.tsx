@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Clock } from 'lucide-react';
-import type { ShiftPreset } from '../../types';
+import type { ShiftPreset, Store } from '../../types';
 
 interface ShiftFormProps {
   date: string;
-  onSubmit: (date: string, startTime: string, endTime: string, note?: string) => Promise<void>;
+  onSubmit: (date: string, startTime: string, endTime: string, note?: string, storeId?: string) => Promise<void>;
   onCancel: () => void;
   initialStartTime?: string;
   initialEndTime?: string;
   presets?: ShiftPreset[];
+  selectableStores: Store[];
+  defaultStoreId: string | null;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -18,10 +20,11 @@ for (let h = 0; h < 24; h++) {
   }
 }
 
-export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialEndTime, presets }: ShiftFormProps) {
+export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialEndTime, presets, selectableStores, defaultStoreId }: ShiftFormProps) {
   const [startTime, setStartTime] = useState(initialStartTime || '09:00');
   const [endTime, setEndTime] = useState(initialEndTime || '18:00');
   const [note, setNote] = useState('');
+  const [storeId, setStoreId] = useState<string | null>(defaultStoreId);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,10 +34,14 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
       setError('開始と終了時刻が同じです');
       return;
     }
+    if (!storeId) {
+      setError('店舗を選択してください');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
-      await onSubmit(date, startTime, endTime, note || undefined);
+      await onSubmit(date, startTime, endTime, note || undefined, storeId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'シフト申請に失敗しました');
     } finally {
@@ -63,6 +70,21 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
               {p.name} ({p.start_time.slice(0, 5)}-{p.end_time.slice(0, 5)})
             </button>
           ))}
+        </div>
+      )}
+
+      {selectableStores.length >= 1 && (
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">店舗</label>
+          <select
+            value={storeId ?? ''}
+            onChange={(e) => setStoreId(e.target.value || null)}
+            className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            {selectableStores.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
         </div>
       )}
 

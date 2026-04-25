@@ -160,7 +160,7 @@ export function ShiftPreferenceCalendar({
 
                 <div className="space-y-0.5">
                   {isAdmin && memberNames ? (
-                    // 管理者ビュー: メンバーの頭文字 + タイプアイコン
+                    // 店長ビュー: メンバーの頭文字 + タイプアイコン
                     dayPrefs.slice(0, 3).map((pref) => {
                       const color = userColorMap.get(pref.user_id) || MEMBER_COLORS[0];
                       const style = PREFERENCE_STYLE[pref.preference_type];

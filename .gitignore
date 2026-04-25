@@ -1,1 +1,4 @@
 .vercel
+
+# Build output
+dist/

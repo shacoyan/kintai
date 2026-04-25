@@ -8,6 +8,7 @@ import { useCorrection } from '../../hooks/useCorrection';
 import { useLeave } from '../../hooks/useLeave';
 import { useAdmin } from '../../hooks/useAdmin';
 import { useTenant } from '../../hooks/useTenant';
+import { useStoreContext } from '../../contexts/StoreContext';
 import { CorrectionList } from '../Correction/CorrectionList';
 import { LeaveList } from '../Leave/LeaveList';
 import { ShiftPresetManager } from './ShiftPresetManager';
@@ -41,6 +42,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const { currentTenant } = useTenant();
+  const { currentStore } = useStoreContext();
   const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
   const { allLeaves, loading: leaveLoading, getAllLeaves, approveLeave, rejectLeave } = useLeave(tenantId);
   const { members: adminMembers, fetchMembers: fetchAdminMembers } = useAdmin(tenantId);
@@ -211,7 +213,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
           </div>
         )}
         {activeTab === 'presets' && (
-          <ShiftPresetManager tenantId={tenantId} />
+          <ShiftPresetManager tenantId={tenantId} storeId={currentStore?.id ?? null} />
         )}
         {activeTab === 'stores' && (
           <StoreManagement tenantId={tenantId} />

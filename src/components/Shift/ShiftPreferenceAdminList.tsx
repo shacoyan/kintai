@@ -10,6 +10,7 @@ interface ShiftPreferenceAdminListProps {
   onReject: (id: string) => Promise<void>;
   onRefresh: () => void;
   historyMode?: boolean;
+  canManage: (storeId: string | null) => boolean;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -46,6 +47,7 @@ export function ShiftPreferenceAdminList({
   onReject,
   onRefresh,
   historyMode = false,
+  canManage,
 }: ShiftPreferenceAdminListProps) {
   const [showAll, setShowAll] = useState(false);
   const [cardStates, setCardStates] = useState<Map<string, CardState>>(new Map());
@@ -162,6 +164,7 @@ export function ShiftPreferenceAdminList({
           const isPending = pref.status === 'pending';
           const isApproved = pref.status === 'approved';
           const isRejected = pref.status === 'rejected';
+          const canManageRow = canManage(pref.store_id);
 
           return (
             <div
@@ -231,7 +234,7 @@ export function ShiftPreferenceAdminList({
               )}
 
               {/* 時間指定エディタ */}
-              {!historyMode && state.showTimeEditor && isPending && (
+              {!historyMode && state.showTimeEditor && isPending && canManageRow && (
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
@@ -268,8 +271,15 @@ export function ShiftPreferenceAdminList({
                 </div>
               )}
 
-              {/* アクションボタン (pending のみ) */}
-              {!historyMode && isPending && (
+              {/* 権限なし表示 */}
+              {!historyMode && isPending && !canManageRow && (
+                <div className="pt-1">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">権限なし</span>
+                </div>
+              )}
+
+              {/* アクションボタン (pending のみ・操作権限あり) */}
+              {!historyMode && isPending && canManageRow && (
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {/* 承認ボタン (出勤不可以外) */}
                   {pref.preference_type !== 'unavailable' && !state.showTimeEditor && (

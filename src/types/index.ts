@@ -96,6 +96,7 @@ export interface ShiftPreset {
   end_time: string;
   sort_order: number;
   created_at: string;
+  store_id: string | null;
 }
 
 export interface CorrectionRequest {

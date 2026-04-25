@@ -2,18 +2,23 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { ShiftPreset } from '../types';
 
-export function useShiftPreset(tenantId: string) {
+export function useShiftPreset(tenantId: string, storeId: string | null) {
   const [presets, setPresets] = useState<ShiftPreset[]>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchPresets = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('shift_presets')
         .select('*')
-        .eq('tenant_id', tenantId)
-        .order('sort_order', { ascending: true });
+        .eq('tenant_id', tenantId);
+      if (storeId !== null) {
+        query = query.or(`store_id.is.null,store_id.eq.${storeId}`);
+      } else {
+        query = query.is('store_id', null);
+      }
+      const { data, error } = await query.order('sort_order', { ascending: true });
       if (error) throw error;
       setPresets((data as ShiftPreset[]) || []);
     } catch (err) {
@@ -21,9 +26,12 @@ export function useShiftPreset(tenantId: string) {
     } finally {
       setLoading(false);
     }
-  }, [tenantId]);
+  }, [tenantId, storeId]);
 
-  const addPreset = useCallback(async (name: string, startTime: string, endTime: string) => {
+  const addPreset = useCallback(async (name: string, startTime: string, endTime: string, scope: 'store' | 'tenant') => {
+    if (scope === 'store' && storeId === null) {
+      throw new Error('店舗が選択されていません');
+    }
     const { error } = await supabase
       .from('shift_presets')
       .insert({
@@ -31,10 +39,11 @@ export function useShiftPreset(tenantId: string) {
         name,
         start_time: startTime,
         end_time: endTime,
+        store_id: scope === 'store' ? storeId : null,
       });
     if (error) throw new Error(`プリセットの追加に失敗しました: ${error.message}`);
     await fetchPresets();
-  }, [tenantId, fetchPresets]);
+  }, [tenantId, storeId, fetchPresets]);
 
   const deletePreset = useCallback(async (id: string) => {
     const { error } = await supabase

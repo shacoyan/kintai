@@ -30,7 +30,7 @@ export function DashboardPage() {
     loading,
   } = useAttendance(tenantId, currentStore?.id ?? null);
 
-  const { myShifts, getMyShifts, loading: shiftLoading } = useShift(tenantId);
+  const { myShifts, getMyShifts, loading: shiftLoading } = useShift(tenantId, currentStore?.id ?? null);
 
   // 勤務中の労働時間をリアルタイム更新するためのタイマー
   const [now, setNow] = useState(() => new Date());

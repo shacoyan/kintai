@@ -13,6 +13,7 @@
 | 007 | `007_admin_attendance_rls.sql` | attendance_records に admin用 UPDATE/DELETE RLSポリシー追加 | 2026-04-06 |
 | 008 | `008_fix_tenant_members_update_rls.sql` | tenant_members UPDATE RLS無限再帰修正、`is_tenant_owner()` 関数作成 | 2026-04-06 |
 | 017 | `017_multi_store_role_and_manager.sql` | ロール語彙 admin→manager / store_members.is_manager / shift_preferences.store_id / RLS 再構築 | 2026-04-26 |
+| 018 | `018_loop_b_unique_keys_and_preset_scope.sql` | shift_preferences の UNIQUE を (tenant,user,date,store_id) に組み替え + NULL データ削除 | 2026-04-26 |
 
 ## 備考
 

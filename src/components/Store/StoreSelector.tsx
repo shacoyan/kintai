@@ -8,7 +8,7 @@ export function StoreSelector() {
     return (
       <span
         className="text-xs text-amber-600 dark:text-amber-400"
-        title="店舗が割り当てられていません。管理者に連絡してください。"
+        title="店舗が割り当てられていません。店長 or オーナーに連絡してください。"
       >
         店舗未割当
       </span>

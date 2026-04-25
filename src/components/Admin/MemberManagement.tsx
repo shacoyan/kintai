@@ -188,7 +188,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       <button
                         role="switch"
                         aria-checked={member.role === 'manager'}
-                        aria-label={`${member.display_name} の管理者権限`}
+                        aria-label={`${member.display_name} の店長権限`}
                         onClick={() => handleRoleToggle(member)}
                         disabled={togglingRoleId === member.id}
                         className={`px-2 py-0.5 text-xs font-medium rounded transition ${

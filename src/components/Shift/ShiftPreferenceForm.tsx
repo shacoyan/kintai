@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle2, XCircle, Circle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import type { ShiftPreference, ShiftPreferenceType, ShiftPreset } from '../../types';
+import type { ShiftPreference, ShiftPreferenceType, ShiftPreset, Store } from '../../types';
 
 interface ShiftPreferenceFormProps {
   date: string;
@@ -12,10 +12,13 @@ interface ShiftPreferenceFormProps {
     startTime?: string,
     endTime?: string,
     note?: string,
+    storeId?: string,
   ) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   onCancel: () => void;
   presets?: ShiftPreset[];
+  selectableStores: Store[];
+  defaultStoreId: string | null;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -38,6 +41,8 @@ export function ShiftPreferenceForm({
   onDelete,
   onCancel,
   presets,
+  selectableStores,
+  defaultStoreId,
 }: ShiftPreferenceFormProps) {
   const [preferenceType, setPreferenceType] = useState<ShiftPreferenceType>(
     existingPreference?.preference_type ?? 'available',
@@ -49,6 +54,9 @@ export function ShiftPreferenceForm({
     existingPreference?.end_time?.slice(0, 5) ?? '18:00',
   );
   const [note, setNote] = useState(existingPreference?.note ?? '');
+  const [storeId, setStoreId] = useState<string | null>(
+    existingPreference?.store_id ?? defaultStoreId,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +69,10 @@ export function ShiftPreferenceForm({
       setError('開始と終了時刻が同じです');
       return;
     }
+    if (!storeId) {
+      setError('店舗を選択してください');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -70,6 +82,7 @@ export function ShiftPreferenceForm({
         showTimeFields ? startTime : undefined,
         showTimeFields ? endTime : undefined,
         note.trim() || undefined,
+        storeId,
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'シフト希望の登録に失敗しました');
@@ -124,6 +137,21 @@ export function ShiftPreferenceForm({
           ))}
         </div>
       </div>
+
+      {selectableStores.length >= 1 && (
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">店舗</label>
+          <select
+            value={storeId ?? ''}
+            onChange={(e) => setStoreId(e.target.value || null)}
+            className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md bg-white"
+          >
+            {selectableStores.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* プリセットボタン（出勤不可以外） */}
       {showTimeFields && presets && presets.length > 0 && (

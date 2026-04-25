@@ -7,6 +7,7 @@ import { EmptyState } from '../ui/EmptyState';
 
 interface ShiftPresetManagerProps {
   tenantId: string;
+  storeId: string | null;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -16,13 +17,14 @@ for (let h = 0; h < 24; h++) {
   }
 }
 
-export function ShiftPresetManager({ tenantId }: ShiftPresetManagerProps) {
+export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProps) {
   const { showToast } = useToast();
-  const { presets, loading, fetchPresets, addPreset, deletePreset } = useShiftPreset(tenantId);
+  const { presets, loading, fetchPresets, addPreset, deletePreset } = useShiftPreset(tenantId, storeId);
   const [name, setName] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
   const [saving, setSaving] = useState(false);
+  const [scope, setScope] = useState<'store' | 'tenant'>(storeId ? 'store' : 'tenant');
 
   useEffect(() => {
     fetchPresets();
@@ -32,7 +34,7 @@ export function ShiftPresetManager({ tenantId }: ShiftPresetManagerProps) {
     if (!name.trim()) return;
     setSaving(true);
     try {
-      await addPreset(name.trim(), startTime, endTime);
+      await addPreset(name.trim(), startTime, endTime, scope);
       setName('');
       showToast('プリセットを追加しました', 'success');
     } catch (err) {
@@ -95,6 +97,18 @@ export function ShiftPresetManager({ tenantId }: ShiftPresetManagerProps) {
               ))}
             </select>
           </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">適用範囲</label>
+            <select
+              value={scope}
+              onChange={(e) => setScope(e.target.value as 'store' | 'tenant')}
+              disabled={storeId == null}
+              className="block px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 disabled:opacity-50"
+            >
+              <option value="tenant">全店舗共通</option>
+              <option value="store">店舗別</option>
+            </select>
+          </div>
           <button
             onClick={handleAdd}
             disabled={saving || !name.trim()}
@@ -125,6 +139,9 @@ export function ShiftPresetManager({ tenantId }: ShiftPresetManagerProps) {
                 <span className="text-sm text-gray-600 dark:text-gray-300 inline-flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
                   {preset.start_time.slice(0, 5)} - {preset.end_time.slice(0, 5)}
+                </span>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${preset.store_id ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300'}`}>
+                  {preset.store_id ? '店舗別' : '全店舗共通'}
                 </span>
               </div>
               <button

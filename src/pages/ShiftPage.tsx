@@ -16,21 +16,24 @@ import { LeaveList } from '../components/Leave/LeaveList';
 import { ShiftPreferenceCalendar } from '../components/Shift/ShiftPreferenceCalendar';
 import { ShiftPreferenceForm } from '../components/Shift/ShiftPreferenceForm';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
+import { useStoreContext } from '../contexts/StoreContext';
 import type { ShiftPreferenceType } from '../types';
 
 type TabId = 'shift' | 'leave' | 'preference';
 type PreferenceView = 'current' | 'history';
 
 export function ShiftPage() {
-  const { currentTenant, myRole } = useTenant();
+  const { currentTenant, myRole, isOwner } = useTenant();
   const tenantId = currentTenant?.id || '';
   const isAdmin = myRole === 'owner' || myRole === 'manager';
+  const { currentStore, stores, isManagerOf } = useStoreContext();
+  const storeId = currentStore?.id ?? null;
 
-  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, bulkApprove, getLaborCostEstimate } = useShift(tenantId);
+  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, bulkApprove, getLaborCostEstimate } = useShift(tenantId, storeId);
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useAdmin(tenantId);
-  const { presets, fetchPresets } = useShiftPreset(tenantId);
-  const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference } = useShiftPreference(tenantId);
+  const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
+  const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference } = useShiftPreference(tenantId, storeId);
 
   const [activeTab, setActiveTab] = useState<TabId>('shift');
   const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
@@ -120,8 +123,9 @@ export function ShiftPage() {
     startTime?: string,
     endTime?: string,
     note?: string,
+    storeIdOverride?: string,
   ) => {
-    await submitPreference(date, type, startTime, endTime, note);
+    await submitPreference(date, type, startTime, endTime, note, storeIdOverride);
     setSelectedPrefDate(null);
     fetchPreferenceRange();
   };
@@ -151,6 +155,18 @@ export function ShiftPage() {
   const pendingShifts = shifts.filter(s => s.status === 'pending');
 
   if (!tenantId) return null;
+
+  if (!storeId) {
+    return (
+      <div className="p-6">
+        <div className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 text-center">
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            店舗を選択してください。ヘッダーの店舗セレクターから操作対象の店舗を選ぶと、シフト・希望が表示されます。
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -212,6 +228,9 @@ export function ShiftPage() {
               onReject={rejectShift}
               onClose={() => setSelectedShift(null)}
               onRefresh={fetchRange}
+              selectableStores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
+              storeName={stores.find(s => s.id === selectedShift.store_id)?.name}
+              canManage={selectedShift.store_id ? isManagerOf(selectedShift.store_id) : false}
             />
           )}
 
@@ -226,6 +245,7 @@ export function ShiftPage() {
                 onBulkApprove={bulkApprove}
                 onDelete={deleteShift}
                 onRefresh={fetchRange}
+                canManage={(sid) => sid ? isManagerOf(sid) : false}
               />
 
               <LaborCostSummary estimates={laborEstimates} />
@@ -323,6 +343,8 @@ export function ShiftPage() {
                       onDelete={handlePrefDelete}
                       onCancel={() => setSelectedPrefDate(null)}
                       presets={presets}
+                      selectableStores={stores}
+                      defaultStoreId={storeId}
                     />
                   </div>
                 </div>
@@ -337,6 +359,7 @@ export function ShiftPage() {
                     onReject={handleRejectPreference}
                     onRefresh={fetchPreferenceRange}
                     historyMode={false}
+                    canManage={(sid) => sid ? isManagerOf(sid) : false}
                   />
                 </div>
               )}
@@ -354,6 +377,7 @@ export function ShiftPage() {
                     onReject={handleRejectPreference}
                     onRefresh={fetchPreferenceRange}
                     historyMode
+                    canManage={(sid) => sid ? isManagerOf(sid) : false}
                   />
                 </div>
               )}

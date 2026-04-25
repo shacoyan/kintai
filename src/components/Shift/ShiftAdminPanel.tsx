@@ -7,10 +7,11 @@ interface ShiftAdminPanelProps {
   members: TenantMember[];
   onApprove: (shiftId: string) => Promise<void>;
   onReject: (shiftId: string) => Promise<void>;
-  onModify: (shiftId: string, startTime: string, endTime: string) => Promise<void>;
+  onModify: (shiftId: string, startTime: string, endTime: string, storeId?: string) => Promise<void>;
   onBulkApprove: (shiftIds: string[]) => Promise<void>;
   onDelete: (shiftId: string) => Promise<void>;
   onRefresh: () => void;
+  canManage: (storeId: string | null) => boolean;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -27,7 +28,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   modified: { label: '修正', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
 };
 
-export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify, onBulkApprove, onDelete, onRefresh }: ShiftAdminPanelProps) {
+export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify, onBulkApprove, onDelete, onRefresh, canManage }: ShiftAdminPanelProps) {
   const [modifyingId, setModifyingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [modStart, setModStart] = useState('');
@@ -36,7 +37,8 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
   const [error, setError] = useState<string | null>(null);
 
   const memberMap = new Map(members.map(m => [m.user_id, m.display_name]));
-  const pendingShifts = shifts.filter(s => s.status === 'pending');
+  const manageableShifts = shifts.filter(s => canManage(s.store_id));
+  const pendingShifts = manageableShifts.filter(s => s.status === 'pending');
 
   const handleAction = async (action: () => Promise<void>) => {
     setProcessing(true);
@@ -97,6 +99,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
           shifts.map((shift) => {
             const badge = STATUS_BADGE[shift.status] || STATUS_BADGE.pending;
             const isModifying = modifyingId === shift.id;
+            const canManageRow = canManage(shift.store_id);
 
             return (
               <div key={shift.id} className="px-6 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
@@ -155,7 +158,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                     </span>
                   )}
 
-                  {shift.status === 'pending' && !isModifying && (
+                  {shift.status === 'pending' && !isModifying && canManageRow && (
                     <div className="flex gap-1.5">
                       <button
                         onClick={() => handleAction(() => onApprove(shift.id))}
@@ -181,7 +184,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                     </div>
                   )}
 
-                  {shift.status !== 'pending' && !isModifying && (
+                  {shift.status !== 'pending' && !isModifying && canManageRow && (
                     <div className="flex gap-1.5">
                       {deletingId === shift.id ? (
                         <>
@@ -208,6 +211,10 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                         </button>
                       )}
                     </div>
+                  )}
+
+                  {!isModifying && !canManageRow && (
+                    <span className="text-xs text-gray-400 dark:text-gray-500">権限なし</span>
                   )}
                 </div>
 

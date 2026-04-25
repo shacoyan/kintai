@@ -147,7 +147,7 @@ export function CorrectionForm({
         {isDelete && (
           <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
             <p className="text-sm text-red-600 dark:text-red-400 mt-1">
-              この勤怠記録の削除を管理者に依頼します
+              この勤怠記録の削除を店長 or オーナーに依頼します
             </p>
           </div>
         )}

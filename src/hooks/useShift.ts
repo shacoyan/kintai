@@ -12,13 +12,18 @@ interface LaborCostEstimate {
   estimatedCost: number;
 }
 
-export function useShift(tenantId: string) {
+export function useShift(tenantId: string, storeId: string | null) {
   const [myShifts, setMyShifts] = useState<Shift[]>([]);
   const [allShifts, setAllShifts] = useState<Shift[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const getMyShifts = useCallback(async (startDate: string, endDate: string) => {
+    if (storeId === null) {
+      setMyShifts([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -28,6 +33,7 @@ export function useShift(tenantId: string) {
         .from('shifts')
         .select('*')
         .eq('tenant_id', tenantId)
+        .eq('store_id', storeId)
         .eq('user_id', user.id)
         .gte('date', startDate)
         .lte('date', endDate)
@@ -40,9 +46,14 @@ export function useShift(tenantId: string) {
     } finally {
       setLoading(false);
     }
-  }, [tenantId]);
+  }, [tenantId, storeId]);
 
   const getAllShifts = useCallback(async (startDate: string, endDate: string) => {
+    if (storeId === null) {
+      setAllShifts([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -50,6 +61,7 @@ export function useShift(tenantId: string) {
         .from('shifts')
         .select('*')
         .eq('tenant_id', tenantId)
+        .eq('store_id', storeId)
         .gte('date', startDate)
         .lte('date', endDate)
         .order('date', { ascending: true });
@@ -61,9 +73,11 @@ export function useShift(tenantId: string) {
     } finally {
       setLoading(false);
     }
-  }, [tenantId]);
+  }, [tenantId, storeId]);
 
-  const submitShift = useCallback(async (date: string, startTime: string, endTime: string, note?: string) => {
+  const submitShift = useCallback(async (date: string, startTime: string, endTime: string, note?: string, storeIdOverride?: string) => {
+    const effectiveStoreId = storeIdOverride ?? storeId;
+    if (effectiveStoreId === null) throw new Error('店舗が選択されていません');
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
     const { error: e } = await supabase
@@ -75,9 +89,10 @@ export function useShift(tenantId: string) {
         start_time: startTime,
         end_time: endTime,
         note: note || null,
+        store_id: effectiveStoreId,
       });
     if (e) throw new Error(`シフト申請に失敗しました: ${e.message}`);
-  }, [tenantId]);
+  }, [tenantId, storeId]);
 
   const deleteShift = useCallback(async (shiftId: string) => {
     const { error: e } = await supabase
@@ -124,7 +139,7 @@ export function useShift(tenantId: string) {
     if (e) throw new Error(`シフト却下に失敗しました: ${e.message}`);
   }, []);
 
-  const modifyShift = useCallback(async (shiftId: string, newStartTime: string, newEndTime: string) => {
+  const modifyShift = useCallback(async (shiftId: string, newStartTime: string, newEndTime: string, newStoreId?: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
@@ -145,6 +160,7 @@ export function useShift(tenantId: string) {
         status: 'modified',
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
+        ...(newStoreId !== undefined ? { store_id: newStoreId } : {}),
       })
       .eq('id', shiftId);
     if (e) throw new Error(`シフト修正に失敗しました: ${e.message}`);

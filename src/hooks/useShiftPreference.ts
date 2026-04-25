@@ -2,13 +2,17 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { ShiftPreference, ShiftPreferenceType } from '../types';
 
-export function useShiftPreference(tenantId: string) {
+export function useShiftPreference(tenantId: string, storeId: string | null) {
   const [myPreferences, setMyPreferences] = useState<ShiftPreference[]>([]);
   const [allPreferences, setAllPreferences] = useState<ShiftPreference[]>([]);
   const [loading, setLoading] = useState(false);
 
   // 自分のシフト希望を期間で取得
   const fetchMyPreferences = useCallback(async (startDate: string, endDate: string) => {
+    if (storeId === null) {
+      setMyPreferences([]);
+      return;
+    }
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -17,6 +21,7 @@ export function useShiftPreference(tenantId: string) {
         .from('shift_preferences')
         .select('*')
         .eq('tenant_id', tenantId)
+        .eq('store_id', storeId)
         .eq('user_id', user.id)
         .gte('date', startDate)
         .lte('date', endDate)
@@ -26,16 +31,21 @@ export function useShiftPreference(tenantId: string) {
     } finally {
       setLoading(false);
     }
-  }, [tenantId]);
+  }, [tenantId, storeId]);
 
-  // 管理者: 全員分の希望を取得
+  // 店長: 全員分の希望を取得
   const fetchAllPreferences = useCallback(async (startDate: string, endDate: string) => {
+    if (storeId === null) {
+      setAllPreferences([]);
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('shift_preferences')
         .select('*')
         .eq('tenant_id', tenantId)
+        .eq('store_id', storeId)
         .gte('date', startDate)
         .lte('date', endDate)
         .order('date');
@@ -44,7 +54,7 @@ export function useShiftPreference(tenantId: string) {
     } finally {
       setLoading(false);
     }
-  }, [tenantId]);
+  }, [tenantId, storeId]);
 
   // シフト希望を提出（upsert: 同日は上書き）
   const submitPreference = useCallback(async (
@@ -53,7 +63,10 @@ export function useShiftPreference(tenantId: string) {
     startTime?: string,
     endTime?: string,
     note?: string,
+    storeIdOverride?: string,
   ) => {
+    const effectiveStoreId = storeIdOverride ?? storeId;
+    if (effectiveStoreId === null) throw new Error('店舗が選択されていません');
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('認証が必要です');
     const { error } = await supabase
@@ -66,9 +79,10 @@ export function useShiftPreference(tenantId: string) {
         start_time: startTime || null,
         end_time: endTime || null,
         note: note || null,
-      }, { onConflict: 'tenant_id,user_id,date' });
+        store_id: effectiveStoreId,
+      }, { onConflict: 'tenant_id,user_id,date,store_id' });
     if (error) throw new Error(`シフト希望の登録に失敗しました: ${error.message}`);
-  }, [tenantId]);
+  }, [tenantId, storeId]);
 
   // シフト希望を削除
   const deletePreference = useCallback(async (preferenceId: string) => {
@@ -79,7 +93,7 @@ export function useShiftPreference(tenantId: string) {
     if (error) throw new Error(`シフト希望の削除に失敗しました: ${error.message}`);
   }, []);
 
-  // 管理者: 希望を承認し、shiftsテーブルにシフトを自動作成
+  // 店長: 希望を承認し、shiftsテーブルにシフトを自動作成
   const approvePreference = useCallback(async (
     preferenceId: string,
     overrideStartTime?: string,
@@ -107,6 +121,8 @@ export function useShiftPreference(tenantId: string) {
       .eq('id', preferenceId);
     if (updateError) throw new Error(`希望の承認に失敗しました: ${updateError.message}`);
 
+    if (pref.store_id === null) throw new Error('シフト希望に店舗が紐付いていません');
+
     // shiftsテーブルにシフトを作成
     const { error: insertError } = await supabase
       .from('shifts')
@@ -118,11 +134,12 @@ export function useShiftPreference(tenantId: string) {
         end_time: endTime,
         status: 'approved',
         note: pref.note || null,
+        store_id: pref.store_id,
       });
     if (insertError) throw new Error(`シフト作成に失敗しました: ${insertError.message}`);
   }, []);
 
-  // 管理者: 希望を却下
+  // 店長: 希望を却下
   const rejectPreference = useCallback(async (preferenceId: string) => {
     const { error } = await supabase
       .from('shift_preferences')
