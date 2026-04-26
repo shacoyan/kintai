@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Serif+JP:wght@500;700&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -19,6 +21,19 @@
 @layer base {
   body {
     @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+  }
+}
+
+@layer base {
+  html {
+    font-feature-settings: 'palt' 1;
+    font-family: theme('fontFamily.sans');
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
@@ -49,5 +64,21 @@
   }
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  .num   { font-family: theme('fontFamily.num');  font-variant-numeric: tabular-nums; }
+  .serif { font-family: theme('fontFamily.serif'); }
+  .mono  { font-family: theme('fontFamily.mono'); }
+  .focus-ring {
+    outline: none;
+    box-shadow: 0 0 0 2px theme('colors.neutral.0'), 0 0 0 4px theme('colors.primary.500');
+  }
+  .grid-bg {
+    background-image:
+      linear-gradient(to right, rgba(19, 29, 60, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(19, 29, 60, 0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
 }
