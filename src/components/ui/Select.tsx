@@ -21,14 +21,14 @@ export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement
 const FIELD_BASE =
   'w-full h-12 md:h-10 appearance-none border rounded-md bg-white pl-3.5 pr-10 text-body ' +
   'transition-colors duration-120 ' +
-  'focus:outline-none focus:ring-2 ' +
+  'focus:outline-none focus-visible:ring-2 ' +
   'disabled:bg-neutral-50 disabled:cursor-not-allowed';
 
 const FIELD_NORMAL =
-  'border-neutral-300 focus:border-primary-500 focus:ring-primary-100';
+  'border-neutral-300 focus-visible:border-primary-500 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50';
 
 const FIELD_ERROR =
-  'border-danger-500 focus:border-danger-500 focus:ring-danger-50';
+  'border-danger-500 focus-visible:border-danger-500 focus-visible:ring-danger-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50';
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
   {

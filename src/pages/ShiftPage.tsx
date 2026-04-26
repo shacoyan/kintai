@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
-import { Clock, History, CheckCircle2, Circle, XCircle } from 'lucide-react';
+import { Clock, History, CheckCircle2, Circle, XCircle, Loader2, Plus, ChevronRight } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { Button, Card, Badge, BottomSheet } from '../components/ui';
+import type { BadgeTone } from '../components/ui';
 import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
 import { useLeave } from '../hooks/useLeave';
@@ -21,6 +24,18 @@ import type { ShiftPreferenceType } from '../types';
 
 type TabId = 'shift' | 'leave' | 'preference';
 type PreferenceView = 'current' | 'history';
+
+interface PrefListStyle {
+  Icon: LucideIcon;
+  label: string;
+  iconBox: string;
+}
+
+const PREF_LIST_STYLE: Record<ShiftPreferenceType, PrefListStyle> = {
+  preferred: { Icon: CheckCircle2, label: '希望', iconBox: 'bg-primary-50 text-primary-700' },
+  available: { Icon: Circle, label: '出勤可能', iconBox: 'bg-info-50 text-info-500' },
+  unavailable: { Icon: XCircle, label: '出勤不可', iconBox: 'bg-warning-50 text-warning-500' },
+};
 
 export function ShiftPage() {
   const { currentTenant, myRole, isOwner } = useTenant();
@@ -62,6 +77,29 @@ export function ShiftPage() {
   const myPreferencesForHistory = useMemo(
     () => [...myPreferences].sort((a, b) => b.date.localeCompare(a.date)),
     [myPreferences]
+  );
+
+  const preferenceSummary = useMemo(() => {
+    const active = myPreferences.filter((p) => p.status !== 'rejected');
+    return {
+      preferredCount: active.filter((p) => p.preference_type === 'preferred').length,
+      availableCount: active.filter((p) => p.preference_type === 'available').length,
+      unavailableCount: active.filter((p) => p.preference_type === 'unavailable').length,
+    };
+  }, [myPreferences]);
+
+  const timedPreferences = useMemo(
+    () =>
+      myPreferences
+        .filter(
+          (p) =>
+            p.status !== 'rejected' &&
+            p.preference_type !== 'unavailable' &&
+            !!p.start_time &&
+            !!p.end_time,
+        )
+        .sort((a, b) => a.date.localeCompare(b.date)),
+    [myPreferences],
   );
 
   const fetchRange = useCallback(() => {
@@ -255,31 +293,36 @@ export function ShiftPage() {
       )}
 
       {activeTab === 'preference' && (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4 pb-24">
           {prefLoading && (
             <div className="flex justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <Loader2 className="w-6 h-6 text-primary-500 animate-spin" aria-label="読み込み中" />
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          {/* 表示切替: 現在 / 履歴 */}
+          <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 rounded-md self-start">
             <button
+              type="button"
               onClick={() => setPreferenceView('current')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition ${
+              aria-pressed={preferenceView === 'current'}
+              className={`inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold rounded transition-colors duration-120 focus-ring ${
                 preferenceView === 'current'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  ? 'bg-white text-primary-700 shadow-xs'
+                  : 'bg-transparent text-neutral-600 hover:text-neutral-900'
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
               現在
             </button>
             <button
+              type="button"
               onClick={() => setPreferenceView('history')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition ${
+              aria-pressed={preferenceView === 'history'}
+              className={`inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold rounded transition-colors duration-120 focus-ring ${
                 preferenceView === 'history'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  ? 'bg-white text-primary-700 shadow-xs'
+                  : 'bg-transparent text-neutral-600 hover:text-neutral-900'
               }`}
             >
               <History className="w-3.5 h-3.5" />
@@ -290,24 +333,28 @@ export function ShiftPage() {
           {preferenceView === 'current' && (
             <>
               {canManageTenant && (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">カレンダー表示:</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-semibold text-neutral-500 tracking-wider">カレンダー表示:</span>
                   <button
+                    type="button"
                     onClick={() => setShowAllMembersPrefs(false)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
+                    aria-pressed={!showAllMembersPrefs}
+                    className={`px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring ${
                       !showAllMembersPrefs
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50'
                     }`}
                   >
                     自分の希望
                   </button>
                   <button
+                    type="button"
                     onClick={() => setShowAllMembersPrefs(true)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition ${
+                    aria-pressed={showAllMembersPrefs}
+                    className={`px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring ${
                       showAllMembersPrefs
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50'
                     }`}
                   >
                     全員の希望
@@ -325,33 +372,90 @@ export function ShiftPage() {
                 canManageTenant={canManageTenant && showAllMembersPrefs}
               />
 
-              {selectedPrefDate && (
-                <div
-                  className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-                  onClick={() => setSelectedPrefDate(null)}
-                >
-                  <div
-                    role="dialog"
-                    aria-modal="true"
-                    className="w-full max-w-md mx-4"
-                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                  >
-                    <ShiftPreferenceForm
-                      date={selectedPrefDate}
-                      existingPreference={myPreferences.find((p) => p.date === selectedPrefDate)}
-                      onSubmit={handlePrefSubmit}
-                      onDelete={handlePrefDelete}
-                      onCancel={() => setSelectedPrefDate(null)}
-                      presets={presets}
-                      selectableStores={stores}
-                      defaultStoreId={storeId}
-                    />
-                  </div>
-                </div>
+              {/* 提出予定サマリ（自分視点のみ） */}
+              {!(canManageTenant && showAllMembersPrefs) && (
+                <Card padding="md">
+                  <Card.Body className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
+                        {preferenceSummary.preferredCount}
+                      </p>
+                      <p className="text-[11px] text-neutral-500 mt-0.5">希望日</p>
+                    </div>
+                    <div className="border-x border-neutral-100">
+                      <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
+                        {preferenceSummary.availableCount}
+                      </p>
+                      <p className="text-[11px] text-neutral-500 mt-0.5">出勤可</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
+                        {preferenceSummary.unavailableCount}
+                      </p>
+                      <p className="text-[11px] text-neutral-500 mt-0.5">出勤不可</p>
+                    </div>
+                  </Card.Body>
+                </Card>
               )}
 
+              {/* 時間指定の詳細リスト */}
+              {!(canManageTenant && showAllMembersPrefs) && timedPreferences.length > 0 && (
+                <Card padding="none">
+                  <Card.Header className="border-b border-neutral-100 mb-0 pb-3 px-4 pt-4 text-sm font-semibold text-neutral-700">
+                    時間指定の詳細
+                  </Card.Header>
+                  <ul className="divide-y divide-neutral-100">
+                    {timedPreferences.map((p) => {
+                      const style = PREF_LIST_STYLE[p.preference_type];
+                      return (
+                        <li key={p.id}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPrefDate(p.date)}
+                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-neutral-50 text-left focus-ring"
+                          >
+                            <div className={`w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0 ${style.iconBox}`}>
+                              <span className="text-[10px] font-semibold leading-none">{p.date.slice(5, 7)}/</span>
+                              <span className="text-[14px] font-bold tabular-nums leading-none">{p.date.slice(8, 10)}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-neutral-900">{style.label}</p>
+                              {p.start_time && p.end_time && (
+                                <p className="text-xs text-neutral-500 tabular-nums">
+                                  {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-neutral-400" aria-hidden="true" />
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </Card>
+              )}
+
+              <BottomSheet
+                isOpen={!!selectedPrefDate}
+                onClose={() => setSelectedPrefDate(null)}
+                title={selectedPrefDate ? `${selectedPrefDate} のシフト希望` : undefined}
+              >
+                {selectedPrefDate && (
+                  <ShiftPreferenceForm
+                    date={selectedPrefDate}
+                    existingPreference={myPreferences.find((p) => p.date === selectedPrefDate)}
+                    onSubmit={handlePrefSubmit}
+                    onDelete={handlePrefDelete}
+                    onCancel={() => setSelectedPrefDate(null)}
+                    presets={presets}
+                    selectableStores={stores}
+                    defaultStoreId={storeId}
+                  />
+                )}
+              </BottomSheet>
+
               {canManageTenant && (
-                <div className="mt-4">
+                <div className="mt-2">
                   <ShiftPreferenceAdminList
                     preferences={preferencesForAdminList}
                     memberNames={memberNames}
@@ -363,13 +467,28 @@ export function ShiftPage() {
                   />
                 </div>
               )}
+
+              {/* sticky 追加ボタン（自分視点のみ） */}
+              {!(canManageTenant && showAllMembersPrefs) && (
+                <div className="sticky bottom-0 -mx-4 px-4 py-3 bg-white/95 backdrop-blur border-t border-neutral-200 z-10">
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    iconLeft={<Plus className="w-4 h-4" />}
+                    onClick={() => setSelectedPrefDate(format(new Date(), 'yyyy-MM-dd'))}
+                  >
+                    本日の希望を追加・編集
+                  </Button>
+                </div>
+              )}
             </>
           )}
 
           {preferenceView === 'history' && (
             <>
               {canManageTenant && (
-                <div className="mt-4">
+                <div className="mt-2">
                   <ShiftPreferenceAdminList
                     preferences={preferencesForAdminList}
                     memberNames={memberNames}
@@ -383,58 +502,45 @@ export function ShiftPage() {
               )}
 
               {!canManageTenant && (
-                <div className="space-y-3">
+                <div className="flex flex-col gap-2">
                   {myPreferencesForHistory.length === 0 && (
-                    <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
-                      履歴はありません
-                    </div>
+                    <Card padding="md">
+                      <p className="text-center text-sm text-neutral-500">履歴はありません</p>
+                    </Card>
                   )}
                   {myPreferencesForHistory.map((pref) => {
-                    const borderClass = pref.status === 'pending'
-                      ? 'border-yellow-300 dark:border-yellow-700'
-                      : pref.status === 'approved'
-                      ? 'border-green-300 dark:border-green-700'
-                      : 'border-gray-300 dark:border-gray-600';
-
-                    const typeIcon = pref.preference_type === 'available'
-                      ? <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      : pref.preference_type === 'preferred'
-                      ? <Circle className="w-4 h-4 text-blue-500" />
-                      : <XCircle className="w-4 h-4 text-gray-400" />;
-                    
-                    const typeLabel = pref.preference_type === 'available'
-                      ? '勤務可'
-                      : pref.preference_type === 'preferred'
-                      ? '勤務希望'
-                      : '勤務不可';
-
-                    const statusBadge = pref.status === 'pending'
-                      ? <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">未対応</span>
-                      : pref.status === 'approved'
-                      ? <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">承認済</span>
-                      : <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">却下済</span>;
-
+                    const style = PREF_LIST_STYLE[pref.preference_type];
+                    const statusTone: BadgeTone =
+                      pref.status === 'approved'
+                        ? 'success'
+                        : pref.status === 'rejected'
+                        ? 'neutral'
+                        : 'warning';
+                    const statusLabel =
+                      pref.status === 'approved' ? '承認済' : pref.status === 'rejected' ? '却下' : '未対応';
                     return (
-                      <div key={pref.id} className={`rounded-lg border p-3 ${borderClass}`}>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{pref.date}</span>
-                          {statusBadge}
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          {typeIcon}
-                          <span className="text-sm text-gray-700 dark:text-gray-300">{typeLabel}</span>
-                        </div>
-                        {pref.start_time && pref.end_time && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {pref.start_time} - {pref.end_time}
+                      <Card key={pref.id} padding="md">
+                        <Card.Body className="flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-neutral-900 tabular-nums">{pref.date}</span>
+                            <Badge tone={statusTone} withDot>{statusLabel}</Badge>
                           </div>
-                        )}
-                        {pref.note && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {pref.note}
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${style.iconBox}`}>
+                              <style.Icon className="w-3 h-3" />
+                              {style.label}
+                            </span>
+                            {pref.start_time && pref.end_time && (
+                              <span className="text-xs text-neutral-500 tabular-nums">
+                                {pref.start_time.slice(0, 5)} - {pref.end_time.slice(0, 5)}
+                              </span>
+                            )}
                           </div>
-                        )}
-                      </div>
+                          {pref.note && (
+                            <p className="text-xs text-neutral-500">{pref.note}</p>
+                          )}
+                        </Card.Body>
+                      </Card>
                     );
                   })}
                 </div>
@@ -443,7 +549,6 @@ export function ShiftPage() {
           )}
         </div>
       )}
-
       {activeTab === 'leave' && (
         <div className="space-y-6">
           {leaveLoading && (

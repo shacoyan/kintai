@@ -15,9 +15,25 @@ import { ShiftPresetManager } from './ShiftPresetManager';
 import { StoreManagement } from './StoreManagement';
 import { ShiftMismatchAlert } from './ShiftMismatchAlert';
 import { detectMismatches } from '../../utils/shiftMismatch';
-import { QrCode, Check, Copy } from 'lucide-react';
+import {
+  QrCode,
+  Check,
+  Copy,
+  LayoutDashboard,
+  Users,
+  Wallet,
+  Clock,
+  Edit3,
+  Plane,
+  Sliders,
+  Store,
+  AlertCircle,
+  CalendarCheck,
+  AlertTriangle
+} from 'lucide-react';
 import { PageSkeleton } from '../ui/Skeleton';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { StatCard, Card } from '../ui';
 import type { Shift, AttendanceRecord } from '../../types';
 
 interface AdminDashboardProps {
@@ -25,20 +41,21 @@ interface AdminDashboardProps {
 }
 
 const tabs = [
-  { id: 'members', label: 'メンバー管理' },
-  { id: 'payroll', label: '給与計算' },
-  { id: 'attendance', label: '勤怠管理' },
-  { id: 'corrections', label: '修正申請' },
-  { id: 'leaves', label: '休暇管理' },
-  { id: 'presets', label: 'シフトプリセット' },
-  { id: 'stores', label: '店舗管理' },
-  { id: 'mismatch', label: 'シフト不一致' },
-] as const;
+  { id: 'dashboard' as const, label: 'ダッシュボード', icon: LayoutDashboard },
+  { id: 'members' as const, label: 'メンバー', icon: Users },
+  { id: 'payroll' as const, label: '給与', icon: Wallet },
+  { id: 'attendance' as const, label: '勤怠', icon: Clock },
+  { id: 'corrections' as const, label: '修正', icon: Edit3 },
+  { id: 'leaves' as const, label: '休暇', icon: Plane },
+  { id: 'presets' as const, label: 'プリセット', icon: Sliders },
+  { id: 'stores' as const, label: '店舗', icon: Store },
+  { id: 'mismatch' as const, label: '不一致', icon: AlertCircle },
+];
 
 type TabId = typeof tabs[number]['id'];
 
 export function AdminDashboard({ tenantId }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('members');
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const { currentTenant } = useTenant();
@@ -161,16 +178,84 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   function renderContent() {
     return (
       <>
+        {activeTab === 'dashboard' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <StatCard
+                label="今月の総勤務時間"
+                value={0}
+                unit="h"
+                icon={<Clock size={16} />}
+                hint="集計準備中"
+              />
+              <StatCard
+                label="アクティブメンバー"
+                value={adminMembers.length}
+                unit="名"
+                icon={<Users size={16} />}
+              />
+              <StatCard
+                label="シフト充足率"
+                value={0}
+                unit="%"
+                icon={<CalendarCheck size={16} />}
+                hint="集計準備中"
+              />
+              <StatCard
+                label="未対応の修正申請"
+                value={pendingRequests.length}
+                unit="件"
+                icon={<AlertTriangle size={16} />}
+              />
+            </div>
+            {currentTenant && (
+              <Card>
+                <Card.Header>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center justify-center w-10 h-10 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                      <QrCode className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">招待コード（メンバーに共有してください）</p>
+                      <p className="text-2xl font-mono font-bold tracking-widest text-neutral-900 dark:text-neutral-100">
+                        {currentTenant.invite_code}
+                      </p>
+                    </div>
+                  </div>
+                </Card.Header>
+                <Card.Body>
+                  <button
+                    onClick={handleCopyCode}
+                    className="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 inline-flex items-center space-x-2"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>コピーしました</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        <span>コピー</span>
+                      </>
+                    )}
+                  </button>
+                </Card.Body>
+              </Card>
+            )}
+            {/* TODO(Phase 3): useTenantAdmin 拡張で totalHours / fillRate を実値化 */}
+          </div>
+        )}
         {activeTab === 'members' && <MemberManagement tenantId={tenantId} />}
         {activeTab === 'payroll' && <PayrollCalculation tenantId={tenantId} />}
         {activeTab === 'attendance' && <AttendanceAdmin tenantId={tenantId} />}
         {activeTab === 'corrections' && (
           <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">修正申請（承認待ち）</h2>
+            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">修正申請（承認待ち）</h2>
                 {pendingRequests.length > 0 && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
                     {pendingRequests.length}件
                   </span>
                 )}
@@ -186,9 +271,9 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
             </div>
 
             {processedRequests.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">修正申請履歴</h2>
+              <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
+                <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+                  <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">修正申請履歴</h2>
                 </div>
                 <CorrectionList requests={processedRequests} />
               </div>
@@ -220,17 +305,17 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
         )}
         {activeTab === 'mismatch' && (
           <div className="space-y-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-4 flex items-center justify-between">
+            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow px-6 py-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">シフト不一致アラート</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">シフト不一致アラート</h2>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                   今月の承認済みシフトと実績の差異を表示します（猶予15分）
                 </p>
               </div>
               <button
                 onClick={fetchMismatchData}
                 disabled={mismatchLoading}
-                className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 disabled:opacity-50"
+                className="px-3 py-1.5 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 disabled:opacity-50"
               >
                 {mismatchLoading ? '読み込み中…' : '再読込'}
               </button>
@@ -251,40 +336,8 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
 
   return (
     <div className="space-y-6">
-      {currentTenant && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg">
-              <QrCode className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">招待コード（メンバーに共有してください）</p>
-              <p className="text-2xl font-mono font-bold tracking-widest text-gray-900 dark:text-gray-100">
-                {currentTenant.invite_code}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleCopyCode}
-            className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 inline-flex items-center space-x-2"
-          >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4" />
-                <span>コピーしました</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4" />
-                <span>コピー</span>
-              </>
-            )}
-          </button>
-        </div>
-      )}
-
       {/* Mobile tabs - horizontal scroll */}
-      <div className="md:hidden border-b border-gray-200 dark:border-gray-700 overflow-x-auto -mx-4 px-4">
+      <div className="md:hidden border-b border-neutral-200 dark:border-neutral-700 overflow-x-auto -mx-4 px-4">
         <nav role="tablist" className="flex space-x-4 min-w-max" style={{ scrollSnapType: 'x mandatory' }}>
           {tabs.map((tab) => (
             <button
@@ -294,24 +347,24 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               onClick={() => setActiveTab(tab.id)}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition ${
                 activeTab === tab.id
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
+                  ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-400 dark:hover:text-neutral-200'
               }`}
               style={{ scrollSnapAlign: 'start' }}
             >
               {tab.label}
               {tab.id === 'leaves' && pendingLeaves.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
                   {pendingLeaves.length}
                 </span>
               )}
               {tab.id === 'corrections' && pendingRequests.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
                   {pendingRequests.length}
                 </span>
               )}
               {tab.id === 'mismatch' && mismatches.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">
                   {mismatches.length}
                 </span>
               )}
@@ -328,8 +381,8 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       {/* Desktop layout - sidebar + content */}
       <div className="hidden md:flex gap-6">
         {/* Sidebar */}
-        <nav className="w-48 shrink-0">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-2 sticky top-20 space-y-1">
+        <nav className="md:w-[200px] shrink-0">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl p-2 sticky top-20 space-y-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -337,23 +390,26 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 aria-current={activeTab === tab.id ? 'page' : undefined}
                 className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium border-l-2 border-blue-600 dark:border-blue-400 rounded-l-none'
-                    : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-700'
+                    ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 font-medium border-l-2 border-primary-600 dark:border-primary-400 rounded-l-none'
+                    : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-700'
                 }`}
               >
-                <span>{tab.label}</span>
+                <span className="flex items-center gap-2">
+                  <tab.icon size={16} />
+                  <span>{tab.label}</span>
+                </span>
                 {tab.id === 'leaves' && pendingLeaves.length > 0 && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
                     {pendingLeaves.length}
                   </span>
                 )}
                 {tab.id === 'corrections' && pendingRequests.length > 0 && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
                     {pendingRequests.length}
                   </span>
                 )}
                 {tab.id === 'mismatch' && mismatches.length > 0 && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">
                     {mismatches.length}
                   </span>
                 )}

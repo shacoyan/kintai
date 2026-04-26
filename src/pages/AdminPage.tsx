@@ -21,8 +21,10 @@ export function AdminPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">管理ダッシュボード</h1>
+    <div className="max-w-6xl mx-auto flex flex-col gap-4">
+      <h1 className="text-xl md:text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+        管理ダッシュボード
+      </h1>
       <AdminDashboard tenantId={tenantId} />
     </div>
   );

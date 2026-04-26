@@ -1,15 +1,44 @@
-import React, { useState } from 'react';
+import { useState, type FormEvent, type MouseEvent } from 'react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { Input } from '../ui/Input';
+import { Button } from '../ui/Button';
+import { Checkbox } from '../ui/Checkbox';
+import { ErrorBanner } from '../ui/ErrorBanner';
 
-export const LoginForm: React.FC = () => {
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden="true">
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.99.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}
+
+export const LoginForm = function LoginForm() {
   const { signIn, signUp } = useAuth();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -23,81 +52,130 @@ export const LoginForm: React.FC = () => {
           await signIn(email, password);
         } catch {
           // メール確認が必要な場合はログインに失敗する
-          setError('登録しました！確認メールを送信した場合は、メール内のリンクをクリックしてからログインしてください。');
+          setError(
+            '登録しました。確認メールを送信した場合は、メール内のリンクをクリックしてからログインしてください。',
+          );
           setLoading(false);
           return;
         }
       }
-    } catch (err: any) {
-      setError(err.message || '認証に失敗しました。');
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : '認証に失敗しました。';
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGoogleLogin = (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    // TODO Phase 3: signInWithOAuth({ provider: 'google' })
+  };
+
   return (
-    <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-md border border-blue-100 dark:border-gray-700">
-      <h2 className="text-2xl font-bold text-center text-blue-900 dark:text-blue-300 mb-6">
+    <form
+      onSubmit={handleSubmit}
+      aria-busy={loading || undefined}
+      className="flex flex-col gap-4"
+    >
+      {error ? <ErrorBanner message={error} /> : null}
+
+      <Input
+        type="email"
+        label="メールアドレス"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+        autoComplete="email"
+        leftIcon={<Mail size={16} aria-hidden="true" />}
+        placeholder="name@example.com"
+      />
+
+      <Input
+        type={showPassword ? 'text' : 'password'}
+        label="パスワード"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        required
+        autoComplete={isLogin ? 'current-password' : 'new-password'}
+        leftIcon={<Lock size={16} aria-hidden="true" />}
+        placeholder="••••••••"
+        rightSlot={
+          <button
+            type="button"
+            aria-label={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
+            onClick={() => setShowPassword((v) => !v)}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-neutral-500 hover:text-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          >
+            {showPassword ? (
+              <EyeOff size={16} aria-hidden="true" />
+            ) : (
+              <Eye size={16} aria-hidden="true" />
+            )}
+          </button>
+        }
+      />
+
+      {isLogin ? (
+        <div className="flex items-center justify-between">
+          <Checkbox label="このデバイスを記憶する" />
+          <a
+            href="#"
+            className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
+          >
+            パスワードをお忘れですか？
+          </a>
+        </div>
+      ) : null}
+
+      <Button
+        type="submit"
+        variant="primary"
+        size="lg"
+        fullWidth
+        loading={loading}
+      >
         {isLogin ? 'ログイン' : '新規登録'}
-      </h2>
+      </Button>
 
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded mb-4 text-sm">
-          {error}
+      <div className="relative my-2">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-neutral-200" />
         </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            メールアドレス
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            placeholder="email@example.com"
-          />
+        <div className="relative flex justify-center">
+          <span className="bg-neutral-50 px-3 text-xs text-neutral-500">
+            または
+          </span>
         </div>
+      </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            パスワード
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-            placeholder="••••••••"
-          />
-        </div>
+      <Button
+        type="button"
+        variant="secondary"
+        size="lg"
+        fullWidth
+        iconLeft={<GoogleIcon />}
+        onClick={handleGoogleLogin}
+      >
+        Google でログイン
+      </Button>
 
+      <p className="mt-2 text-center text-sm text-neutral-600">
+        {isLogin
+          ? 'アカウントをお持ちでない方は'
+          : 'すでにアカウントをお持ちの方は'}
         <button
-          type="submit"
-          disabled={loading}
-          className="w-full btn-primary"
-        >
-          {loading ? '処理中...' : isLogin ? 'ログイン' : '新規登録'}
-        </button>
-      </form>
-
-      <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-        <button
+          type="button"
           onClick={() => {
-            setIsLogin(!isLogin);
+            setIsLogin((v) => !v);
             setError(null);
           }}
-          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 font-medium"
+          className="ml-1 font-semibold text-primary-600 hover:text-primary-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded"
         >
-          {isLogin ? 'アカウントをお持ちでない方はこちら' : '既にアカウントをお持ちの方はこちら'}
+          {isLogin ? '新規登録' : 'ログイン'}
         </button>
-      </div>
-    </div>
+      </p>
+    </form>
   );
 };

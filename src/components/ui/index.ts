@@ -31,6 +31,9 @@ export type { StatCardProps, StatCardTrend, StatTrendDirection } from './StatCar
 export { Toast, ToastViewport } from './Toast';
 export type { ToastItem, ToastProps, ToastViewportProps, ToastTone } from './Toast';
 
+export { BrandMark } from './BrandMark';
+export type { BrandMarkProps, BrandMarkSize } from './BrandMark';
+
 // 既存（Phase 1 では再 export のみ、内部は Phase 2 以降で差替）
 export { BottomSheet } from './BottomSheet';
 export { EmptyState } from './EmptyState';

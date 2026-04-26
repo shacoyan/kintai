@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format, startOfWeek, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, Circle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, XCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ShiftPreference, ShiftPreferenceType } from '../../types';
 
@@ -12,24 +12,46 @@ interface ShiftPreferenceCalendarProps {
   canManageTenant?: boolean;
 }
 
-const MEMBER_COLORS = [
-  { bg: 'bg-blue-400', text: 'text-blue-700', light: 'bg-blue-100' },
-  { bg: 'bg-emerald-400', text: 'text-emerald-700', light: 'bg-emerald-100' },
-  { bg: 'bg-purple-400', text: 'text-purple-700', light: 'bg-purple-100' },
-  { bg: 'bg-orange-400', text: 'text-orange-700', light: 'bg-orange-100' },
-  { bg: 'bg-pink-400', text: 'text-pink-700', light: 'bg-pink-100' },
-  { bg: 'bg-cyan-400', text: 'text-cyan-700', light: 'bg-cyan-100' },
-  { bg: 'bg-amber-400', text: 'text-amber-700', light: 'bg-amber-100' },
-  { bg: 'bg-indigo-400', text: 'text-indigo-700', light: 'bg-indigo-100' },
-  { bg: 'bg-rose-400', text: 'text-rose-700', light: 'bg-rose-100' },
-  { bg: 'bg-teal-400', text: 'text-teal-700', light: 'bg-teal-100' },
-];
+interface PrefStyle {
+  Icon: LucideIcon;
+  cellClass: string;
+  dot: string;
+  text: string;
+  label: string;
+}
 
-const PREFERENCE_STYLE: Record<ShiftPreferenceType, { Icon: LucideIcon; dot: string; label: string }> = {
-  preferred: { Icon: CheckCircle2, dot: 'bg-blue-500', label: '希望' },
-  available: { Icon: Circle, dot: 'bg-green-500', label: '出勤可' },
-  unavailable: { Icon: XCircle, dot: 'bg-red-500', label: '出勤不可' },
+const PREFERENCE_STYLE: Record<ShiftPreferenceType, PrefStyle> = {
+  preferred: {
+    Icon: CheckCircle2,
+    cellClass: 'bg-primary-50 ring-1 ring-primary-300 text-primary-700',
+    dot: 'bg-primary-500',
+    text: 'text-primary-700',
+    label: '希望',
+  },
+  available: {
+    Icon: Circle,
+    cellClass: 'bg-info-50 ring-1 ring-info-500/40 text-info-500',
+    dot: 'bg-info-500',
+    text: 'text-info-500',
+    label: '出勤可能',
+  },
+  unavailable: {
+    Icon: XCircle,
+    cellClass: 'bg-warning-50 ring-1 ring-warning-500/40 text-warning-500',
+    dot: 'bg-warning-500',
+    text: 'text-warning-500',
+    label: '出勤不可',
+  },
 };
+
+const MEMBER_TONE_CLASSES = [
+  'bg-primary-50 text-primary-700',
+  'bg-success-50 text-success-500',
+  'bg-info-50 text-info-500',
+  'bg-warning-50 text-warning-500',
+  'bg-danger-50 text-danger-500',
+  'bg-neutral-100 text-neutral-700',
+];
 
 export function ShiftPreferenceCalendar({
   preferences,
@@ -52,11 +74,11 @@ export function ShiftPreferenceCalendar({
     return result;
   }, [baseDate]);
 
-  const userColorMap = useMemo(() => {
-    const map = new Map<string, (typeof MEMBER_COLORS)[number]>();
+  const userToneMap = useMemo(() => {
+    const map = new Map<string, string>();
     const uniqueUsers = [...new Set(preferences.map((p) => p.user_id))];
     uniqueUsers.forEach((uid, i) => {
-      map.set(uid, MEMBER_COLORS[i % MEMBER_COLORS.length]);
+      map.set(uid, MEMBER_TONE_CLASSES[i % MEMBER_TONE_CLASSES.length]);
     });
     return map;
   }, [preferences]);
@@ -78,154 +100,188 @@ export function ShiftPreferenceCalendar({
   const today = format(new Date(), 'yyyy-MM-dd');
   const weekDays = ['月', '火', '水', '木', '金', '土', '日'];
 
+  const isAdminView = !!canManageTenant && !!memberNames;
+
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       {/* ナビゲーション */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-            aria-label="前月"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </button>
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 min-w-[120px] text-center">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 focus-ring"
+          aria-label="前月"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+        <div className="text-center">
+          <p className="text-base font-semibold text-neutral-900 tabular-nums">
             {format(baseDate, 'yyyy年M月', { locale: ja })}
-          </span>
+          </p>
           <button
-            onClick={() => navigate(1)}
-            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-            aria-label="次月"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </button>
-          <button
+            type="button"
             onClick={() => setBaseDate(new Date())}
-            className="px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition"
+            className="text-[11px] font-semibold text-primary-600 hover:underline mt-0.5"
           >
-            今月
+            今月へ戻る
           </button>
         </div>
+        <button
+          type="button"
+          onClick={() => navigate(1)}
+          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 focus-ring"
+          aria-label="次月"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
       </div>
 
-      {/* カレンダーグリッド */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        {/* ヘッダー */}
-        <div className="grid grid-cols-7 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-          {weekDays.map((d, i) => (
-            <div
-              key={i}
-              className={`text-center py-2 text-xs font-medium ${
-                i === 5 ? 'text-blue-600 dark:text-blue-400' : i === 6 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
-              }`}
+      {/* 曜日ヘッダ */}
+      <div className="grid grid-cols-7 gap-1.5 px-0.5">
+        {weekDays.map((d, i) => (
+          <div
+            key={d}
+            className={
+              'text-center text-[11px] font-semibold ' +
+              (i === 5
+                ? 'text-info-500'
+                : i === 6
+                ? 'text-danger-500'
+                : 'text-neutral-500')
+            }
+          >
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* 日マス */}
+      <div className="grid grid-cols-7 gap-1.5" role="grid" aria-label="シフト希望カレンダー">
+        {dates.map((d, idx) => {
+          const dateStr = format(d, 'yyyy-MM-dd');
+          const isToday = dateStr === today;
+          const isCurrentMonth = d.getMonth() === baseDate.getMonth();
+          const dayPrefs = preferencesByDate.get(dateStr) || [];
+          const dayOfWeek = idx % 7;
+
+          // スタッフビューでは自分の希望は通常 1 件
+          const primaryPref = dayPrefs[0];
+          const style = primaryPref ? PREFERENCE_STYLE[primaryPref.preference_type] : null;
+          const hasTime =
+            primaryPref?.preference_type !== 'unavailable' &&
+            !!primaryPref?.start_time &&
+            !!primaryPref?.end_time;
+
+          const baseCell =
+            'aspect-square min-h-[44px] md:min-h-[56px] rounded-lg flex flex-col ' +
+            'items-center justify-center gap-0.5 text-[11px] transition-colors duration-120 ' +
+            'focus-ring select-none';
+
+          let stateCell: string;
+          if (!isCurrentMonth) {
+            stateCell = 'bg-neutral-100 text-neutral-500 cursor-not-allowed';
+          } else if (style && !isAdminView) {
+            stateCell = style.cellClass + ' hover:opacity-90';
+          } else {
+            stateCell =
+              'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50';
+          }
+          const todayRing = isToday ? ' ring-2 ring-primary-500' : '';
+          const dayNumColor =
+            !isCurrentMonth
+              ? 'text-neutral-500'
+              : dayOfWeek === 6
+              ? 'text-danger-500'
+              : dayOfWeek === 5
+              ? 'text-info-500'
+              : 'text-neutral-700';
+
+          const ariaLabel = `${format(d, 'yyyy年M月d日 (E)', { locale: ja })}${
+            primaryPref ? ` ${PREFERENCE_STYLE[primaryPref.preference_type].label}` : ''
+          }`;
+
+          return (
+            <button
+              key={dateStr}
+              type="button"
+              role="gridcell"
+              aria-label={ariaLabel}
+              aria-pressed={!!primaryPref && !isAdminView}
+              disabled={!isCurrentMonth}
+              onClick={() => isCurrentMonth && onDateClick(dateStr)}
+              className={baseCell + ' ' + stateCell + todayRing}
             >
-              {d}
-            </div>
-          ))}
-        </div>
-
-        {/* セル */}
-        <div className="grid grid-cols-7">
-          {dates.map((d, index) => {
-            const dateStr = format(d, 'yyyy-MM-dd');
-            const isToday = dateStr === today;
-            const isCurrentMonth = d.getMonth() === baseDate.getMonth();
-            const dayPrefs = preferencesByDate.get(dateStr) || [];
-            const dayOfWeek = index % 7;
-
-            return (
-              <div
-                key={dateStr}
-                onClick={() => onDateClick(dateStr)}
-                className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-gray-100 dark:border-gray-700 p-1 cursor-pointer transition ${
-                  !isCurrentMonth
-                    ? 'bg-gray-50 dark:bg-gray-700 opacity-50'
-                    : dayOfWeek === 5
-                    ? 'bg-sky-50/40 dark:bg-sky-900/10 hover:bg-sky-100/50 dark:hover:bg-sky-900/20'
-                    : dayOfWeek === 6
-                    ? 'bg-rose-50/40 dark:bg-rose-900/10 hover:bg-rose-100/50 dark:hover:bg-rose-900/20'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                }`}
+              <span
+                className={
+                  'text-xs font-semibold tabular-nums ' +
+                  (style && !isAdminView ? '' : dayNumColor)
+                }
               >
-                <div
-                  className={`text-xs font-medium mb-0.5 ${
-                    isToday
-                      ? 'bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center'
-                      : 'text-gray-700 dark:text-gray-300'
-                  }`}
-                >
-                  {format(d, 'd')}
-                </div>
+                {format(d, 'd')}
+              </span>
 
-                <div className="space-y-0.5">
-                  {canManageTenant && memberNames ? (
-                    // 店長ビュー: メンバーの頭文字 + タイプアイコン
-                    dayPrefs.slice(0, 3).map((pref) => {
-                      const color = userColorMap.get(pref.user_id) || MEMBER_COLORS[0];
-                      const style = PREFERENCE_STYLE[pref.preference_type];
-                      const initial = memberNames.get(pref.user_id)?.charAt(0) || '?';
-                      return (
-                        <div
-                          key={pref.id}
-                          className={`flex items-center gap-0.5 text-[10px] leading-tight px-1 py-0.5 rounded truncate ${color.light} ${color.text}`}
-                        >
-                          <span className="font-bold">{initial}</span>
-                          <style.Icon className="w-3 h-3" />
-                        </div>
-                      );
-                    })
+              {/* スタッフビュー: 時間 or アイコン */}
+              {!isAdminView && primaryPref && style && (
+                <>
+                  {hasTime && primaryPref.start_time && primaryPref.end_time ? (
+                    <span className="text-[9px] font-semibold tabular-nums leading-none">
+                      {primaryPref.start_time.slice(0, 5)}
+                    </span>
                   ) : (
-                    // スタッフビュー: 自分の希望タイプ
-                    dayPrefs.slice(0, 1).map((pref) => {
-                      const style = PREFERENCE_STYLE[pref.preference_type];
-                      const timeLabel =
-                        pref.preference_type !== 'unavailable' && pref.start_time && pref.end_time
-                          ? `${pref.start_time.slice(0, 5)}-${pref.end_time.slice(0, 5)}`
-                          : null;
-                      return (
-                        <div key={pref.id} className="space-y-0.5">
-                          <div className="flex items-center gap-0.5">
-                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${style.dot}`} />
-                            <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">
-                              <style.Icon className="w-3 h-3" />
-                            </span>
-                          </div>
-                          {timeLabel && (
-                            <div className="text-[9px] text-gray-500 dark:text-gray-400 leading-tight">{timeLabel}</div>
-                          )}
-                        </div>
-                      );
-                    })
+                    <style.Icon className="w-3 h-3" aria-hidden="true" />
                   )}
-                  {canManageTenant && dayPrefs.length > 3 && (
-                    <div className="text-[10px] text-gray-500 dark:text-gray-400">+{dayPrefs.length - 3}件</div>
+                </>
+              )}
+
+              {/* 店長ビュー: 人数 + tone dots */}
+              {isAdminView && dayPrefs.length > 0 && (
+                <div className="flex items-center gap-0.5">
+                  {dayPrefs.slice(0, 3).map((p) => {
+                    const tone = userToneMap.get(p.user_id) ?? MEMBER_TONE_CLASSES[0];
+                    return (
+                      <span
+                        key={p.id}
+                        className={'w-1.5 h-1.5 rounded-full ' + tone.split(' ')[0]}
+                        aria-hidden="true"
+                      />
+                    );
+                  })}
+                  {dayPrefs.length > 3 && (
+                    <span className="text-[9px] font-semibold text-neutral-500 tabular-nums ml-0.5">
+                      +{dayPrefs.length - 3}
+                    </span>
                   )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* 凡例 */}
-      <div className="flex flex-wrap gap-3 text-xs">
-        {canManageTenant && memberNames ? (
-          [...userColorMap.entries()].map(([uid, color]) => (
-            <div key={uid} className="flex items-center gap-1">
-              <div className={`w-2.5 h-2.5 rounded-full ${color.bg}`} />
-              <span className="text-gray-600 dark:text-gray-400">{memberNames.get(uid) || '不明'}</span>
+      <div className="px-1 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-neutral-600">
+        {isAdminView && memberNames ? (
+          [...userToneMap.entries()].slice(0, 6).map(([uid, tone]) => (
+            <div key={uid} className="inline-flex items-center gap-1.5">
+              <span
+                className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
+                aria-hidden="true"
+              />
+              <span className="text-neutral-700">{memberNames.get(uid) ?? '不明'}</span>
             </div>
           ))
         ) : (
-          (Object.entries(PREFERENCE_STYLE) as [ShiftPreferenceType, typeof PREFERENCE_STYLE[ShiftPreferenceType]][]).map(
-            ([, style]) => (
-              <div key={style.label} className="flex items-center gap-1">
-                <div className={`w-2.5 h-2.5 rounded-full ${style.dot}`} />
-                <span className="text-gray-600">{style.label}</span>
-              </div>
-            ),
-          )
+          (Object.entries(PREFERENCE_STYLE) as Array<
+            [ShiftPreferenceType, PrefStyle]
+          >).map(([key, st]) => (
+            <div key={key} className="inline-flex items-center gap-1.5">
+              <span
+                className={'inline-block w-2.5 h-2.5 rounded-sm ' + st.dot}
+                aria-hidden="true"
+              />
+              <span>{st.label}</span>
+            </div>
+          ))
         )}
       </div>
     </div>
