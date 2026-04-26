@@ -60,7 +60,7 @@ const App: React.FC = () => {
               <ProtectedRoute>
                 <RequireTenant>
                   <Layout>
-                    <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>}>
+                    <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-primary-500 border-t-transparent rounded-full" /></div>}>
                       <ShiftPage />
                     </Suspense>
                   </Layout>
@@ -74,7 +74,7 @@ const App: React.FC = () => {
               <ProtectedRoute>
                 <RequireTenant>
                   <Layout>
-                    <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" /></div>}>
+                    <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-primary-500 border-t-transparent rounded-full" /></div>}>
                       <AdminPage />
                     </Suspense>
                   </Layout>

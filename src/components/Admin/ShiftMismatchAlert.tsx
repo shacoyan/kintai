@@ -2,7 +2,8 @@ import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Ban, AlertTriangle, Clock, UserX } from 'lucide-react';
 import type { ShiftMismatch } from '../../utils/shiftMismatch';
-import { EmptyState } from '../ui/EmptyState';
+import { Card, Badge, Button, EmptyState } from '../ui';
+import type { BadgeTone } from '../ui';
 
 interface ShiftMismatchAlertProps {
   mismatches: ShiftMismatch[];
@@ -12,11 +13,11 @@ interface ShiftMismatchAlertProps {
 
 function typeIcon(type: ShiftMismatch['type']): React.ReactNode {
   switch (type) {
-    case 'no_record':   return <Ban className="w-4 h-4 text-red-600 dark:text-red-400" />;
-    case 'late':        return <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />;
-    case 'early_leave': return <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />;
-    case 'absent':      return <UserX className="w-4 h-4 text-red-600 dark:text-red-400" />;
-    default:            return <AlertTriangle className="w-4 h-4 text-gray-600 dark:text-gray-400" />;
+    case 'no_record':   return <Ban className="w-4 h-4" />;
+    case 'late':        return <AlertTriangle className="w-4 h-4" />;
+    case 'early_leave': return <Clock className="w-4 h-4" />;
+    case 'absent':      return <UserX className="w-4 h-4" />;
+    default:            return <AlertTriangle className="w-4 h-4" />;
   }
 }
 
@@ -30,31 +31,30 @@ function typeLabel(type: ShiftMismatch['type']): string {
   }
 }
 
+function typeBadgeTone(type: ShiftMismatch['type']): BadgeTone {
+  switch (type) {
+    case 'no_record':
+    case 'absent':
+      return 'danger';
+    case 'late':
+    case 'early_leave':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+}
+
 function rowBgClass(type: ShiftMismatch['type']): string {
   switch (type) {
     case 'no_record':
     case 'absent':
-      return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800';
+      return 'bg-danger-50 dark:bg-danger-900/20 border-danger-200 dark:border-danger-800';
     case 'late':
-      return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
+      return 'bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800';
     case 'early_leave':
       return 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800';
     default:
-      return 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700';
-  }
-}
-
-function badgeClass(type: ShiftMismatch['type']): string {
-  switch (type) {
-    case 'no_record':
-    case 'absent':
-      return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400';
-    case 'late':
-      return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400';
-    case 'early_leave':
-      return 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400';
-    default:
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+      return 'bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700';
   }
 }
 
@@ -103,15 +103,13 @@ export function ShiftMismatchAlert({
         })();
 
         return (
-          <div key={date} className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center gap-3">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{dateLabel}</h3>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
-                {items.length}件
-              </span>
+          <Card key={date} padding="none">
+            <div className="px-5 py-3 border-b border-neutral-200 dark:border-neutral-700 flex items-center gap-3">
+              <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{dateLabel}</h3>
+              <Badge tone="neutral">{items.length}件</Badge>
             </div>
 
-            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+            <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
               {items.map((m, idx) => {
                 const name = memberNames.get(m.userId) ?? m.userId;
                 return (
@@ -122,16 +120,13 @@ export function ShiftMismatchAlert({
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          {typeIcon(m.type)}
-                          <span className="font-medium text-gray-900 dark:text-gray-100 text-sm">{name}</span>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${badgeClass(m.type)}`}>
-                            {typeLabel(m.type)}
-                          </span>
+                          <span className="font-medium text-neutral-900 dark:text-neutral-100 text-sm">{name}</span>
+                          <Badge tone={typeBadgeTone(m.type)} icon={typeIcon(m.type)}>{typeLabel(m.type)}</Badge>
                         </div>
 
-                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-1.5">{m.message}</p>
+                        <p className="text-sm text-neutral-700 dark:text-neutral-300 mb-1.5">{m.message}</p>
 
-                        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400 space-y-0.5">
                           <p>シフト: {m.shiftStart} 〜 {m.shiftEnd}</p>
                           {(m.actualStart || m.actualEnd) && (
                             <p>
@@ -147,19 +142,20 @@ export function ShiftMismatchAlert({
                       </div>
 
                       {onRequestCorrection && (
-                        <button
+                        <Button
+                          variant="secondary"
+                          size="sm"
                           onClick={() => onRequestCorrection(m.userId, m.date)}
-                          className="shrink-0 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 whitespace-nowrap"
                         >
                           修正を依頼
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </li>
                 );
               })}
             </ul>
-          </div>
+          </Card>
         );
       })}
     </div>

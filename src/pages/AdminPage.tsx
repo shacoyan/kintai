@@ -25,11 +25,13 @@ export function AdminPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col gap-4">
-      <h1 className="text-xl md:text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-        店舗ダッシュボード
-      </h1>
-      <p className="text-sm text-neutral-500 tabular-nums">{format(currentMonth, 'yyyy年M月', { locale: ja })}</p>
+    <div className="max-w-6xl mx-auto">
+      <header className="mb-6">
+        <h1 className="text-xl md:text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+          店舗ダッシュボード
+        </h1>
+        <p className="text-sm text-neutral-500 tabular-nums mt-1">{format(currentMonth, 'yyyy年M月', { locale: ja })}</p>
+      </header>
       <AdminDashboard tenantId={tenantId} />
     </div>
   );

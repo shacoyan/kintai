@@ -15,7 +15,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   height,
   count = 1,
 }) => {
-  const baseClass = 'animate-pulse bg-gray-200 dark:bg-gray-700';
+  const baseClass = 'animate-pulse bg-neutral-200 dark:bg-neutral-700';
   const variantClass = {
     text: 'rounded h-4',
     circular: 'rounded-full',
@@ -69,7 +69,7 @@ export const PageSkeleton: React.FC = () => (
 );
 
 export const ListRowSkeleton: React.FC = () => (
-  <div className="py-3 px-4 border-b border-gray-100 dark:border-gray-800 space-y-2">
+  <div className="py-3 px-4 border-b border-neutral-100 dark:border-neutral-800 space-y-2">
     <Skeleton variant="text" width="70%" height={16} />
     <Skeleton variant="text" width="40%" height={12} />
   </div>

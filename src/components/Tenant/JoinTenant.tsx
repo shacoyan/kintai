@@ -46,9 +46,9 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
   const displayError = error;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
-      <div className="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md border border-gray-100 dark:border-gray-700">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">招待コードで参加</h2>
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
+      <div className="w-full max-w-md bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-md border border-neutral-100 dark:border-neutral-700">
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">招待コードで参加</h2>
 
         {displayError && (
           <div className="mb-4">
@@ -58,8 +58,8 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="inviteCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              招待コード <span className="text-red-500">*</span>
+            <label htmlFor="inviteCode" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+              招待コード <span className="text-danger-500">*</span>
             </label>
             <input
               id="inviteCode"
@@ -67,22 +67,22 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
               maxLength={6}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm font-mono text-lg tracking-widest text-center uppercase bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg shadow-sm font-mono text-lg tracking-widest text-center uppercase bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="ABC123"
               disabled={loading}
             />
           </div>
 
           <div>
-            <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              表示名 <span className="text-red-500">*</span>
+            <label htmlFor="displayName" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+              表示名 <span className="text-danger-500">*</span>
             </label>
             <input
               id="displayName"
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg shadow-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="例: 山田 太郎"
               disabled={loading}
             />

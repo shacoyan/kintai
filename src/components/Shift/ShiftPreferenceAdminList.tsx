@@ -120,15 +120,15 @@ export function ShiftPreferenceAdminList({
     <div className="space-y-3">
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
           {historyMode ? 'シフト希望の履歴' : 'シフト希望の承認'}
           {historyMode ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300">
               全 {preferences.length} 件
             </span>
           ) : (
             pendingCount > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900 dark:text-warning-200">
                 {pendingCount}件 未対応
               </span>
             )
@@ -137,7 +137,7 @@ export function ShiftPreferenceAdminList({
         {!historyMode && (
           <button
             onClick={() => setShowAll((v) => !v)}
-            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+            className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
           >
             {showAll ? '未対応のみ表示' : '全て表示'}
           </button>
@@ -145,7 +145,7 @@ export function ShiftPreferenceAdminList({
       </div>
 
       {displayed.length === 0 && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 py-4 text-center">
           {historyMode ? '履歴はありません' : (showAll ? '希望がありません' : '未対応の希望はありません')}
         </p>
       )}
@@ -171,57 +171,57 @@ export function ShiftPreferenceAdminList({
               key={pref.id}
               className={`rounded-lg border p-3 space-y-2 transition ${
                 isPending
-                  ? 'border-yellow-200 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-950'
+                  ? 'border-warning-200 bg-warning-50 dark:border-warning-700 dark:bg-warning-950'
                   : isApproved
-                  ? 'border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-950'
-                  : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
+                  ? 'border-success-200 bg-success-50 dark:border-success-700 dark:bg-success-950'
+                  : 'border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800'
               }`}
             >
               {/* 上段: 名前・日付・タイプ・ステータス */}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                       {memberName}
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{pref.date}</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">{pref.date}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span
                       className={`text-base leading-none font-bold ${
                         pref.preference_type === 'preferred'
-                          ? 'text-blue-600 dark:text-blue-400'
+                          ? 'text-primary-600 dark:text-primary-400'
                           : pref.preference_type === 'available'
-                          ? 'text-green-600 dark:text-green-400'
-                          : 'text-red-600 dark:text-red-400'
+                          ? 'text-success-600 dark:text-success-400'
+                          : 'text-danger-600 dark:text-danger-400'
                       }`}
                     >
                       <Ic className="w-4 h-4" />
                     </span>
-                    <span className="text-xs text-gray-600 dark:text-gray-300">{label}</span>
+                    <span className="text-xs text-neutral-600 dark:text-neutral-300">{label}</span>
                     {timeLabel && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{timeLabel}</span>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400">{timeLabel}</span>
                     )}
                   </div>
                   {pref.note && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{pref.note}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{pref.note}</p>
                   )}
                 </div>
 
                 {/* ステータスバッジ */}
                 <div className="flex-shrink-0">
                   {isApproved && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700 dark:bg-success-800 dark:text-success-200">
                       <CheckCircle2 className="w-3 h-3" />承認済
                     </span>
                   )}
                   {isRejected && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300">
                       <XCircle className="w-3 h-3" />却下済
                     </span>
                   )}
                   {isPending && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-800 dark:text-yellow-200">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-700 dark:bg-warning-800 dark:text-warning-200">
                       未対応
                     </span>
                   )}
@@ -230,20 +230,20 @@ export function ShiftPreferenceAdminList({
 
               {/* エラー表示 */}
               {!historyMode && state.error && (
-                <p className="text-xs text-red-600 dark:text-red-400">{state.error}</p>
+                <p className="text-xs text-danger-600 dark:text-danger-400">{state.error}</p>
               )}
 
               {/* 時間指定エディタ */}
               {!historyMode && state.showTimeEditor && isPending && canManageRow && (
                 <div className="grid grid-cols-2 gap-2 pt-1">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
+                    <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
                       開始時刻
                     </label>
                     <select
                       value={state.editStart}
                       onChange={(e) => setState(pref.id, { editStart: e.target.value })}
-                      className="block w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-gray-100"
+                      className="block w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-700 dark:text-neutral-100"
                     >
                       {TIME_OPTIONS.map((t) => (
                         <option key={t} value={t}>
@@ -253,13 +253,13 @@ export function ShiftPreferenceAdminList({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">
+                    <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
                       終了時刻
                     </label>
                     <select
                       value={state.editEnd}
                       onChange={(e) => setState(pref.id, { editEnd: e.target.value })}
-                      className="block w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-gray-100"
+                      className="block w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-700 dark:text-neutral-100"
                     >
                       {TIME_OPTIONS.map((t) => (
                         <option key={t} value={t}>
@@ -274,7 +274,7 @@ export function ShiftPreferenceAdminList({
               {/* 権限なし表示 */}
               {!historyMode && isPending && !canManageRow && (
                 <div className="pt-1">
-                  <span className="text-xs text-gray-400 dark:text-gray-500">権限なし</span>
+                  <span className="text-xs text-neutral-400 dark:text-neutral-500">権限なし</span>
                 </div>
               )}
 
@@ -287,7 +287,7 @@ export function ShiftPreferenceAdminList({
                       type="button"
                       disabled={state.loading}
                       onClick={() => handleApprove(pref)}
-                      className="btn-primary px-3 py-1 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition dark:bg-green-700 dark:hover:bg-green-600"
+                      className="btn-primary px-3 py-1 text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 disabled:opacity-50 transition dark:bg-success-700 dark:hover:bg-success-600"
                     >
                       {state.loading ? '処理中...' : '承認'}
                     </button>
@@ -299,7 +299,7 @@ export function ShiftPreferenceAdminList({
                       type="button"
                       disabled={state.loading}
                       onClick={() => setState(pref.id, { showTimeEditor: true })}
-                      className="btn-ghost px-3 py-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 disabled:opacity-50 transition dark:text-blue-300 dark:bg-blue-900 dark:border-blue-700 dark:hover:bg-blue-800"
+                      className="btn-ghost px-3 py-1 text-xs font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-md hover:bg-primary-100 disabled:opacity-50 transition dark:text-primary-300 dark:bg-primary-900 dark:border-primary-700 dark:hover:bg-primary-800"
                     >
                       時間指定承認
                     </button>
@@ -312,7 +312,7 @@ export function ShiftPreferenceAdminList({
                         type="button"
                         disabled={state.loading}
                         onClick={() => handleApprove(pref, true)}
-                        className="btn-primary px-3 py-1 text-xs font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 transition dark:bg-green-700 dark:hover:bg-green-600"
+                        className="btn-primary px-3 py-1 text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 disabled:opacity-50 transition dark:bg-success-700 dark:hover:bg-success-600"
                       >
                         {state.loading ? '処理中...' : '時間指定で承認'}
                       </button>
@@ -320,7 +320,7 @@ export function ShiftPreferenceAdminList({
                         type="button"
                         disabled={state.loading}
                         onClick={() => setState(pref.id, { showTimeEditor: false })}
-                        className="btn-ghost px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 transition dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
+                        className="btn-ghost px-3 py-1 text-xs font-medium text-neutral-600 bg-neutral-100 rounded-md hover:bg-neutral-200 disabled:opacity-50 transition dark:text-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600"
                       >
                         キャンセル
                       </button>
@@ -333,7 +333,7 @@ export function ShiftPreferenceAdminList({
                       type="button"
                       disabled={state.loading}
                       onClick={() => handleReject(pref)}
-                      className="btn-danger px-3 py-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-50 transition dark:text-red-300 dark:bg-red-900 dark:border-red-700 dark:hover:bg-red-800"
+                      className="btn-danger px-3 py-1 text-xs font-medium text-danger-700 bg-danger-50 border border-danger-200 rounded-md hover:bg-danger-100 disabled:opacity-50 transition dark:text-danger-300 dark:bg-danger-900 dark:border-danger-700 dark:hover:bg-danger-800"
                     >
                       {state.loading ? '処理中...' : '却下'}
                     </button>

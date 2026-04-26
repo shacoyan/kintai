@@ -23,7 +23,7 @@ export function StoreSelector() {
         setCurrentStore(store);
       }}
       aria-label="店舗切替"
-      className="text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      className="text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
     >
       {stores.map(s => (
         <option key={s.id} value={s.id}>{s.name}</option>

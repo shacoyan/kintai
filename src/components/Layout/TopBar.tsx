@@ -51,6 +51,7 @@ export function TopBar({
   const { myRole } = useTenant();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -63,6 +64,23 @@ export function TopBar({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    function handleEscapeKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsMenuOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+
+    document.addEventListener('keydown', handleEscapeKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKeyDown);
+    };
+  }, [isMenuOpen]);
 
   const currentIndex = THEME_CYCLE.indexOf(theme as ThemeValue);
   const nextTheme = THEME_CYCLE[(currentIndex + 1) % THEME_CYCLE.length];
@@ -115,21 +133,29 @@ export function TopBar({
       {showUserMenu && (
         <div className="relative" ref={menuRef}>
           <button
+            ref={triggerRef}
             type="button"
             aria-label="ユーザーメニュー"
             className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-haspopup="menu"
+            aria-expanded={isMenuOpen}
+            aria-controls="user-menu-popover"
           >
             <User size={18} />
           </button>
           {isMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-56 rounded-md bg-white shadow-lg border border-neutral-200 py-2 z-50">
+            <div
+              id="user-menu-popover"
+              role="menu"
+              className="absolute right-0 top-full mt-2 w-56 rounded-md bg-white shadow-lg border border-neutral-200 py-2 z-50"
+            >
               {user?.email && (
-                <div className="px-4 py-2 text-sm text-neutral-700 truncate">
+                <div className="px-4 py-2 text-sm text-neutral-700 truncate" role="menuitem">
                   {user.email}
                 </div>
               )}
-              <div className="px-4 py-2">
+              <div className="px-4 py-2" role="menuitem">
                 <Button
                   variant="tertiary"
                   size="sm"

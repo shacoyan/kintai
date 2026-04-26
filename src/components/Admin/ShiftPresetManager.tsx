@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { Clock, CalendarClock, Trash2 } from 'lucide-react';
 import { useShiftPreset } from '../../hooks/useShiftPreset';
 import { useToast } from '../../contexts/ToastContext';
-import { PageSkeleton } from '../ui/Skeleton';
-import { EmptyState } from '../ui/EmptyState';
+import { Card, Button, Badge, Input, Select, PageSkeleton, EmptyState } from '../ui';
 
 interface ShiftPresetManagerProps {
   tenantId: string;
@@ -16,6 +15,8 @@ for (let h = 0; h < 24; h++) {
     TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:${m}`);
   }
 }
+
+const TIME_OPTION_OBJECTS = TIME_OPTIONS.map((t) => ({ value: t, label: t }));
 
 export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProps) {
   const { showToast } = useToast();
@@ -30,8 +31,6 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
     fetchPresets();
   }, [fetchPresets]);
 
-  // 店舗が選ばれた瞬間に scope を 'store' へ寄せる（null → 値ありの遷移時）
-  // 値あり → null（店舗解除）の遷移時は 'tenant' に戻す
   useEffect(() => {
     setScope(storeId ? 'store' : 'tenant');
   }, [storeId]);
@@ -61,107 +60,99 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">シフトプリセット</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます</p>
+    <Card padding="none">
+      <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
+        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">シフトプリセット</h2>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます</p>
       </div>
 
-      {/* 追加フォーム */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+      <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[120px]">
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">プリセット名</label>
-            <input
+            <Input
+              label="プリセット名"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
               placeholder="例: 早番"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">開始</label>
-            <select
+            <Select
+              label="開始"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="block px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            >
-              {TIME_OPTIONS.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+              options={TIME_OPTION_OBJECTS}
+            />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">終了</label>
-            <select
+            <Select
+              label="終了"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="block px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            >
-              {TIME_OPTIONS.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+              options={TIME_OPTION_OBJECTS}
+            />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">適用範囲</label>
-            <select
+            <Select
+              label="適用範囲"
               value={storeId == null ? 'tenant' : scope}
               onChange={(e) => setScope(e.target.value as 'store' | 'tenant')}
               disabled={storeId == null}
-              className="block px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600 disabled:opacity-50"
-            >
-              <option value="tenant">全店舗共通</option>
-              <option value="store">店舗別</option>
-            </select>
+              options={[
+                { value: 'tenant', label: '全店舗共通' },
+                { value: 'store', label: '店舗別' },
+              ]}
+            />
           </div>
-          <button
+          <Button
+            variant="primary"
+            size="md"
             onClick={handleAdd}
             disabled={saving || !name.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition"
+            loading={saving}
           >
-            {saving ? '追加中...' : '追加'}
-          </button>
+            追加
+          </Button>
         </div>
       </div>
 
-      {/* プリセット一覧 */}
-      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
         {loading && presets.length === 0 ? (
           <PageSkeleton />
         ) : presets.length === 0 ? (
           <EmptyState
-            icon={<CalendarClock className="w-12 h-12 text-slate-400" />}
+            icon={<CalendarClock className="w-12 h-12 text-neutral-400" />}
             title="プリセットが未登録です"
             description="よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます"
           />
         ) : (
           presets.map((preset) => (
-            <div key={preset.id} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            <div key={preset.id} className="px-6 py-3 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
               <div className="flex items-center gap-3">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium">
+                <Badge tone="primary">
                   {preset.name}
-                </span>
-                <span className="text-sm text-gray-600 dark:text-gray-300 inline-flex items-center gap-1">
+                </Badge>
+                <span className="text-sm text-neutral-600 dark:text-neutral-300 inline-flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
                   {preset.start_time.slice(0, 5)} - {preset.end_time.slice(0, 5)}
                 </span>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${preset.store_id ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' : 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300'}`}>
+                <Badge tone={preset.store_id ? 'primary' : 'neutral'}>
                   {preset.store_id ? '店舗別' : '全店舗共通'}
-                </span>
+                </Badge>
               </div>
-              <button
+              <Button
+                variant="danger"
+                size="sm"
                 onClick={() => handleDelete(preset.id)}
-                className="btn-danger inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+                iconLeft={<Trash2 className="w-3.5 h-3.5" />}
               >
-                <Trash2 className="w-3.5 h-3.5" />
                 削除
-              </button>
+              </Button>
             </div>
           ))
         )}
       </div>
-    </div>
+    </Card>
   );
 }

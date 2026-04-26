@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, addWeeks, addMonths, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns';
+import { ja } from 'date-fns/locale';
 import { Clock, History, CheckCircle2, Circle, XCircle, Loader2, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, Card, Badge, BottomSheet } from '../components/ui';
@@ -10,6 +11,7 @@ import { useLeave } from '../hooks/useLeave';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
 import { useShiftPreset } from '../hooks/useShiftPreset';
 import { useShiftPreference } from '../hooks/useShiftPreference';
+import { useShiftSubmissionDeadline } from '../hooks/useShiftSubmissionDeadline';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
 import { ShiftAdminPanel } from '../components/Shift/ShiftAdminPanel';
@@ -149,26 +151,18 @@ export function ShiftPage() {
     return map;
   }, [members]);
 
+  const targetMonth = useMemo(() => startOfMonth(addMonths(new Date(), 1)), []);
+  const { deadline } = useShiftSubmissionDeadline(targetMonth);
   const deadlineInfo = useMemo(() => {
     if (!storeId) return null;
-    // Phase 3 暫定: localStorage から読む。なければ「対象月の前月25日23:59」
-    const targetMonth = startOfMonth(addMonths(new Date(), 1));
-    const targetMonthKey = format(targetMonth, 'yyyy-MM');
-    const stored = localStorage.getItem(`kintai_shift_deadline_${storeId}_${targetMonthKey}`);
-    const deadline = stored ? parseISO(stored) : (() => {
-      const d = new Date(targetMonth);
-      d.setMonth(d.getMonth() - 1);
-      d.setDate(25);
-      d.setHours(23, 59, 0, 0);
-      return d;
-    })();
+    if (!deadline) return null;
     if (deadline < new Date()) return null;
     const ms = deadline.getTime() - Date.now();
     const days = Math.floor(ms / (24 * 3600 * 1000));
     const hours = Math.floor((ms % (24 * 3600 * 1000)) / (3600 * 1000));
     const remainingLabel = days > 0 ? `${days}日${hours}時間` : `${hours}時間`;
     return { deadline, targetMonth, remainingLabel };
-  }, [storeId]);
+  }, [storeId, deadline, targetMonth]);
 
   const handleLeaveSubmit = async (date: string, leaveType: 'paid' | 'half_paid' | 'absence' | 'other', reason?: string) => {
     await submitLeave(date, leaveType, reason);
@@ -262,7 +256,7 @@ export function ShiftPage() {
           <header className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-lg md:text-xl font-semibold text-neutral-900">シフト</h2>
-              <p className="text-sm text-neutral-500 tabular-nums">{format(new Date(), 'yyyy年M月')}</p>
+              <p className="text-sm text-neutral-500 tabular-nums">{format(new Date(), 'yyyy年M月', { locale: ja })}</p>
             </div>
             {canManageTenant && pendingShifts.length > 0 && (
               <Badge tone="warning" withDot>{pendingShifts.length} 件 承認待ち</Badge>
@@ -334,10 +328,10 @@ export function ShiftPage() {
                 <AlertTriangle className="w-5 h-5 text-warning-600 mt-0.5 shrink-0" aria-hidden="true" />
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-warning-800">
-                    シフト希望の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm')}
+                    シフト希望の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })}
                   </p>
                   <p className="text-xs text-warning-700 mt-1 tabular-nums">
-                    残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月')} 分）
+                    残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
                   </p>
                 </div>
               </Card.Body>
@@ -597,7 +591,7 @@ export function ShiftPage() {
         <div className="space-y-6">
           {leaveLoading && (
             <div className="flex justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <Loader2 className="w-6 h-6 text-primary-500 animate-spin" aria-label="読み込み中" />
             </div>
           )}
 
@@ -611,7 +605,7 @@ export function ShiftPage() {
               ) : (
                 <button
                   onClick={() => setShowLeaveForm(true)}
-                  className="w-full px-4 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition border border-blue-200 dark:border-blue-800"
+                  className="w-full px-4 py-3 text-sm font-medium text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 >
                   + 休暇申請
                 </button>

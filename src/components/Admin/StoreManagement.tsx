@@ -8,6 +8,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { PageSkeleton } from '../ui/Skeleton';
 import { Store as StoreIcon } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
+import { Card, Button, Badge } from '../ui';
 
 interface StoreManagementProps {
   tenantId: string;
@@ -135,35 +136,36 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 左側: 店舗一覧 + 作成フォーム */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">店舗一覧</h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">店舗を選択するとメンバー管理ができます</p>
+        <Card padding="none">
+          <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">店舗一覧</h2>
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">店舗を選択するとメンバー管理ができます</p>
           </div>
 
           {/* 作成フォーム */}
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+          <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={newStoreName}
                 onChange={(e) => setNewStoreName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateStore()}
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                className="flex-1 px-3 py-2 text-sm border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                 placeholder="店舗名を入力"
               />
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleCreateStore}
                 disabled={creating || !newStoreName.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition"
               >
                 {creating ? '作成中...' : '追加'}
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* 店舗リスト */}
-          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+          <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
             {loading && stores.length === 0 ? (
               <PageSkeleton />
             ) : stores.length === 0 ? (
@@ -172,8 +174,8 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
               stores.map((store) => (
                 <div
                   key={store.id}
-                  className={`px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                    selectedStore?.id === store.id ? 'bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500' : ''
+                  className={`px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors ${
+                    selectedStore?.id === store.id ? 'bg-primary-50 dark:bg-primary-900/30 border-l-4 border-primary-500' : ''
                   }`}
                   onClick={() => setSelectedStore(store)}
                 >
@@ -188,38 +190,42 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                           if (e.key === 'Escape') setEditingStoreId(null);
                         }}
                         autoFocus
-                        className="flex-1 px-2 py-1 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                        className="flex-1 px-2 py-1 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                       />
-                      <button
+                      <Button
+                        variant="primary"
+                        size="sm"
                         onClick={() => handleSaveEdit(store.id)}
                         disabled={savingEdit || !editingName.trim()}
-                        className="px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 transition"
                       >
                         {savingEdit ? '保存中' : '保存'}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => setEditingStoreId(null)}
-                        className="px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition"
                       >
                         キャンセル
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     <>
-                      <span className="flex-1 text-sm font-medium text-gray-900 dark:text-gray-100">{store.name}</span>
+                      <span className="flex-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">{store.name}</span>
                       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <button
+                        <Button
+                          variant="tertiary"
+                          size="sm"
                           onClick={() => handleStartEdit(store)}
-                          className="px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50 transition"
                         >
                           編集
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
                           onClick={() => setConfirmDeleteStore(store)}
-                          className="px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 transition"
                         >
                           削除
-                        </button>
+                        </Button>
                       </div>
                     </>
                   )}
@@ -227,15 +233,15 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
               ))
             )}
           </div>
-        </div>
+        </Card>
 
         {/* 右側: メンバー管理 */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <Card padding="none">
+          <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
               {selectedStore ? `${selectedStore.name} のメンバー` : 'メンバー管理'}
             </h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
               {selectedStore
                 ? 'チェックを入れるとこの店舗に所属します'
                 : '左の一覧から店舗を選択してください'}
@@ -251,7 +257,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
           ) : allMembers.length === 0 ? (
             <EmptyState title="テナントにメンバーがいません" description="先にメンバーをテナントに招待してください" />
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
               {allMembers.map((member) => {
                 const assigned = isMemberAssigned(member.id);
                 const toggling = togglingMember === member.id;
@@ -259,28 +265,28 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                 return (
                   <label
                     key={member.id}
-                    className="flex items-center gap-3 px-6 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                    className="flex items-center gap-3 px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"
                       checked={assigned}
                       disabled={toggling}
                       onChange={() => handleToggleMember(member.id)}
-                      className="h-4 w-4 text-blue-600 rounded border-gray-300 dark:border-gray-600 focus:ring-blue-500 cursor-pointer disabled:opacity-50"
+                      className="h-4 w-4 text-primary-600 rounded border-neutral-300 dark:border-neutral-600 focus:ring-primary-500 cursor-pointer disabled:opacity-50"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{member.display_name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{member.display_name}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         {member.role === 'owner' ? 'オーナー' : member.role === 'manager' ? '店長' : 'スタッフ'}
                       </p>
                     </div>
                     {toggling && (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 flex-shrink-0"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 flex-shrink-0"></div>
                     )}
                     {!toggling && assigned && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 flex-shrink-0">
+                      <Badge tone="primary">
                         所属中
-                      </span>
+                      </Badge>
                     )}
                     {assigned === true && (
                       <button
@@ -295,8 +301,8 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                         disabled={!isOwner || togglingManagerId === member.id}
                         className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${
                           is_manager
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                            ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300'
+                            : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400'
                         }`}
                         title={isOwner ? (is_manager ? '店長権限を外す' : '店長に任命') : 'オーナーのみ操作可能'}
                       >
@@ -308,7 +314,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
               })}
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       <BottomSheet
@@ -318,22 +324,24 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
         description={confirmDeleteStore ? `「${confirmDeleteStore.name}」を削除します。関連するシフト・店舗メンバー情報も失われます` : ''}
         footer={
           <div className="flex justify-end gap-2">
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setConfirmDeleteStore(null)}
-              className="btn-ghost px-4 py-2 text-sm"
             >
               キャンセル
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
               onClick={doDeleteStore}
-              className="btn-danger px-4 py-2 text-sm"
             >
               削除
-            </button>
+            </Button>
           </div>
         }
       >
-        <p className="text-sm text-gray-600 dark:text-gray-300">この操作は取り消せません。</p>
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">この操作は取り消せません。</p>
       </BottomSheet>
     </>
   );

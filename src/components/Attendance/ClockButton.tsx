@@ -93,13 +93,13 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
     switch (status) {
       case 'not_started':
         if (todayRecords.some((r) => r.date === todayStr)) {
-          return { label: '再出勤', bg: 'bg-green-500 hover:bg-green-600', disabled: false };
+          return { label: '再出勤', bg: 'bg-success-500 hover:bg-success-600', disabled: false };
         }
-        return { label: '出勤', bg: 'bg-green-500 hover:bg-green-600', disabled: false };
+        return { label: '出勤', bg: 'bg-success-500 hover:bg-success-600', disabled: false };
       case 'working':
-        return { label: isCarryOver ? '退勤（日跨ぎ）' : '退勤', bg: 'bg-red-500 hover:bg-red-600', disabled: false };
+        return { label: isCarryOver ? '退勤（日跨ぎ）' : '退勤', bg: 'bg-danger-500 hover:bg-danger-600', disabled: false };
       case 'on_break':
-        return { label: '休憩中...', bg: 'bg-yellow-400', disabled: true };
+        return { label: '休憩中...', bg: 'bg-warning-400', disabled: true };
     }
   };
 
@@ -108,14 +108,14 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="text-5xl md:text-6xl font-bold font-mono text-gray-800 dark:text-gray-100 tabular-nums tracking-tight">
+      <div className="text-5xl md:text-6xl font-bold font-mono text-neutral-800 dark:text-neutral-100 tabular-nums tracking-tight">
         {format(currentTime, 'HH:mm:ss')}
       </div>
       <div className="relative">
         {showTooltip && (
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-800 dark:bg-gray-200 px-4 py-2 text-sm text-white dark:text-gray-800 shadow-lg z-10">
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-neutral-800 dark:bg-neutral-200 px-4 py-2 text-sm text-white dark:text-neutral-800 shadow-lg z-10">
             {TOOLTIP_TEXTS[status]}
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 dark:bg-gray-200 rotate-45"></div>
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-neutral-800 dark:bg-neutral-200 rotate-45"></div>
           </div>
         )}
         <button
@@ -126,14 +126,14 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           disabled={config.disabled || processing}
           aria-label={config.label}
           aria-pressed={status !== 'not_started'}
-          className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg transition-all duration-300 select-none ${flashGreen ? 'bg-green-400 scale-105' : config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
+          className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg transition-all duration-300 select-none ${flashGreen ? 'bg-success-400 scale-105' : config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
         >
           {processing ? '処理中...' : config.label}
         </button>
       </div>
 
       {activeRecord?.clock_in && (
-        <div className="flex gap-6 text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex gap-6 text-sm text-neutral-500 dark:text-neutral-400">
           <span>出勤: {formatTime(activeRecord.clock_in)}</span>
           {activeRecord.clock_out && <span>退勤: {formatTime(activeRecord.clock_out)}</span>}
         </div>
@@ -141,19 +141,19 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
 
       {todayRecords.length > 0 && (
         <div className="w-full max-w-sm mt-2">
-          <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 text-center">セッション一覧</p>
+          <p className="text-xs text-neutral-400 dark:text-neutral-500 mb-2 text-center">セッション一覧</p>
           <div className="space-y-1">
             {todayRecords.map((record, index) => {
               const isCrossDay = record.date !== todayStr;
               return (
-                <div key={record.id} className={`flex items-center justify-between text-sm rounded px-3 py-1.5 ${isCrossDay ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-gray-50 dark:bg-gray-800'}`}>
-                  <span className="text-gray-500 dark:text-gray-400">
+                <div key={record.id} className={`flex items-center justify-between text-sm rounded px-3 py-1.5 ${isCrossDay ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-neutral-50 dark:bg-neutral-800'}`}>
+                  <span className="text-neutral-500 dark:text-neutral-400">
                     {isCrossDay ? `${record.date}〜` : `${index + 1}回目`}
                   </span>
                   <div className="flex gap-3">
-                    <span className="text-gray-700 dark:text-gray-300">{formatTime(record.clock_in) || '-'}</span>
-                    <span className="text-gray-400 dark:text-gray-500">〜</span>
-                    <span className="text-gray-700 dark:text-gray-300">{formatTime(record.clock_out) || '勤務中'}</span>
+                    <span className="text-neutral-700 dark:text-neutral-300">{formatTime(record.clock_in) || '-'}</span>
+                    <span className="text-neutral-400 dark:text-neutral-500">〜</span>
+                    <span className="text-neutral-700 dark:text-neutral-300">{formatTime(record.clock_out) || '勤務中'}</span>
                   </div>
                 </div>
               );

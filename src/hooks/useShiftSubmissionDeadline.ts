@@ -1,0 +1,154 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
+import { startOfMonth, format } from 'date-fns';
+import { useTenant } from './useTenant';
+import { useStoreContext } from '../contexts/StoreContext';
+
+// AC-4: 権限判定は RLS (tenant_members.role IN ('owner','manager')) と一致させる。
+// store_members.is_manager には依存しない（hook と RLS の乖離を防ぐため）。
+
+export interface UseShiftSubmissionDeadlineResult {
+  deadline: Date | null;
+  loading: boolean;
+  error: Error | null;
+  canEdit: boolean;
+  setDeadline: (deadlineAt: Date) => Promise<void>;
+  clearDeadline: () => Promise<void>;
+}
+
+export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissionDeadlineResult {
+  const { currentTenant, isOwner, myRole } = useTenant();
+  const { currentStore } = useStoreContext();
+
+  const tenantId = currentTenant?.id ?? null;
+  const storeId = currentStore?.id ?? null;
+
+  const targetMonthKey = format(startOfMonth(targetMonth), 'yyyy-MM-dd');
+
+  const [deadline, setDeadlineState] = useState<Date | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const canEdit = isOwner || myRole === 'manager';
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchDeadline = async () => {
+      if (!tenantId || !storeId) {
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const { data, error: fetchError } = await supabase
+          .from('shift_submission_deadlines')
+          .select('deadline_at')
+          .eq('tenant_id', tenantId)
+          .eq('store_id', storeId)
+          .eq('target_month', targetMonthKey)
+          .maybeSingle();
+
+        if (!isMounted) return;
+
+        if (fetchError) {
+          throw fetchError;
+        }
+
+        setDeadlineState(data?.deadline_at ? new Date(data.deadline_at) : null);
+      } catch (e) {
+        if (isMounted) {
+          setError(e instanceof Error ? e : new Error(String(e)));
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchDeadline();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantId, storeId, targetMonthKey]);
+
+  const setDeadline = useCallback(async (deadlineAt: Date) => {
+    if (!tenantId || !storeId) {
+      throw new Error('Tenant and Store context are required to set a deadline.');
+    }
+
+    try {
+      setError(null);
+      setLoading(true);
+
+      const { error: upsertError } = await supabase
+        .from('shift_submission_deadlines')
+        .upsert(
+          {
+            tenant_id: tenantId,
+            store_id: storeId,
+            target_month: targetMonthKey,
+            deadline_at: deadlineAt.toISOString(),
+          },
+          { onConflict: 'tenant_id,store_id,target_month' }
+        );
+
+      if (upsertError) {
+        throw upsertError;
+      }
+
+      setDeadlineState(deadlineAt);
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [tenantId, storeId, targetMonthKey]);
+
+  const clearDeadline = useCallback(async () => {
+    if (!tenantId || !storeId) {
+      throw new Error('Tenant and Store context are required to clear a deadline.');
+    }
+
+    try {
+      setError(null);
+      setLoading(true);
+
+      const { error: deleteError } = await supabase
+        .from('shift_submission_deadlines')
+        .delete()
+        .match({
+          tenant_id: tenantId,
+          store_id: storeId,
+          target_month: targetMonthKey,
+        });
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      setDeadlineState(null);
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      setError(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [tenantId, storeId, targetMonthKey]);
+
+  return {
+    deadline,
+    loading,
+    error,
+    canEdit,
+    setDeadline,
+    clearDeadline,
+  };
+}

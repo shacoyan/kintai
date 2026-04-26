@@ -64,13 +64,13 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
     <div className="overflow-x-auto">
       <table className="w-full min-w-[600px] text-sm">
         <thead>
-          <tr className="border-b border-gray-200 bg-gray-50">
-            <th className="px-3 py-2 text-left font-medium text-gray-600">日付</th>
-            <th className="px-3 py-2 text-left font-medium text-gray-600">出勤</th>
-            <th className="px-3 py-2 text-left font-medium text-gray-600">退勤</th>
-            <th className="px-3 py-2 text-left font-medium text-gray-600">休憩</th>
-            <th className="px-3 py-2 text-left font-medium text-gray-600">労働時間</th>
-            <th className="px-3 py-2 text-left font-medium text-gray-600"></th>
+          <tr className="border-b border-neutral-200 bg-neutral-50">
+            <th className="px-3 py-2 text-left font-medium text-neutral-600">日付</th>
+            <th className="px-3 py-2 text-left font-medium text-neutral-600">出勤</th>
+            <th className="px-3 py-2 text-left font-medium text-neutral-600">退勤</th>
+            <th className="px-3 py-2 text-left font-medium text-neutral-600">休憩</th>
+            <th className="px-3 py-2 text-left font-medium text-neutral-600">労働時間</th>
+            <th className="px-3 py-2 text-left font-medium text-neutral-600"></th>
           </tr>
         </thead>
         <tbody>
@@ -83,19 +83,19 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
               return (
                 <tr
                   key={dateStr}
-                  className={`border-b border-gray-100 ${isToday ? 'bg-blue-50' : ''}`}
+                  className={`border-b border-neutral-100 ${isToday ? 'bg-primary-50' : ''}`}
                 >
                   <td className={`px-3 py-2 ${isToday ? 'font-bold' : ''}`}>
                     {format(day, 'M/d(E)', { locale: ja })}
                   </td>
-                  <td className="px-3 py-2 text-gray-300">--:--</td>
-                  <td className="px-3 py-2 text-gray-300">--:--</td>
-                  <td className="px-3 py-2 text-gray-300">--:--</td>
-                  <td className="px-3 py-2 text-gray-300">--:--</td>
+                  <td className="px-3 py-2 text-neutral-300">--:--</td>
+                  <td className="px-3 py-2 text-neutral-300">--:--</td>
+                  <td className="px-3 py-2 text-neutral-300">--:--</td>
+                  <td className="px-3 py-2 text-neutral-300">--:--</td>
                   <td className="px-3 py-2">
                     <button
                       onClick={() => onRequestCorrection(dateStr)}
-                      className="px-2 py-1 text-xs text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                      className="px-2 py-1 text-xs text-primary-600 bg-primary-50 rounded hover:bg-primary-100 transition-colors"
                     >
                       修正申請
                     </button>
@@ -109,7 +109,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
               return (
                 <tr
                   key={record.id}
-                  className={`border-b border-gray-100 ${isToday ? 'bg-blue-50' : ''}`}
+                  className={`border-b border-neutral-100 ${isToday ? 'bg-primary-50' : ''}`}
                 >
                   <td className={`px-3 py-2 ${isToday ? 'font-bold' : ''}`}>
                     {index === 0 ? format(day, 'M/d(E)', { locale: ja }) : ''}
@@ -129,13 +129,13 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                   <td className="px-3 py-2 space-x-1">
                     <button
                       onClick={() => onRequestCorrection(dateStr, record)}
-                      className="px-2 py-1 text-xs text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                      className="px-2 py-1 text-xs text-primary-600 bg-primary-50 rounded hover:bg-primary-100 transition-colors"
                     >
                       修正申請
                     </button>
                     <button
                       onClick={() => onRequestDeletion(dateStr, record)}
-                      className="px-2 py-1 text-xs text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors"
+                      className="px-2 py-1 text-xs text-danger-600 bg-danger-50 rounded hover:bg-danger-100 transition-colors"
                     >
                       削除依頼
                     </button>

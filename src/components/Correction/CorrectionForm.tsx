@@ -145,8 +145,8 @@ export function CorrectionForm({
     >
       <form id="correction-form" onSubmit={handleSubmit} className="space-y-4">
         {isDelete && (
-          <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+          <div className="mb-4 p-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg">
+            <p className="text-sm text-danger-600 dark:text-danger-400 mt-1">
               この勤怠記録の削除を店長 or オーナーに依頼します
             </p>
           </div>
@@ -155,17 +155,17 @@ export function CorrectionForm({
         {!isDelete && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">出勤時刻</label>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">出勤時刻</label>
               <input
                 type="time"
                 value={requestedClockIn}
                 onChange={(e) => setRequestedClockIn(e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-neutral-900 dark:text-neutral-100"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                 退勤時刻
                 {isOvernight && (
                   <span className="ml-2 text-xs text-amber-600 dark:text-amber-400 font-normal">（翌日）</span>
@@ -175,15 +175,15 @@ export function CorrectionForm({
                 type="time"
                 value={requestedClockOut}
                 onChange={(e) => setRequestedClockOut(e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-neutral-900 dark:text-neutral-100"
               />
             </div>
           </>
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {isDelete ? '削除理由' : '修正理由'} <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+            {isDelete ? '削除理由' : '修正理由'} <span className="text-danger-500">*</span>
           </label>
           <textarea
             value={reason}
@@ -191,7 +191,7 @@ export function CorrectionForm({
             rows={4}
             required
             placeholder={isDelete ? '削除理由を入力してください' : '修正理由を入力してください'}
-            className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 dark:text-gray-100"
+            className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none text-neutral-900 dark:text-neutral-100"
           />
         </div>
 

@@ -14,6 +14,7 @@ import { LeaveList } from '../Leave/LeaveList';
 import { ShiftPresetManager } from './ShiftPresetManager';
 import { StoreManagement } from './StoreManagement';
 import { ShiftMismatchAlert } from './ShiftMismatchAlert';
+import { ShiftDeadlineSettingsModal } from './ShiftDeadlineSettingsModal';
 import { detectMismatches } from '../../utils/shiftMismatch';
 import {
   QrCode,
@@ -29,9 +30,10 @@ import {
   Store,
   AlertCircle,
   CalendarCheck,
-  AlertTriangle
+  AlertTriangle,
+  CalendarClock
 } from 'lucide-react';
-import { StatCard, Card, PageSkeleton, ErrorBanner } from '../ui';
+import { StatCard, Card, PageSkeleton, ErrorBanner, Button } from '../ui';
 import type { Shift, AttendanceRecord } from '../../types';
 
 interface AdminDashboardProps {
@@ -63,8 +65,11 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const { currentTenant } = useTenant();
+  const [deadlineModalOpen, setDeadlineModalOpen] = useState(false);
+  const { currentTenant, isOwner, myRole } = useTenant();
   const { currentStore } = useStoreContext();
+  // AC-4: useShiftSubmissionDeadline の canEdit と同じ判定（RLS と一致）
+  const canEditDeadline = isOwner || myRole === 'manager';
   const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
   const { allLeaves, loading: leaveLoading, getAllLeaves, approveLeave, rejectLeave } = useLeave(tenantId);
   const { members: adminMembers, fetchMembers: fetchAdminMembers } = useTenantAdmin(tenantId);
@@ -306,7 +311,28 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
           <ShiftPresetManager tenantId={tenantId} storeId={currentStore?.id ?? null} />
         )}
         {activeTab === 'stores' && (
-          <StoreManagement tenantId={tenantId} />
+          <div className="space-y-4">
+            {canEditDeadline && currentStore && (
+              <Card padding="md">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">シフト希望締切</h2>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      対象月（{format(startOfMonth(new Date()), 'yyyy年M月')}）の希望提出締切日時を設定します。
+                    </p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    iconLeft={<CalendarClock size={16} />}
+                    onClick={() => setDeadlineModalOpen(true)}
+                  >
+                    シフト希望締切を設定
+                  </Button>
+                </div>
+              </Card>
+            )}
+            <StoreManagement tenantId={tenantId} />
+          </div>
         )}
         {activeTab === 'mismatch' && (
           <div className="space-y-4">
@@ -389,11 +415,11 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       <div className="hidden md:flex gap-6">
         {/* Sidebar */}
         <nav className="md:w-[200px] shrink-0">
-          <Card padding="sm" className="sticky top-20">
+          <Card padding="sm" className="sticky top-20 dark:bg-neutral-900">
             <div className="space-y-1">
               {SECTIONS.map((section, sectionIndex) => (
                 <div key={section.label}>
-                  {sectionIndex > 0 && <div className="border-t border-neutral-100 my-2" />}
+                  {sectionIndex > 0 && <div className="border-t border-neutral-100 dark:border-neutral-800 my-2" />}
                   <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider px-3 pt-3 pb-1">{section.label}</div>
                   {tabs.filter(tab => (section.items as readonly string[]).includes(tab.id)).map((tab) => (
                     <button
@@ -403,7 +429,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                       className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
                         activeTab === tab.id
                           ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 font-semibold border-l-2 border-primary-600 dark:border-primary-400 rounded-l-none'
-                          : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-700'
+                          : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800/60'
                       }`}
                     >
                       <span className="flex items-center gap-2">
@@ -438,6 +464,14 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
           {renderContent()}
         </div>
       </div>
+
+      {canEditDeadline && (
+        <ShiftDeadlineSettingsModal
+          open={deadlineModalOpen}
+          onClose={() => setDeadlineModalOpen(false)}
+          targetMonth={startOfMonth(new Date())}
+        />
+      )}
     </div>
   );
 }

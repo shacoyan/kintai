@@ -7,7 +7,7 @@ import type { AttendanceRecord, TenantMember, Shift } from '../../types';
 import { generatePayrollCsv, downloadCsv } from '../../utils/csvExport';
 import { getNightMinutesInRange, getNightMinutesForShift } from '../../utils/nightShift';
 import { Download, Calculator } from 'lucide-react';
-import { EmptyState, ErrorBanner, PageSkeleton, Button, Card, Select, Badge } from '../ui';
+import { EmptyState, ErrorBanner, PageSkeleton, Button, Card, Select, Badge, StatCard } from '../ui';
 
 interface PayrollCalculationProps {
   tenantId: string;
@@ -360,24 +360,24 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
             </div>
           </div>
 
-          {/* モード切り替えトグル */}
-          <div className="flex gap-1 bg-neutral-100 dark:bg-neutral-700 rounded-md p-1">
+          {/* モード切り替えトグル（segmented control 階層） */}
+          <div className="inline-flex gap-1 bg-neutral-100 dark:bg-neutral-800 rounded-md p-1">
             <button
               onClick={() => { setPayrollMode('actual'); setCalculated(false); }}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-120 ${
                 payrollMode === 'actual'
-                  ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-800 dark:text-primary-300'
-                  : 'text-neutral-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+                  ? 'bg-white text-primary-700 shadow-sm dark:bg-neutral-700 dark:text-primary-300'
+                  : 'text-neutral-600 hover:bg-white/60 dark:text-neutral-400 dark:hover:bg-neutral-700/60'
               }`}
             >
               実績ベース
             </button>
             <button
               onClick={() => { setPayrollMode('shift'); setCalculated(false); }}
-              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-120 ${
                 payrollMode === 'shift'
-                  ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-800 dark:text-primary-300'
-                  : 'text-neutral-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+                  ? 'bg-white text-primary-700 shadow-sm dark:bg-neutral-700 dark:text-primary-300'
+                  : 'text-neutral-600 hover:bg-white/60 dark:text-neutral-400 dark:hover:bg-neutral-700/60'
               }`}
             >
               シフトベース
@@ -454,6 +454,13 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                 <span className="text-xs text-neutral-500 dark:text-neutral-400">
                   {selectedYear}年{selectedMonth}月 給与計算結果
                 </span>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6 py-4">
+                <StatCard label="総支払額" value={totalPayment.toLocaleString()} unit="円" />
+                <StatCard label="対象人数" value={payrollData.length} unit="名" />
+                <StatCard label="総労働時間" value={fmtTime(totalMinutes)} />
+                <StatCard label="総夜勤時間" value={fmtTime(totalNightMinutes)} />
               </div>
 
               <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">

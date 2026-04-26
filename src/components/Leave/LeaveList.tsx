@@ -22,17 +22,17 @@ const LEAVE_TYPE_LABEL: Record<LeaveType, string> = {
 };
 
 const LEAVE_TYPE_COLOR: Record<LeaveType, string> = {
-  paid: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  paid: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300',
   half_paid: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
-  absence: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
+  absence: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200',
   other: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
 };
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  pending: { label: '申請中', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
-  approved: { label: '承認済', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
-  rejected: { label: '却下', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
-  cancelled: { label: '取消', className: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400' },
+  pending: { label: '申請中', className: 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300' },
+  approved: { label: '承認済', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
+  rejected: { label: '却下', className: 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300' },
+  cancelled: { label: '取消', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400' },
 };
 
 export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onReject, onCancel, onRefresh }: LeaveListProps) {
@@ -53,9 +53,9 @@ export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onR
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">休暇申請一覧</h2>
+    <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
+      <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">休暇申請一覧</h2>
       </div>
 
       {error && (
@@ -64,7 +64,7 @@ export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onR
         </div>
       )}
 
-      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
         {leaves.length === 0 ? (
           <div className="px-6 py-12">
             <EmptyState
@@ -79,11 +79,11 @@ export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onR
             const typeColor = LEAVE_TYPE_COLOR[leave.leave_type] || LEAVE_TYPE_COLOR.other;
 
             return (
-              <div key={leave.id} className="px-6 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+              <div key={leave.id} className="px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
                     {memberNames && (
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                         {memberNames.get(leave.user_id) || '不明'}
                       </span>
                     )}
@@ -94,11 +94,11 @@ export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onR
                       {statusBadge.label}
                     </span>
                   </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">{leave.date}</span>
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">{leave.date}</span>
                 </div>
 
                 {leave.reason && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{leave.reason}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">{leave.reason}</p>
                 )}
 
                 {leave.status === 'pending' && (

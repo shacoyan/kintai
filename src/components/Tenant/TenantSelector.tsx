@@ -13,9 +13,9 @@ interface TenantSelectorProps {
 
 const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCreateNew, onJoin }) => {
   const roleColors: Record<string, string> = {
-    owner: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-    manager: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    staff: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+    owner: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200',
+    manager: 'bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200',
+    staff: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300',
   };
 
   const roleLabels: Record<string, string> = {
@@ -25,11 +25,11 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
       <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">ワークスペースを選択</h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">参加するワークスペースを選んでください</p>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">ワークスペースを選択</h1>
+          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">参加するワークスペースを選んでください</p>
         </div>
 
         {tenants.length > 0 ? (
@@ -38,11 +38,11 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
               <button
                 key={tenant.id}
                 onClick={() => onSelect(tenant)}
-                className="w-full flex items-center justify-between p-4 bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200 text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full flex items-center justify-between p-4 bg-white dark:bg-neutral-800 shadow-sm rounded-lg border border-neutral-200 dark:border-neutral-700 hover:shadow-md hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-200 text-left focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <div className="min-w-0">
-                  <p className="text-base font-semibold text-gray-900 dark:text-gray-100 truncate">{tenant.name}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{tenant.display_name}</p>
+                  <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100 truncate">{tenant.name}</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">{tenant.display_name}</p>
                 </div>
                 <span className={`ml-4 px-3 py-1 text-xs font-medium rounded-full ${roleColors[tenant.role] || roleColors.staff}`}>
                   {roleLabels[tenant.role] || roleLabels.staff}
@@ -58,7 +58,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
           />
         )}
 
-        <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="space-y-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
           <button
             onClick={onCreateNew}
             className="w-full btn-primary flex items-center justify-center"

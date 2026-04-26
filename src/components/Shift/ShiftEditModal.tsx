@@ -25,11 +25,11 @@ for (let h = 0; h < 24; h++) {
 }
 
 const STATUS_LABEL: Record<string, { text: string; className: string }> = {
-  pending: { text: '申請中', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' },
-  approved: { text: '承認済', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' },
-  rejected: { text: '却下', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' },
-  modified: { text: '修正済', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
-  cancelled: { text: '取消', className: 'bg-gray-100 text-gray-500 dark:bg-gray-700/30 dark:text-gray-400' },
+  pending: { text: '申請中', className: 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300' },
+  approved: { text: '承認済', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
+  rejected: { text: '却下', className: 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300' },
+  modified: { text: '修正済', className: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300' },
+  cancelled: { text: '取消', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700/30 dark:text-neutral-400' },
 };
 
 export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, onDelete, onApprove, onReject, onClose, onRefresh, selectableStores, storeName, canManage }: ShiftEditModalProps) {
@@ -64,7 +64,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
             <button
               onClick={() => handleAction(() => onApprove(shift.id))}
               disabled={processing}
-              className="btn-primary bg-green-600 hover:bg-green-700 disabled:opacity-50 transition"
+              className="btn-primary bg-success-600 hover:bg-success-700 disabled:opacity-50 transition"
             >
               承認
             </button>
@@ -81,7 +81,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
           {canManageTenant && canManage && (
             <button
               onClick={() => setMode('edit')}
-              className="btn-primary bg-blue-600 hover:bg-blue-700 transition"
+              className="btn-primary bg-primary-600 hover:bg-primary-700 transition"
             >
               修正
             </button>
@@ -95,7 +95,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
             </button>
           )}
           {canManageTenant && !canManage && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">この店舗の管理権限がありません</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">この店舗の管理権限がありません</p>
           )}
           <button
             onClick={onClose}
@@ -165,7 +165,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
       </div>
 
       {error && (
-        <div className="p-2 bg-red-50 border border-red-200 dark:bg-red-900/30 dark:border-red-700 rounded text-sm text-red-600 dark:text-red-300 mb-3">
+        <div className="p-2 bg-danger-50 border border-danger-200 dark:bg-danger-900/30 dark:border-danger-700 rounded text-sm text-danger-600 dark:text-danger-300 mb-3">
           {error}
         </div>
       )}
@@ -173,21 +173,21 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
       {mode === 'view' && (
         <div className="space-y-4">
           {storeName && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">店舗: <span className="font-medium text-gray-700 dark:text-gray-300">{storeName}</span></p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">店舗: <span className="font-medium text-neutral-700 dark:text-neutral-300">{storeName}</span></p>
           )}
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <p className="text-xs text-gray-500 dark:text-gray-400">開始</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{shift.start_time.slice(0, 5)}</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">開始</p>
+              <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{shift.start_time.slice(0, 5)}</p>
             </div>
-            <span className="text-gray-400 dark:text-gray-500">→</span>
+            <span className="text-neutral-400 dark:text-neutral-500">→</span>
             <div className="flex-1">
-              <p className="text-xs text-gray-500 dark:text-gray-400">終了</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{shift.end_time.slice(0, 5)}</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">終了</p>
+              <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{shift.end_time.slice(0, 5)}</p>
             </div>
           </div>
           {shift.note && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">メモ: {shift.note}</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">メモ: {shift.note}</p>
           )}
         </div>
       )}
@@ -196,11 +196,11 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
         <>
         {selectableStores.length >= 1 && (
           <div className="mb-3">
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">店舗</label>
+            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">店舗</label>
             <select
               value={editStoreId ?? ''}
               onChange={(e) => setEditStoreId(e.target.value || null)}
-              className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
             >
               {selectableStores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -208,21 +208,21 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
         )}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">開始時刻</label>
+            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">開始時刻</label>
             <select
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
             >
               {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">終了時刻</label>
+            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">終了時刻</label>
             <select
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
             >
               {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -232,7 +232,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
       )}
 
       {mode === 'confirmDelete' && (
-        <p className="text-sm text-gray-700 dark:text-gray-300">
+        <p className="text-sm text-neutral-700 dark:text-neutral-300">
           このシフトを削除しますか？この操作は元に戻せません。
         </p>
       )}

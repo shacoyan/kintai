@@ -36,31 +36,31 @@ export function LeaveForm({ onSubmit, onCancel }: LeaveFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow dark:shadow-gray-900/30 border border-transparent dark:border-gray-700 p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">休暇申請</h3>
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-neutral-800 rounded-lg shadow dark:shadow-neutral-900/30 border border-transparent dark:border-neutral-700 p-4 space-y-4">
+      <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">休暇申請</h3>
 
       {error && (
         <ErrorBanner message={error} />
       )}
 
       <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">日付</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">日付</label>
         <input
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           aria-label="休暇申請日"
-          className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:placeholder-gray-400"
+          className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:placeholder-neutral-400"
         />
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">種類</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">種類</label>
         <select
           value={leaveType}
           onChange={(e) => setLeaveType(e.target.value as LeaveType)}
           aria-label="休暇種類"
-          className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+          className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
         >
           {LEAVE_TYPE_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -69,13 +69,13 @@ export function LeaveForm({ onSubmit, onCancel }: LeaveFormProps) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-300 mb-1">理由（任意）</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">理由（任意）</label>
         <input
           type="text"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           aria-label="休暇理由（任意）"
-          className="block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder-gray-400 dark:placeholder-gray-500"
+          className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 placeholder-neutral-400 dark:placeholder-neutral-500"
           placeholder="理由があれば入力"
         />
       </div>

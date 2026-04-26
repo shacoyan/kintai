@@ -75,26 +75,26 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
         role="dialog"
         aria-modal="true"
         {...ariaProps}
-        className="relative w-full md:max-w-lg bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-2xl shadow-xl max-h-[85vh] overflow-y-auto animate-slide-up md:animate-none"
+        className="relative w-full md:max-w-lg bg-white dark:bg-neutral-800 rounded-t-2xl md:rounded-2xl shadow-xl max-h-[85vh] overflow-y-auto animate-slide-up md:animate-none"
       >
         {/* Handle bar (mobile only) */}
         <div className="md:hidden flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          <div className="w-10 h-1 bg-neutral-300 dark:bg-neutral-600 rounded-full" />
         </div>
         {title && (
-          <div className="border-b border-gray-200 dark:border-gray-700">
+          <div className="border-b border-neutral-200 dark:border-neutral-700">
             <div className="flex items-center justify-between px-4 py-3">
-              <h2 id={titleId} className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
+              <h2 id={titleId} className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{title}</h2>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 p-1"
                 aria-label="閉じる"
               >
                 ✕
               </button>
             </div>
             {description && (
-              <p id={descId} className="text-sm text-gray-500 dark:text-gray-400 mt-1 px-4 pb-3">
+              <p id={descId} className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 px-4 pb-3">
                 {description}
               </p>
             )}
@@ -102,7 +102,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
         )}
         <div className="p-4">{children}</div>
         {footer && (
-          <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="px-4 py-3 border-t border-neutral-200 dark:border-neutral-700">
             {footer}
           </div>
         )}
