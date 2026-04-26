@@ -21,6 +21,7 @@ import { LeaveList } from '../components/Leave/LeaveList';
 import { ShiftPreferenceCalendar } from '../components/Shift/ShiftPreferenceCalendar';
 import { ShiftPreferenceForm } from '../components/Shift/ShiftPreferenceForm';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
+import { ShiftPreferenceSidebar } from '../components/Shift/ShiftPreferenceSidebar';
 import { useStoreContext } from '../contexts/StoreContext';
 import type { ShiftPreferenceType } from '../types';
 
@@ -329,24 +330,7 @@ export function ShiftPage() {
             </div>
           )}
 
-          {/* TODO(Phase 4): useShiftSubmissionDeadline + migration 021 へ置換 */}
-          {deadlineInfo && (
-            <Card padding="md" className="border-l-4 border-warning-500 bg-warning-50">
-              <Card.Body className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-warning-600 mt-0.5 shrink-0" aria-hidden="true" />
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-warning-800">
-                    シフト希望の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })}
-                  </p>
-                  <p className="text-xs text-warning-700 mt-1 tabular-nums">
-                    残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
-                  </p>
-                </div>
-              </Card.Body>
-            </Card>
-          )}
-
-          {/* 表示切替: 現在 / 履歴 */}
+          {/* 表示切替: 現在 / 履歴 (両ビュー共通) */}
           <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 rounded-md self-start">
             <button
               type="button"
@@ -377,218 +361,270 @@ export function ShiftPage() {
           </div>
 
           {preferenceView === 'current' && (
-            <>
-              {canManageTenant && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-semibold text-neutral-500 tracking-wider">カレンダー表示:</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowAllMembersPrefs(false)}
-                    aria-pressed={!showAllMembersPrefs}
-                    className={`px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring ${
-                      !showAllMembersPrefs
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50'
-                    }`}
-                  >
-                    自分の希望
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowAllMembersPrefs(true)}
-                    aria-pressed={showAllMembersPrefs}
-                    className={`px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring ${
-                      showAllMembersPrefs
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50'
-                    }`}
-                  >
-                    全員の希望
-                  </button>
-                </div>
-              )}
-
-              <ShiftPreferenceCalendar
-                preferences={preferencesForCalendar}
-                onDateClick={(date) => {
-                  if (canManageTenant && showAllMembersPrefs) {
-                    setAllMemberPrefDate(date);
-                  } else {
-                    setSelectedPrefDate(date);
-                  }
-                }}
-                memberNames={canManageTenant && showAllMembersPrefs ? memberNames : undefined}
-                canManageTenant={canManageTenant && showAllMembersPrefs}
-              />
-
-              {/* 提出予定サマリ（自分視点のみ） */}
-              {!(canManageTenant && showAllMembersPrefs) && (
-                <Card padding="md">
-                  <Card.Body className="grid grid-cols-3 gap-3 text-center">
-                    <div>
-                      <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
-                        {preferenceSummary.preferredCount}
-                      </p>
-                      <p className="text-[11px] text-neutral-500 mt-0.5">希望日</p>
-                    </div>
-                    <div className="border-x border-neutral-100">
-                      <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
-                        {preferenceSummary.availableCount}
-                      </p>
-                      <p className="text-[11px] text-neutral-500 mt-0.5">出勤可</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
-                        {preferenceSummary.unavailableCount}
-                      </p>
-                      <p className="text-[11px] text-neutral-500 mt-0.5">出勤不可</p>
-                    </div>
-                  </Card.Body>
-                </Card>
-              )}
-
-              {/* 時間指定の詳細リスト */}
-              {!(canManageTenant && showAllMembersPrefs) && timedPreferences.length > 0 && (
-                <Card padding="none">
-                  <Card.Header className="border-b border-neutral-100 mb-0 pb-3 px-4 pt-4 text-sm font-semibold text-neutral-700">
-                    時間指定の詳細
-                  </Card.Header>
-                  <ul className="divide-y divide-neutral-100">
-                    {timedPreferences.map((p) => {
-                      const style = PREF_LIST_STYLE[p.preference_type];
-                      return (
-                        <li key={p.id}>
-                          <button
-                            type="button"
-                            onClick={() => setSelectedPrefDate(p.date)}
-                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-neutral-50 text-left focus-ring"
-                          >
-                            <div className={`w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0 ${style.iconBox}`}>
-                              <span className="text-[10px] font-semibold leading-none">{p.date.slice(5, 7)}/</span>
-                              <span className="text-[14px] font-bold tabular-nums leading-none">{p.date.slice(8, 10)}</span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-neutral-900">{style.label}</p>
-                              {p.start_time && p.end_time && (
-                                <p className="text-xs text-neutral-500 tabular-nums">
-                                  {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
-                                </p>
-                              )}
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-neutral-400" aria-hidden="true" />
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </Card>
-              )}
-
-              <BottomSheet
-                isOpen={!!selectedPrefDate}
-                onClose={() => setSelectedPrefDate(null)}
-                title={selectedPrefDate ? `${selectedPrefDate} のシフト希望` : undefined}
-              >
-                {selectedPrefDate && (
-                  <ShiftPreferenceForm
-                    date={selectedPrefDate}
-                    existingPreference={myPreferences.find((p) => p.date === selectedPrefDate)}
-                    onSubmit={handlePrefSubmit}
-                    onDelete={handlePrefDelete}
-                    onCancel={() => setSelectedPrefDate(null)}
-                    presets={presets}
-                    selectableStores={stores}
-                    defaultStoreId={storeId}
-                  />
+            <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-6 lg:items-start">
+              <div className="flex flex-col gap-4">
+                {/* TODO(Phase 4): useShiftSubmissionDeadline + migration 021 へ置換 */}
+                {deadlineInfo && (
+                  <Card padding="md" className="border-l-4 border-warning-500 bg-warning-50">
+                    <Card.Body className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-warning-600 mt-0.5 shrink-0" aria-hidden="true" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-warning-800">
+                          シフト希望の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })}
+                        </p>
+                        <p className="text-xs text-warning-700 mt-1 tabular-nums">
+                          残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
+                        </p>
+                      </div>
+                    </Card.Body>
+                  </Card>
                 )}
-              </BottomSheet>
 
-              <BottomSheet
-                isOpen={!!allMemberPrefDate}
-                onClose={() => setAllMemberPrefDate(null)}
-                title={allMemberPrefDate ? `${allMemberPrefDate} の希望一覧` : undefined}
-              >
-                {allMemberPrefDate && (
-                  <ul className="divide-y divide-neutral-100">
-                    {allMemberPrefsForDate.length === 0 && (
-                      <li className="px-4 py-6 text-center text-sm text-neutral-500">
-                        この日の希望はありません
-                      </li>
+                {canManageTenant && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-semibold text-neutral-500 tracking-wider">カレンダー表示:</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowAllMembersPrefs(false)}
+                      aria-pressed={!showAllMembersPrefs}
+                      className={`px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring ${
+                        !showAllMembersPrefs
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                      }`}
+                    >
+                      自分の希望
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAllMembersPrefs(true)}
+                      aria-pressed={showAllMembersPrefs}
+                      className={`px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring ${
+                        showAllMembersPrefs
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                      }`}
+                    >
+                      全員の希望
+                    </button>
+                  </div>
+                )}
+
+                <ShiftPreferenceCalendar
+                  preferences={preferencesForCalendar}
+                  onDateClick={(date) => {
+                    if (canManageTenant && showAllMembersPrefs) {
+                      setAllMemberPrefDate(date);
+                    } else {
+                      setSelectedPrefDate(date);
+                    }
+                  }}
+                  memberNames={canManageTenant && showAllMembersPrefs ? memberNames : undefined}
+                  canManageTenant={canManageTenant && showAllMembersPrefs}
+                  onApprovePreference={canManageTenant && showAllMembersPrefs ? handleApprovePreference : undefined}
+                  onRejectPreference={canManageTenant && showAllMembersPrefs ? handleRejectPreference : undefined}
+                  canManageStore={(sid) => sid ? isManagerOf(sid) : false}
+                  onMutated={fetchPreferenceRange}
+                />
+
+                {/* 提出予定サマリ（自分視点のみ） */}
+                {!(canManageTenant && showAllMembersPrefs) && (
+                  <div className="lg:hidden">
+                    <Card padding="md">
+                      <Card.Body className="grid grid-cols-3 gap-3 text-center">
+                        <div>
+                          <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
+                            {preferenceSummary.preferredCount}
+                          </p>
+                          <p className="text-[11px] text-neutral-500 mt-0.5">希望日</p>
+                        </div>
+                        <div className="border-x border-neutral-100">
+                          <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
+                            {preferenceSummary.availableCount}
+                          </p>
+                          <p className="text-[11px] text-neutral-500 mt-0.5">出勤可</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
+                            {preferenceSummary.unavailableCount}
+                          </p>
+                          <p className="text-[11px] text-neutral-500 mt-0.5">出勤不可</p>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </div>
+                )}
+
+                {/* 時間指定の詳細リスト */}
+                {!(canManageTenant && showAllMembersPrefs) && timedPreferences.length > 0 && (
+                  <div className="lg:hidden">
+                    <Card padding="none">
+                      <Card.Header className="border-b border-neutral-100 mb-0 pb-3 px-4 pt-4 text-sm font-semibold text-neutral-700">
+                        時間指定の詳細
+                      </Card.Header>
+                      <ul className="divide-y divide-neutral-100">
+                        {timedPreferences.map((p) => {
+                          const style = PREF_LIST_STYLE[p.preference_type];
+                          return (
+                            <li key={p.id}>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedPrefDate(p.date)}
+                                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-neutral-50 text-left focus-ring"
+                              >
+                                <div className={`w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0 ${style.iconBox}`}>
+                                  <span className="text-[10px] font-semibold leading-none">{p.date.slice(5, 7)}/</span>
+                                  <span className="text-[14px] font-bold tabular-nums leading-none">{p.date.slice(8, 10)}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-neutral-900">{style.label}</p>
+                                  {p.start_time && p.end_time && (
+                                    <p className="text-xs text-neutral-500 tabular-nums">
+                                      {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
+                                    </p>
+                                  )}
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-neutral-400" aria-hidden="true" />
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </Card>
+                  </div>
+                )}
+
+                <div className="lg:hidden">
+                  <BottomSheet
+                    isOpen={!!selectedPrefDate}
+                    onClose={() => setSelectedPrefDate(null)}
+                    title={selectedPrefDate ? `${selectedPrefDate} のシフト希望` : undefined}
+                  >
+                    {selectedPrefDate && (
+                      <ShiftPreferenceForm
+                        date={selectedPrefDate}
+                        existingPreference={myPreferences.find((p) => p.date === selectedPrefDate)}
+                        onSubmit={handlePrefSubmit}
+                        onDelete={handlePrefDelete}
+                        onCancel={() => setSelectedPrefDate(null)}
+                        presets={presets}
+                        selectableStores={stores}
+                        defaultStoreId={storeId}
+                      />
                     )}
-                    {allMemberPrefsForDate.map((p) => {
-                      const style = PREF_LIST_STYLE[p.preference_type];
-                      return (
-                        <li key={p.id} className="px-4 py-3 flex items-center gap-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-neutral-900">
-                              {memberNames.get(p.user_id) ?? '不明'}
-                            </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${style.iconBox}`}>
-                                <style.Icon className="w-3 h-3" />
-                                {style.label}
-                              </span>
-                              {p.start_time && p.end_time && (
-                                <span className="text-xs text-neutral-500 tabular-nums">
-                                  {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {p.status === 'pending' && p.preference_type !== 'unavailable' && (
-                            <div className="flex items-center gap-2 shrink-0">
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleApprovePreference(p.id, p.start_time ?? undefined, p.end_time ?? undefined)}
-                              >
-                                承認
-                              </Button>
-                              <Button
-                                variant="tertiary"
-                                size="sm"
-                                onClick={() => handleRejectPreference(p.id)}
-                              >
-                                却下
-                              </Button>
-                            </div>
-                          )}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </BottomSheet>
+                  </BottomSheet>
 
-              {canManageTenant && showAllMembersPrefs && (
-                <div className="mt-2">
-                  <ShiftPreferenceAdminList
-                    preferences={preferencesForAdminList}
-                    memberNames={memberNames}
-                    onApprove={handleApprovePreference}
-                    onReject={handleRejectPreference}
-                    onRefresh={fetchPreferenceRange}
-                    historyMode={false}
-                    canManageStore={(sid) => sid ? isManagerOf(sid) : false}
-                  />
-                </div>
-              )}
-
-              {/* sticky 追加ボタン（自分視点のみ） */}
-              {!(canManageTenant && showAllMembersPrefs) && (
-                <div className="sticky bottom-0 -mx-4 px-4 py-3 bg-white/95 backdrop-blur border-t border-neutral-200 z-10">
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    fullWidth
-                    iconLeft={<Plus className="w-4 h-4" />}
-                    onClick={() => setSelectedPrefDate(format(new Date(), 'yyyy-MM-dd'))}
+                  <BottomSheet
+                    isOpen={!!allMemberPrefDate}
+                    onClose={() => setAllMemberPrefDate(null)}
+                    title={allMemberPrefDate ? `${allMemberPrefDate} の希望一覧` : undefined}
                   >
-                    本日の希望を追加・編集
-                  </Button>
+                    {allMemberPrefDate && (
+                      <ul className="divide-y divide-neutral-100">
+                        {allMemberPrefsForDate.length === 0 && (
+                          <li className="px-4 py-6 text-center text-sm text-neutral-500">
+                            この日の希望はありません
+                          </li>
+                        )}
+                        {allMemberPrefsForDate.map((p) => {
+                          const style = PREF_LIST_STYLE[p.preference_type];
+                          return (
+                            <li key={p.id} className="px-4 py-3 flex items-center gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-neutral-900">
+                                  {memberNames.get(p.user_id) ?? '不明'}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${style.iconBox}`}>
+                                    <style.Icon className="w-3 h-3" />
+                                    {style.label}
+                                  </span>
+                                  {p.start_time && p.end_time && (
+                                    <span className="text-xs text-neutral-500 tabular-nums">
+                                      {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              {p.status === 'pending' && p.preference_type !== 'unavailable' && (
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() => handleApprovePreference(p.id, p.start_time ?? undefined, p.end_time ?? undefined)}
+                                  >
+                                    承認
+                                  </Button>
+                                  <Button
+                                    variant="tertiary"
+                                    size="sm"
+                                    onClick={() => handleRejectPreference(p.id)}
+                                  >
+                                    却下
+                                  </Button>
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </BottomSheet>
                 </div>
-              )}
-            </>
+
+                {canManageTenant && showAllMembersPrefs && (
+                  <div className="lg:hidden mt-2">
+                    <ShiftPreferenceAdminList
+                      preferences={preferencesForAdminList}
+                      memberNames={memberNames}
+                      onApprove={handleApprovePreference}
+                      onReject={handleRejectPreference}
+                      onRefresh={fetchPreferenceRange}
+                      historyMode={false}
+                      canManageStore={(sid) => sid ? isManagerOf(sid) : false}
+                    />
+                  </div>
+                )}
+
+                {/* sticky 追加ボタン（自分視点のみ） */}
+                {!(canManageTenant && showAllMembersPrefs) && (
+                  <div className="lg:hidden sticky bottom-0 -mx-4 px-4 py-3 bg-white/95 backdrop-blur border-t border-neutral-200 z-10">
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      fullWidth
+                      iconLeft={<Plus className="w-4 h-4" />}
+                      onClick={() => setSelectedPrefDate(format(new Date(), 'yyyy-MM-dd'))}
+                    >
+                      本日の希望を追加・編集
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <aside className="hidden lg:block">
+                <ShiftPreferenceSidebar
+                  mode={canManageTenant && showAllMembersPrefs ? "admin" : "self"}
+                  selectedDate={canManageTenant && showAllMembersPrefs ? allMemberPrefDate : selectedPrefDate}
+                  onSelectedDateChange={canManageTenant && showAllMembersPrefs ? setAllMemberPrefDate : setSelectedPrefDate}
+                  preferences={allPreferences}
+                  myPreferences={myPreferences}
+                  memberNames={memberNames}
+                  pendingPreferenceCount={pendingPreferenceCount}
+                  preferenceSummary={preferenceSummary}
+                  timedPreferences={timedPreferences}
+                  onApprovePreference={handleApprovePreference}
+                  onRejectPreference={handleRejectPreference}
+                  canManageStore={(sid) => sid ? isManagerOf(sid) : false}
+                  onSubmitPreference={handlePrefSubmit}
+                  onDeletePreference={handlePrefDelete}
+                  presets={presets}
+                  stores={stores}
+                  defaultStoreId={storeId}
+                  onMutated={fetchPreferenceRange}
+                />
+              </aside>
+            </div>
           )}
 
           {preferenceView === 'history' && (

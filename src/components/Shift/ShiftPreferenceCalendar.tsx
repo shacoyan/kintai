@@ -4,12 +4,17 @@ import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CheckCircle2, Circle, XCircle, ChevronDown, ChevronUp, ChevronRight as NextPrefIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ShiftPreference, ShiftPreferenceType } from '../../types';
+import { PreferenceActionRow } from './PreferenceActionRow';
 
 interface ShiftPreferenceCalendarProps {
   preferences: ShiftPreference[];
   onDateClick: (date: string) => void;
   memberNames?: Map<string, string>;
   canManageTenant?: boolean;
+  onApprovePreference?: (id: string, startTime?: string, endTime?: string) => Promise<void>;
+  onRejectPreference?: (id: string) => Promise<void>;
+  canManageStore?: (storeId: string | null) => boolean;
+  onMutated?: () => void;
 }
 
 interface PrefStyle {
@@ -58,6 +63,10 @@ export function ShiftPreferenceCalendar({
   onDateClick,
   memberNames,
   canManageTenant,
+  onApprovePreference,
+  onRejectPreference,
+  canManageStore,
+  onMutated,
 }: ShiftPreferenceCalendarProps) {
   const [baseDate, setBaseDate] = useState(() => new Date());
   const [showAllMembers, setShowAllMembers] = useState(false);
@@ -265,7 +274,12 @@ export function ShiftPreferenceCalendar({
       </div>
 
       {/* 日マス */}
-      <div className="grid grid-cols-7 gap-1.5" role="grid" aria-label="シフト希望カレンダー">
+      <div 
+        className="grid grid-cols-7 gap-1.5" 
+        role="grid" 
+        aria-label="シフト希望カレンダー"
+        style={isAdminView ? { gridAutoRows: 'minmax(88px, auto)' } : { gridAutoRows: '1fr' }}
+      >
         {dates.map((d, idx) => {
           const dateStr = format(d, 'yyyy-MM-dd');
           const isToday = dateStr === today;
@@ -281,10 +295,11 @@ export function ShiftPreferenceCalendar({
             !!primaryPref?.start_time &&
             !!primaryPref?.end_time;
 
-          const baseCell =
-            'aspect-square min-h-[44px] md:min-h-[56px] rounded-lg flex flex-col ' +
-            'items-center justify-center gap-0.5 text-[11px] transition-colors duration-120 ' +
-            'focus-ring select-none cursor-pointer';
+          const pendingCount = dayPrefs.filter(p => p.status === 'pending').length;
+
+          const baseCell = isAdminView
+            ? 'min-h-[88px] lg:min-h-[120px] rounded-lg flex flex-col items-stretch gap-0.5 text-[11px] transition-colors duration-120 focus-ring select-none cursor-pointer relative'
+            : 'aspect-square min-h-[44px] md:min-h-[56px] rounded-lg flex flex-col items-center justify-center gap-0.5 text-[11px] transition-colors duration-120 focus-ring select-none cursor-pointer';
 
           let stateCell: string;
           if (!isCurrentMonth) {
@@ -309,25 +324,23 @@ export function ShiftPreferenceCalendar({
             primaryPref ? ` ${PREFERENCE_STYLE[primaryPref.preference_type].label}` : ''
           }`;
 
-          return (
-            <button
-              key={dateStr}
-              type="button"
-              role="gridcell"
-              aria-label={ariaLabel}
-              aria-pressed={!!primaryPref && !isAdminView}
-              disabled={!isCurrentMonth}
-              onClick={() => isCurrentMonth && onDateClick(dateStr)}
-              className={baseCell + ' ' + stateCell + todayRing}
-            >
-              <span
-                className={
-                  'text-xs font-semibold tabular-nums ' +
-                  (style && !isAdminView ? '' : dayNumColor)
-                }
-              >
-                {format(d, 'd')}
-              </span>
+          const cellChildren = (
+            <>
+              <div className="flex items-center justify-between px-1 pt-1">
+                <span
+                  className={
+                    'text-xs font-semibold tabular-nums ' +
+                    (style && !isAdminView ? '' : dayNumColor)
+                  }
+                >
+                  {format(d, 'd')}
+                </span>
+                {isAdminView && pendingCount > 0 && (
+                  <span className="bg-warning-500 text-white rounded-full w-4 h-4 inline-flex items-center justify-center text-[9px] font-semibold tabular-nums leading-none">
+                    {pendingCount}
+                  </span>
+                )}
+              </div>
 
               {/* スタッフビュー: 時間 or アイコン */}
               {!isAdminView && primaryPref && style && (
@@ -342,26 +355,66 @@ export function ShiftPreferenceCalendar({
                 </>
               )}
 
-              {/* 店長ビュー: 人数 + tone dots */}
+              {/* 店長ビュー: 全件 PreferenceActionRow スタック表示 */}
               {isAdminView && dayPrefs.length > 0 && (
-                <div className="flex items-center gap-0.5">
-                  {dayPrefs.slice(0, 3).map((p) => {
+                <div className="flex flex-col gap-0.5 px-0.5 pb-1">
+                  {dayPrefs.map(p => {
                     const tone = userToneMap.get(p.user_id) ?? MEMBER_TONE_CLASSES[0];
                     return (
-                      <span
+                      <div
                         key={p.id}
-                        className={'w-1.5 h-1.5 rounded-full ' + tone.split(' ')[0]}
-                        aria-hidden="true"
-                      />
+                        className={tone + ' rounded-sm'}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <PreferenceActionRow
+                          preference={p}
+                          memberName={memberNames?.get(p.user_id)}
+                          onApprove={onApprovePreference ?? (async () => {})}
+                          onReject={onRejectPreference ?? (async () => {})}
+                          canManage={canManageStore?.(p.store_id) ?? false}
+                          variant="compact"
+                          onMutated={onMutated}
+                        />
+                      </div>
                     );
                   })}
-                  {dayPrefs.length > 3 && (
-                    <span className="text-[9px] font-semibold text-neutral-500 tabular-nums ml-0.5">
-                      +{dayPrefs.length - 3}
-                    </span>
-                  )}
                 </div>
               )}
+            </>
+          );
+
+          // P0-1 修正: admin view では button-in-button を避けるため div + role="gridcell"
+          return isAdminView ? (
+            <div
+              key={dateStr}
+              role="gridcell"
+              tabIndex={isCurrentMonth ? 0 : -1}
+              aria-label={ariaLabel}
+              aria-disabled={!isCurrentMonth}
+              onClick={() => isCurrentMonth && onDateClick(dateStr)}
+              onKeyDown={(e) => {
+                if (!isCurrentMonth) return;
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onDateClick(dateStr);
+                }
+              }}
+              className={baseCell + ' ' + stateCell + todayRing + (!isCurrentMonth ? ' opacity-60' : '')}
+            >
+              {cellChildren}
+            </div>
+          ) : (
+            <button
+              key={dateStr}
+              type="button"
+              role="gridcell"
+              aria-label={ariaLabel}
+              aria-pressed={!!primaryPref && !isAdminView}
+              disabled={!isCurrentMonth}
+              onClick={() => isCurrentMonth && onDateClick(dateStr)}
+              className={baseCell + ' ' + stateCell + todayRing}
+            >
+              {cellChildren}
             </button>
           );
         })}

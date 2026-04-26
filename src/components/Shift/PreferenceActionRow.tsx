@@ -1,0 +1,353 @@
+import { useState } from 'react';
+import { Check, X, Loader2, CheckCircle2, Circle, XCircle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import type { ShiftPreference } from '../../types';
+import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
+
+export interface PreferenceActionRowProps {
+  preference: ShiftPreference;
+  memberName?: string;
+  onApprove: (id: string, startTime?: string, endTime?: string) => Promise<void>;
+  onReject: (id: string) => Promise<void>;
+  canManage: boolean;
+  variant: 'compact' | 'full';
+  onMutated?: () => void;
+}
+
+const TIME_OPTIONS: string[] = [];
+for (let h = 0; h < 24; h++) {
+  for (const m of ['00', '15', '30', '45']) {
+    TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:${m}`);
+  }
+}
+
+const PREFERENCE_ICON: Record<string, LucideIcon> = {
+  preferred: CheckCircle2,
+  available: Circle,
+  unavailable: XCircle,
+};
+
+interface CardState {
+  loading: boolean;
+  error: string | null;
+  showTimeEditor: boolean;
+  editStart: string;
+  editEnd: string;
+}
+
+export function PreferenceActionRow({
+  preference,
+  memberName = '不明',
+  onApprove,
+  onReject,
+  canManage,
+  variant,
+  onMutated,
+}: PreferenceActionRowProps) {
+  const [state, setState] = useState<CardState>({
+    loading: false,
+    error: null,
+    showTimeEditor: false,
+    editStart: preference.start_time?.slice(0, 5) ?? '09:00',
+    editEnd: preference.end_time?.slice(0, 5) ?? '18:00',
+  });
+
+  const handleApprove = async (withTime?: boolean) => {
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      if (withTime) {
+        await onApprove(preference.id, state.editStart, state.editEnd);
+      } else {
+        await onApprove(preference.id);
+      }
+      onMutated?.();
+    } catch (err) {
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        error: err instanceof Error ? err.message : '操作に失敗しました',
+      }));
+      return;
+    }
+    setState((prev) => ({ ...prev, loading: false, showTimeEditor: false }));
+  };
+
+  const handleReject = async () => {
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      await onReject(preference.id);
+      onMutated?.();
+    } catch (err) {
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        error: err instanceof Error ? err.message : '操作に失敗しました',
+      }));
+      return;
+    }
+    setState((prev) => ({ ...prev, loading: false }));
+  };
+
+  const isPending = preference.status === 'pending';
+  const isApproved = preference.status === 'approved';
+  const isUnavailable = preference.preference_type === 'unavailable';
+
+  if (variant === 'compact') {
+    const Ic = PREFERENCE_ICON[preference.preference_type] ?? Circle;
+    return (
+      <div className="flex items-center justify-between h-6 text-[10px]" title={state.error ?? undefined}>
+        <div className="flex items-center gap-1 min-w-0 flex-1">
+          <span
+            className={`flex-shrink-0 w-2 h-2 rounded-full ${
+              preference.preference_type === 'preferred'
+                ? 'bg-primary-600 dark:bg-primary-400'
+                : preference.preference_type === 'available'
+                ? 'bg-success-600 dark:bg-success-400'
+                : 'bg-danger-600 dark:bg-danger-400'
+            }`}
+          />
+          <span className="truncate text-neutral-900 dark:text-neutral-100 font-medium">
+            {memberName}
+          </span>
+          {!isUnavailable && (
+            <>
+              <Ic className="w-3 h-3 flex-shrink-0 text-neutral-600 dark:text-neutral-400" />
+              <span className="text-neutral-600 dark:text-neutral-400">
+                {preference.start_time ? preference.start_time.slice(0, 5) : ''}
+              </span>
+            </>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+          {state.loading && <Loader2 className="w-3 h-3 animate-spin text-neutral-500 dark:text-neutral-400" />}
+          
+          {isUnavailable && !state.loading && (
+            <Badge tone="neutral">不可</Badge>
+          )}
+          
+          {!isPending && !isUnavailable && !state.loading && (
+            <>
+              {isApproved && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-success-100 text-success-700 dark:bg-success-800 dark:text-success-200">
+                  <CheckCircle2 className="w-3 h-3" />済
+                </span>
+              )}
+              {!isApproved && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300">
+                  <XCircle className="w-3 h-3" />却下
+                </span>
+              )}
+            </>
+          )}
+          
+          {isPending && !isUnavailable && canManage && !state.loading && (
+            <>
+              <button
+                type="button"
+                onClick={() => handleApprove()}
+                className="flex items-center justify-center w-5 h-5 rounded-md text-success-700 bg-success-50 hover:bg-success-100 dark:text-success-300 dark:bg-success-900 dark:hover:bg-success-800 transition"
+                aria-label="承認"
+              >
+                <Check className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleReject()}
+                className="flex items-center justify-center w-5 h-5 rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:hover:bg-danger-800 transition"
+                aria-label="却下"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // variant === 'full'
+  const Ic = PREFERENCE_ICON[preference.preference_type] ?? Circle;
+  const isRejected = preference.status === 'rejected';
+  
+  return (
+    <div
+      className={`rounded-lg border p-3 space-y-2 transition ${
+        isPending
+          ? 'border-warning-200 bg-warning-50 dark:border-warning-700 dark:bg-warning-950'
+          : isApproved
+          ? 'border-success-200 bg-success-50 dark:border-success-700 dark:bg-success-950'
+          : 'border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800'
+      }`}
+    >
+      {/* 上段: 名前・日付・タイプ・ステータス */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              {memberName}
+            </span>
+            <span className="text-xs text-neutral-500 dark:text-neutral-400">{preference.date}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`text-base leading-none font-bold ${
+                preference.preference_type === 'preferred'
+                  ? 'text-primary-600 dark:text-primary-400'
+                  : preference.preference_type === 'available'
+                  ? 'text-success-600 dark:text-success-400'
+                  : 'text-danger-600 dark:text-danger-400'
+              }`}
+            >
+              <Ic className="w-4 h-4" />
+            </span>
+            <span className="text-xs text-neutral-600 dark:text-neutral-300">
+              {preference.preference_type === 'preferred' ? '希望' : preference.preference_type === 'available' ? '出勤可能' : '出勤不可'}
+            </span>
+            {preference.preference_type !== 'unavailable' && preference.start_time && preference.end_time && (
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                {preference.start_time.slice(0, 5)} 〜 {preference.end_time.slice(0, 5)}
+              </span>
+            )}
+          </div>
+          {preference.note && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{preference.note}</p>
+          )}
+        </div>
+
+        {/* ステータスバッジ */}
+        <div className="flex-shrink-0">
+          {isApproved && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700 dark:bg-success-800 dark:text-success-200">
+              <CheckCircle2 className="w-3 h-3" />承認済
+            </span>
+          )}
+          {isRejected && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300">
+              <XCircle className="w-3 h-3" />却下済
+            </span>
+          )}
+          {isPending && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-700 dark:bg-warning-800 dark:text-warning-200">
+              未対応
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* エラー表示 */}
+      {state.error && <p className="text-xs text-danger-600 dark:text-danger-400">{state.error}</p>}
+
+      {/* unavailable バッジ */}
+      {isPending && isUnavailable && (
+        <Badge tone="neutral">出勤不可（承認不要）</Badge>
+      )}
+
+      {/* 時間指定エディタ */}
+      {state.showTimeEditor && isPending && canManage && (
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+              開始時刻
+            </label>
+            <select
+              value={state.editStart}
+              onChange={(e) => setState((prev) => ({ ...prev, editStart: e.target.value }))}
+              className="block w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-700 dark:text-neutral-100"
+            >
+              {TIME_OPTIONS.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+              終了時刻
+            </label>
+            <select
+              value={state.editEnd}
+              onChange={(e) => setState((prev) => ({ ...prev, editEnd: e.target.value }))}
+              className="block w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-700 dark:text-neutral-100"
+            >
+              {TIME_OPTIONS.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* 権限なし表示 */}
+      {isPending && !canManage && !isUnavailable && (
+        <div className="pt-1">
+          <span className="text-xs text-neutral-400 dark:text-neutral-500">権限なし</span>
+        </div>
+      )}
+
+      {/* アクションボタン */}
+      {isPending && canManage && !isUnavailable && (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {!state.showTimeEditor && (
+            <Button
+              type="button"
+              disabled={state.loading}
+              onClick={() => handleApprove()}
+              variant="primary"
+              className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
+            >
+              {state.loading ? '処理中...' : '承認'}
+            </Button>
+          )}
+
+          {!state.showTimeEditor && (
+            <Button
+              type="button"
+              disabled={state.loading}
+              onClick={() => setState((prev) => ({ ...prev, showTimeEditor: true }))}
+              variant="tertiary"
+              className="h-auto px-3 py-1 text-xs text-primary-700 bg-primary-50 border border-primary-200 hover:bg-primary-100 dark:text-primary-300 dark:bg-primary-900 dark:border-primary-700 dark:hover:bg-primary-800"
+            >
+              時間指定承認
+            </Button>
+          )}
+
+          {state.showTimeEditor && (
+            <>
+              <Button
+                type="button"
+                disabled={state.loading}
+                onClick={() => handleApprove(true)}
+                variant="primary"
+                className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
+              >
+                {state.loading ? '処理中...' : '時間指定で承認'}
+              </Button>
+              <Button
+                type="button"
+                disabled={state.loading}
+                onClick={() => setState((prev) => ({ ...prev, showTimeEditor: false }))}
+                variant="tertiary"
+                className="h-auto px-3 py-1 text-xs text-neutral-600 bg-neutral-100 hover:bg-neutral-200 dark:text-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600"
+              >
+                キャンセル
+              </Button>
+            </>
+          )}
+
+          {!state.showTimeEditor && (
+            <Button
+              type="button"
+              disabled={state.loading}
+              onClick={() => handleReject()}
+              variant="danger"
+              className="h-auto px-3 py-1 text-xs text-danger-700 bg-danger-50 border border-danger-200 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:border-danger-700 dark:hover:bg-danger-800"
+            >
+              {state.loading ? '処理中...' : '却下'}
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
