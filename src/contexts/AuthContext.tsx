@@ -17,15 +17,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
-    };
-
-    initializeAuth();
-
+    // Supabase v2: onAuthStateChange は subscribe 直後に INITIAL_SESSION を必ず発火する。
+    // getSession() を別途 await すると StrictMode double-mount で Web Locks がデッドロックし、
+    // loading=true のまま永久ローディングになる（dev 環境 P0）。
+    // → INITIAL_SESSION 経由で初期セッションを受け取り、loading を解除する一本化パスに統一。
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
