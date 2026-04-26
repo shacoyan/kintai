@@ -364,7 +364,6 @@ export function ShiftPreferenceCalendar({
                       <div
                         key={p.id}
                         className={tone + ' rounded-sm'}
-                        onClick={(e) => e.stopPropagation()}
                       >
                         <PreferenceActionRow
                           preference={p}

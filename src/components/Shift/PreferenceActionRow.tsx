@@ -146,7 +146,7 @@ export function PreferenceActionRow({
             <>
               <button
                 type="button"
-                onClick={() => handleApprove()}
+                onClick={(e) => { e.stopPropagation(); handleApprove(); }}
                 className="flex items-center justify-center w-5 h-5 rounded-md text-success-700 bg-success-50 hover:bg-success-100 dark:text-success-300 dark:bg-success-900 dark:hover:bg-success-800 transition"
                 aria-label="承認"
               >
@@ -154,7 +154,7 @@ export function PreferenceActionRow({
               </button>
               <button
                 type="button"
-                onClick={() => handleReject()}
+                onClick={(e) => { e.stopPropagation(); handleReject(); }}
                 className="flex items-center justify-center w-5 h-5 rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:hover:bg-danger-800 transition"
                 aria-label="却下"
               >
@@ -292,7 +292,7 @@ export function PreferenceActionRow({
             <Button
               type="button"
               disabled={state.loading}
-              onClick={() => handleApprove()}
+              onClick={(e) => { e.stopPropagation(); handleApprove(); }}
               variant="primary"
               className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
             >
@@ -304,7 +304,7 @@ export function PreferenceActionRow({
             <Button
               type="button"
               disabled={state.loading}
-              onClick={() => setState((prev) => ({ ...prev, showTimeEditor: true }))}
+              onClick={(e) => { e.stopPropagation(); setState((prev) => ({ ...prev, showTimeEditor: true })); }}
               variant="tertiary"
               className="h-auto px-3 py-1 text-xs text-primary-700 bg-primary-50 border border-primary-200 hover:bg-primary-100 dark:text-primary-300 dark:bg-primary-900 dark:border-primary-700 dark:hover:bg-primary-800"
             >
@@ -317,7 +317,7 @@ export function PreferenceActionRow({
               <Button
                 type="button"
                 disabled={state.loading}
-                onClick={() => handleApprove(true)}
+                onClick={(e) => { e.stopPropagation(); handleApprove(true); }}
                 variant="primary"
                 className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
               >
@@ -326,7 +326,7 @@ export function PreferenceActionRow({
               <Button
                 type="button"
                 disabled={state.loading}
-                onClick={() => setState((prev) => ({ ...prev, showTimeEditor: false }))}
+                onClick={(e) => { e.stopPropagation(); setState((prev) => ({ ...prev, showTimeEditor: false })); }}
                 variant="tertiary"
                 className="h-auto px-3 py-1 text-xs text-neutral-600 bg-neutral-100 hover:bg-neutral-200 dark:text-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600"
               >
@@ -339,7 +339,7 @@ export function PreferenceActionRow({
             <Button
               type="button"
               disabled={state.loading}
-              onClick={() => handleReject()}
+              onClick={(e) => { e.stopPropagation(); handleReject(); }}
               variant="danger"
               className="h-auto px-3 py-1 text-xs text-danger-700 bg-danger-50 border border-danger-200 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:border-danger-700 dark:hover:bg-danger-800"
             >

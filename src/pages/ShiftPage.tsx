@@ -602,7 +602,7 @@ export function ShiftPage() {
                 )}
               </div>
 
-              <aside className="hidden lg:block">
+              <div className="hidden lg:block">
                 <ShiftPreferenceSidebar
                   mode={canManageTenant && showAllMembersPrefs ? "admin" : "self"}
                   selectedDate={canManageTenant && showAllMembersPrefs ? allMemberPrefDate : selectedPrefDate}
@@ -623,7 +623,7 @@ export function ShiftPage() {
                   defaultStoreId={storeId}
                   onMutated={fetchPreferenceRange}
                 />
-              </aside>
+              </div>
             </div>
           )}
 
