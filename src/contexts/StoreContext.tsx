@@ -41,8 +41,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const { data, error } = await supabase
             .from('stores')
             .select('*')
-            .eq('tenant_id', currentTenant.id)
-            .order('name');
+            .eq('tenant_id', currentTenant.id);
           if (error) throw error;
           storeList = (data as Store[]) || [];
           membersList = [];
@@ -77,10 +76,44 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const { data, error } = await supabase
             .from('stores')
             .select('*')
-            .in('id', storeIds)
-            .order('name');
+            .in('id', storeIds);
           if (error) throw error;
           storeList = (data as Store[]) || [];
+        }
+
+        // 店舗のメンバー数集計とソート処理
+        const storeIds = storeList.map(s => s.id);
+        if (storeIds.length > 0) {
+          const { data: allMembers } = await supabase
+            .from('store_members')
+            .select('store_id')
+            .in('store_id', storeIds);
+
+          if (allMembers && allMembers.length > 0) {
+            const memberCounts: Record<string, number> = {};
+            allMembers.forEach((m: { store_id: string }) => {
+              memberCounts[m.store_id] = (memberCounts[m.store_id] || 0) + 1;
+            });
+
+            storeList.sort((a: Store, b: Store) => {
+              const countA = memberCounts[a.id] || 0;
+              const countB = memberCounts[b.id] || 0;
+              if (countA !== countB) {
+                return countB - countA; // 多い順（降順）
+              }
+              // 同点の場合は作成日昇順
+              const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+              const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+              return dateA - dateB;
+            });
+          } else {
+            // メンバーがいない場合も作成日昇順でソート
+            storeList.sort((a: Store, b: Store) => {
+              const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+              const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+              return dateA - dateB;
+            });
+          }
         }
 
         setStores(storeList);
@@ -107,7 +140,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
         }
 
-        // 3. 上記に該当しない場合、リストの先頭
+        // 3. メンバー数最多（同点なら作成日昇順）の店舗を取得
+        // 上記で既に storeList をメンバー数降順・作成日昇順にソート済みのため、リスト先頭が該当
         setCurrentStoreState(storeList[0] || null);
 
       } catch (err) {

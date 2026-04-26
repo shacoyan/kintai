@@ -3,6 +3,7 @@ import { CheckCircle2, XCircle, Circle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ShiftPreference } from '../../types';
 import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
 
 interface ShiftPreferenceAdminListProps {
   preferences: ShiftPreference[];
@@ -50,10 +51,10 @@ export function ShiftPreferenceAdminList({
   historyMode = false,
   canManageStore,
 }: ShiftPreferenceAdminListProps) {
-  const [showAll, setShowAll] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'all'>('pending');
   const [cardStates, setCardStates] = useState<Map<string, CardState>>(new Map());
 
-  const displayed = historyMode ? preferences : (showAll ? preferences : preferences.filter((p) => p.status === 'pending'));
+  const displayed = historyMode ? preferences : (statusFilter === 'all' ? preferences : preferences.filter((p) => p.status === 'pending'));
 
   function getState(id: string, pref: ShiftPreference): CardState {
     return cardStates.get(id) ?? {
@@ -135,19 +136,39 @@ export function ShiftPreferenceAdminList({
             )
           )}
         </h3>
-        {!historyMode && (
-          <button
-            onClick={() => setShowAll((v) => !v)}
-            className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
-          >
-            {showAll ? '未対応のみ表示' : '全て表示'}
-          </button>
-        )}
       </div>
+
+      {/* フィルタータブ */}
+      {!historyMode && (
+        <div className="flex gap-1 border-b border-neutral-200 dark:border-neutral-700">
+          <button
+            onClick={() => setStatusFilter('pending')}
+            aria-pressed={statusFilter === 'pending'}
+            className={`px-3 py-1.5 text-xs transition-colors ${
+              statusFilter === 'pending'
+                ? 'border-b-2 border-primary-600 text-primary-600 font-semibold dark:border-primary-400 dark:text-primary-400'
+                : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+            }`}
+          >
+            申請中({pendingCount})
+          </button>
+          <button
+            onClick={() => setStatusFilter('all')}
+            aria-pressed={statusFilter === 'all'}
+            className={`px-3 py-1.5 text-xs transition-colors ${
+              statusFilter === 'all'
+                ? 'border-b-2 border-primary-600 text-primary-600 font-semibold dark:border-primary-400 dark:text-primary-400'
+                : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+            }`}
+          >
+            すべて
+          </button>
+        </div>
+      )}
 
       {displayed.length === 0 && (
         <p className="text-sm text-neutral-500 dark:text-neutral-400 py-4 text-center">
-          {historyMode ? '履歴はありません' : (showAll ? '希望がありません' : '未対応の希望はありません')}
+          {historyMode ? '履歴はありません' : (statusFilter === 'all' ? '希望がありません' : '未対応の希望はありません')}
         </p>
       )}
 
@@ -234,6 +255,11 @@ export function ShiftPreferenceAdminList({
                 <p className="text-xs text-danger-600 dark:text-danger-400">{state.error}</p>
               )}
 
+              {/* アクション領域 / unavailable バッジ */}
+              {!historyMode && isPending && pref.preference_type === 'unavailable' && (
+                <Badge tone="neutral">出勤不可（承認不要）</Badge>
+              )}
+
               {/* 時間指定エディタ */}
               {!historyMode && state.showTimeEditor && isPending && canManageRow && (
                 <div className="grid grid-cols-2 gap-2 pt-1">
@@ -273,17 +299,17 @@ export function ShiftPreferenceAdminList({
               )}
 
               {/* 権限なし表示 */}
-              {!historyMode && isPending && !canManageRow && (
+              {!historyMode && isPending && !canManageRow && pref.preference_type !== 'unavailable' && (
                 <div className="pt-1">
                   <span className="text-xs text-neutral-400 dark:text-neutral-500">権限なし</span>
                 </div>
               )}
 
-              {/* アクションボタン (pending のみ・操作権限あり) */}
-              {!historyMode && isPending && canManageRow && (
+              {/* アクションボタン (pending のみ・操作権限あり・出勤不可以外) */}
+              {!historyMode && isPending && canManageRow && pref.preference_type !== 'unavailable' && (
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {/* 承認ボタン (出勤不可以外) */}
-                  {pref.preference_type !== 'unavailable' && !state.showTimeEditor && (
+                  {/* 承認ボタン */}
+                  {!state.showTimeEditor && (
                     <Button
                       type="button"
                       disabled={state.loading}
@@ -296,7 +322,7 @@ export function ShiftPreferenceAdminList({
                   )}
 
                   {/* 時間指定承認 */}
-                  {pref.preference_type !== 'unavailable' && !state.showTimeEditor && (
+                  {!state.showTimeEditor && (
                     <Button
                       type="button"
                       disabled={state.loading}

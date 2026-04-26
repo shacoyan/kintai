@@ -29,6 +29,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 };
 
 export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify, onBulkApprove, onDelete, onRefresh, canManageStore }: ShiftAdminPanelProps) {
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'all'>('pending');
   const [modifyingId, setModifyingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [modStart, setModStart] = useState('');
@@ -39,6 +40,14 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
   const memberMap = new Map(members.map(m => [m.user_id, m.display_name]));
   const manageableShifts = shifts.filter(s => canManageStore(s.store_id));
   const pendingShifts = manageableShifts.filter(s => s.status === 'pending');
+
+  const displayedShifts = shifts.filter(s =>
+    statusFilter === 'pending'
+      ? s.status === 'pending'
+      : statusFilter === 'approved'
+      ? s.status === 'approved'
+      : s.status !== 'cancelled'
+  );
 
   const handleAction = async (action: () => Promise<void>) => {
     setProcessing(true);
@@ -86,6 +95,42 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
         )}
       </div>
 
+      <div role="tablist" className="flex border-b border-neutral-200 dark:border-neutral-700">
+        <button
+          onClick={() => setStatusFilter('pending')}
+          aria-pressed={statusFilter === 'pending'}
+          className={`flex-1 px-4 py-2 text-sm font-medium text-center transition-colors focus:outline-none ${
+            statusFilter === 'pending'
+              ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
+              : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+          }`}
+        >
+          申請中 ({pendingShifts.length})
+        </button>
+        <button
+          onClick={() => setStatusFilter('approved')}
+          aria-pressed={statusFilter === 'approved'}
+          className={`flex-1 px-4 py-2 text-sm font-medium text-center transition-colors focus:outline-none ${
+            statusFilter === 'approved'
+              ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
+              : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+          }`}
+        >
+          承認済
+        </button>
+        <button
+          onClick={() => setStatusFilter('all')}
+          aria-pressed={statusFilter === 'all'}
+          className={`flex-1 px-4 py-2 text-sm font-medium text-center transition-colors focus:outline-none ${
+            statusFilter === 'all'
+              ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
+              : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+          }`}
+        >
+          すべて
+        </button>
+      </div>
+
       {error && (
         <div className="mx-6 mt-4 p-3 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-neutral-700 rounded-md">
           <p className="text-sm text-danger-600 dark:text-danger-400">{error}</p>
@@ -93,10 +138,10 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
       )}
 
       <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
-        {shifts.length === 0 ? (
+        {displayedShifts.length === 0 ? (
           <div className="px-6 py-8 text-center text-neutral-500 dark:text-neutral-400">シフト申請はありません</div>
         ) : (
-          shifts.map((shift) => {
+          displayedShifts.map((shift) => {
             const badge = STATUS_BADGE[shift.status] || STATUS_BADGE.pending;
             const isModifying = modifyingId === shift.id;
             const canManageRow = canManageStore(shift.store_id);

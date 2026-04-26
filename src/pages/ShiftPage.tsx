@@ -58,6 +58,8 @@ export function ShiftPage() {
   const [selectedPrefDate, setSelectedPrefDate] = useState<string | null>(null);
   const [showAllMembersPrefs, setShowAllMembersPrefs] = useState(false);
   const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
+  const [shiftViewMonth, setShiftViewMonth] = useState<Date>(new Date());
+  const [allMemberPrefDate, setAllMemberPrefDate] = useState<string | null>(null);
 
   const pendingPreferenceCount = useMemo(
     () => allPreferences.filter(p => p.status === 'pending').length,
@@ -207,6 +209,11 @@ export function ShiftPage() {
 
   const pendingShifts = shifts.filter(s => s.status === 'pending');
 
+  const allMemberPrefsForDate = useMemo(
+    () => allPreferences.filter(p => p.date === allMemberPrefDate),
+    [allPreferences, allMemberPrefDate]
+  );
+
   if (!tenantId) return null;
 
   if (!storeId) {
@@ -256,7 +263,7 @@ export function ShiftPage() {
           <header className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-lg md:text-xl font-semibold text-neutral-900">シフト</h2>
-              <p className="text-sm text-neutral-500 tabular-nums">{format(new Date(), 'yyyy年M月', { locale: ja })}</p>
+              <p className="text-sm text-neutral-500 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
             </div>
             {canManageTenant && pendingShifts.length > 0 && (
               <Badge tone="warning" withDot>{pendingShifts.length} 件 承認待ち</Badge>
@@ -274,6 +281,7 @@ export function ShiftPage() {
             onDateClick={() => {}}
             onShiftClick={(shift) => setSelectedShift(shift)}
             memberNames={canManageTenant ? memberNames : undefined}
+            onViewMonthChange={setShiftViewMonth}
           />
 
           {selectedShift && canManageTenant && (
@@ -403,8 +411,11 @@ export function ShiftPage() {
               <ShiftPreferenceCalendar
                 preferences={preferencesForCalendar}
                 onDateClick={(date) => {
-                  if (canManageTenant && showAllMembersPrefs) return;
-                  setSelectedPrefDate(date);
+                  if (canManageTenant && showAllMembersPrefs) {
+                    setAllMemberPrefDate(date);
+                  } else {
+                    setSelectedPrefDate(date);
+                  }
                 }}
                 memberNames={canManageTenant && showAllMembersPrefs ? memberNames : undefined}
                 canManageTenant={canManageTenant && showAllMembersPrefs}
@@ -492,7 +503,64 @@ export function ShiftPage() {
                 )}
               </BottomSheet>
 
-              {canManageTenant && (
+              <BottomSheet
+                isOpen={!!allMemberPrefDate}
+                onClose={() => setAllMemberPrefDate(null)}
+                title={allMemberPrefDate ? `${allMemberPrefDate} の希望一覧` : undefined}
+              >
+                {allMemberPrefDate && (
+                  <ul className="divide-y divide-neutral-100">
+                    {allMemberPrefsForDate.length === 0 && (
+                      <li className="px-4 py-6 text-center text-sm text-neutral-500">
+                        この日の希望はありません
+                      </li>
+                    )}
+                    {allMemberPrefsForDate.map((p) => {
+                      const style = PREF_LIST_STYLE[p.preference_type];
+                      return (
+                        <li key={p.id} className="px-4 py-3 flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-neutral-900">
+                              {memberNames.get(p.user_id) ?? '不明'}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${style.iconBox}`}>
+                                <style.Icon className="w-3 h-3" />
+                                {style.label}
+                              </span>
+                              {p.start_time && p.end_time && (
+                                <span className="text-xs text-neutral-500 tabular-nums">
+                                  {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {p.status === 'pending' && p.preference_type !== 'unavailable' && (
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => handleApprovePreference(p.id, p.start_time ?? undefined, p.end_time ?? undefined)}
+                              >
+                                承認
+                              </Button>
+                              <Button
+                                variant="tertiary"
+                                size="sm"
+                                onClick={() => handleRejectPreference(p.id)}
+                              >
+                                却下
+                              </Button>
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </BottomSheet>
+
+              {canManageTenant && showAllMembersPrefs && (
                 <div className="mt-2">
                   <ShiftPreferenceAdminList
                     preferences={preferencesForAdminList}

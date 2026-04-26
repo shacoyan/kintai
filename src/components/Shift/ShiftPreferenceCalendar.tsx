@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { format, startOfWeek, addDays, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfWeek, addDays, startOfMonth, endOfMonth, isSameMonth, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, XCircle, ChevronDown, ChevronUp, ChevronRight as NextPrefIcon } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ShiftPreference, ShiftPreferenceType } from '../../types';
 
@@ -60,6 +60,7 @@ export function ShiftPreferenceCalendar({
   canManageTenant,
 }: ShiftPreferenceCalendarProps) {
   const [baseDate, setBaseDate] = useState(() => new Date());
+  const [showAllMembers, setShowAllMembers] = useState(false);
 
   const dates = useMemo(() => {
     const result: Date[] = [];
@@ -97,10 +98,38 @@ export function ShiftPreferenceCalendar({
     setBaseDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + dir, 1));
   };
 
+  const isCurrentMonthEmpty = useMemo(() => {
+    return !preferences.some((p) => isSameMonth(parseISO(p.date), baseDate));
+  }, [preferences, baseDate]);
+
+  const nextPrefMonth = useMemo<Date | null>(() => {
+    let nextDate: Date | null = null;
+    for (const p of preferences) {
+      const pDate = parseISO(p.date);
+      if (pDate > endOfMonth(baseDate)) {
+        if (!nextDate || pDate < nextDate) {
+          nextDate = pDate;
+        }
+      }
+    }
+    return nextDate;
+  }, [preferences, baseDate]);
+
+  const navigateToNextPrefMonth = () => {
+    if (nextPrefMonth) {
+      setBaseDate(startOfMonth(nextPrefMonth));
+    }
+  };
+
   const today = format(new Date(), 'yyyy-MM-dd');
   const weekDays = ['月', '火', '水', '木', '金', '土', '日'];
 
   const isAdminView = !!canManageTenant && !!memberNames;
+
+  const memberEntries = useMemo(() => {
+    if (!isAdminView || !memberNames) return [];
+    return [...userToneMap.entries()].filter(([uid]) => memberNames.has(uid));
+  }, [isAdminView, memberNames, userToneMap]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -135,6 +164,86 @@ export function ShiftPreferenceCalendar({
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Compact 凡例 (U3) */}
+      <div className="px-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-600">
+        {isAdminView && memberNames ? (
+          <>
+            {memberEntries.slice(0, 5).map(([uid, tone]) => (
+              <div key={uid} className="inline-flex items-center gap-1.5">
+                <span
+                  className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
+                  aria-hidden="true"
+                />
+                <span className="text-neutral-700">{memberNames.get(uid) ?? '不明'}</span>
+              </div>
+            ))}
+            {memberEntries.length > 5 && (
+              <>
+                {!showAllMembers && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllMembers(true)}
+                    className="inline-flex items-center gap-0.5 text-primary-600 hover:underline focus-ring rounded"
+                  >
+                    +{memberEntries.length - 5}
+                    <ChevronDown className="w-3 h-3" aria-hidden="true" />
+                  </button>
+                )}
+                {showAllMembers &&
+                  memberEntries.slice(5).map(([uid, tone]) => (
+                    <div key={uid} className="inline-flex items-center gap-1.5">
+                      <span
+                        className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
+                        aria-hidden="true"
+                      />
+                      <span className="text-neutral-700">{memberNames.get(uid) ?? '不明'}</span>
+                    </div>
+                  ))}
+                {showAllMembers && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllMembers(false)}
+                    className="inline-flex items-center gap-0.5 text-primary-600 hover:underline focus-ring rounded"
+                  >
+                    閉じる
+                    <ChevronUp className="w-3 h-3" aria-hidden="true" />
+                  </button>
+                )}
+              </>
+            )}
+          </>
+        ) : (
+          (Object.entries(PREFERENCE_STYLE) as Array<
+            [ShiftPreferenceType, PrefStyle]
+          >).map(([key, st]) => (
+            <div key={key} className="inline-flex items-center gap-1.5">
+              <span
+                className={'inline-block w-2.5 h-2.5 rounded-sm ' + st.dot}
+                aria-hidden="true"
+              />
+              <span>{st.label}</span>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* empty state バナー */}
+      {isCurrentMonthEmpty && (
+        <div className="bg-warning-50 border border-warning-200 rounded-lg p-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-warning-800">今月のシフト希望はまだありません</p>
+          {nextPrefMonth && (
+            <button
+              type="button"
+              onClick={navigateToNextPrefMonth}
+              className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded transition inline-flex items-center gap-1 shrink-0"
+            >
+              次の希望がある月へ
+              <NextPrefIcon className="w-3 h-3" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* 曜日ヘッダ */}
       <div className="grid grid-cols-7 gap-1.5 px-0.5">
@@ -175,7 +284,7 @@ export function ShiftPreferenceCalendar({
           const baseCell =
             'aspect-square min-h-[44px] md:min-h-[56px] rounded-lg flex flex-col ' +
             'items-center justify-center gap-0.5 text-[11px] transition-colors duration-120 ' +
-            'focus-ring select-none';
+            'focus-ring select-none cursor-pointer';
 
           let stateCell: string;
           if (!isCurrentMonth) {
@@ -256,33 +365,6 @@ export function ShiftPreferenceCalendar({
             </button>
           );
         })}
-      </div>
-
-      {/* 凡例 */}
-      <div className="px-1 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-neutral-600">
-        {isAdminView && memberNames ? (
-          [...userToneMap.entries()].slice(0, 6).map(([uid, tone]) => (
-            <div key={uid} className="inline-flex items-center gap-1.5">
-              <span
-                className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
-                aria-hidden="true"
-              />
-              <span className="text-neutral-700">{memberNames.get(uid) ?? '不明'}</span>
-            </div>
-          ))
-        ) : (
-          (Object.entries(PREFERENCE_STYLE) as Array<
-            [ShiftPreferenceType, PrefStyle]
-          >).map(([key, st]) => (
-            <div key={key} className="inline-flex items-center gap-1.5">
-              <span
-                className={'inline-block w-2.5 h-2.5 rounded-sm ' + st.dot}
-                aria-hidden="true"
-              />
-              <span>{st.label}</span>
-            </div>
-          ))
-        )}
       </div>
     </div>
   );

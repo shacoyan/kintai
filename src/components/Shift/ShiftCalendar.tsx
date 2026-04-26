@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { format, startOfWeek, addDays, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
+import { useState, useMemo, useEffect } from 'react';
+import { format, startOfWeek, addDays, startOfMonth, endOfMonth, addWeeks, isAfter, startOfDay, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Shift } from '../../types';
@@ -12,6 +12,7 @@ interface ShiftCalendarProps {
   onShiftClick?: (shift: Shift) => void;
   /** member display_name map for admin view */
   memberNames?: Map<string, string>;
+  onViewMonthChange?: (date: Date) => void;
 }
 
 const MEMBER_COLORS = [
@@ -43,9 +44,12 @@ const STATUS_DOT: Record<string, string> = {
   cancelled: 'bg-neutral-400',
 };
 
-export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }: ShiftCalendarProps) {
+export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange }: ShiftCalendarProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [baseDate, setBaseDate] = useState(() => new Date());
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => { onViewMonthChange?.(baseDate); }, [baseDate, onViewMonthChange]);
 
   const dates = useMemo(() => {
     const result: Date[] = [];
@@ -97,6 +101,29 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
     }
   };
 
+  const isCurrentMonthEmpty = useMemo(() => {
+    if (viewMode !== 'month') return false;
+    const monthStart = startOfMonth(baseDate);
+    const monthEnd = endOfMonth(baseDate);
+    return !shifts.some(s => {
+      const shiftDate = parseISO(s.date);
+      return !isAfter(monthStart, shiftDate) && !isAfter(shiftDate, monthEnd);
+    });
+  }, [viewMode, baseDate, shifts]);
+
+  const navigateToNextShiftMonth = () => {
+    const baseDateStart = startOfDay(baseDate);
+    const futureShifts = shifts.filter(s => isAfter(parseISO(s.date), baseDateStart));
+    if (futureShifts.length === 0) return;
+    const nearestShift = futureShifts.reduce((nearest, current) => {
+      const currentDate = parseISO(current.date);
+      const nearestDate = parseISO(nearest.date);
+      return isAfter(nearestDate, currentDate) ? current : nearest;
+    });
+    const nextDate = parseISO(nearestShift.date);
+    setBaseDate(new Date(nextDate.getFullYear(), nextDate.getMonth(), 1));
+  };
+
   const today = format(new Date(), 'yyyy-MM-dd');
   const weekDays = ['月', '火', '水', '木', '金', '土', '日'];
 
@@ -143,6 +170,58 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
           ))}
         </div>
       </div>
+
+      {/* Compact Legend */}
+      <div className="flex items-center flex-wrap gap-x-4 gap-y-1 px-1 py-1.5 bg-neutral-50 dark:bg-neutral-800 rounded-md text-xs">
+        {memberNames ? (
+          <>
+            {(() => {
+              const entries = [...userColorMap.entries()];
+              const displayEntries = isExpanded ? entries : entries.slice(0, 5);
+              return displayEntries.map(([uid, colorClass]) => {
+                const bgClass = colorClass.split(' ')[0];
+                return (
+                  <div key={uid} className="flex items-center gap-1">
+                    <div className={`w-2.5 h-2.5 rounded-full ${bgClass.replace('100', '400')}`} />
+                    <span className="text-neutral-600 dark:text-neutral-400">{memberNames.get(uid) || '不明'}</span>
+                  </div>
+                );
+              });
+            })()}
+            {userColorMap.size > 5 && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-primary-600 dark:text-primary-400 font-medium hover:underline focus:outline-none"
+              >
+                {isExpanded ? '閉じる' : `…(+${userColorMap.size - 5})`}
+              </button>
+            )}
+          </>
+        ) : (
+          Object.entries({ pending: '申請中', approved: '承認済', rejected: '却下', modified: '修正', cancelled: '取消' }).map(([key, label]) => (
+            <div key={key} className="flex items-center gap-1">
+              <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[key]}`} />
+              <span className="text-neutral-600 dark:text-neutral-400">{label}</span>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Empty state banner */}
+      {isCurrentMonthEmpty && (
+        <div className="flex items-center justify-between p-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg text-primary-800 dark:text-primary-300">
+          <span className="text-sm font-medium">今月のシフトはまだありません</span>
+          {shifts.some(s => isAfter(parseISO(s.date), startOfDay(baseDate))) && (
+            <button
+              onClick={navigateToNextShiftMonth}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-700 dark:text-primary-200 bg-primary-100 dark:bg-primary-800/40 rounded-md hover:bg-primary-200 dark:hover:bg-primary-800/60 transition"
+            >
+              次のシフトがある月へ
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Calendar grid */}
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
@@ -212,28 +291,6 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames }
             );
           })}
         </div>
-      </div>
-
-      {/* Legend */}
-      <div className="flex flex-wrap gap-3 text-xs">
-        {memberNames ? (
-          [...userColorMap.entries()].map(([uid, colorClass]) => {
-            const bgClass = colorClass.split(' ')[0];
-            return (
-              <div key={uid} className="flex items-center gap-1">
-                <div className={`w-2.5 h-2.5 rounded-full ${bgClass.replace('100', '400')}`} />
-                <span className="text-neutral-600 dark:text-neutral-400">{memberNames.get(uid) || '不明'}</span>
-              </div>
-            );
-          })
-        ) : (
-          Object.entries({ pending: '申請中', approved: '承認済', rejected: '却下', modified: '修正', cancelled: '取消' }).map(([key, label]) => (
-            <div key={key} className="flex items-center gap-1">
-              <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[key]}`} />
-              <span className="text-neutral-600 dark:text-neutral-400">{label}</span>
-            </div>
-          ))
-        )}
       </div>
     </div>
   );
