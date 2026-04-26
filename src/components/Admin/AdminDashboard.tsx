@@ -31,9 +31,7 @@ import {
   CalendarCheck,
   AlertTriangle
 } from 'lucide-react';
-import { PageSkeleton } from '../ui/Skeleton';
-import { ErrorBanner } from '../ui/ErrorBanner';
-import { StatCard, Card } from '../ui';
+import { StatCard, Card, PageSkeleton, ErrorBanner } from '../ui';
 import type { Shift, AttendanceRecord } from '../../types';
 
 interface AdminDashboardProps {
@@ -53,6 +51,13 @@ const tabs = [
 ];
 
 type TabId = typeof tabs[number]['id'];
+
+const SECTIONS = [
+  { label: '概要', items: ['dashboard'] },
+  { label: 'メンバー管理', items: ['members'] },
+  { label: '給与・勤怠', items: ['payroll', 'attendance', 'corrections', 'leaves', 'mismatch'] },
+  { label: '設定', items: ['presets', 'stores'] },
+] as const;
 
 export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
@@ -251,7 +256,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
         {activeTab === 'attendance' && <AttendanceAdmin tenantId={tenantId} />}
         {activeTab === 'corrections' && (
           <div className="space-y-6">
-            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
+            <Card padding="none">
               <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">修正申請（承認待ち）</h2>
                 {pendingRequests.length > 0 && (
@@ -268,15 +273,15 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               ) : (
                 <CorrectionList requests={pendingRequests} onReview={handleReview} />
               )}
-            </div>
+            </Card>
 
             {processedRequests.length > 0 && (
-              <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
+              <Card padding="none">
                 <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
                   <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">修正申請履歴</h2>
                 </div>
                 <CorrectionList requests={processedRequests} />
-              </div>
+              </Card>
             )}
           </div>
         )}
@@ -305,21 +310,23 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
         )}
         {activeTab === 'mismatch' && (
           <div className="space-y-4">
-            <div className="bg-white dark:bg-neutral-800 rounded-lg shadow px-6 py-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">シフト不一致アラート</h2>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                  今月の承認済みシフトと実績の差異を表示します（猶予15分）
-                </p>
+            <Card padding="md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">シフト不一致アラート</h2>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    今月の承認済みシフトと実績の差異を表示します（猶予15分）
+                  </p>
+                </div>
+                <button
+                  onClick={fetchMismatchData}
+                  disabled={mismatchLoading}
+                  className="px-3 py-1.5 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 disabled:opacity-50"
+                >
+                  {mismatchLoading ? '読み込み中…' : '再読込'}
+                </button>
               </div>
-              <button
-                onClick={fetchMismatchData}
-                disabled={mismatchLoading}
-                className="px-3 py-1.5 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 disabled:opacity-50"
-              >
-                {mismatchLoading ? '読み込み中…' : '再読込'}
-              </button>
-            </div>
+            </Card>
             {mismatchLoading ? (
               <PageSkeleton />
             ) : (
@@ -382,40 +389,48 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       <div className="hidden md:flex gap-6">
         {/* Sidebar */}
         <nav className="md:w-[200px] shrink-0">
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl p-2 sticky top-20 space-y-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                aria-current={activeTab === tab.id ? 'page' : undefined}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 font-medium border-l-2 border-primary-600 dark:border-primary-400 rounded-l-none'
-                    : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-700'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <tab.icon size={16} />
-                  <span>{tab.label}</span>
-                </span>
-                {tab.id === 'leaves' && pendingLeaves.length > 0 && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
-                    {pendingLeaves.length}
-                  </span>
-                )}
-                {tab.id === 'corrections' && pendingRequests.length > 0 && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
-                    {pendingRequests.length}
-                  </span>
-                )}
-                {tab.id === 'mismatch' && mismatches.length > 0 && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">
-                    {mismatches.length}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+          <Card padding="sm" className="sticky top-20">
+            <div className="space-y-1">
+              {SECTIONS.map((section, sectionIndex) => (
+                <div key={section.label}>
+                  {sectionIndex > 0 && <div className="border-t border-neutral-100 my-2" />}
+                  <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider px-3 pt-3 pb-1">{section.label}</div>
+                  {tabs.filter(tab => (section.items as readonly string[]).includes(tab.id)).map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      aria-current={activeTab === tab.id ? 'page' : undefined}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
+                        activeTab === tab.id
+                          ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 font-semibold border-l-2 border-primary-600 dark:border-primary-400 rounded-l-none'
+                          : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-700'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <tab.icon size={16} />
+                        <span>{tab.label}</span>
+                      </span>
+                      {tab.id === 'leaves' && pendingLeaves.length > 0 && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                          {pendingLeaves.length}
+                        </span>
+                      )}
+                      {tab.id === 'corrections' && pendingRequests.length > 0 && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                          {pendingRequests.length}
+                        </span>
+                      )}
+                      {tab.id === 'mismatch' && mismatches.length > 0 && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">
+                          {mismatches.length}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </Card>
         </nav>
 
         {/* Content */}

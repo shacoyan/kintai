@@ -1,9 +1,19 @@
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Sun, Moon, Monitor, Bell, User, LogOut } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTenant } from '../../hooks/useTenant';
+import { Badge, Button } from '../ui';
 import { StoreSelector } from '../Store/StoreSelector';
 
 export interface TopBarProps {
   title?: string;
+  showRoleBadge?: boolean;
+  showStoreSelector?: boolean;
+  showThemeToggle?: boolean;
+  showNotificationBell?: boolean;
+  showUserMenu?: boolean;
+  rightSlot?: React.ReactNode;
 }
 
 const THEME_CYCLE = ['light', 'dark', 'system'] as const;
@@ -27,12 +37,38 @@ const THEME_TITLES: Record<ThemeValue, string> = {
   system: 'システム設定',
 };
 
-export function TopBar({ title }: TopBarProps) {
+export function TopBar({
+  title,
+  showRoleBadge = true,
+  showStoreSelector = true,
+  showThemeToggle = true,
+  showNotificationBell = true,
+  showUserMenu = true,
+  rightSlot,
+}: TopBarProps) {
   const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
+  const { myRole } = useTenant();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const currentIndex = THEME_CYCLE.indexOf(theme as ThemeValue);
   const nextTheme = THEME_CYCLE[(currentIndex + 1) % THEME_CYCLE.length];
-  const Icon = THEME_ICONS[theme as ThemeValue] ?? Monitor;
+  const ThemeIcon = THEME_ICONS[theme as ThemeValue] ?? Monitor;
+
+  const unread = 0;
 
   return (
     <div className="flex items-center w-full gap-4">
@@ -41,17 +77,72 @@ export function TopBar({ title }: TopBarProps) {
           {title}
         </h1>
       )}
+      {showRoleBadge && (myRole === 'owner' || myRole === 'manager') && (
+        <span className="hidden md:inline-flex">
+          {myRole === 'owner' ? (
+            <Badge tone="primary" withDot>Owner</Badge>
+          ) : (
+            <Badge tone="info" withDot>Manager</Badge>
+          )}
+        </span>
+      )}
       <div className="flex-1" />
-      <StoreSelector />
-      <button
-        type="button"
-        aria-label={THEME_ARIA_LABELS[theme as ThemeValue]}
-        title={THEME_TITLES[theme as ThemeValue]}
-        onClick={() => setTheme(nextTheme)}
-        className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-      >
-        <Icon size={18} aria-hidden="true" />
-      </button>
+      {rightSlot}
+      {showNotificationBell && (
+        <button
+          type="button"
+          aria-label="通知"
+          className="relative p-2 rounded-md text-neutral-600 hover:bg-neutral-100"
+        >
+          <Bell size={18} />
+          {unread > 0 && (
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger-500" />
+          )}
+        </button>
+      )}
+      {showStoreSelector && <StoreSelector />}
+      {showThemeToggle && (
+        <button
+          type="button"
+          aria-label={THEME_ARIA_LABELS[theme as ThemeValue]}
+          title={THEME_TITLES[theme as ThemeValue]}
+          onClick={() => setTheme(nextTheme)}
+          className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        >
+          <ThemeIcon size={18} aria-hidden="true" />
+        </button>
+      )}
+      {showUserMenu && (
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            aria-label="ユーザーメニュー"
+            className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <User size={18} />
+          </button>
+          {isMenuOpen && (
+            <div className="absolute right-0 top-full mt-2 w-56 rounded-md bg-white shadow-lg border border-neutral-200 py-2 z-50">
+              {user?.email && (
+                <div className="px-4 py-2 text-sm text-neutral-700 truncate">
+                  {user.email}
+                </div>
+              )}
+              <div className="px-4 py-2">
+                <Button
+                  variant="tertiary"
+                  size="sm"
+                  onClick={signOut}
+                  iconLeft={<LogOut size={16} />}
+                >
+                  ログアウト
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -7,9 +7,7 @@ import type { AttendanceRecord, TenantMember, Shift } from '../../types';
 import { generatePayrollCsv, downloadCsv } from '../../utils/csvExport';
 import { getNightMinutesInRange, getNightMinutesForShift } from '../../utils/nightShift';
 import { Download, Calculator } from 'lucide-react';
-import { EmptyState } from '../ui/EmptyState';
-import { ErrorBanner } from '../ui/ErrorBanner';
-import { PageSkeleton } from '../ui/Skeleton';
+import { EmptyState, ErrorBanner, PageSkeleton, Button, Card, Select, Badge } from '../ui';
 
 interface PayrollCalculationProps {
   tenantId: string;
@@ -330,44 +328,46 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   const storeLabel = currentStore?.name ?? '全店舗';
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">給与計算</h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">月次の勤怠データから給与を計算します</p>
-      </div>
+    <Card padding="none">
+      <Card.Header>
+        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">給与計算</h2>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">月次の勤怠データから給与を計算します</p>
+      </Card.Header>
 
-      <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+      <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
         <div className="flex flex-wrap items-center gap-3">
           {/* 年月セレクト */}
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">年</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => { setSelectedYear(Number(e.target.value)); setCalculated(false); }}
-              className="block w-28 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            >
-              {yearOpts.map((y) => <option key={y} value={y}>{y}年</option>)}
-            </select>
+            <div className="w-28">
+              <Select
+                label="年"
+                value={selectedYear}
+                onChange={(e) => { setSelectedYear(Number(e.target.value)); setCalculated(false); }}
+              >
+                {yearOpts.map((y) => <option key={y} value={y}>{y}年</option>)}
+              </Select>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">月</label>
-            <select
-              value={selectedMonth}
-              onChange={(e) => { setSelectedMonth(Number(e.target.value)); setCalculated(false); }}
-              className="block w-24 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            >
-              {monthOpts.map((m) => <option key={m} value={m}>{m}月</option>)}
-            </select>
+            <div className="w-24">
+              <Select
+                label="月"
+                value={selectedMonth}
+                onChange={(e) => { setSelectedMonth(Number(e.target.value)); setCalculated(false); }}
+              >
+                {monthOpts.map((m) => <option key={m} value={m}>{m}月</option>)}
+              </Select>
+            </div>
           </div>
 
           {/* モード切り替えトグル */}
-          <div className="flex gap-1 bg-gray-200 dark:bg-gray-600 rounded-lg p-1">
+          <div className="flex gap-1 bg-neutral-100 dark:bg-neutral-700 rounded-md p-1">
             <button
               onClick={() => { setPayrollMode('actual'); setCalculated(false); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 payrollMode === 'actual'
-                  ? 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-800 dark:text-primary-300'
+                  : 'text-neutral-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
               }`}
             >
               実績ベース
@@ -376,8 +376,8 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
               onClick={() => { setPayrollMode('shift'); setCalculated(false); }}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 payrollMode === 'shift'
-                  ? 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-800 dark:text-primary-300'
+                  : 'text-neutral-600 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
               }`}
             >
               シフトベース
@@ -385,17 +385,23 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
           </div>
 
           {/* 計算ボタン */}
-          <button
+          <Button
+            variant="primary"
+            size="md"
+            loading={isLoading}
+            iconLeft={<Calculator size={16} />}
             onClick={handleCalculate}
             disabled={isLoading}
-            className="btn-primary inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {isLoading ? '計算中...' : '計算'}
-          </button>
+            計算
+          </Button>
 
           {/* CSVダウンロード */}
           {calculated && hasData && (
-            <button
+            <Button
+              variant="secondary"
+              size="md"
+              iconLeft={<Download size={16} />}
               onClick={() => {
                 let csv: string;
                 let filename: string;
@@ -408,17 +414,15 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                 }
                 downloadCsv(csv, filename);
               }}
-              className="inline-flex items-center px-4 py-2 text-sm font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-md hover:bg-green-100 dark:hover:bg-green-900/50 transition"
             >
-              <Download className="w-4 h-4 mr-1.5" />
               CSVダウンロード
-            </button>
+            </Button>
           )}
         </div>
 
         {/* モード説明バナー */}
         {payrollMode === 'shift' && (
-          <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+          <p className="mt-2 text-xs text-info-600 dark:text-info-400">
             シフトベース: 承認済みシフト（approved / modified）の時間をもとに給与を計算します
           </p>
         )}
@@ -436,71 +440,65 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
         <div className="overflow-x-auto">
           {!hasData ? (
             <EmptyState 
-              icon={<Calculator className="w-12 h-12 text-slate-400" />} 
+              icon={<Calculator className="w-12 h-12 text-neutral-400" />} 
               title={`${selectedYear}年${selectedMonth}月のデータはありません`} 
               description={`${payrollMode === 'shift' ? 'シフト' : '勤怠'}データが該当月にありません`} 
             />
           ) : (
             <>
               {/* モードラベル */}
-              <div className="px-6 py-2 flex items-center gap-2 border-b border-gray-100 dark:border-gray-700">
-                <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    payrollMode === 'shift'
-                      ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
-                      : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
-                  }`}
-                >
+              <div className="px-6 py-2 flex items-center gap-2 border-b border-neutral-100 dark:border-neutral-700">
+                <Badge tone="info">
                   {payrollMode === 'shift' ? 'シフトベース' : '実績ベース'}
-                </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                </Badge>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400">
                   {selectedYear}年{selectedMonth}月 給与計算結果
                 </span>
               </div>
 
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+              <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+                <thead className="bg-neutral-50 dark:bg-neutral-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">名前</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">名前</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
                       {payrollMode === 'shift' ? '稼働予定日数' : '稼働日数'}
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">通常時間</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">深夜時間</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">時給/月給</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">支払額</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">通常時間</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">深夜時間</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">時給/月給</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">支払額</th>
                   </tr>
                 </thead>
-                <tbody className="tabular-nums bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="tabular-nums bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700">
                   {payrollData.map((row) => (
-                    <tr key={row.userId} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{row.displayName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">{row.workDays}日</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right" title="休憩を除く">{fmtTime(row.normalMinutes)}</td>
+                    <tr key={row.userId} className="hover:bg-neutral-50 dark:hover:bg-neutral-700">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-neutral-100">{row.displayName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 dark:text-neutral-300 text-right">{row.workDays}日</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 dark:text-neutral-300 text-right" title="休憩を除く">{fmtTime(row.normalMinutes)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-right" title="22:00〜翌5:00 は 1.25 倍">
                         {row.nightMinutes > 0 ? (
-                          <span className="text-purple-700 dark:text-purple-300 font-medium">{fmtTime(row.nightMinutes)}</span>
+                          <span className="text-warning-700 dark:text-warning-300 font-medium">{fmtTime(row.nightMinutes)}</span>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500">-</span>
+                          <span className="text-neutral-400 dark:text-neutral-500">-</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 text-right">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 dark:text-neutral-300 text-right">
                         {row.payType === 'monthly' ? (
                           <span>¥{row.monthlySalary.toLocaleString()}/月</span>
                         ) : (
                           <span>¥{row.hourlyRate.toLocaleString()}/時</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 text-right font-medium">¥{row.payment.toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-100 text-right font-medium">¥{row.payment.toLocaleString()}</td>
                     </tr>
                   ))}
-                  <tr className="bg-gray-50 dark:bg-gray-700 border-t-2 border-gray-300 dark:border-gray-600">
-                    <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-100">合計</td>
-                    <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-100 text-right">-</td>
-                    <td className="px-6 py-4 text-sm font-bold text-gray-900 dark:text-gray-100 text-right" title="休憩を除く">{fmtTime(totalMinutes - totalNightMinutes)}</td>
-                    <td className="px-6 py-4 text-sm font-bold text-purple-700 dark:text-purple-300 text-right" title="22:00〜翌5:00 は 1.25 倍">{totalNightMinutes > 0 ? fmtTime(totalNightMinutes) : '-'}</td>
+                  <tr className="bg-neutral-50 dark:bg-neutral-700 border-t-2 border-neutral-300 dark:border-neutral-600">
+                    <td className="px-6 py-4 text-sm font-bold text-neutral-900 dark:text-neutral-100">合計</td>
+                    <td className="px-6 py-4 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right">-</td>
+                    <td className="px-6 py-4 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right" title="休憩を除く">{fmtTime(totalMinutes - totalNightMinutes)}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-warning-700 dark:text-warning-300 text-right" title="22:00〜翌5:00 は 1.25 倍">{totalNightMinutes > 0 ? fmtTime(totalNightMinutes) : '-'}</td>
                     <td className="px-6 py-4 text-right">-</td>
-                    <td className="px-6 py-4 text-base font-bold text-gray-900 dark:text-gray-100 text-right">¥{totalPayment.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-base font-bold text-neutral-900 dark:text-neutral-100 text-right">¥{totalPayment.toLocaleString()}</td>
                   </tr>
                 </tbody>
               </table>
@@ -508,6 +506,6 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

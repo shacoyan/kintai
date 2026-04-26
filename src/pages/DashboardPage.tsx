@@ -5,9 +5,8 @@ import { useAttendance } from '../hooks/useAttendance';
 import { useShift } from '../hooks/useShift';
 import { ClockButton } from '../components/Attendance/ClockButton';
 import { BreakButton } from '../components/Attendance/BreakButton';
-import { AlertTriangle, Clock } from 'lucide-react';
-import { PageSkeleton, ListRowSkeleton } from '../components/ui/Skeleton';
-import { EmptyState } from '../components/ui/EmptyState';
+import { AlertTriangle, Clock, Activity } from 'lucide-react';
+import { Card, StatCard, Badge, Button, PageSkeleton, ListRowSkeleton, EmptyState } from '../components/ui';
 import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -57,8 +56,7 @@ export function DashboardPage() {
   }
 
   const todayStr = todayFromHook;
-  const todayDate = new Date();
-  const dateDisplay = format(todayDate, 'M月d日（EEE）', { locale: ja });
+  const today = new Date();
 
   // 今日のレコードのみ（日跨ぎの未退勤レコードは除外して集計）
   const todayOnlyRecords = todayRecords.filter((r) => r.date === todayStr);
@@ -127,36 +125,39 @@ export function DashboardPage() {
     .slice(0, 3);
 
   return (
-    <div className="max-w-md mx-auto space-y-6">
-      <div className="text-center pt-6">
-        <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{dateDisplay}</p>
-      </div>
+    <div className="max-w-md mx-auto space-y-4 md:space-y-6">
+      <header className="flex items-end justify-between gap-3">
+        <h1 className="text-xl md:text-2xl font-semibold text-neutral-900">{format(today, 'M月d日')}</h1>
+        <p className="text-sm text-neutral-500">{format(today, 'EEEE', { locale: ja })}</p>
+      </header>
 
       {carryOverRecord && (
-        <div className="bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-xl shadow-lg p-4">
+        <Card padding="md" className="border-l-4 border-danger-500">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="font-semibold">昨日の退勤打刻が未完了</p>
-              <p className="text-sm text-white/90 mt-1">
+              <div className="flex items-center gap-2 mb-1">
+                <Badge tone="danger" withDot>未完了</Badge>
+              </div>
+              <p className="text-sm text-neutral-600">
                 {carryOverRecord.date} に出勤({formatTime(carryOverRecord.clock_in)}) したまま退勤打刻がされていません
               </p>
-              <button
-                onClick={clockOut}
-                className="mt-3 bg-white text-rose-600 font-semibold rounded-lg px-4 py-2"
-              >
-                今すぐ退勤打刻する
-              </button>
+              <div className="mt-3">
+                <Button variant="danger" size="md" onClick={clockOut} fullWidth>今すぐ退勤打刻</Button>
+              </div>
             </div>
           </div>
-        </div>
+        </Card>
       )}
 
       <div className="flex flex-col items-center gap-6 py-8">
         {currentStore == null ? (
-          <div className="w-full max-w-md rounded-lg border border-amber-200 bg-amber-50 p-4 text-center text-sm text-amber-800">
-            打刻するには上部のセレクタから店舗を選択してください。
-          </div>
+          <Card padding="md">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Badge tone="warning" withDot>店舗未選択</Badge>
+              <p className="text-sm text-warning-800">打刻するには上部のセレクタから店舗を選択してください。</p>
+            </div>
+          </Card>
         ) : (
           <>
             <ClockButton
@@ -179,77 +180,76 @@ export function DashboardPage() {
 
       {todayRecords.length === 0 ? (
         <EmptyState
-          icon={<Clock className="w-12 h-12 text-slate-400 dark:text-slate-500" />}
+          icon={<Clock className="w-12 h-12 text-neutral-400" />}
           title="まだ本日の打刻はありません"
           description="出勤ボタンを押して開始しましょう"
         />
       ) : (
         <>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 text-center">本日の記録</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="text-center">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">最初の出勤</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{formatTime(firstClockIn)}</p>
+          <Card padding="md">
+            <Card.Header>本日の記録</Card.Header>
+            <Card.Body>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <p className="text-xs text-neutral-500 mb-1">最初の出勤</p>
+                  <p className="text-2xl font-semibold text-neutral-900 tabular-nums">{formatTime(firstClockIn)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-neutral-500 mb-1">最後の退勤</p>
+                  <p className="text-2xl font-semibold text-neutral-900 tabular-nums">{lastClockOut ? formatTime(lastClockOut) : (activeRecord ? '勤務中' : '-')}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-neutral-500 mb-1">労働時間</p>
+                  <p className="text-2xl font-semibold text-neutral-900 tabular-nums">{formatDuration(totalWorkMinutes)}</p>
+                </div>
               </div>
-              <div className="text-center">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">最後の退勤</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{lastClockOut ? formatTime(lastClockOut) : (activeRecord ? '勤務中' : '-')}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">労働時間</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{formatDuration(totalWorkMinutes)}</p>
-              </div>
-            </div>
-          </div>
+            </Card.Body>
+          </Card>
 
           {/* Today's summary cards */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">本日の労働時間</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{todayTotalHours}</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">セッション数</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{todayRecords.filter((r) => r.clock_in).length}</p>
-            </div>
+            <StatCard label="本日の労働時間" value={todayTotalHours} icon={<Clock size={16} />} />
+            <StatCard label="セッション数" value={todayRecords.filter(r => r.clock_in).length} unit="回" icon={<Activity size={16} />} />
           </div>
         </>
       )}
 
       {/* 今週のシフト */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-2">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">今週のシフト</h3>
-        {shiftLoading ? (
-          <div className="space-y-1.5">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <ListRowSkeleton key={i} />
-            ))}
-          </div>
-        ) : (
-          upcomingShifts.length > 0 && (
+      <Card padding="md">
+        <Card.Header>今週のシフト</Card.Header>
+        <Card.Body>
+          {shiftLoading ? (
             <div className="space-y-1.5">
-              {upcomingShifts.map((shift) => (
-                <div key={shift.id} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600 dark:text-gray-300 font-medium">
-                    {format(new Date(shift.date), 'M/d(E)', { locale: ja })}
-                  </span>
-                  <span className="text-gray-800 dark:text-gray-200">
-                    {shift.start_time.slice(0, 5)} 〜 {shift.end_time.slice(0, 5)}
-                  </span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    shift.status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
-                    shift.status === 'pending'  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' :
-                    'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                  }`}>
-                    {shift.status === 'approved' ? '承認済' : shift.status === 'pending' ? '申請中' : shift.status}
-                  </span>
-                </div>
+              {Array.from({ length: 7 }).map((_, i) => (
+                <ListRowSkeleton key={i} />
               ))}
             </div>
-          )
-        )}
-      </div>
+          ) : (
+            upcomingShifts.length > 0 && (
+              <div className="space-y-1.5">
+                {upcomingShifts.map((shift) => (
+                  <div key={shift.id} className="flex items-center justify-between text-sm">
+                    <span className="text-neutral-600 font-medium">
+                      {format(new Date(shift.date), 'M/d(E)', { locale: ja })}
+                    </span>
+                    <span className="text-neutral-800">
+                      {shift.start_time.slice(0, 5)} 〜 {shift.end_time.slice(0, 5)}
+                    </span>
+                    {shift.status === 'approved' ? (
+                      <Badge tone="success" withDot>承認済</Badge>
+                    ) : shift.status === 'pending' ? (
+                      <Badge tone="warning" withDot>申請中</Badge>
+                    ) : (
+                      <Badge tone="neutral">{shift.status}</Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+        </Card.Body>
+      </Card>
     </div>
   );
 }
+

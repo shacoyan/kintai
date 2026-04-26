@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
-import { Clock, History, CheckCircle2, Circle, XCircle, Loader2, Plus, ChevronRight } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, addWeeks, addMonths, parseISO } from 'date-fns';
+import { Clock, History, CheckCircle2, Circle, XCircle, Loader2, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, Card, Badge, BottomSheet } from '../components/ui';
 import type { BadgeTone } from '../components/ui';
@@ -149,6 +149,27 @@ export function ShiftPage() {
     return map;
   }, [members]);
 
+  const deadlineInfo = useMemo(() => {
+    if (!storeId) return null;
+    // Phase 3 暫定: localStorage から読む。なければ「対象月の前月25日23:59」
+    const targetMonth = startOfMonth(addMonths(new Date(), 1));
+    const targetMonthKey = format(targetMonth, 'yyyy-MM');
+    const stored = localStorage.getItem(`kintai_shift_deadline_${storeId}_${targetMonthKey}`);
+    const deadline = stored ? parseISO(stored) : (() => {
+      const d = new Date(targetMonth);
+      d.setMonth(d.getMonth() - 1);
+      d.setDate(25);
+      d.setHours(23, 59, 0, 0);
+      return d;
+    })();
+    if (deadline < new Date()) return null;
+    const ms = deadline.getTime() - Date.now();
+    const days = Math.floor(ms / (24 * 3600 * 1000));
+    const hours = Math.floor((ms % (24 * 3600 * 1000)) / (3600 * 1000));
+    const remainingLabel = days > 0 ? `${days}日${hours}時間` : `${hours}時間`;
+    return { deadline, targetMonth, remainingLabel };
+  }, [storeId]);
+
   const handleLeaveSubmit = async (date: string, leaveType: 'paid' | 'half_paid' | 'absence' | 'other', reason?: string) => {
     await submitLeave(date, leaveType, reason);
     setShowLeaveForm(false);
@@ -197,18 +218,18 @@ export function ShiftPage() {
   if (!storeId) {
     return (
       <div className="p-6">
-        <div className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 text-center">
-          <p className="text-sm text-gray-700 dark:text-gray-300">
+        <Card padding="md">
+          <Card.Body className="text-center text-sm text-neutral-700">
             店舗を選択してください。ヘッダーの店舗セレクターから操作対象の店舗を選ぶと、シフト・希望が表示されます。
-          </p>
-        </div>
+          </Card.Body>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="border-b border-neutral-200">
         <nav className="flex space-x-8">
           {([
             { id: 'shift' as TabId, label: 'シフト' },
@@ -220,20 +241,16 @@ export function ShiftPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition ${
                 activeTab === tab.id
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
+                  ? 'border-primary-600 text-primary-600'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
               }`}
             >
               {tab.label}
               {tab.id === 'shift' && canManageTenant && pendingShifts.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                  {pendingShifts.length}
-                </span>
+                <Badge tone="warning" className="ml-2">{pendingShifts.length}</Badge>
               )}
               {tab.id === 'preference' && canManageTenant && pendingPreferenceCount > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-                  {pendingPreferenceCount}
-                </span>
+                <Badge tone="warning" className="ml-2">{pendingPreferenceCount}</Badge>
               )}
             </button>
           ))}
@@ -242,9 +259,19 @@ export function ShiftPage() {
 
       {activeTab === 'shift' && (
         <div className="space-y-6">
+          <header className="flex items-end justify-between gap-3">
+            <div>
+              <h2 className="text-lg md:text-xl font-semibold text-neutral-900">シフト</h2>
+              <p className="text-sm text-neutral-500 tabular-nums">{format(new Date(), 'yyyy年M月')}</p>
+            </div>
+            {canManageTenant && pendingShifts.length > 0 && (
+              <Badge tone="warning" withDot>{pendingShifts.length} 件 承認待ち</Badge>
+            )}
+          </header>
+
           {shiftLoading && (
             <div className="flex justify-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <Loader2 className="w-6 h-6 text-primary-500 animate-spin" aria-label="読み込み中" />
             </div>
           )}
 
@@ -298,6 +325,23 @@ export function ShiftPage() {
             <div className="flex justify-center py-4">
               <Loader2 className="w-6 h-6 text-primary-500 animate-spin" aria-label="読み込み中" />
             </div>
+          )}
+
+          {/* TODO(Phase 4): useShiftSubmissionDeadline + migration 021 へ置換 */}
+          {deadlineInfo && (
+            <Card padding="md" className="border-l-4 border-warning-500 bg-warning-50">
+              <Card.Body className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-warning-600 mt-0.5 shrink-0" aria-hidden="true" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-warning-800">
+                    シフト希望の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm')}
+                  </p>
+                  <p className="text-xs text-warning-700 mt-1 tabular-nums">
+                    残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月')} 分）
+                  </p>
+                </div>
+              </Card.Body>
+            </Card>
           )}
 
           {/* 表示切替: 現在 / 履歴 */}

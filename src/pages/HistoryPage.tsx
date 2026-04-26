@@ -20,7 +20,7 @@ import {
 } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { ListRowSkeleton } from '../components/ui/Skeleton';
+import { Button, Card, Badge, ListRowSkeleton } from '../components/ui';
 
 interface CorrectionModalState {
   isOpen: boolean;
@@ -81,18 +81,18 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+    <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
       {/* 曜日ヘッダー */}
-      <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700">
+      <div className="grid grid-cols-7 border-b border-neutral-200 dark:border-neutral-700">
         {weekDayLabels.map((day, i) => (
           <div
             key={day}
             className={`py-2 text-center text-xs font-semibold ${
               i === 5
-                ? 'text-blue-500 dark:text-blue-400'
+                ? 'text-info-500 dark:text-info-400'
                 : i === 6
-                ? 'text-red-500 dark:text-red-400'
-                : 'text-gray-500 dark:text-gray-400'
+                ? 'text-danger-500 dark:text-danger-400'
+                : 'text-neutral-500 dark:text-neutral-400'
             }`}
           >
             {day}
@@ -119,24 +119,24 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
                   setSelectedDate(isSelected ? null : dateKey);
                   if (record) onClickDay(dateKey, record);
                 }}
-                className={`w-full min-h-[56px] p-1 text-left border-b border-r border-gray-100 dark:border-gray-700 transition-colors ${
+                className={`w-full min-h-[56px] p-1 text-left border-b border-r border-neutral-100 dark:border-neutral-700 transition-colors ${
                   !isCurrentMonth
-                    ? 'bg-gray-50 dark:bg-gray-900/30 cursor-default'
+                    ? 'bg-neutral-50 dark:bg-neutral-900/30 cursor-default'
                     : isSelected
-                    ? 'bg-blue-50 dark:bg-blue-900/20'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                    ? 'bg-primary-50 dark:bg-primary-900/20'
+                    : 'hover:bg-neutral-50 dark:hover:bg-neutral-700/50'
                 }`}
               >
                 {/* 日付番号 */}
                 <span
                   className={`text-xs font-medium block mb-0.5 ${
                     !isCurrentMonth
-                      ? 'text-gray-300 dark:text-gray-600'
+                      ? 'text-neutral-300 dark:text-neutral-600'
                       : dayOfWeek === 0
-                      ? 'text-red-500 dark:text-red-400'
+                      ? 'text-danger-500 dark:text-danger-400'
                       : dayOfWeek === 6
-                      ? 'text-blue-500 dark:text-blue-400'
-                      : 'text-gray-700 dark:text-gray-300'
+                      ? 'text-info-500 dark:text-info-400'
+                      : 'text-neutral-700 dark:text-neutral-300'
                   }`}
                 >
                   {format(day, 'd')}
@@ -149,12 +149,12 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
                       <span
                         className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                           isOvertime
-                            ? 'bg-blue-500 dark:bg-blue-400'
-                            : 'bg-green-500 dark:bg-green-400'
+                            ? 'bg-info-500 dark:bg-info-400'
+                            : 'bg-success-500 dark:bg-success-400'
                         }`}
                       />
                       {workMins > 0 && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400 leading-none">
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400 leading-none">
                           {formatWorkHours(workMins)}
                         </span>
                       )}
@@ -165,8 +165,8 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
 
               {/* 選択時の詳細ポップオーバー（展開） */}
               {isSelected && record && isCurrentMonth && (
-                <div className="col-span-7 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 space-y-0.5">
-                  <p className="font-semibold text-blue-700 dark:text-blue-300">{dateKey}</p>
+                <div className="col-span-7 bg-primary-50 dark:bg-primary-900/20 border-b border-primary-200 dark:border-primary-800 px-3 py-2 text-xs text-neutral-700 dark:text-neutral-300 space-y-0.5">
+                  <p className="font-semibold text-primary-700 dark:text-primary-300">{dateKey}</p>
                   {record.clock_in && (
                     <p>出勤: {format(parseISO(record.clock_in), 'HH:mm')}</p>
                   )}
@@ -184,13 +184,13 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
       </div>
 
       {/* 凡例 */}
-      <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+      <div className="px-4 py-2 border-t border-neutral-100 dark:border-neutral-700 flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500 dark:bg-green-400" />
+          <span className="w-2 h-2 rounded-full bg-success-500 dark:bg-success-400" />
           <span>通常勤務</span>
         </div>
         <div className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400" />
+          <span className="w-2 h-2 rounded-full bg-info-500 dark:bg-info-400" />
           <span>8時間以上</span>
         </div>
       </div>
@@ -265,41 +265,36 @@ export function HistoryPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {currentStore == null && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center text-sm text-amber-800">
-          履歴を表示するには上部のセレクタから店舗を選択してください。
-        </div>
+        <Card padding="md">
+          <div className="flex items-center justify-center gap-2 text-sm">
+            <Badge tone="warning" withDot>店舗未選択</Badge>
+            履歴を表示するには上部のセレクタから店舗を選択してください。
+          </div>
+        </Card>
       )}
       {/* 月ナビゲーション + ビュー切り替え */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-4 py-3">
+      <Card padding="md">
         <div className="flex items-center justify-between">
-          <button
-            onClick={handlePrevMonth}
-            aria-label="前月"
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </button>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+          <Button variant="tertiary" size="sm" iconLeft={<ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handlePrevMonth} aria-label="前月">
+            <span className="sr-only">前月</span>
+          </Button>
+          <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
             {format(currentDate, 'yyyy年M月(E)', { locale: ja })}
           </h2>
-          <button
-            onClick={handleNextMonth}
-            aria-label="翌月"
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          </button>
+          <Button variant="tertiary" size="sm" iconLeft={<ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handleNextMonth} aria-label="翌月">
+            <span className="sr-only">翌月</span>
+          </Button>
         </div>
 
         {/* ビュー切り替えトグル */}
         <div className="flex justify-center mt-2">
-          <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+          <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-700 rounded-md">
             <button
               onClick={() => setViewMode('list')}
               className={`px-3 py-1 text-sm rounded-md transition-colors ${
                 viewMode === 'list'
-                  ? 'bg-white dark:bg-gray-600 shadow text-gray-900 dark:text-gray-100'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
               }`}
             >
               リスト
@@ -308,31 +303,31 @@ export function HistoryPage() {
               onClick={() => setViewMode('calendar')}
               className={`px-3 py-1 text-sm rounded-md transition-colors ${
                 viewMode === 'calendar'
-                  ? 'bg-white dark:bg-gray-600 shadow text-gray-900 dark:text-gray-100'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
               }`}
             >
               カレンダー
             </button>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* 月次サマリー */}
       <MonthlySummary summary={monthlySummary} />
 
       {loading ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden divide-y divide-gray-100 dark:divide-gray-700">
+        <Card padding="none">
           <ListRowSkeleton />
           <ListRowSkeleton />
           <ListRowSkeleton />
-        </div>
+        </Card>
       ) : viewMode === 'list' ? (
         /* リストビュー */
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400">日別勤怠記録</h3>
-          </div>
+        <Card padding="none">
+          <Card.Header>
+            <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">日別勤怠記録</h3>
+          </Card.Header>
           <DailyList
             records={monthlyRecords}
             year={year}
@@ -340,7 +335,7 @@ export function HistoryPage() {
             onRequestCorrection={handleRequestCorrection}
             onRequestDeletion={handleRequestDeletion}
           />
-        </div>
+        </Card>
       ) : (
         /* カレンダービュー */
         <HistoryCalendar
