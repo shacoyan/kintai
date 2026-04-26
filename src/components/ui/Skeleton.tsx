@@ -41,7 +41,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
 // Pre-built skeleton patterns
 export const CardSkeleton: React.FC = () => (
-  <div className="card space-y-3">
+  <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:shadow-neutral-700/20 space-y-3">
     <Skeleton variant="text" width="60%" height={20} />
     <Skeleton variant="text" count={3} />
     <Skeleton variant="rectangular" height={40} />

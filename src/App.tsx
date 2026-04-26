@@ -8,6 +8,7 @@ import { ProtectedRoute } from './components/Auth/ProtectedRoute';
 import { RequireTenant } from './components/Auth/RequireTenant';
 import { Layout } from './components/Layout/Layout';
 import { LoginPage } from './pages/LoginPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import TenantPage from './pages/TenantPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { HistoryPage } from './pages/HistoryPage';
@@ -22,6 +23,7 @@ const App: React.FC = () => {
         <StoreProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route
             path="/tenant"
             element={

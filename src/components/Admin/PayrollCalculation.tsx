@@ -308,7 +308,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   }, [calculated, allAttendance, allShifts, members, payrollMode]);
 
   const totalPayment = payrollData.reduce((s, r) => s + r.payment, 0);
-  const totalMinutes = payrollData.reduce((s, r) => s + r.totalMinutes, 0);
+  const grandTotalMinutes = payrollData.reduce((s, r) => s + r.totalMinutes, 0);
   const totalNightMinutes = payrollData.reduce((s, r) => s + r.nightMinutes, 0);
 
   const fmtTime = (min: number) => {
@@ -459,7 +459,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-6 py-4">
                 <StatCard label="総支払額" value={totalPayment.toLocaleString()} unit="円" />
                 <StatCard label="対象人数" value={payrollData.length} unit="名" />
-                <StatCard label="総労働時間" value={fmtTime(totalMinutes)} />
+                <StatCard label="総労働時間" value={fmtTime(grandTotalMinutes)} />
                 <StatCard label="総夜勤時間" value={fmtTime(totalNightMinutes)} />
               </div>
 
@@ -502,7 +502,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                   <tr className="bg-neutral-50 dark:bg-neutral-700 border-t-2 border-neutral-300 dark:border-neutral-600">
                     <td className="px-6 py-4 text-sm font-bold text-neutral-900 dark:text-neutral-100">合計</td>
                     <td className="px-6 py-4 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right">-</td>
-                    <td className="px-6 py-4 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right" title="休憩を除く">{fmtTime(totalMinutes - totalNightMinutes)}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right" title="休憩を除く">{fmtTime(grandTotalMinutes - totalNightMinutes)}</td>
                     <td className="px-6 py-4 text-sm font-bold text-warning-700 dark:text-warning-300 text-right" title="22:00〜翌5:00 は 1.25 倍">{totalNightMinutes > 0 ? fmtTime(totalNightMinutes) : '-'}</td>
                     <td className="px-6 py-4 text-right">-</td>
                     <td className="px-6 py-4 text-base font-bold text-neutral-900 dark:text-neutral-100 text-right">¥{totalPayment.toLocaleString()}</td>

@@ -89,30 +89,21 @@ export function useStore(tenantId: string) {
   }, [fetchStoreMembers]);
 
   const setStoreMemberManager = useCallback(async (storeId: string, memberId: string, isManager: boolean) => {
-    // store_members から対象レコードの id を解決
-    const { data: targetRecord, error: selectError } = await supabase
-      .from('store_members')
-      .select('id')
-      .eq('store_id', storeId)
-      .eq('member_id', memberId)
-      .maybeSingle();
-
-    if (selectError) {
-      throw new Error(`店舗内権限の更新に失敗しました: ${selectError.message}`);
-    }
-    if (!targetRecord) {
-      throw new Error('店舗内権限の更新に失敗しました: 対象メンバーが見つかりません');
-    }
-
-    // RPC を呼び出して is_manager を更新
+    // E-2 TOCTOU 解消: migration 022 で新設の 3 引数版 RPC を直接呼び出す
+    // （事前 select id は廃止。DB 側で store_id + member_id から行を解決＋ advisory_xact_lock）
     const { error: rpcError } = await supabase.rpc('set_store_member_manager', {
-      target_store_member_id: targetRecord.id,
-      new_is_manager: isManager,
+      p_store_id: storeId,
+      p_member_id: memberId,
+      p_is_manager: isManager,
     });
 
     if (rpcError) {
-      // 特定エラーメッセージの翻訳
-      if (rpcError.message === 'Only tenant owner can change is_manager') {
+      // E-3 includes() 判定: PostgREST がメッセージをラップしても拾えるよう部分一致に変更
+      const msg = rpcError.message ?? '';
+      if (msg.includes('Store member not found')) {
+        throw new Error('店舗内権限の更新に失敗しました: 対象メンバーが見つかりません');
+      }
+      if (msg.includes('Only tenant owner can change is_manager')) {
         throw new Error('店長権限の変更はオーナーのみ可能です');
       }
       throw new Error(`店舗内権限の更新に失敗しました: ${rpcError.message}`);

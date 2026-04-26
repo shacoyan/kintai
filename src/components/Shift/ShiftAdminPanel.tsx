@@ -11,7 +11,7 @@ interface ShiftAdminPanelProps {
   onBulkApprove: (shiftIds: string[]) => Promise<void>;
   onDelete: (shiftId: string) => Promise<void>;
   onRefresh: () => void;
-  canManage: (storeId: string | null) => boolean;
+  canManageStore: (storeId: string | null) => boolean;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -28,7 +28,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   modified: { label: '修正', className: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300' },
 };
 
-export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify, onBulkApprove, onDelete, onRefresh, canManage }: ShiftAdminPanelProps) {
+export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify, onBulkApprove, onDelete, onRefresh, canManageStore }: ShiftAdminPanelProps) {
   const [modifyingId, setModifyingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [modStart, setModStart] = useState('');
@@ -37,7 +37,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
   const [error, setError] = useState<string | null>(null);
 
   const memberMap = new Map(members.map(m => [m.user_id, m.display_name]));
-  const manageableShifts = shifts.filter(s => canManage(s.store_id));
+  const manageableShifts = shifts.filter(s => canManageStore(s.store_id));
   const pendingShifts = manageableShifts.filter(s => s.status === 'pending');
 
   const handleAction = async (action: () => Promise<void>) => {
@@ -99,7 +99,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
           shifts.map((shift) => {
             const badge = STATUS_BADGE[shift.status] || STATUS_BADGE.pending;
             const isModifying = modifyingId === shift.id;
-            const canManageRow = canManage(shift.store_id);
+            const canManageRow = canManageStore(shift.store_id);
 
             return (
               <div key={shift.id} className="px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">

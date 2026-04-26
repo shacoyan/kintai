@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CheckCircle2, XCircle, Circle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ShiftPreference } from '../../types';
+import { Button } from '../ui/Button';
 
 interface ShiftPreferenceAdminListProps {
   preferences: ShiftPreference[];
@@ -10,7 +11,7 @@ interface ShiftPreferenceAdminListProps {
   onReject: (id: string) => Promise<void>;
   onRefresh: () => void;
   historyMode?: boolean;
-  canManage: (storeId: string | null) => boolean;
+  canManageStore: (storeId: string | null) => boolean;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -47,7 +48,7 @@ export function ShiftPreferenceAdminList({
   onReject,
   onRefresh,
   historyMode = false,
-  canManage,
+  canManageStore,
 }: ShiftPreferenceAdminListProps) {
   const [showAll, setShowAll] = useState(false);
   const [cardStates, setCardStates] = useState<Map<string, CardState>>(new Map());
@@ -164,7 +165,7 @@ export function ShiftPreferenceAdminList({
           const isPending = pref.status === 'pending';
           const isApproved = pref.status === 'approved';
           const isRejected = pref.status === 'rejected';
-          const canManageRow = canManage(pref.store_id);
+          const canManageRow = canManageStore(pref.store_id);
 
           return (
             <div
@@ -283,60 +284,65 @@ export function ShiftPreferenceAdminList({
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {/* 承認ボタン (出勤不可以外) */}
                   {pref.preference_type !== 'unavailable' && !state.showTimeEditor && (
-                    <button
+                    <Button
                       type="button"
                       disabled={state.loading}
                       onClick={() => handleApprove(pref)}
-                      className="btn-primary px-3 py-1 text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 disabled:opacity-50 transition dark:bg-success-700 dark:hover:bg-success-600"
+                      variant="primary"
+                      className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
                     >
                       {state.loading ? '処理中...' : '承認'}
-                    </button>
+                    </Button>
                   )}
 
                   {/* 時間指定承認 */}
                   {pref.preference_type !== 'unavailable' && !state.showTimeEditor && (
-                    <button
+                    <Button
                       type="button"
                       disabled={state.loading}
                       onClick={() => setState(pref.id, { showTimeEditor: true })}
-                      className="btn-ghost px-3 py-1 text-xs font-medium text-primary-700 bg-primary-50 border border-primary-200 rounded-md hover:bg-primary-100 disabled:opacity-50 transition dark:text-primary-300 dark:bg-primary-900 dark:border-primary-700 dark:hover:bg-primary-800"
+                      variant="tertiary"
+                      className="h-auto px-3 py-1 text-xs text-primary-700 bg-primary-50 border border-primary-200 hover:bg-primary-100 dark:text-primary-300 dark:bg-primary-900 dark:border-primary-700 dark:hover:bg-primary-800"
                     >
                       時間指定承認
-                    </button>
+                    </Button>
                   )}
 
                   {/* 時間指定エディタが開いている時の確定・キャンセル */}
                   {state.showTimeEditor && (
                     <>
-                      <button
+                      <Button
                         type="button"
                         disabled={state.loading}
                         onClick={() => handleApprove(pref, true)}
-                        className="btn-primary px-3 py-1 text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 disabled:opacity-50 transition dark:bg-success-700 dark:hover:bg-success-600"
+                        variant="primary"
+                        className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
                       >
                         {state.loading ? '処理中...' : '時間指定で承認'}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         disabled={state.loading}
                         onClick={() => setState(pref.id, { showTimeEditor: false })}
-                        className="btn-ghost px-3 py-1 text-xs font-medium text-neutral-600 bg-neutral-100 rounded-md hover:bg-neutral-200 disabled:opacity-50 transition dark:text-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600"
+                        variant="tertiary"
+                        className="h-auto px-3 py-1 text-xs text-neutral-600 bg-neutral-100 hover:bg-neutral-200 dark:text-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600"
                       >
                         キャンセル
-                      </button>
+                      </Button>
                     </>
                   )}
 
                   {/* 却下ボタン */}
                   {!state.showTimeEditor && (
-                    <button
+                    <Button
                       type="button"
                       disabled={state.loading}
                       onClick={() => handleReject(pref)}
-                      className="btn-danger px-3 py-1 text-xs font-medium text-danger-700 bg-danger-50 border border-danger-200 rounded-md hover:bg-danger-100 disabled:opacity-50 transition dark:text-danger-300 dark:bg-danger-900 dark:border-danger-700 dark:hover:bg-danger-800"
+                      variant="danger"
+                      className="h-auto px-3 py-1 text-xs text-danger-700 bg-danger-50 border border-danger-200 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:border-danger-700 dark:hover:bg-danger-800"
                     >
                       {state.loading ? '処理中...' : '却下'}
-                    </button>
+                    </Button>
                   )}
                 </div>
               )}

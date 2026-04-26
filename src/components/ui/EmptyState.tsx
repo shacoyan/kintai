@@ -1,5 +1,6 @@
 import React from 'react';
 import { Inbox } from 'lucide-react';
+import { Button } from './Button';
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -19,12 +20,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description
       <p className="text-sm text-neutral-400 dark:text-neutral-500 max-w-xs">{description}</p>
     )}
     {action && (
-      <button
+      <Button
         onClick={action.onClick}
-        className="mt-4 btn-primary text-sm"
+        variant="primary"
+        size="sm"
+        className="mt-4"
       >
         {action.label}
-      </button>
+      </Button>
     )}
   </div>
 );

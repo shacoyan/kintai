@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Shift, Store } from '../../types';
 import { BottomSheet } from '../ui/BottomSheet';
+import { Button } from '../ui/Button';
 
 interface ShiftEditModalProps {
   shift: Shift;
@@ -14,7 +15,7 @@ interface ShiftEditModalProps {
   onRefresh: () => void;
   selectableStores: Store[];
   storeName?: string;
-  canManage: boolean;
+  canManageStore: boolean;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -32,7 +33,7 @@ const STATUS_LABEL: Record<string, { text: string; className: string }> = {
   cancelled: { text: '取消', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700/30 dark:text-neutral-400' },
 };
 
-export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, onDelete, onApprove, onReject, onClose, onRefresh, selectableStores, storeName, canManage }: ShiftEditModalProps) {
+export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, onDelete, onApprove, onReject, onClose, onRefresh, selectableStores, storeName, canManageStore }: ShiftEditModalProps) {
   const [startTime, setStartTime] = useState(shift.start_time.slice(0, 5));
   const [endTime, setEndTime] = useState(shift.end_time.slice(0, 5));
   const [editStoreId, setEditStoreId] = useState<string | null>(shift.store_id ?? null);
@@ -60,49 +61,50 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
     if (mode === 'view') {
       return (
         <div className="flex flex-wrap gap-2">
-          {canManageTenant && canManage && shift.status === 'pending' && onApprove && (
-            <button
+          {canManageTenant && canManageStore && shift.status === 'pending' && onApprove && (
+            <Button
               onClick={() => handleAction(() => onApprove(shift.id))}
               disabled={processing}
-              className="btn-primary bg-success-600 hover:bg-success-700 disabled:opacity-50 transition"
+              variant="primary"
+              className="bg-success-600 hover:bg-success-700"
             >
               承認
-            </button>
+            </Button>
           )}
-          {canManageTenant && canManage && shift.status === 'pending' && onReject && (
-            <button
+          {canManageTenant && canManageStore && shift.status === 'pending' && onReject && (
+            <Button
               onClick={() => handleAction(() => onReject(shift.id))}
               disabled={processing}
-              className="btn-danger disabled:opacity-50 transition"
+              variant="danger"
             >
               却下
-            </button>
+            </Button>
           )}
-          {canManageTenant && canManage && (
-            <button
+          {canManageTenant && canManageStore && (
+            <Button
               onClick={() => setMode('edit')}
-              className="btn-primary bg-primary-600 hover:bg-primary-700 transition"
+              variant="primary"
             >
               修正
-            </button>
+            </Button>
           )}
-          {canManageTenant && canManage && (
-            <button
+          {canManageTenant && canManageStore && (
+            <Button
               onClick={() => setMode('confirmDelete')}
-              className="btn-danger disabled:opacity-50 transition"
+              variant="danger"
             >
               削除
-            </button>
+            </Button>
           )}
-          {canManageTenant && !canManage && (
+          {canManageTenant && !canManageStore && (
             <p className="text-xs text-neutral-500 dark:text-neutral-400">この店舗の管理権限がありません</p>
           )}
-          <button
+          <Button
             onClick={onClose}
-            className="btn-ghost"
+            variant="tertiary"
           >
             閉じる
-          </button>
+          </Button>
         </div>
       );
     }
@@ -110,19 +112,19 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
     if (mode === 'edit') {
       return (
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={() => handleAction(() => onModify(shift.id, startTime, endTime, editStoreId ?? undefined))}
             disabled={processing}
-            className="btn-primary disabled:opacity-50 transition"
+            variant="primary"
           >
             {processing ? '処理中...' : '修正を確定'}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setMode('view')}
-            className="btn-ghost"
+            variant="tertiary"
           >
             戻る
-          </button>
+          </Button>
         </div>
       );
     }
@@ -130,19 +132,19 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
     if (mode === 'confirmDelete') {
       return (
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={() => handleAction(() => onDelete(shift.id))}
             disabled={processing}
-            className="btn-danger disabled:opacity-50 transition"
+            variant="danger"
           >
             {processing ? '処理中...' : '削除する'}
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setMode('view')}
-            className="btn-ghost"
+            variant="tertiary"
           >
             戻る
-          </button>
+          </Button>
         </div>
       );
     }

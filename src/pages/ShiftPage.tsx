@@ -289,7 +289,7 @@ export function ShiftPage() {
               onRefresh={fetchRange}
               selectableStores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
               storeName={stores.find(s => s.id === selectedShift.store_id)?.name}
-              canManage={selectedShift.store_id ? isManagerOf(selectedShift.store_id) : false}
+              canManageStore={selectedShift.store_id ? isManagerOf(selectedShift.store_id) : false}
             />
           )}
 
@@ -304,7 +304,7 @@ export function ShiftPage() {
                 onBulkApprove={bulkApprove}
                 onDelete={deleteShift}
                 onRefresh={fetchRange}
-                canManage={(sid) => sid ? isManagerOf(sid) : false}
+                canManageStore={(sid) => sid ? isManagerOf(sid) : false}
               />
 
               <LaborCostSummary estimates={laborEstimates} />
@@ -501,7 +501,7 @@ export function ShiftPage() {
                     onReject={handleRejectPreference}
                     onRefresh={fetchPreferenceRange}
                     historyMode={false}
-                    canManage={(sid) => sid ? isManagerOf(sid) : false}
+                    canManageStore={(sid) => sid ? isManagerOf(sid) : false}
                   />
                 </div>
               )}
@@ -534,7 +534,7 @@ export function ShiftPage() {
                     onReject={handleRejectPreference}
                     onRefresh={fetchPreferenceRange}
                     historyMode
-                    canManage={(sid) => sid ? isManagerOf(sid) : false}
+                    canManageStore={(sid) => sid ? isManagerOf(sid) : false}
                   />
                 </div>
               )}

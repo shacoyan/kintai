@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 import type { LeaveType } from '../../types';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { Button } from '../ui/Button';
 
 interface LeaveFormProps {
   onSubmit: (date: string, leaveType: LeaveType, reason?: string) => Promise<void>;
@@ -81,20 +82,21 @@ export function LeaveForm({ onSubmit, onCancel }: LeaveFormProps) {
       </div>
 
       <div className="flex gap-2">
-        <button
+        <Button
           type="submit"
           disabled={submitting}
-          className="btn-primary flex-1 disabled:opacity-50"
+          variant="primary"
+          className="flex-1"
         >
           {submitting ? '送信中...' : '申請'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={onCancel}
-          className="btn-ghost"
+          variant="tertiary"
         >
           キャンセル
-        </button>
+        </Button>
       </div>
     </form>
   );

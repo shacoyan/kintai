@@ -4,6 +4,7 @@ import { format, parseISO } from 'date-fns';
 import { BottomSheet } from '../ui/BottomSheet';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { AlertTriangle } from 'lucide-react';
+import { Button } from '../ui/Button';
 
 interface CorrectionFormProps {
   isOpen: boolean;
@@ -120,26 +121,24 @@ export function CorrectionForm({
       description={`対象日: ${date}${isDelete ? '（削除）' : ''}`}
       footer={
         <div className="flex gap-3">
-          <button
+          <Button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="flex-1 btn-ghost"
+            variant="tertiary"
+            className="flex-1"
           >
             キャンセル
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             form="correction-form"
             disabled={submitting}
-            className={`flex-1 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors px-4 py-2 text-sm font-medium rounded-md ${
-              isDelete
-                ? 'btn-danger'
-                : 'btn-primary'
-            }`}
+            variant={isDelete ? 'danger' : 'primary'}
+            className="flex-1"
           >
             {submitting ? '送信中...' : isDelete ? '削除依頼する' : '申請する'}
-          </button>
+          </Button>
         </div>
       }
     >

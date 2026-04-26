@@ -2,6 +2,7 @@
 import React from 'react';
 import { Building2, UserPlus } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
+import { Button } from '../ui/Button';
 import type { TenantWithRole } from '../../types';
 
 interface TenantSelectorProps {
@@ -59,20 +60,22 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
         )}
 
         <div className="space-y-3 pt-4 border-t border-neutral-200 dark:border-neutral-700">
-          <button
+          <Button
             onClick={onCreateNew}
-            className="w-full btn-primary flex items-center justify-center"
+            variant="primary"
+            fullWidth
+            iconLeft={<Building2 className="w-4 h-4" />}
           >
-            <Building2 className="w-4 h-4 mr-2" />
             新しいワークスペースを作成
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onJoin}
-            className="w-full btn-secondary flex items-center justify-center"
+            variant="secondary"
+            fullWidth
+            iconLeft={<UserPlus className="w-4 h-4" />}
           >
-            <UserPlus className="w-4 h-4 mr-2" />
             招待コードで参加
-          </button>
+          </Button>
         </div>
       </div>
     </div>

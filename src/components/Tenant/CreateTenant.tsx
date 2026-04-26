@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import type { Tenant } from '../../types';
 import { CheckCircle2, Copy, Check } from 'lucide-react';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { Button } from '../ui/Button';
 
 interface CreateTenantProps {
   onCreate: (tenant: Tenant) => void;
@@ -84,12 +85,14 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
             </div>
           </div>
 
-          <button
+          <Button
             onClick={() => onCreate(createdTenant)}
-            className="mt-6 w-full btn-primary py-2.5 px-4 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-neutral-800"
+            variant="primary"
+            fullWidth
+            className="mt-6"
           >
             ワークスペースに進む
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -138,21 +141,23 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button
+            <Button
               type="button"
               onClick={onCancel}
-              className="flex-1 btn-ghost py-2.5 px-4 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:ring-offset-2 dark:focus:ring-offset-neutral-800"
+              variant="tertiary"
+              className="flex-1"
               disabled={loading}
             >
               戻る
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="flex-1 btn-primary py-2.5 px-4 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary"
+              className="flex-1"
               disabled={loading}
             >
               {loading ? '作成中...' : '作成する'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

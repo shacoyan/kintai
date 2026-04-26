@@ -1,10 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Clock, List, Calendar, LayoutDashboard } from 'lucide-react';
+import { Clock, List, Calendar, LayoutDashboard, type LucideIcon } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 
 interface NavItemDef {
   to: string;
-  icon: typeof Clock;
+  icon: LucideIcon;
   label: string;
 }
 
@@ -38,7 +38,7 @@ export function BottomNav() {
             <Link
               to={item.to}
               aria-current={active ? 'page' : undefined}
-              className={`flex flex-col items-center justify-center gap-0.5 h-full ${
+              className={`flex flex-col items-center justify-center gap-0.5 h-full min-h-[44px] ${
                 active ? 'text-primary-600' : 'text-neutral-500'
               } hover:text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
             >

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
@@ -63,20 +63,78 @@ export function Toast(props: ToastProps): JSX.Element {
     onDismiss,
   } = props;
 
+  const timerRef = useRef<number | null>(null);
+  const startedAtRef = useRef<number>(0);
+  const remainingRef = useRef<number>(0);
+  const isPausedRef = useRef<boolean>(false);
+
+  const clearTimer = useCallback(() => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const startTimer = useCallback(
+    (ms: number) => {
+      if (duration <= 0) return;
+      clearTimer();
+      startedAtRef.current = Date.now();
+      remainingRef.current = ms;
+      timerRef.current = window.setTimeout(() => {
+        timerRef.current = null;
+        onDismiss(id);
+      }, ms);
+    },
+    [clearTimer, duration, id, onDismiss],
+  );
+
   useEffect(() => {
     if (duration <= 0) return;
-    const timer = window.setTimeout(() => {
-      onDismiss(id);
-    }, duration);
+    if (!isPausedRef.current) {
+      startTimer(duration);
+    }
     return () => {
-      window.clearTimeout(timer);
+      clearTimer();
     };
-  }, [id, duration, onDismiss]);
+  }, [startTimer, clearTimer, duration]);
+
+  const handleMouseEnter = useCallback(() => {
+    if (duration <= 0 || isPausedRef.current) return;
+    isPausedRef.current = true;
+    const elapsed = Date.now() - startedAtRef.current;
+    remainingRef.current = Math.max(0, remainingRef.current - elapsed);
+    clearTimer();
+  }, [clearTimer, duration]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (duration <= 0 || !isPausedRef.current) return;
+    isPausedRef.current = false;
+    startTimer(remainingRef.current);
+  }, [startTimer, duration]);
+
+  const handleFocus = useCallback(() => {
+    if (duration <= 0 || isPausedRef.current) return;
+    isPausedRef.current = true;
+    const elapsed = Date.now() - startedAtRef.current;
+    remainingRef.current = Math.max(0, remainingRef.current - elapsed);
+    clearTimer();
+  }, [clearTimer, duration]);
+
+  const handleBlur = useCallback(() => {
+    if (duration <= 0 || !isPausedRef.current) return;
+    isPausedRef.current = false;
+    startTimer(remainingRef.current);
+  }, [startTimer, duration]);
 
   return (
     <div
       role="status"
       aria-live="polite"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
       className={cn(
         'pointer-events-auto flex max-w-sm items-start gap-3 rounded-md bg-neutral-900 px-4 py-3 text-body-sm text-white shadow-lg animate-fade-in',
         TONE_BORDER[tone],

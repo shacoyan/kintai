@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import type { Tenant } from '../../types';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { Button } from '../ui/Button';
 
 interface JoinTenantProps {
   onJoin: (tenant: Tenant) => void;
@@ -89,21 +90,23 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button
+            <Button
               type="button"
               onClick={onCancel}
-              className="btn-ghost flex-1 py-2.5 px-4"
+              variant="tertiary"
+              className="flex-1"
               disabled={loading}
             >
               戻る
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn-primary flex-1 py-2.5 px-4"
+              variant="primary"
+              className="flex-1"
               disabled={loading}
             >
               {loading ? '参加中...' : '参加する'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

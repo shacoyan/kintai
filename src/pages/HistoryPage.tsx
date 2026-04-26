@@ -83,27 +83,25 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
   return (
     <Card padding="none">
       {/* 曜日ヘッダー */}
-      <Card.Header className="!pb-0 !mb-0 !border-b-0 !text-base !font-normal !text-inherit">
-        <div className="grid grid-cols-7 border-b border-neutral-200 dark:border-neutral-700">
-          {weekDayLabels.map((day, i) => (
-            <div
-              key={day}
-              className={`py-2 text-center text-xs font-semibold ${
-                i === 5
-                  ? 'text-info-500 dark:text-info-400'
-                  : i === 6
-                  ? 'text-danger-500 dark:text-danger-400'
-                  : 'text-neutral-500 dark:text-neutral-400'
-              }`}
-            >
-              {day}
-            </div>
-          ))}
-        </div>
-      </Card.Header>
+      <div className="grid grid-cols-7 border-b border-neutral-200 dark:border-neutral-700">
+        {weekDayLabels.map((day, i) => (
+          <div
+            key={day}
+            className={`py-2 text-center text-xs font-semibold ${
+              i === 5
+                ? 'text-info-500 dark:text-info-400'
+                : i === 6
+                ? 'text-danger-500 dark:text-danger-400'
+                : 'text-neutral-500 dark:text-neutral-400'
+            }`}
+          >
+            {day}
+          </div>
+        ))}
+      </div>
 
-      <Card.Body className="px-4 pb-4">
-        {/* 日付グリッド */}
+      {/* 日付グリッド + 凡例 */}
+      <div className="px-4 pb-4">
         <div className="grid grid-cols-7">
           {days.map((day, idx) => {
             const dateKey = format(day, 'yyyy-MM-dd');
@@ -197,7 +195,7 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
             <span>8時間以上</span>
           </div>
         </div>
-      </Card.Body>
+      </div>
     </Card>
   );
 }

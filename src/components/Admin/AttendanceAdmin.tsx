@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { AlertTriangle, Users } from 'lucide-react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { EmptyState } from '../ui/EmptyState';
+import { Button } from '../ui/Button';
 import { useStoreContext } from '../../contexts/StoreContext';
 
 interface AttendanceAdminProps {
@@ -322,7 +323,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
             出勤（〜8h）
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded bg-purple-50 dark:bg-purple-900/30 border border-purple-300 dark:border-purple-700" />
+            <span className="inline-block w-3 h-3 rounded bg-info-50 dark:bg-info-900/30 border border-info-300 dark:border-info-700" />
             残業（8h超）
           </span>
           <span className="flex items-center gap-1">
@@ -406,10 +407,10 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                           const workMin = calcWorkMinutes(record);
                           const isOvertime = workMin > OVERTIME_THRESHOLD_MINUTES;
                           cellBg = isOvertime
-                            ? 'bg-purple-50 dark:bg-purple-900/30'
+                            ? 'bg-info-50 dark:bg-info-900/30'
                             : 'bg-emerald-50 dark:bg-emerald-900/30';
                           textColor = isOvertime
-                            ? 'text-purple-700 dark:text-purple-300 font-semibold'
+                            ? 'text-info-700 dark:text-info-300 font-semibold'
                             : 'text-emerald-700 dark:text-emerald-300 font-semibold';
                           cellContent = (
                             <span className={textColor}>{fmtMinutes(workMin)}</span>
@@ -486,13 +487,13 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
               {selectedCell.record && (
                 confirmDelete ? (
                   <span className="inline-flex items-center gap-2">
-                    <button
+                    <Button
                       onClick={handleDelete}
                       disabled={saving}
-                      className="btn-danger bg-danger-600 text-white px-4 py-2 rounded-md text-sm hover:bg-danger-700 disabled:opacity-50 transition"
+                      variant="danger"
                     >
                       削除確認
-                    </button>
+                    </Button>
                     <button
                       onClick={() => setConfirmDelete(false)}
                       className="bg-neutral-200 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-200 px-4 py-2 rounded-md text-sm hover:bg-neutral-300 dark:hover:bg-neutral-500 transition"
@@ -501,12 +502,12 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                     </button>
                   </span>
                 ) : (
-                  <button
+                  <Button
                     onClick={() => setConfirmDelete(true)}
-                    className="btn-danger bg-danger-600 text-white px-4 py-2 rounded-md text-sm hover:bg-danger-700 transition"
+                    variant="danger"
                   >
                     削除
-                  </button>
+                  </Button>
                 )
               )}
 

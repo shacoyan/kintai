@@ -18,20 +18,24 @@ const paddingMap: Record<CardPadding, string> = {
   lg: 'p-6 md:p-8',
 };
 
+const CardPaddingContext = React.createContext<CardPadding>('md');
+
 function CardRoot(props: CardProps): JSX.Element {
   const { padding = 'md', as = 'section', className, children, ...rest } = props;
   const Tag = as as React.ElementType;
   return (
-    <Tag
-      className={cn(
-        'bg-white border border-neutral-100 rounded-lg shadow-xs',
-        paddingMap[padding],
-        className,
-      )}
-      {...rest}
-    >
-      {children}
-    </Tag>
+    <CardPaddingContext.Provider value={padding}>
+      <Tag
+        className={cn(
+          'bg-white border border-neutral-100 rounded-lg shadow-xs',
+          paddingMap[padding],
+          className,
+        )}
+        {...rest}
+      >
+        {children}
+      </Tag>
+    </CardPaddingContext.Provider>
   );
 }
 
@@ -61,10 +65,13 @@ function CardBody(props: CardSlotProps): JSX.Element {
 
 function CardFooter(props: CardSlotProps): JSX.Element {
   const { className, children, ...rest } = props;
+  const padding = React.useContext(CardPaddingContext);
+  const horizontalPadding = padding === 'none' ? 'px-5 md:px-6' : '';
   return (
     <footer
       className={cn(
         'border-t border-neutral-100 pt-4 mt-4 flex items-center justify-end gap-2',
+        horizontalPadding,
         className,
       )}
       {...rest}

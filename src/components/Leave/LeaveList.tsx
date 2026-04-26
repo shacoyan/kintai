@@ -3,6 +3,7 @@ import type { LeaveRequest, LeaveType } from '../../types';
 import { CalendarOff } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { Button } from '../ui/Button';
 
 interface LeaveListProps {
   leaves: LeaveRequest[];
@@ -25,7 +26,7 @@ const LEAVE_TYPE_COLOR: Record<LeaveType, string> = {
   paid: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300',
   half_paid: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
   absence: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200',
-  other: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  other: 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-300',
 };
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
@@ -105,29 +106,32 @@ export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onR
                   <div className="flex gap-1.5 mt-1">
                     {canManageTenant ? (
                       <>
-                        <button
+                        <Button
                           onClick={() => handleAction(() => onApprove(leave.id))}
                           disabled={processing}
-                          className="btn-primary px-2.5 py-1 text-xs font-medium disabled:opacity-50 transition"
+                          variant="primary"
+                          className="h-auto px-2.5 py-1 text-xs"
                         >
                           承認
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={() => handleAction(() => onReject(leave.id))}
                           disabled={processing}
-                          className="btn-danger px-2.5 py-1 text-xs font-medium disabled:opacity-50 transition"
+                          variant="danger"
+                          className="h-auto px-2.5 py-1 text-xs"
                         >
                           却下
-                        </button>
+                        </Button>
                       </>
                     ) : (
-                      <button
+                      <Button
                         onClick={() => handleAction(() => onCancel(leave.id))}
                         disabled={processing}
-                        className="btn-ghost px-2.5 py-1 text-xs font-medium disabled:opacity-50 transition"
+                        variant="tertiary"
+                        className="h-auto px-2.5 py-1 text-xs"
                       >
                         取り消し
-                      </button>
+                      </Button>
                     )}
                   </div>
                 )}

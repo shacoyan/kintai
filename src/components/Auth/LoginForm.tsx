@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type MouseEvent } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../lib/supabase';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Checkbox';
@@ -37,6 +38,10 @@ export const LoginForm = function LoginForm() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showResetForm, setShowResetForm] = useState<boolean>(false);
+  const [resetEmail, setResetEmail] = useState<string>('');
+  const [resetLoading, setResetLoading] = useState<boolean>(false);
+  const [resetSuccess, setResetSuccess] = useState<boolean>(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -51,7 +56,6 @@ export const LoginForm = function LoginForm() {
         try {
           await signIn(email, password);
         } catch {
-          // メール確認が必要な場合はログインに失敗する
           setError(
             '登録しました。確認メールを送信した場合は、メール内のリンクをクリックしてからログインしてください。',
           );
@@ -68,10 +72,91 @@ export const LoginForm = function LoginForm() {
     }
   };
 
+  const handleResetSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setResetSuccess(false);
+    setResetLoading(true);
+
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        resetEmail,
+        { redirectTo: window.location.origin + '/reset-password' }
+      );
+      if (resetError) {
+        throw resetError;
+      }
+      setResetSuccess(true);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'パスワードリセットメールの送信に失敗しました。';
+      setError(message);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const handleGoogleLogin = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     // TODO Phase 3: signInWithOAuth({ provider: 'google' })
   };
+
+  if (showResetForm) {
+    return (
+      <form
+        onSubmit={handleResetSubmit}
+        aria-busy={resetLoading || undefined}
+        className="flex flex-col gap-4"
+      >
+        {error ? <ErrorBanner message={error} /> : null}
+
+        {resetSuccess ? (
+          <div className="rounded-md bg-success-50 dark:bg-success-900/30 p-3 text-sm text-success-700 dark:text-success-200">
+            パスワードリセットのメールを送信しました。メール内のリンクからパスワードを再設定してください。
+          </div>
+        ) : null}
+
+        <p className="text-sm text-neutral-600">
+          登録済みのメールアドレスを入力してください。パスワードリセット用のリンクをメールでお送りします。
+        </p>
+
+        <Input
+          type="email"
+          label="メールアドレス"
+          value={resetEmail}
+          onChange={(e) => setResetEmail(e.target.value)}
+          required
+          autoComplete="email"
+          leftIcon={<Mail size={16} aria-hidden="true" />}
+          placeholder="name@example.com"
+        />
+
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          loading={resetLoading}
+        >
+          リセットメールを送信
+        </Button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowResetForm(false);
+            setError(null);
+            setResetSuccess(false);
+          }}
+          className="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded"
+        >
+          ログインに戻る
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form
@@ -120,12 +205,13 @@ export const LoginForm = function LoginForm() {
       {isLogin ? (
         <div className="flex items-center justify-between">
           <Checkbox label="このデバイスを記憶する" />
-          <a
-            href="#"
+          <button
+            type="button"
+            onClick={() => setShowResetForm(true)}
             className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
           >
             パスワードをお忘れですか？
-          </a>
+          </button>
         </div>
       ) : null}
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Clock } from 'lucide-react';
 import type { ShiftPreset, Store } from '../../types';
+import { Button } from '../ui/Button';
 
 interface ShiftFormProps {
   date: string;
@@ -127,20 +128,21 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
       </div>
 
       <div className="flex gap-2">
-        <button
+        <Button
           type="submit"
           disabled={submitting}
-          className="btn-primary flex-1 disabled:opacity-50 transition"
+          variant="primary"
+          className="flex-1"
         >
           {submitting ? '送信中...' : '申請'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
           onClick={onCancel}
-          className="btn-ghost"
+          variant="tertiary"
         >
           キャンセル
-        </button>
+        </Button>
       </div>
     </form>
   );

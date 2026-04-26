@@ -19,7 +19,7 @@ export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement
 }
 
 const FIELD_BASE =
-  'w-full h-12 md:h-10 appearance-none border rounded-md bg-white pl-3.5 pr-10 text-body ' +
+  'w-full h-12 md:h-10 appearance-none border rounded-md bg-white pl-3.5 pr-10 [dir=rtl]:pl-10 [dir=rtl]:pr-3.5 text-body ' +
   'transition-colors duration-120 ' +
   'focus:outline-none focus-visible:ring-2 ' +
   'disabled:bg-neutral-50 disabled:cursor-not-allowed';
@@ -94,7 +94,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
               ))}
         </select>
         <ChevronDown
-          className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"
+          className="w-4 h-4 absolute right-3 [dir=rtl]:right-auto [dir=rtl]:left-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"
           aria-hidden="true"
         />
       </div>

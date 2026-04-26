@@ -7,6 +7,7 @@ interface RadioGroupContextValue {
   name?: string;
   value?: string;
   onChange?: (value: string) => void;
+  groupId?: string;
 }
 
 const RadioGroupContext = createContext<RadioGroupContextValue | null>(null);
@@ -21,8 +22,12 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
   ref,
 ) {
   const reactId = useId();
-  const inputId = id ?? `radio-${reactId}`;
   const ctx = useContext(RadioGroupContext);
+
+  let inputId = id ?? `radio-${reactId}`;
+  if (ctx?.groupId && value !== undefined) {
+    inputId = id ?? `${ctx.groupId}-${value}`;
+  }
 
   const resolvedName = ctx?.name ?? name;
   const resolvedChecked =
@@ -92,9 +97,10 @@ export function RadioGroup({
   className,
 }: RadioGroupProps): JSX.Element {
   const reactId = useId();
-  const labelId = label ? `radiogroup-${reactId}-label` : undefined;
-  const hintId = hint ? `radiogroup-${reactId}-hint` : undefined;
-  const errId = error ? `radiogroup-${reactId}-error` : undefined;
+  const groupId = `radiogroup-${reactId}`;
+  const labelId = label ? `${groupId}-label` : undefined;
+  const hintId = hint ? `${groupId}-hint` : undefined;
+  const errId = error ? `${groupId}-error` : undefined;
   const describedBy =
     [errId, hintId && !error ? hintId : undefined].filter(Boolean).join(' ') || undefined;
 
@@ -114,7 +120,7 @@ export function RadioGroup({
           orientation === 'vertical' ? 'flex-col gap-1' : 'flex-row flex-wrap gap-4',
         )}
       >
-        <RadioGroupContext.Provider value={{ name, value, onChange }}>
+        <RadioGroupContext.Provider value={{ name, value, onChange, groupId }}>
           {children}
         </RadioGroupContext.Provider>
       </div>

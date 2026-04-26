@@ -36,6 +36,7 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
 
     const fetchDeadline = async () => {
       if (!tenantId || !storeId) {
+        setLoading(false);
         return;
       }
 
@@ -144,10 +145,10 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
   }, [tenantId, storeId, targetMonthKey]);
 
   return {
-    deadline,
+    deadline: loading ? null : deadline,
     loading,
     error,
-    canEdit,
+    canEdit: loading ? false : canEdit,
     setDeadline,
     clearDeadline,
   };
