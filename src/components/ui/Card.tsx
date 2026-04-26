@@ -27,7 +27,7 @@ function CardRoot(props: CardProps): JSX.Element {
     <CardPaddingContext.Provider value={padding}>
       <Tag
         className={cn(
-          'bg-white border border-neutral-100 rounded-lg shadow-xs',
+          'bg-white border border-neutral-100 rounded-lg shadow-xs dark:bg-neutral-800 dark:border-neutral-700',
           paddingMap[padding],
           className,
         )}
@@ -44,7 +44,7 @@ function CardHeader(props: CardSlotProps): JSX.Element {
   return (
     <header
       className={cn(
-        'border-b border-neutral-100 pb-4 mb-4 text-heading-3 text-neutral-900',
+        'border-b border-neutral-100 pb-4 mb-4 text-heading-3 text-neutral-900 dark:border-neutral-700 dark:text-neutral-100',
         className,
       )}
       {...rest}
@@ -70,7 +70,7 @@ function CardFooter(props: CardSlotProps): JSX.Element {
   return (
     <footer
       className={cn(
-        'border-t border-neutral-100 pt-4 mt-4 flex items-center justify-end gap-2',
+        'border-t border-neutral-100 pt-4 mt-4 flex items-center justify-end gap-2 dark:border-neutral-700',
         horizontalPadding,
         className,
       )}

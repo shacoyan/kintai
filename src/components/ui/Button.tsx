@@ -17,10 +17,10 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 }
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary:   'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-700',
-  secondary: 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50',
-  tertiary:  'bg-transparent text-primary-600 hover:bg-primary-50',
-  danger:    'bg-danger-500 text-white hover:bg-[#A53124]',
+  primary:   'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400',
+  secondary: 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-100 dark:hover:bg-neutral-700',
+  tertiary:  'bg-transparent text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/30',
+  danger:    'bg-danger-500 text-white hover:bg-[#A53124] dark:bg-danger-500 dark:hover:bg-[#A53124]',
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {

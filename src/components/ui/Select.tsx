@@ -22,13 +22,16 @@ const FIELD_BASE =
   'w-full h-12 md:h-10 appearance-none border rounded-md bg-white pl-3.5 pr-10 [dir=rtl]:pl-10 [dir=rtl]:pr-3.5 text-body ' +
   'transition-colors duration-120 ' +
   'focus:outline-none focus-visible:ring-2 ' +
-  'disabled:bg-neutral-50 disabled:cursor-not-allowed';
+  'disabled:bg-neutral-50 disabled:cursor-not-allowed ' +
+  'dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:disabled:bg-neutral-900';
 
 const FIELD_NORMAL =
-  'border-neutral-300 focus-visible:border-primary-500 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50';
+  'border-neutral-300 focus-visible:border-primary-500 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 ' +
+  'dark:border-neutral-600 dark:focus-visible:ring-offset-neutral-900';
 
 const FIELD_ERROR =
-  'border-danger-500 focus-visible:border-danger-500 focus-visible:ring-danger-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50';
+  'border-danger-500 focus-visible:border-danger-500 focus-visible:ring-danger-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 ' +
+  'dark:focus-visible:ring-offset-neutral-900';
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
   {
@@ -59,7 +62,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   return (
     <div className="w-full">
       {label ? (
-        <label htmlFor={inputId} className="block text-label text-neutral-700 mb-2">
+        <label htmlFor={inputId} className="block text-label text-neutral-700 mb-2 dark:text-neutral-300">
           {label}
           {required ? (
             <span aria-hidden="true" className="text-danger-500 ml-0.5">
@@ -94,7 +97,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
               ))}
         </select>
         <ChevronDown
-          className="w-4 h-4 absolute right-3 [dir=rtl]:right-auto [dir=rtl]:left-3 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"
+          className="w-4 h-4 absolute right-3 [dir=rtl]:right-auto [dir=rtl]:left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-400 pointer-events-none"
           aria-hidden="true"
         />
       </div>

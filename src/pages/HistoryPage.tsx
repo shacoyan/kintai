@@ -19,8 +19,8 @@ import {
   differenceInMinutes,
 } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button, Card, Badge, ListRowSkeleton } from '../components/ui';
+import { ChevronLeft, ChevronRight, CalendarX } from 'lucide-react';
+import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton } from '../components/ui';
 
 interface CorrectionModalState {
   isOpen: boolean;
@@ -264,6 +264,9 @@ export function HistoryPage() {
     // カレンダービューではクリックで展開表示のみ（インライン実装）
   }
 
+  const hasRecords = monthlyRecords.length > 0;
+  const showEmpty = !loading && !hasRecords && currentStore != null;
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {currentStore == null && (
@@ -319,33 +322,56 @@ export function HistoryPage() {
       <MonthlySummary summary={monthlySummary} />
 
       {loading ? (
-        <Card padding="md">
-          <ListRowSkeleton />
-          <ListRowSkeleton />
-          <ListRowSkeleton />
-        </Card>
-      ) : viewMode === 'list' ? (
-        /* リストビュー */
-        <Card padding="none">
-          <Card.Header>
-            <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">日別勤怠記録</h3>
-          </Card.Header>
-          <DailyList
-            records={monthlyRecords}
-            year={year}
-            month={month}
-            onRequestCorrection={handleRequestCorrection}
-            onRequestDeletion={handleRequestDeletion}
-          />
-        </Card>
+        viewMode === 'list' ? (
+          <Card padding="md">
+            <ListRowSkeleton />
+            <ListRowSkeleton />
+            <ListRowSkeleton />
+          </Card>
+        ) : (
+          <Card padding="none">
+            {/* カレンダー風 Skeleton: 7 列 x 6 行 */}
+            <div className="p-4">
+              <Skeleton variant="rectangular" height={28} className="mb-3" />
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: 42 }).map((_, i) => (
+                  <Skeleton key={i} variant="rectangular" height={56} />
+                ))}
+              </div>
+            </div>
+          </Card>
+        )
       ) : (
-        /* カレンダービュー */
-        <HistoryCalendar
-          year={year}
-          month={month}
-          records={monthlyRecords}
-          onClickDay={handleCalendarDayClick}
-        />
+        <>
+          {showEmpty && (
+            <EmptyState
+              icon={<CalendarX className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
+              title="今月の勤怠データがまだありません"
+              description="打刻するとここに記録が表示されます。"
+            />
+          )}
+          {viewMode === 'list' ? (
+            <Card padding="none">
+              <Card.Header>
+                <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">日別勤怠記録</h3>
+              </Card.Header>
+              <DailyList
+                records={monthlyRecords}
+                year={year}
+                month={month}
+                onRequestCorrection={handleRequestCorrection}
+                onRequestDeletion={handleRequestDeletion}
+              />
+            </Card>
+          ) : (
+            <HistoryCalendar
+              year={year}
+              month={month}
+              records={monthlyRecords}
+              onClickDay={handleCalendarDayClick}
+            />
+          )}
+        </>
       )}
 
       {/* 修正申請モーダル */}

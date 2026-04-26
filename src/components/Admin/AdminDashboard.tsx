@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { MemberManagement } from './MemberManagement';
 import { PayrollCalculation } from './PayrollCalculation';
 import { AttendanceAdmin } from './AttendanceAdmin';
+import { ActiveMembersCard } from './ActiveMembersCard';
 import { useCorrection } from '../../hooks/useCorrection';
 import { useLeave } from '../../hooks/useLeave';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
@@ -68,7 +69,6 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const [deadlineModalOpen, setDeadlineModalOpen] = useState(false);
   const { currentTenant, isOwner, myRole } = useTenant();
   const { currentStore } = useStoreContext();
-  // AC-4: useShiftSubmissionDeadline の canEdit と同じ判定（RLS と一致）
   const canEditDeadline = isOwner || myRole === 'manager';
   const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
   const { allLeaves, loading: leaveLoading, getAllLeaves, approveLeave, rejectLeave } = useLeave(tenantId);
@@ -95,7 +95,6 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
 
   const pendingLeaves = allLeaves.filter(l => l.status === 'pending');
 
-  // ---- Mismatch detection ----
   const [mismatchShifts, setMismatchShifts] = useState<Shift[]>([]);
   const [mismatchAttendance, setMismatchAttendance] = useState<AttendanceRecord[]>([]);
   const [mismatchLoading, setMismatchLoading] = useState(false);
@@ -154,7 +153,6 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
     adminMembers.forEach(m => map.set(m.user_id, m.display_name));
     return map;
   }, [adminMembers]);
-  // ---- end Mismatch detection ----
 
   const handleCopyCode = async () => {
     if (!currentTenant?.invite_code) return;
@@ -218,6 +216,13 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 icon={<AlertTriangle size={16} />}
               />
             </div>
+
+            <ActiveMembersCard
+              tenantId={tenantId}
+              storeId={currentStore?.id ?? null}
+              memberNames={leaveMemberNames}
+            />
+
             {currentTenant && (
               <Card>
                 <Card.Header>
@@ -349,7 +354,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   disabled={mismatchLoading}
                   className="px-3 py-1.5 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 disabled:opacity-50"
                 >
-                  {mismatchLoading ? '読み込み中…' : '再読込'}
+                  {mismatchLoading ? '読み込み中...' : '再読込'}
                 </button>
               </div>
             </Card>

@@ -25,16 +25,10 @@ const THEME_ICONS: Record<ThemeValue, typeof Sun> = {
   system: Monitor,
 };
 
-const THEME_ARIA_LABELS: Record<ThemeValue, string> = {
-  light: 'テーマ: 明るい',
-  dark: 'テーマ: 暗い',
-  system: 'テーマ: システム',
-};
-
-const THEME_TITLES: Record<ThemeValue, string> = {
-  light: 'ライトモード',
-  dark: 'ダークモード',
-  system: 'システム設定',
+const THEME_CURRENT_LABELS: Record<ThemeValue, string> = {
+  light: 'ライト',
+  dark: 'ダーク',
+  system: 'システム',
 };
 
 export function TopBar({
@@ -91,7 +85,7 @@ export function TopBar({
   return (
     <div className="flex items-center w-full gap-4">
       {title && (
-        <h1 className="text-lg font-semibold text-neutral-900 truncate">
+        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 truncate">
           {title}
         </h1>
       )}
@@ -110,7 +104,7 @@ export function TopBar({
         <button
           type="button"
           aria-label="通知"
-          className="relative p-2 rounded-md text-neutral-600 hover:bg-neutral-100"
+          className="relative p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
         >
           <Bell size={18} />
           {unread > 0 && (
@@ -122,10 +116,10 @@ export function TopBar({
       {showThemeToggle && (
         <button
           type="button"
-          aria-label={THEME_ARIA_LABELS[theme as ThemeValue]}
-          title={THEME_TITLES[theme as ThemeValue]}
+          aria-label={`テーマ切替（現在: ${THEME_CURRENT_LABELS[theme as ThemeValue]} / クリックで ${THEME_CURRENT_LABELS[nextTheme]}）`}
+          title={`現在: ${THEME_CURRENT_LABELS[theme as ThemeValue]} → クリックで ${THEME_CURRENT_LABELS[nextTheme]}`}
           onClick={() => setTheme(nextTheme)}
-          className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
         >
           <ThemeIcon size={18} aria-hidden="true" />
         </button>
@@ -136,7 +130,7 @@ export function TopBar({
             ref={triggerRef}
             type="button"
             aria-label="ユーザーメニュー"
-            className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100"
+            className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}
@@ -148,10 +142,10 @@ export function TopBar({
             <div
               id="user-menu-popover"
               role="menu"
-              className="absolute right-0 top-full mt-2 w-56 rounded-md bg-white shadow-lg border border-neutral-200 py-2 z-50"
+              className="absolute right-0 top-full mt-2 w-56 rounded-md bg-white shadow-lg border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-800 py-2 z-50"
             >
               {user?.email && (
-                <div className="px-4 py-2 text-sm text-neutral-700 truncate" role="menuitem">
+                <div className="px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 truncate" role="menuitem">
                   {user.email}
                 </div>
               )}
