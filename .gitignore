@@ -2,3 +2,4 @@
 
 # Build output
 dist/
+.env*.local
