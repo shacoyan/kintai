@@ -3,18 +3,21 @@ import { useTenant } from '../hooks/useTenant';
 import { useStoreContext } from '../contexts/StoreContext';
 import { useAttendance } from '../hooks/useAttendance';
 import { useShift } from '../hooks/useShift';
+import { useLeave } from '../hooks/useLeave';
+import { useAuth } from '../hooks/useAuth';
 import { ClockButton } from '../components/Attendance/ClockButton';
 import { BreakButton } from '../components/Attendance/BreakButton';
-import { AlertTriangle, Clock, Activity } from 'lucide-react';
+import { AlertTriangle, Clock, Activity, CalendarDays, FileClock } from 'lucide-react';
 import { Card, StatCard, Badge, Button, PageSkeleton, ListRowSkeleton, EmptyState } from '../components/ui';
-import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek } from 'date-fns';
+import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 export function DashboardPage() {
-  const { currentTenant } = useTenant();
+  const { currentTenant, myRole } = useTenant();
   // RequireTenant ガードにより currentTenant は必ず存在する
   const tenantId = currentTenant!.id;
   const { currentStore } = useStoreContext();
+  const { user } = useAuth();
 
   const {
     todayRecords,
@@ -31,6 +34,8 @@ export function DashboardPage() {
 
   const { myShifts, getMyShifts, loading: shiftLoading } = useShift(tenantId, currentStore?.id ?? null);
 
+  const { myLeaves, getMyLeaves, getRemainingPaidLeave } = useLeave(tenantId);
+
   // 勤務中の労働時間をリアルタイム更新するためのタイマー
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -39,6 +44,22 @@ export function DashboardPage() {
     const timer = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
   }, [status]);
+
+  // 有給残日数
+  const [remainingPaidLeave, setRemainingPaidLeave] = useState<number | null>(null);
+
+  // 当月の休暇取得
+  useEffect(() => {
+    const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+    getMyLeaves(monthStart, monthEnd);
+  }, [getMyLeaves]);
+
+  // 有給残日数取得
+  useEffect(() => {
+    if (!user?.id) return;
+    getRemainingPaidLeave(user.id).then(days => setRemainingPaidLeave(days));
+  }, [user?.id, getRemainingPaidLeave]);
 
   // 今週のシフトを取得
   useEffect(() => {
@@ -123,6 +144,9 @@ export function DashboardPage() {
   const upcomingShifts = myShifts
     .filter((s) => s.date >= todayStr && s.status !== 'cancelled' && s.status !== 'rejected')
     .slice(0, 3);
+
+  // 申請中の休暇件数
+  const pendingLeaveCount = myLeaves.filter(l => l.status === 'pending').length;
 
   return (
     <div className="max-w-md mx-auto space-y-4 md:space-y-6">
@@ -211,6 +235,14 @@ export function DashboardPage() {
             <StatCard label="本日の労働時間" value={todayTotalHours} icon={<Clock size={16} />} />
             <StatCard label="セッション数" value={todayRecords.filter(r => r.clock_in).length} unit="回" icon={<Activity size={16} />} />
           </div>
+
+          {/* Staff leave summary cards */}
+          {myRole === 'staff' && (
+            <div className="grid grid-cols-2 gap-3">
+              <StatCard label="有給残" value={remainingPaidLeave !== null ? remainingPaidLeave : '-'} unit="日" icon={<CalendarDays size={16} />} />
+              <StatCard label="申請中の休暇" value={pendingLeaveCount} unit="件" icon={<FileClock size={16} />} />
+            </div>
+          )}
         </>
       )}
 
@@ -252,4 +284,3 @@ export function DashboardPage() {
     </div>
   );
 }
-

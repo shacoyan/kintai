@@ -18,6 +18,7 @@ import { ShiftAdminPanel } from '../components/Shift/ShiftAdminPanel';
 import { LaborCostSummary } from '../components/Shift/LaborCostSummary';
 import { LeaveForm } from '../components/Leave/LeaveForm';
 import { LeaveList } from '../components/Leave/LeaveList';
+import { RejectLeaveModal } from '../components/Leave/RejectLeaveModal';
 import { ShiftPreferenceCalendar } from '../components/Shift/ShiftPreferenceCalendar';
 import { ShiftPreferenceForm } from '../components/Shift/ShiftPreferenceForm';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
@@ -49,7 +50,7 @@ export function ShiftPage() {
   const storeId = currentStore?.id ?? null;
 
   const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, bulkApprove, getLaborCostEstimate } = useShift(tenantId, storeId);
-  const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave } = useLeave(tenantId);
+  const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave, getRemainingPaidLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
   const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference } = useShiftPreference(tenantId, storeId);
@@ -58,6 +59,9 @@ export function ShiftPage() {
   const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
   const [selectedShiftDate, setSelectedShiftDate] = useState<string | null>(null);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
+  const [remainingPaidLeave, setRemainingPaidLeave] = useState<number>(0);
+  const [rejectingLeaveId, setRejectingLeaveId] = useState<string | null>(null);
+  const [approveLeaveConfirm, setApproveLeaveConfirm] = useState<{ leaveId: string; userId: string } | null>(null);
   const [selectedPrefDate, setSelectedPrefDate] = useState<string | null>(null);
   const [showAllMembersPrefs, setShowAllMembersPrefs] = useState(false);
   const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
@@ -183,9 +187,66 @@ export function ShiftPage() {
     return { deadline, targetMonth, remainingLabel };
   }, [storeId, deadline, targetMonth]);
 
-  const handleLeaveSubmit = async (date: string, leaveType: 'paid' | 'half_paid' | 'absence' | 'other', reason?: string) => {
-    await submitLeave(date, leaveType, reason);
+  const handleLeaveSubmit = async (
+    dates: string[],
+    leaveType: 'paid' | 'half_am' | 'half_pm' | 'absence' | 'other',
+    reason?: string,
+  ) => {
+    const result = await submitLeave(dates, leaveType, reason);
+    if (result.failedDates.length > 0) {
+      const msg = result.successCount > 0
+        ? `${result.successCount}件 申請しました。${result.failedDates.length}件 失敗（${result.failedDates.join(', ')}）`
+        : `休暇申請に失敗しました（${result.failedDates.join(', ')}）`;
+      throw new Error(msg);
+    }
     setShowLeaveForm(false);
+    fetchRange();
+    if (tenantId) {
+      try {
+        const remaining = await getRemainingPaidLeave();
+        setRemainingPaidLeave(remaining);
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!tenantId || canManageTenant) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const remaining = await getRemainingPaidLeave();
+        if (!cancelled) setRemainingPaidLeave(remaining);
+      } catch {
+        // ignore: 残日数取得失敗時は0表示のまま
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [tenantId, canManageTenant, getRemainingPaidLeave]);
+
+  const handleApproveLeaveWrapped = async (leaveId: string) => {
+    const leave = leaves.find(l => l.id === leaveId);
+    if (!leave) return;
+    if (leave.leave_type === 'paid' || leave.leave_type === 'half_am' || leave.leave_type === 'half_pm') {
+      const remaining = await getRemainingPaidLeave(leave.user_id);
+      const required = leave.leave_type === 'paid' ? 1 : 0.5;
+      if (remaining < required) {
+        setApproveLeaveConfirm({ leaveId, userId: leave.user_id });
+        return;
+      }
+    }
+    await approveLeave(leaveId);
+  };
+  const handleConfirmApproveLeave = async () => {
+    if (!approveLeaveConfirm) return;
+    await approveLeave(approveLeaveConfirm.leaveId);
+    setApproveLeaveConfirm(null);
+    fetchRange();
+  };
+  const handleRejectLeaveSubmit = async (note: string) => {
+    if (!rejectingLeaveId) return;
+    await rejectLeave(rejectingLeaveId, note);
     fetchRange();
   };
 
@@ -342,6 +403,7 @@ export function ShiftPage() {
             shifts={shifts}
             onDateClick={(date) => setSelectedShiftDate(date)}
             onShiftClick={(shift) => setSelectedShift(shift)}
+            leaves={leaves}
             memberNames={canManageTenant ? memberNames : undefined}
             onViewMonthChange={setShiftViewMonth}
           />
@@ -772,6 +834,7 @@ export function ShiftPage() {
                 <LeaveForm
                   onSubmit={handleLeaveSubmit}
                   onCancel={() => setShowLeaveForm(false)}
+                  remainingPaidLeave={remainingPaidLeave}
                 />
               ) : (
                 <button
@@ -788,13 +851,37 @@ export function ShiftPage() {
             leaves={leaves}
             memberNames={canManageTenant ? memberNames : undefined}
             canManageTenant={canManageTenant}
-            onApprove={approveLeave}
-            onReject={rejectLeave}
+            onApprove={handleApproveLeaveWrapped}
+            onReject={async (leaveId) => { setRejectingLeaveId(leaveId); }}
             onCancel={cancelLeave}
             onRefresh={fetchRange}
           />
         </div>
       )}
+      <RejectLeaveModal
+        isOpen={!!rejectingLeaveId}
+        leaveId={rejectingLeaveId}
+        onClose={() => setRejectingLeaveId(null)}
+        onSubmit={handleRejectLeaveSubmit}
+      />
+      <BottomSheet
+        isOpen={!!approveLeaveConfirm}
+        onClose={() => setApproveLeaveConfirm(null)}
+        title="有給残が不足しています"
+        description="対象メンバーの有給残が不足していますが、承認しますか？"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setApproveLeaveConfirm(null)}>
+              キャンセル
+            </Button>
+            <Button variant="primary" size="sm" onClick={handleConfirmApproveLeave}>
+              承認する
+            </Button>
+          </div>
+        }
+      >
+        <div />
+      </BottomSheet>
     </div>
   );
 }

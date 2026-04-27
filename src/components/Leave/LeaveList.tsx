@@ -17,14 +17,16 @@ interface LeaveListProps {
 
 const LEAVE_TYPE_LABEL: Record<LeaveType, string> = {
   paid: '有給',
-  half_paid: '半休',
+  half_am: 'AM半休',
+  half_pm: 'PM半休',
   absence: '欠勤',
   other: 'その他',
 };
 
 const LEAVE_TYPE_COLOR: Record<LeaveType, string> = {
   paid: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300',
-  half_paid: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
+  half_am: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
+  half_pm: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
   absence: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200',
   other: 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-300',
 };
@@ -100,6 +102,10 @@ export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onR
 
                 {leave.reason && (
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">{leave.reason}</p>
+                )}
+
+                {leave.status === 'rejected' && leave.review_note && (
+                  <p className="text-xs text-danger-600 dark:text-danger-400 mb-1">却下理由: {leave.review_note}</p>
                 )}
 
                 {leave.status === 'pending' && (

@@ -24,13 +24,15 @@ const roleBadge: Record<string, { label: string; className: string }> = {
 export function MemberManagement({ tenantId }: MemberManagementProps) {
   const { showToast } = useToast();
   const { myRole } = useTenant();
-  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary, deleteMember, updateRole } = useTenantAdmin(tenantId);
+  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary, deleteMember, updateRole, updatePaidLeaveDays } = useTenantAdmin(tenantId);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingRoleId, setTogglingRoleId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRate, setEditRate] = useState<string>('');
   const [editMonthlySalary, setEditMonthlySalary] = useState<string>('');
   const [editingMonthlySalaryId, setEditingMonthlySalaryId] = useState<string | null>(null);
+  const [editingPaidLeaveDaysId, setEditingPaidLeaveDaysId] = useState<string | null>(null);
+  const [editPaidLeaveDays, setEditPaidLeaveDays] = useState<string>('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -104,6 +106,34 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const handleMonthlySalaryKeyDown = (e: React.KeyboardEvent, memberId: string) => {
     if (e.key === 'Enter') handleSaveMonthlySalary(memberId);
     if (e.key === 'Escape') setEditingMonthlySalaryId(null);
+  };
+
+  const handleStartEditPaidLeaveDays = (member: TenantMember) => {
+    setEditingPaidLeaveDaysId(member.id);
+    setEditPaidLeaveDays(String(member.paid_leave_days ?? 0));
+  };
+
+  const handleSavePaidLeaveDays = async (memberId: string) => {
+    const days = parseFloat(editPaidLeaveDays);
+    if (isNaN(days) || days < 0) {
+      setEditingPaidLeaveDaysId(null);
+      return;
+    }
+    setSaving(true);
+    try {
+      await updatePaidLeaveDays(memberId, days);
+      setEditingPaidLeaveDaysId(null);
+      showToast('有給日数を保存しました', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '有給日数の保存に失敗しました', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePaidLeaveDaysKeyDown = (e: React.KeyboardEvent, memberId: string) => {
+    if (e.key === 'Enter') handleSavePaidLeaveDays(memberId);
+    if (e.key === 'Escape') setEditingPaidLeaveDaysId(null);
   };
 
   const handleRoleToggle = async (member: TenantMember) => {
@@ -234,7 +264,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     </div>
                   </div>
 
-                  {/* 下段: 給与タイプ・時給/月給・深夜給 */}
+                  {/* 下段: 給与タイプ・時給/月給・有給・深夜給 */}
                   <div className="space-y-2 ml-12">
                     {/* 給与タイプ切替 */}
                     <div className="flex items-center gap-3">
@@ -368,6 +398,57 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           )}
                         </div>
                       )}
+
+                      {/* 有給付与日数 */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400 w-10">有給</span>
+                        {editingPaidLeaveDaysId === member.id ? (
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              value={editPaidLeaveDays}
+                              onChange={(e) => setEditPaidLeaveDays(e.target.value)}
+                              onKeyDown={(e) => handlePaidLeaveDaysKeyDown(e, member.id)}
+                              className="w-20 px-2 py-1.5 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                              autoFocus
+                              disabled={saving}
+                              min="0"
+                              step="0.5"
+                            />
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => handleSavePaidLeaveDays(member.id)}
+                              disabled={saving}
+                            >
+                              {saving ? '...' : '保存'}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setEditingPaidLeaveDaysId(null)}
+                            >
+                              取消
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleStartEditPaidLeaveDays(member)}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors ${
+                              (member.paid_leave_days ?? 0) > 0
+                                ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30'
+                                : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
+                            }`}
+                          >
+                            {(member.paid_leave_days ?? 0) > 0 ? (
+                              <>{(member.paid_leave_days ?? 0)}日</>
+                            ) : (
+                              <>未設定</>
+                            )}
+                            <Pencil className="w-3.5 h-3.5 text-neutral-400" />
+                          </button>
+                        )}
+                      </div>
 
                       {/* 深夜給 */}
                       <div className="flex items-center gap-1.5 ml-auto">

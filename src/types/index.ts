@@ -73,7 +73,7 @@ export interface Shift {
   store_id: string | null;
 }
 
-export type LeaveType = 'paid' | 'half_paid' | 'absence' | 'other';
+export type LeaveType = 'paid' | 'half_am' | 'half_pm' | 'absence' | 'other';
 
 export interface LeaveRequest {
   id: string;
@@ -85,6 +85,7 @@ export interface LeaveRequest {
   status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   reviewed_by: string | null;
   reviewed_at: string | null;
+  review_note?: string | null;
   created_at: string;
 }
 

@@ -12,6 +12,8 @@ import { useTenant } from '../../hooks/useTenant';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { CorrectionList } from '../Correction/CorrectionList';
 import { LeaveList } from '../Leave/LeaveList';
+import { RejectLeaveModal } from '../Leave/RejectLeaveModal';
+import { BottomSheet } from '../ui/BottomSheet';
 import { ShiftPresetManager } from './ShiftPresetManager';
 import { StoreManagement } from './StoreManagement';
 import { ShiftMismatchAlert } from './ShiftMismatchAlert';
@@ -64,6 +66,8 @@ const SECTIONS = [
 
 export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard');
+  const [rejectingLeaveId, setRejectingLeaveId] = useState<string | null>(null);
+  const [approveConfirm, setApproveConfirm] = useState<{ leaveId: string; userId: string } | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [deadlineModalOpen, setDeadlineModalOpen] = useState(false);
@@ -71,7 +75,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const { currentStore } = useStoreContext();
   const canEditDeadline = isOwner || myRole === 'manager';
   const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
-  const { allLeaves, loading: leaveLoading, getAllLeaves, approveLeave, rejectLeave } = useLeave(tenantId);
+  const { allLeaves, loading: leaveLoading, getAllLeaves, approveLeave, rejectLeave, getRemainingPaidLeave } = useLeave(tenantId);
   const { members: adminMembers, fetchMembers: fetchAdminMembers } = useTenantAdmin(tenantId);
 
   const leaveRange = useMemo(() => {
@@ -92,6 +96,31 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
     adminMembers.forEach(m => map.set(m.user_id, m.display_name));
     return map;
   }, [adminMembers]);
+
+  const handleApproveLeave = async (leaveId: string) => {
+    const leave = allLeaves.find(l => l.id === leaveId);
+    if (!leave) return;
+    if (leave.leave_type === 'paid' || leave.leave_type === 'half_am' || leave.leave_type === 'half_pm') {
+      const remaining = await getRemainingPaidLeave(leave.user_id);
+      const required = leave.leave_type === 'paid' ? 1 : 0.5;
+      if (remaining < required) {
+        setApproveConfirm({ leaveId, userId: leave.user_id });
+        return;
+      }
+    }
+    await approveLeave(leaveId);
+  };
+  const handleConfirmApprove = async () => {
+    if (!approveConfirm) return;
+    await approveLeave(approveConfirm.leaveId);
+    setApproveConfirm(null);
+    fetchLeaves();
+  };
+  const handleRejectSubmit = async (note: string) => {
+    if (!rejectingLeaveId) return;
+    await rejectLeave(rejectingLeaveId, note);
+    fetchLeaves();
+  };
 
   const pendingLeaves = allLeaves.filter(l => l.status === 'pending');
 
@@ -304,8 +333,8 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 leaves={allLeaves}
                 memberNames={leaveMemberNames}
                 canManageTenant={true}
-                onApprove={approveLeave}
-                onReject={rejectLeave}
+                onApprove={handleApproveLeave}
+                onReject={async (leaveId) => { setRejectingLeaveId(leaveId); }}
                 onCancel={async () => {}}
                 onRefresh={fetchLeaves}
               />
@@ -477,6 +506,30 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
           targetMonth={startOfMonth(new Date())}
         />
       )}
+      <RejectLeaveModal
+        isOpen={!!rejectingLeaveId}
+        leaveId={rejectingLeaveId}
+        onClose={() => setRejectingLeaveId(null)}
+        onSubmit={handleRejectSubmit}
+      />
+      <BottomSheet
+        isOpen={!!approveConfirm}
+        onClose={() => setApproveConfirm(null)}
+        title="有給残が不足しています"
+        description="対象メンバーの有給残が不足していますが、承認しますか？"
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setApproveConfirm(null)}>
+              キャンセル
+            </Button>
+            <Button variant="primary" size="sm" onClick={handleConfirmApprove}>
+              承認する
+            </Button>
+          </div>
+        }
+      >
+        <div />
+      </BottomSheet>
     </div>
   );
 }

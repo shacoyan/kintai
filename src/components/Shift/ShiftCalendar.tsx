@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { format, startOfWeek, addDays, startOfMonth, endOfMonth, addWeeks, isAfter, startOfDay, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Shift } from '../../types';
+import type { Shift, LeaveRequest } from '../../types';
 import { abbreviateName } from '../../utils/displayNameAbbrev';
 
 type ViewMode = 'week' | '2week' | 'month';
@@ -14,6 +14,8 @@ interface ShiftCalendarProps {
   /** member display_name map for admin view */
   memberNames?: Map<string, string>;
   onViewMonthChange?: (date: Date) => void;
+  /** leave requests */
+  leaves?: LeaveRequest[];
 }
 
 const MEMBER_COLORS = [
@@ -45,7 +47,23 @@ const STATUS_DOT: Record<string, string> = {
   cancelled: 'bg-neutral-400',
 };
 
-export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange }: ShiftCalendarProps) {
+const LEAVE_TYPE_DOT: Record<string, string> = {
+  paid: 'bg-success-500',
+  half_am: 'bg-success-500',
+  half_pm: 'bg-success-500',
+  absence: 'bg-neutral-400',
+  other: 'bg-info-500',
+};
+
+const LEAVE_TYPE_LABEL: Record<string, string> = {
+  paid: '有給',
+  half_am: '半休(午前)',
+  half_pm: '半休(午後)',
+  absence: '欠勤',
+  other: 'その他',
+};
+
+export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange, leaves = [] }: ShiftCalendarProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [baseDate, setBaseDate] = useState(() => new Date());
   const [isExpanded, setIsExpanded] = useState(false);
@@ -91,6 +109,18 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
     }
     return map;
   }, [shifts]);
+
+  const leavesByDate = useMemo(() => {
+    const map = new Map<string, LeaveRequest[]>();
+    for (const l of leaves) {
+      if (l.status === 'approved' || l.status === 'pending') {
+        const arr = map.get(l.date) || [];
+        arr.push(l);
+        map.set(l.date, arr);
+      }
+    }
+    return map;
+  }, [leaves]);
 
   const navigate = (dir: number) => {
     if (viewMode === 'month') {
@@ -252,8 +282,15 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
             const dateStr = format(d, 'yyyy-MM-dd');
             const isToday = dateStr === today;
             const dayShifts = shiftsByDate.get(dateStr) || [];
+            const dayLeaves = leavesByDate.get(dateStr) || [];
             const isCurrentMonth = viewMode === 'month' ? d.getMonth() === baseDate.getMonth() : true;
             const dayOfWeek = d.getDay();
+
+            const leaveTooltip = dayLeaves.map(l => {
+              const typeLabel = LEAVE_TYPE_LABEL[l.leave_type] || 'その他';
+              const name = memberNames?.get(l.user_id) || '';
+              return name ? `${typeLabel} - ${name}` : typeLabel;
+            }).join('\n');
 
             return (
               <div
@@ -268,7 +305,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     onDateClick(dateStr);
                   }
                 }}
-                className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-neutral-100 dark:border-neutral-700 p-1 cursor-pointer transition ${
+                className={`relative min-h-[70px] sm:min-h-[80px] border-b border-r border-neutral-100 dark:border-neutral-700 p-1 cursor-pointer transition ${
                   !isCurrentMonth ? 'bg-neutral-50 dark:bg-neutral-700/50 opacity-50' : ''
                 } ${
                   isCurrentMonth && dayOfWeek === 6 ? 'bg-sky-50/40 dark:bg-sky-900/10' : ''
@@ -324,6 +361,23 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     </button>
                   )}
                 </div>
+                {dayLeaves.length > 0 && (
+                  <div title={leaveTooltip} className="absolute bottom-1 right-1 flex items-center gap-0.5">
+                    {dayLeaves.slice(0, 4).map((l) => (
+                      <span
+                        key={l.id}
+                        className={`w-1.5 h-1.5 rounded-full ${LEAVE_TYPE_DOT[l.leave_type] || 'bg-info-500'} ${
+                          l.status === 'pending' ? 'ring-1 ring-warning-400' : ''
+                        }`}
+                      />
+                    ))}
+                    {dayLeaves.length > 4 && (
+                      <span className="text-[8px] text-neutral-500 dark:text-neutral-400 leading-none">
+                        +{dayLeaves.length - 4}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
