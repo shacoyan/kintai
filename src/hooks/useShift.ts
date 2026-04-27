@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Shift, TenantMember } from '../types';
 import { getNightMinutesForShift } from '../utils/nightShift';
+import { formatSupabaseError } from '../lib/errors';
 
 interface LaborCostEstimate {
   userId: string;
@@ -41,8 +42,7 @@ export function useShift(tenantId: string, storeId: string | null) {
       if (e) throw e;
       setMyShifts((data as Shift[]) || []);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'シフトの取得に失敗しました';
-      setError(msg);
+      setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
     }
@@ -68,8 +68,7 @@ export function useShift(tenantId: string, storeId: string | null) {
       if (e) throw e;
       setAllShifts((data as Shift[]) || []);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'シフトの取得に失敗しました';
-      setError(msg);
+      setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
     }

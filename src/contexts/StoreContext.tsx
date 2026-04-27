@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useTenant } from './TenantContext';
+import { formatSupabaseError } from '../lib/errors';
 import type { Store, StoreMember } from '../types';
 
 interface StoreContextValue {
@@ -145,7 +146,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setCurrentStoreState(storeList[0] || null);
 
       } catch (err) {
-        console.error('店舗の取得に失敗しました:', err);
+        console.error('店舗の取得に失敗しました:', formatSupabaseError(err));
       } finally {
         setLoading(false);
       }

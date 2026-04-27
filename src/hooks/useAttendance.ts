@@ -3,11 +3,13 @@ import { supabase } from '../lib/supabase';
 import { AttendanceRecord, Break } from '../types';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
+import { formatSupabaseError } from '../lib/errors';
 
 export function useAttendance(tenantId: string, storeId: string | null) {
   const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
   const [monthlyRecords, setMonthlyRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const busyRef = useRef(false);
   const [today, setToday] = useState(() => formatInTimeZone(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd'));
 
@@ -76,6 +78,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
       return;
     }
     setLoading(true);
+    setError(null);
     try {
       const {
         data: { user },
@@ -96,7 +99,8 @@ export function useAttendance(tenantId: string, storeId: string | null) {
       if (error) throw error;
       setTodayRecords((data as AttendanceRecord[]) || []);
     } catch (err: any) {
-      console.error('Fetch today records error:', err.message);
+      console.error('Fetch today records error:', formatSupabaseError(err));
+      setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
     }
@@ -162,6 +166,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
     if (!storeId) throw new Error('店舗が選択されていません');
     if (busyRef.current) return;
     busyRef.current = true;
+    setError(null);
     try {
       if (activeRecord) {
         throw new Error('終了していない勤務セッションがあります');
@@ -179,7 +184,8 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         clock_in: now,
       });
       if (error) {
-        console.error('Clock in error:', error.message);
+        console.error('Clock in error:', formatSupabaseError(error));
+        setError(formatSupabaseError(error).message);
         throw error;
       }
       await fetchTodayRecords();
@@ -191,6 +197,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
   async function clockOut() {
     if (busyRef.current) return;
     busyRef.current = true;
+    setError(null);
     try {
       if (!activeRecord?.clock_in) return;
       const now = new Date();
@@ -202,7 +209,8 @@ export function useAttendance(tenantId: string, storeId: string | null) {
           .update({ end_time: now.toISOString() })
           .eq('id', activeBreak.id);
         if (breakError) {
-          console.error('Auto break end error:', breakError.message);
+          console.error('Auto break end error:', formatSupabaseError(breakError));
+          setError(formatSupabaseError(breakError).message);
           throw breakError;
         }
       }
@@ -233,7 +241,8 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         })
         .eq('id', activeRecord.id);
       if (error) {
-        console.error('Clock out error:', error.message);
+        console.error('Clock out error:', formatSupabaseError(error));
+        setError(formatSupabaseError(error).message);
         throw error;
       }
       await fetchTodayRecords();
@@ -245,6 +254,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
   async function breakStart() {
     if (busyRef.current) return;
     busyRef.current = true;
+    setError(null);
     try {
       if (!activeRecord) return;
       const { error } = await supabase.from('breaks').insert({
@@ -252,7 +262,8 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         start_time: new Date().toISOString(),
       });
       if (error) {
-        console.error('Break start error:', error.message);
+        console.error('Break start error:', formatSupabaseError(error));
+        setError(formatSupabaseError(error).message);
         throw error;
       }
       await fetchTodayRecords();
@@ -264,6 +275,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
   async function breakEnd() {
     if (busyRef.current) return;
     busyRef.current = true;
+    setError(null);
     try {
       if (!activeRecord) return;
 
@@ -275,7 +287,8 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         .order('start_time', { ascending: false })
         .limit(1);
       if (fetchError) {
-        console.error('Find active break error:', fetchError.message);
+        console.error('Find active break error:', formatSupabaseError(fetchError));
+        setError(formatSupabaseError(fetchError).message);
         throw fetchError;
       }
       if (!data || data.length === 0) return;
@@ -285,7 +298,8 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         .update({ end_time: new Date().toISOString() })
         .eq('id', data[0].id);
       if (error) {
-        console.error('Break end error:', error.message);
+        console.error('Break end error:', formatSupabaseError(error));
+        setError(formatSupabaseError(error).message);
         throw error;
       }
       await fetchTodayRecords();
@@ -300,6 +314,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         setMonthlyRecords([]);
         return;
       }
+      setError(null);
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -317,7 +332,8 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         .order('date', { ascending: true })
         .order('clock_in', { ascending: true });
       if (error) {
-        console.error('Fetch records error:', error.message);
+        console.error('Fetch records error:', formatSupabaseError(error));
+        setError(formatSupabaseError(error).message);
         return;
       }
       setMonthlyRecords((data as AttendanceRecord[]) || []);
@@ -339,5 +355,6 @@ export function useAttendance(tenantId: string, storeId: string | null) {
     monthlyRecords,
     monthlySummary,
     loading,
+    error,
   };
 }

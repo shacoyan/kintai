@@ -4,6 +4,7 @@ import type { LeaveType } from '../../types';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Button } from '../ui/Button';
 import { RadioGroup, Radio } from '../ui/Radio';
+import { formatSupabaseError } from '../../lib/errors';
 
 interface LeaveFormProps {
   onSubmit: (dates: string[], leaveType: LeaveType, reason?: string) => Promise<void>;
@@ -92,7 +93,7 @@ export function LeaveForm({ onSubmit, onCancel, remainingPaidLeave }: LeaveFormP
       }
       await onSubmit(dates, leaveType, reason || undefined);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '休暇申請に失敗しました');
+      setError(formatSupabaseError(err).message);
     } finally {
       setSubmitting(false);
     }

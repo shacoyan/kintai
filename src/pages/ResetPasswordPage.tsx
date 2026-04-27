@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { formatSupabaseError } from '../lib/errors';
 
 export const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -54,7 +55,7 @@ export const ResetPasswordPage = () => {
       });
 
       if (updateError) {
-        setError(updateError.message || 'パスワードの更新に失敗しました。');
+        setError(formatSupabaseError(updateError).message || 'パスワードの更新に失敗しました。');
         return;
       }
 

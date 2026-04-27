@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import type { Tenant } from '../../types';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Button } from '../ui/Button';
+import { formatSupabaseError } from '../../lib/errors';
 
 interface JoinTenantProps {
   onJoin: (tenant: Tenant) => void;
@@ -38,7 +39,7 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
       const tenant = await joinTenant(inviteCode.trim().toUpperCase(), displayName.trim());
       onJoin(tenant);
     } catch (err: any) {
-      setError(err.message || '参加に失敗しました');
+      setError(formatSupabaseError(err).message || '参加に失敗しました');
     } finally {
       setLoading(false);
     }

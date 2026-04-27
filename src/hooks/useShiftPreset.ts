@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { formatSupabaseError } from '../lib/errors';
 import type { ShiftPreset } from '../types';
 
 export function useShiftPreset(tenantId: string, storeId: string | null) {
   const [presets, setPresets] = useState<ShiftPreset[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPresets = useCallback(async () => {
     setLoading(true);
@@ -22,7 +24,8 @@ export function useShiftPreset(tenantId: string, storeId: string | null) {
       if (error) throw error;
       setPresets((data as ShiftPreset[]) || []);
     } catch (err) {
-      console.error('Error fetching shift presets:', err);
+      console.error('Error fetching shift presets:', formatSupabaseError(err));
+      setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
     }
@@ -41,7 +44,7 @@ export function useShiftPreset(tenantId: string, storeId: string | null) {
         end_time: endTime,
         store_id: scope === 'store' ? storeId : null,
       });
-    if (error) throw new Error(`プリセットの追加に失敗しました: ${error.message}`);
+    if (error) throw new Error(`プリセットの追加に失敗しました: ${formatSupabaseError(error).message}`);
     await fetchPresets();
   }, [tenantId, storeId, fetchPresets]);
 
@@ -50,7 +53,7 @@ export function useShiftPreset(tenantId: string, storeId: string | null) {
       .from('shift_presets')
       .delete()
       .eq('id', id);
-    if (error) throw new Error(`プリセットの削除に失敗しました: ${error.message}`);
+    if (error) throw new Error(`プリセットの削除に失敗しました: ${formatSupabaseError(error).message}`);
     setPresets(prev => prev.filter(p => p.id !== id));
   }, []);
 
@@ -67,7 +70,7 @@ export function useShiftPreset(tenantId: string, storeId: string | null) {
         store_id: scope === 'store' ? storeId : null,
       })
       .eq('id', id);
-    if (error) throw new Error(`プリセットの更新に失敗しました: ${error.message}`);
+    if (error) throw new Error(`プリセットの更新に失敗しました: ${formatSupabaseError(error).message}`);
     await fetchPresets();
   }, [storeId, fetchPresets]);
 
@@ -81,5 +84,5 @@ export function useShiftPreset(tenantId: string, storeId: string | null) {
     await fetchPresets();
   }, [fetchPresets]);
 
-  return { presets, loading, fetchPresets, addPreset, deletePreset, updatePreset, reorderPresets };
+  return { presets, loading, error, fetchPresets, addPreset, deletePreset, updatePreset, reorderPresets };
 }

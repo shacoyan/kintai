@@ -3,6 +3,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { Textarea } from '../ui/Textarea';
 import { Button } from '../ui/Button';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { formatSupabaseError } from '../../lib/errors';
 
 export interface RejectLeaveModalProps {
   isOpen: boolean;
@@ -37,7 +38,7 @@ export const RejectLeaveModal: React.FC<RejectLeaveModalProps> = ({
       await onSubmit(note.trim());
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '却下に失敗しました');
+      setError(formatSupabaseError(err).message);
     } finally {
       setSubmitting(false);
     }

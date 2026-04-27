@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { startOfMonth, format, subMonths, setDate, startOfDay, addHours, addMinutes } from 'date-fns';
 import { useTenant } from './useTenant';
 import { useStoreContext } from '../contexts/StoreContext';
+import { formatSupabaseError } from '../lib/errors';
 
 // AC-4: 権限判定は RLS (tenant_members.role IN ('owner','manager')) と一致させる。
 // store_members.is_manager には依存しない（hook と RLS の乖離を防ぐため）。
@@ -62,8 +63,9 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
 
         setDeadlineState(data?.deadline_at ? new Date(data.deadline_at) : null);
       } catch (e) {
+        console.error('useShiftSubmissionDeadline fetchDeadline error:', formatSupabaseError(e));
         if (isMounted) {
-          setError(e instanceof Error ? e : new Error(String(e)));
+          setError(new Error(formatSupabaseError(e).message));
         }
       } finally {
         if (isMounted) {
@@ -106,7 +108,8 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
 
       setDeadlineState(deadlineAt);
     } catch (e) {
-      const err = e instanceof Error ? e : new Error(String(e));
+      console.error('useShiftSubmissionDeadline setDeadline error:', formatSupabaseError(e));
+      const err = new Error(formatSupabaseError(e).message);
       setError(err);
       throw err;
     } finally {
@@ -138,7 +141,8 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
 
       setDeadlineState(null);
     } catch (e) {
-      const err = e instanceof Error ? e : new Error(String(e));
+      console.error('useShiftSubmissionDeadline clearDeadline error:', formatSupabaseError(e));
+      const err = new Error(formatSupabaseError(e).message);
       setError(err);
       throw err;
     } finally {

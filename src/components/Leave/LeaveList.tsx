@@ -4,6 +4,7 @@ import { CalendarOff } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Button } from '../ui/Button';
+import { formatSupabaseError } from '../../lib/errors';
 
 interface LeaveListProps {
   leaves: LeaveRequest[];
@@ -60,7 +61,7 @@ export function LeaveList({ leaves, memberNames, storeNames, canManageTenant, on
       await action();
       onRefresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '操作に失敗しました');
+      setError(formatSupabaseError(err).message);
     } finally {
       setProcessing(false);
     }

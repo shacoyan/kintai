@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
 import { supabase } from '../../lib/supabase';
+import { formatSupabaseError } from '../../lib/errors';
 import { MemberManagement } from './MemberManagement';
 import { PayrollCalculation } from './PayrollCalculation';
 import { AttendanceAdmin } from './AttendanceAdmin';
@@ -254,7 +255,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       setMismatchShifts((shiftsRes.data as Shift[]) || []);
       setMismatchAttendance((attendanceRes.data as AttendanceRecord[]) || []);
     } catch (err) {
-      console.error('mismatch fetch error:', err);
+      console.error('mismatch fetch error:', formatSupabaseError(err));
     } finally {
       setMismatchLoading(false);
     }
@@ -301,8 +302,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
     try {
       await reviewRequest(requestId, status);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '申請の処理に失敗しました';
-      setReviewError(msg);
+      setReviewError(formatSupabaseError(err).message);
     }
   };
 
@@ -757,7 +757,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   showToast(`新しい招待コード: ${code}`, 'success');
                   setRegenConfirmOpen(false);
                 } catch (e) {
-                  showToast(e instanceof Error ? e.message : '再発行に失敗しました', 'error');
+                  showToast(formatSupabaseError(e).message, 'error');
                 } finally {
                   setRegenLoading(false);
                 }

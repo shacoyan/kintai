@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
+import { formatSupabaseError } from '../lib/errors';
 
 export interface ActiveAttendance {
   recordId: string;
@@ -54,9 +55,8 @@ export function useActiveAttendance(tenantId: string, storeId: string | null) {
       setActive(mapped);
       setUpdatedAt(new Date());
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'failed';
-      setError(message);
-      console.error('useActiveAttendance fetch error:', err);
+      setError(formatSupabaseError(err).message);
+      console.error('useActiveAttendance fetch error:', formatSupabaseError(err));
     } finally {
       setLoading(false);
     }
@@ -122,4 +122,3 @@ export function useActiveAttendance(tenantId: string, storeId: string | null) {
 
   return { active, loading, error, updatedAt, refetch: fetchActive };
 }
-

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { formatSupabaseError } from '../lib/errors';
 import type { LeaveRequest, LeaveType } from '../types';
 
 export function useLeave(tenantId: string) {
@@ -25,8 +26,7 @@ export function useLeave(tenantId: string) {
       if (e) throw e;
       setMyLeaves((data as LeaveRequest[]) || []);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '休暇の取得に失敗しました';
-      setError(msg);
+      setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
     }
@@ -46,8 +46,7 @@ export function useLeave(tenantId: string) {
       if (e) throw e;
       setAllLeaves((data as LeaveRequest[]) || []);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '休暇の取得に失敗しました';
-      setError(msg);
+      setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
     }

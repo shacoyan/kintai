@@ -9,6 +9,7 @@ import { ClockButton } from '../components/Attendance/ClockButton';
 import { BreakButton } from '../components/Attendance/BreakButton';
 import { AlertTriangle, Clock, Activity, CalendarDays, FileClock } from 'lucide-react';
 import { Card, StatCard, Badge, Button, PageSkeleton, ListRowSkeleton, EmptyState } from '../components/ui';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -30,11 +31,14 @@ export function DashboardPage() {
     activeBreak,
     today: todayFromHook,
     loading,
+    error: attendanceError,
   } = useAttendance(tenantId, currentStore?.id ?? null);
 
-  const { myShifts, getMyShifts, loading: shiftLoading } = useShift(tenantId, currentStore?.id ?? null);
+  const { myShifts, getMyShifts, loading: shiftLoading, error: shiftError } = useShift(tenantId, currentStore?.id ?? null);
 
-  const { myLeaves, getMyLeaves, getRemainingPaidLeave } = useLeave(tenantId);
+  const { myLeaves, getMyLeaves, getRemainingPaidLeave, error: leaveError } = useLeave(tenantId);
+
+  const dashboardError = attendanceError ?? shiftError ?? leaveError;
 
   // 勤務中の労働時間をリアルタイム更新するためのタイマー
   const [now, setNow] = useState(() => new Date());
@@ -154,6 +158,8 @@ export function DashboardPage() {
         <h1 className="text-xl md:text-2xl font-semibold text-neutral-900">{format(today, 'M月d日')}</h1>
         <p className="text-sm text-neutral-500">{format(today, 'EEEE', { locale: ja })}</p>
       </header>
+
+      {dashboardError && <ErrorBanner message={dashboardError} />}
 
       {carryOverRecord && (
         <Card padding="md" className="border-l-4 border-danger-500">

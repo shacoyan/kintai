@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { PayrollRun, PayrollRunItem } from '../types';
+import { formatSupabaseError } from '../lib/errors';
 
 export function usePayrollRun(tenantId: string, storeId: string | null) {
   const [loading, setLoading] = useState(false);
@@ -33,8 +34,9 @@ export function usePayrollRun(tenantId: string, storeId: string | null) {
 
       const { items, ...run } = data as { items: PayrollRunItem[] } & PayrollRun;
       return { run: run as PayrollRun, items: (items ?? []) as PayrollRunItem[] };
-    } catch (err: any) {
-      setError(err.message ?? 'Failed to fetch payroll run');
+    } catch (err) {
+      console.error('fetchRun error:', formatSupabaseError(err));
+      setError(formatSupabaseError(err).message);
       return null;
     } finally {
       setLoading(false);
@@ -124,8 +126,9 @@ export function usePayrollRun(tenantId: string, storeId: string | null) {
       }
 
       return runData as PayrollRun;
-    } catch (err: any) {
-      setError(err.message ?? 'Failed to finalize payroll run');
+    } catch (err) {
+      console.error('finalizeRun error:', formatSupabaseError(err));
+      setError(formatSupabaseError(err).message);
       return null;
     } finally {
       setLoading(false);
@@ -142,8 +145,9 @@ export function usePayrollRun(tenantId: string, storeId: string | null) {
         .eq('id', runId);
 
       if (deleteError) throw deleteError;
-    } catch (err: any) {
-      setError(err.message ?? 'Failed to unfinalize payroll run');
+    } catch (err) {
+      console.error('unfinalizeRun error:', formatSupabaseError(err));
+      setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
     }

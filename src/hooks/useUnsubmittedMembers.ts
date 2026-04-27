@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { supabase } from '../lib/supabase';
+import { formatSupabaseError } from '../lib/errors';
 
 export type UnsubmittedMember = {
   user_id: string;
@@ -141,8 +142,8 @@ export function useUnsubmittedMembers(
 
       setUnsubmitted(result);
     } catch (err) {
-      const e = err instanceof Error ? err : new Error(String(err));
-      setError(e);
+      console.error('useUnsubmittedMembers fetchData error:', formatSupabaseError(err));
+      setError(new Error(formatSupabaseError(err).message));
       setUnsubmitted([]);
     } finally {
       setLoading(false);

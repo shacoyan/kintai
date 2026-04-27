@@ -4,6 +4,7 @@ import type { Tenant } from '../../types';
 import { CheckCircle2, Copy, Check } from 'lucide-react';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Button } from '../ui/Button';
+import { formatSupabaseError } from '../../lib/errors';
 
 interface CreateTenantProps {
   onCreate: (tenant: Tenant) => void;
@@ -37,7 +38,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
       const tenant = await createTenant(name.trim(), displayName.trim());
       setCreatedTenant(tenant);
     } catch (err: any) {
-      setError(err.message || 'ワークスペースの作成に失敗しました');
+      setError(formatSupabaseError(err).message || 'ワークスペースの作成に失敗しました');
     } finally {
       setLoading(false);
     }

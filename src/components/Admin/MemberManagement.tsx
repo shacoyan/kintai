@@ -8,6 +8,7 @@ import { useStoreContext } from '../../contexts/StoreContext';
 import { BottomSheet } from '../ui/BottomSheet';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { formatSupabaseError } from '../../lib/errors';
 import { PageSkeleton } from '../ui/Skeleton';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -68,7 +69,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
       await updateRoleId(member.id, roleId === '' ? null : roleId);
       showToast('役職を更新しました', 'success');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '役職の更新に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     }
   };
 
@@ -89,7 +90,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
       setEditingId(null);
       showToast('時給を保存しました', 'success');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '時給の保存に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setSaving(false);
     }
@@ -109,7 +110,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     try {
       await updatePayType(member.id, payType);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '給与タイプの更新に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     }
   };
 
@@ -130,7 +131,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
       setEditingMonthlySalaryId(null);
       showToast('月給を保存しました', 'success');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '月給の保存に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setSaving(false);
     }
@@ -158,7 +159,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
       setEditingPaidLeaveDaysId(null);
       showToast('有給日数を保存しました', 'success');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '有給日数の保存に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setSaving(false);
     }
@@ -175,7 +176,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     try {
       await updateRole(member.id, newRole);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '権限の更新に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setTogglingRoleId(null);
     }

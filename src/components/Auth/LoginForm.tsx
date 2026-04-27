@@ -6,6 +6,7 @@ import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Checkbox';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { formatSupabaseError } from '../../lib/errors';
 
 function GoogleIcon() {
   return (
@@ -64,9 +65,7 @@ export const LoginForm = function LoginForm() {
         }
       }
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : '認証に失敗しました。';
-      setError(message);
+      setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
     }
@@ -88,11 +87,7 @@ export const LoginForm = function LoginForm() {
       }
       setResetSuccess(true);
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : 'パスワードリセットメールの送信に失敗しました。';
-      setError(message);
+      setError(formatSupabaseError(err).message);
     } finally {
       setResetLoading(false);
     }
