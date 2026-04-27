@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { eachDayOfInterval, parseISO, format } from 'date-fns';
 import { supabase } from '../../lib/supabase';
+import { formatSupabaseError } from '../../lib/errors';
 import { useToast } from '../../contexts/ToastContext';
 import { Button, Select, Input, Checkbox, BottomSheet } from '../ui';
 import type { ShiftPreset, TenantMember } from '../../types';
@@ -181,7 +182,7 @@ export function BulkApplyPresetModal({
           .insert(chunk);
 
         if (insertError) {
-          showToast(`挿入エラー: ${insertError.message}`, 'error');
+          showToast(`挿入エラー: ${formatSupabaseError(insertError).message}`, 'error');
           setSubmitting(false);
           return;
         }
@@ -191,8 +192,7 @@ export function BulkApplyPresetModal({
       onApplied(insertedCount, skippedCount);
       onClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : '不明なエラーが発生しました';
-      showToast(message, 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setSubmitting(false);
     }

@@ -186,7 +186,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     try {
       await updateNightShift(member.id, !member.night_shift_enabled);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '深夜給設定の更新に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     }
   };
 
@@ -195,7 +195,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
       await deleteMember(memberId);
       showToast('メンバーを削除しました', 'success');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'メンバーの削除に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     }
     setDeletingId(null);
   };

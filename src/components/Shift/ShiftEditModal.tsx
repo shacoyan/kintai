@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Shift, Store } from '../../types';
+import { formatSupabaseError } from '../../lib/errors';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/Button';
 
@@ -49,7 +50,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
       onRefresh();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '操作に失敗しました');
+      setError(formatSupabaseError(err).message);
     } finally {
       setProcessing(false);
     }

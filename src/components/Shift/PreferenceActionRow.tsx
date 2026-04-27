@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Check, X, Loader2, CheckCircle2, Circle, XCircle, RotateCcw } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ShiftPreference } from '../../types';
+import { formatSupabaseError } from '../../lib/errors';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { abbreviateName } from '../../utils/displayNameAbbrev';
@@ -91,7 +92,7 @@ export function PreferenceActionRow({
       setState((prev) => ({
         ...prev,
         loading: false,
-        error: err instanceof Error ? err.message : '操作に失敗しました',
+        error: formatSupabaseError(err).message,
       }));
       return;
     }
@@ -108,7 +109,7 @@ export function PreferenceActionRow({
       setState((prev) => ({
         ...prev,
         loading: false,
-        error: err instanceof Error ? err.message : '操作に失敗しました',
+        error: formatSupabaseError(err).message,
       }));
       return;
     }
@@ -125,7 +126,7 @@ export function PreferenceActionRow({
       setState((prev) => ({
         ...prev,
         loading: false,
-        error: err instanceof Error ? err.message : '操作に失敗しました',
+        error: formatSupabaseError(err).message,
       }));
       return;
     }

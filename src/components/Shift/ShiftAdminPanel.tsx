@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { Shift, TenantMember } from '../../types';
+import { formatSupabaseError } from '../../lib/errors';
 import { Loader2 } from 'lucide-react';
 
 interface ShiftAdminPanelProps {
@@ -95,7 +96,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
       await action();
       onRefresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '操作に失敗しました');
+      setError(formatSupabaseError(err).message);
     } finally {
       setProcessing(false);
     }

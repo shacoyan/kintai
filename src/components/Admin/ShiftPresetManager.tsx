@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Clock, CalendarClock, Trash2, Pencil, ArrowUp, ArrowDown, Save, X } from 'lucide-react';
 import { useShiftPreset } from '../../hooks/useShiftPreset';
 import { useToast } from '../../contexts/ToastContext';
+import { formatSupabaseError } from '../../lib/errors';
 import { Card, Button, Badge, Input, Select, PageSkeleton, EmptyState } from '../ui';
 
 interface ShiftPresetManagerProps {
@@ -50,7 +51,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
       setName('');
       showToast('プリセットを追加しました', 'success');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'プリセットの追加に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setSaving(false);
     }
@@ -61,7 +62,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
       await deletePreset(id);
       showToast('プリセットを削除しました', 'success');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'プリセットの削除に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     }
   };
 
@@ -84,7 +85,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
       showToast('プリセットを更新しました', 'success');
       setEditingId(null);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'プリセットの更新に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     }
   };
 
@@ -95,7 +96,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
     try {
       await reorderPresets(ordered.map((p) => p.id));
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '並び替えに失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     }
   };
 
@@ -106,7 +107,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
     try {
       await reorderPresets(ordered.map((p) => p.id));
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '並び替えに失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     }
   };
 

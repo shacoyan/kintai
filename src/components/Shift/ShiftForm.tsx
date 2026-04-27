@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Clock } from 'lucide-react';
 import type { ShiftPreset, Store } from '../../types';
+import { formatSupabaseError } from '../../lib/errors';
 import { Button } from '../ui/Button';
 
 interface ShiftFormProps {
@@ -44,7 +45,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
     try {
       await onSubmit(date, startTime, endTime, note || undefined, storeId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'シフト申請に失敗しました');
+      setError(formatSupabaseError(err).message);
     } finally {
       setSubmitting(false);
     }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useStore } from '../../hooks/useStore';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useToast } from '../../contexts/ToastContext';
+import { formatSupabaseError } from '../../lib/errors';
 import type { Store } from '../../types';
 import { BottomSheet } from '../ui/BottomSheet';
 import { EmptyState } from '../ui/EmptyState';
@@ -66,7 +67,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
       setNewStoreName('');
       showToast('店舗を作成しました', 'success');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '店舗の作成に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setCreating(false);
     }
@@ -81,7 +82,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
       }
       showToast('店舗を削除しました', 'success');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '店舗の削除に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setConfirmDeleteStore(null);
     }
@@ -103,7 +104,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
       setEditingStoreId(null);
       showToast('店舗名を更新しました', 'success');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '店舗名の更新に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setSavingEdit(false);
     }
@@ -124,7 +125,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
         showToast('メンバーを追加しました', 'success');
       }
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'メンバーの変更に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setTogglingMember(null);
     }
@@ -137,7 +138,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
       await setStoreMemberManager(selectedStore.id, memberId, nextValue);
       showToast(nextValue ? '店長に任命しました' : '店長権限を外しました', 'success');
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '店長権限の更新に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setTogglingManagerId(null);
     }

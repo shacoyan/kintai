@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { CheckCircle2, Circle, XCircle, Trash2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ShiftPreference, ShiftPreferenceType, ShiftPreset, Store } from '../../types';
+import { formatSupabaseError } from '../../lib/errors';
 import { Button, Select, Textarea, ErrorBanner } from '../ui';
 
 interface ShiftPreferenceFormProps {
@@ -108,7 +109,7 @@ export function ShiftPreferenceForm({
         storeId,
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'シフト希望の登録に失敗しました');
+      setError(formatSupabaseError(err).message);
     } finally {
       setSubmitting(false);
     }
@@ -121,7 +122,7 @@ export function ShiftPreferenceForm({
     try {
       await onDelete(existingPreference.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '削除に失敗しました');
+      setError(formatSupabaseError(err).message);
     } finally {
       setDeleting(false);
     }

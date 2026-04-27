@@ -5,6 +5,7 @@ import { format, parseISO, differenceInMinutes, getDaysInMonth } from 'date-fns'
 import type { AttendanceRecord, Shift } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
+import { formatSupabaseError } from '../../lib/errors';
 import { AlertTriangle, Users } from 'lucide-react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { EmptyState } from '../ui/EmptyState';
@@ -248,7 +249,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       ]);
       setSelectedCell(null);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '保存に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setSaving(false);
     }
@@ -268,7 +269,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       setSelectedCell(null);
       setConfirmDelete(false);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : '削除に失敗しました', 'error');
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setSaving(false);
     }

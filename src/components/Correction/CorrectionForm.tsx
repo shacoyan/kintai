@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useCorrection } from '../../hooks/useCorrection';
+import { formatSupabaseError } from '../../lib/errors';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { format, parseISO } from 'date-fns';
 import { BottomSheet } from '../ui/BottomSheet';
@@ -134,7 +135,7 @@ export function CorrectionForm({
       });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '申請の送信に失敗しました');
+      setError(formatSupabaseError(err).message);
     } finally {
       setSubmitting(false);
     }

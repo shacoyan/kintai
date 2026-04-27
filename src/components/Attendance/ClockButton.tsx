@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { AttendanceRecord } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
+import { formatSupabaseError } from '../../lib/errors';
 
 interface ClockButtonProps {
   status: 'not_started' | 'working' | 'on_break';
@@ -79,8 +80,8 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
       } else if (status === 'working') {
         await clockOut();
       }
-    } catch (err: any) {
-      showToast(err.message || 'エラーが発生しました', 'error');
+    } catch (err) {
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setProcessing(false);
     }

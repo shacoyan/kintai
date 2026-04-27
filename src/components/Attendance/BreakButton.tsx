@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { AttendanceRecord, Break } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
+import { formatSupabaseError } from '../../lib/errors';
 
 interface BreakButtonProps {
   status: 'not_started' | 'working' | 'on_break';
@@ -25,8 +26,8 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
     setProcessing(true);
     try {
       await breakStart();
-    } catch (err: any) {
-      showToast(err.message || '休憩開始に失敗しました', 'error');
+    } catch (err) {
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setProcessing(false);
     }
@@ -37,8 +38,8 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
     setProcessing(true);
     try {
       await breakEnd();
-    } catch (err: any) {
-      showToast(err.message || '休憩終了に失敗しました', 'error');
+    } catch (err) {
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setProcessing(false);
     }
