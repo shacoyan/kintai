@@ -341,6 +341,7 @@ export function ShiftPage() {
                 onBulkApprove={bulkApprove}
                 onDelete={deleteShift}
                 onRefresh={fetchRange}
+                stores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
                 canManageStore={(sid) => sid ? isManagerOf(sid) : false}
               />
 
