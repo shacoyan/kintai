@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTenant } from '../hooks/useTenant';
 import { useAuth } from '../hooks/useAuth';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
@@ -233,6 +233,8 @@ export function HistoryPage() {
   const { fetchRecords, monthlyRecords, monthlySummary, loading } = useAttendanceViewer(tenantId, currentStore?.id ?? null, effectiveUserId);
   const { requests: correctionRequests, fetchRequests: fetchCorrectionRequests } = useCorrection(tenantId);
   const { showToast } = useToast();
+  
+  const hasLoadedOnceRef = useRef(false);
 
   useEffect(() => {
     void fetchCorrectionRequests();
@@ -261,9 +263,10 @@ export function HistoryPage() {
   const month = currentDate.getMonth() + 1;
 
   useEffect(() => {
-    if (tenantId) {
-      fetchRecords(year, month);
-    }
+    if (!tenantId) return;
+    Promise.resolve(fetchRecords(year, month))
+      .then(() => { hasLoadedOnceRef.current = true; })
+      .catch(() => { hasLoadedOnceRef.current = true; });
   }, [year, month, tenantId, effectiveUserId, fetchRecords]);
 
   function handlePrevMonth() {
@@ -326,7 +329,9 @@ export function HistoryPage() {
   }
 
   const hasRecords = monthlyRecords.length > 0;
-  const showEmpty = !loading && !hasRecords && currentStore != null;
+  const showInitialSkeleton = loading && !hasLoadedOnceRef.current;
+  const isRefetching = loading && hasLoadedOnceRef.current;
+  const showEmpty = !showInitialSkeleton && !hasRecords && currentStore != null;
   
   const handleCorrection = effectiveUserId === myUserId ? handleRequestCorrection : undefined;
   const handleDeletion = effectiveUserId === myUserId ? handleRequestDeletion : undefined;
@@ -337,7 +342,7 @@ export function HistoryPage() {
   })();
 
   // 初回ロード時 (loading かつ初期データ未取得) はページ全体スケルトン
-  if (loading && !hasRecords && currentStore != null) {
+  if (showInitialSkeleton && !hasRecords && currentStore != null) {
     return (
       <div className="max-w-2xl mx-auto">
         <HistorySkeleton />
@@ -346,7 +351,7 @@ export function HistoryPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className={`max-w-2xl mx-auto space-y-6 motion-safe:transition-opacity duration-200${isRefetching ? ' opacity-60 pointer-events-none' : ''}`}>
       {currentStore == null && (
         <Card padding="md">
           <div className="flex items-center justify-center gap-2 text-sm">
@@ -414,7 +419,7 @@ export function HistoryPage() {
 
       <MonthlySummary summary={monthlySummary} />
 
-      {loading ? (
+      {showInitialSkeleton ? (
         viewMode === 'list' ? (
           <Card padding="md">
             <ListRowSkeleton />

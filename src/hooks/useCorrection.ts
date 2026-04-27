@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { CorrectionRequest } from '../types';
 import type { NotificationType } from '../types';
@@ -31,8 +32,8 @@ export function useCorrection(tenantId: string) {
         .order('created_at', { ascending: false });
       if (error) throw error;
       setRequests((data as CorrectionRequest[]) || []);
-    } catch (err: any) {
-      console.error('Fetch correction requests error:', formatSupabaseError(err));
+    } catch (err: unknown) {
+      logger.error('Fetch correction requests error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       setRequests([]);
     } finally {
@@ -95,13 +96,13 @@ export function useCorrection(tenantId: string) {
       }
 
       if (error) {
-        console.error('Submit correction request error:', formatSupabaseError(error));
+        logger.error('Submit correction request error:', formatSupabaseError(error));
         setError(formatSupabaseError(error).message);
         throw error;
       }
       await fetchRequests();
     } catch (err: unknown) {
-      console.error('Submit correction request error:', formatSupabaseError(err));
+      logger.error('Submit correction request error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     }
@@ -128,7 +129,7 @@ export function useCorrection(tenantId: string) {
         })
         .eq('id', requestId);
       if (error) {
-        console.error('Review correction request error:', formatSupabaseError(error));
+        logger.error('Review correction request error:', formatSupabaseError(error));
         setError(formatSupabaseError(error).message);
         throw error;
       }
@@ -265,7 +266,7 @@ export function useCorrection(tenantId: string) {
 
       await fetchRequests();
     } catch (err: unknown) {
-      console.error('Review correction request error:', formatSupabaseError(err));
+      logger.error('Review correction request error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     }
@@ -279,14 +280,14 @@ export function useCorrection(tenantId: string) {
         .update({ status: 'pending', reviewed_by: null, reviewed_at: null })
         .eq('id', requestId);
       if (error) {
-        console.error('Revert correction request error:', formatSupabaseError(error));
+        logger.error('Revert correction request error:', formatSupabaseError(error));
         setError(formatSupabaseError(error).message);
         throw error;
       }
       // 承認済の場合、すでに attendance_records へ反映済の修正は取り消さない（巻き戻しは別途手動で）
       await fetchRequests();
     } catch (err: unknown) {
-      console.error('Revert correction request error:', formatSupabaseError(err));
+      logger.error('Revert correction request error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     }

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { formatSupabaseError } from '../lib/errors';
 import type { Store, StoreMember } from '../types';
@@ -20,7 +21,7 @@ export function useStore(tenantId: string) {
       if (error) throw error;
       setStores((data as Store[]) || []);
     } catch (err) {
-      console.error('fetchStores error:', formatSupabaseError(err));
+      logger.error('fetchStores error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     } finally {
@@ -39,7 +40,7 @@ export function useStore(tenantId: string) {
       await fetchStores();
       return data as Store;
     } catch (err) {
-      console.error('createStore error:', formatSupabaseError(err));
+      logger.error('createStore error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     }
@@ -54,7 +55,7 @@ export function useStore(tenantId: string) {
       if (error) throw new Error(`店舗名の更新に失敗しました: ${formatSupabaseError(error).message}`);
       await fetchStores();
     } catch (err) {
-      console.error('updateStore error:', formatSupabaseError(err));
+      logger.error('updateStore error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     }
@@ -69,7 +70,7 @@ export function useStore(tenantId: string) {
       if (error) throw new Error(`店舗の削除に失敗しました: ${formatSupabaseError(error).message}`);
       await fetchStores();
     } catch (err) {
-      console.error('deleteStore error:', formatSupabaseError(err));
+      logger.error('deleteStore error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     }
@@ -84,7 +85,7 @@ export function useStore(tenantId: string) {
       if (error) throw error;
       setStoreMembers((data as StoreMember[]) || []);
     } catch (err) {
-      console.error('fetchStoreMembers error:', formatSupabaseError(err));
+      logger.error('fetchStoreMembers error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     }
@@ -98,7 +99,7 @@ export function useStore(tenantId: string) {
       if (error) throw new Error(`メンバーの追加に失敗しました: ${formatSupabaseError(error).message}`);
       await fetchStoreMembers(storeId);
     } catch (err) {
-      console.error('addStoreMember error:', formatSupabaseError(err));
+      logger.error('addStoreMember error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     }
@@ -114,7 +115,7 @@ export function useStore(tenantId: string) {
       if (error) throw new Error(`メンバーの削除に失敗しました: ${formatSupabaseError(error).message}`);
       await fetchStoreMembers(storeId);
     } catch (err) {
-      console.error('removeStoreMember error:', formatSupabaseError(err));
+      logger.error('removeStoreMember error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     }
@@ -130,7 +131,7 @@ export function useStore(tenantId: string) {
       if (error) throw error;
       await fetchStoreMembers(storeId);
     } catch (err) {
-      console.error('setMemberPrimary error:', formatSupabaseError(err));
+      logger.error('setMemberPrimary error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     }
@@ -160,7 +161,7 @@ export function useStore(tenantId: string) {
 
       await fetchStoreMembers(storeId);
     } catch (err) {
-      console.error('setStoreMemberManager error:', formatSupabaseError(err));
+      logger.error('setStoreMemberManager error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
     }

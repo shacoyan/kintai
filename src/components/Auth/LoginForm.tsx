@@ -186,7 +186,7 @@ export const LoginForm = function LoginForm() {
             type="button"
             aria-label={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
             onClick={() => setShowPassword((v) => !v)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-neutral-500 hover:text-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 motion-safe:transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
             {showPassword ? (
               <EyeOff size={16} aria-hidden="true" />

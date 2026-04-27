@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import type { PayrollRun, PayrollRunItem } from '../types';
 import { formatSupabaseError } from '../lib/errors';
@@ -35,7 +36,7 @@ export function usePayrollRun(tenantId: string, storeId: string | null) {
       const { items, ...run } = data as { items: PayrollRunItem[] } & PayrollRun;
       return { run: run as PayrollRun, items: (items ?? []) as PayrollRunItem[] };
     } catch (err) {
-      console.error('fetchRun error:', formatSupabaseError(err));
+      logger.error('fetchRun error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       return null;
     } finally {
@@ -127,7 +128,7 @@ export function usePayrollRun(tenantId: string, storeId: string | null) {
 
       return runData as PayrollRun;
     } catch (err) {
-      console.error('finalizeRun error:', formatSupabaseError(err));
+      logger.error('finalizeRun error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       return null;
     } finally {
@@ -146,7 +147,7 @@ export function usePayrollRun(tenantId: string, storeId: string | null) {
 
       if (deleteError) throw deleteError;
     } catch (err) {
-      console.error('unfinalizeRun error:', formatSupabaseError(err));
+      logger.error('unfinalizeRun error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);

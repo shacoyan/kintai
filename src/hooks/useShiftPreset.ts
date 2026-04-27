@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { formatSupabaseError } from '../lib/errors';
 import type { ShiftPreset } from '../types';
@@ -24,7 +25,7 @@ export function useShiftPreset(tenantId: string, storeId: string | null) {
       if (error) throw error;
       setPresets((data as ShiftPreset[]) || []);
     } catch (err) {
-      console.error('Error fetching shift presets:', formatSupabaseError(err));
+      logger.error('Error fetching shift presets:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);

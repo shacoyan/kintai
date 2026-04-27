@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { AttendanceRecord, Break } from '../types';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
@@ -98,8 +99,8 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         .order('clock_in', { ascending: true });
       if (error) throw error;
       setTodayRecords((data as AttendanceRecord[]) || []);
-    } catch (err: any) {
-      console.error('Fetch today records error:', formatSupabaseError(err));
+    } catch (err: unknown) {
+      logger.error('Fetch today records error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
@@ -184,7 +185,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         clock_in: now,
       });
       if (error) {
-        console.error('Clock in error:', formatSupabaseError(error));
+        logger.error('Clock in error:', formatSupabaseError(error));
         setError(formatSupabaseError(error).message);
         throw error;
       }
@@ -209,7 +210,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
           .update({ end_time: now.toISOString() })
           .eq('id', activeBreak.id);
         if (breakError) {
-          console.error('Auto break end error:', formatSupabaseError(breakError));
+          logger.error('Auto break end error:', formatSupabaseError(breakError));
           setError(formatSupabaseError(breakError).message);
           throw breakError;
         }
@@ -241,7 +242,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         })
         .eq('id', activeRecord.id);
       if (error) {
-        console.error('Clock out error:', formatSupabaseError(error));
+        logger.error('Clock out error:', formatSupabaseError(error));
         setError(formatSupabaseError(error).message);
         throw error;
       }
@@ -262,7 +263,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         start_time: new Date().toISOString(),
       });
       if (error) {
-        console.error('Break start error:', formatSupabaseError(error));
+        logger.error('Break start error:', formatSupabaseError(error));
         setError(formatSupabaseError(error).message);
         throw error;
       }
@@ -287,7 +288,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         .order('start_time', { ascending: false })
         .limit(1);
       if (fetchError) {
-        console.error('Find active break error:', formatSupabaseError(fetchError));
+        logger.error('Find active break error:', formatSupabaseError(fetchError));
         setError(formatSupabaseError(fetchError).message);
         throw fetchError;
       }
@@ -298,7 +299,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         .update({ end_time: new Date().toISOString() })
         .eq('id', data[0].id);
       if (error) {
-        console.error('Break end error:', formatSupabaseError(error));
+        logger.error('Break end error:', formatSupabaseError(error));
         setError(formatSupabaseError(error).message);
         throw error;
       }
@@ -332,7 +333,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         .order('date', { ascending: true })
         .order('clock_in', { ascending: true });
       if (error) {
-        console.error('Fetch records error:', formatSupabaseError(error));
+        logger.error('Fetch records error:', formatSupabaseError(error));
         setError(formatSupabaseError(error).message);
         return;
       }

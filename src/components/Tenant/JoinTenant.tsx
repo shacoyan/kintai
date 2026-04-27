@@ -38,7 +38,7 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
     try {
       const tenant = await joinTenant(inviteCode.trim().toUpperCase(), displayName.trim());
       onJoin(tenant);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // L12-8: joinTenant が throw する friendly Error.message
       // (期限切れ / 使用回数上限 / 重複参加 等) をそのまま表示する
       setError(formatSupabaseError(err).message || '参加に失敗しました');

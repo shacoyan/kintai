@@ -37,7 +37,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
     try {
       const tenant = await createTenant(name.trim(), displayName.trim());
       setCreatedTenant(tenant);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(formatSupabaseError(err).message || 'ワークスペースの作成に失敗しました');
     } finally {
       setLoading(false);

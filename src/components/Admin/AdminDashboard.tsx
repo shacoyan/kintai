@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { logger } from '../../lib/logger';
 import { format, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { formatSupabaseError } from '../../lib/errors';
@@ -255,7 +256,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       setMismatchShifts((shiftsRes.data as Shift[]) || []);
       setMismatchAttendance((attendanceRes.data as AttendanceRecord[]) || []);
     } catch (err) {
-      console.error('mismatch fetch error:', formatSupabaseError(err));
+      logger.error('mismatch fetch error:', formatSupabaseError(err));
     } finally {
       setMismatchLoading(false);
     }

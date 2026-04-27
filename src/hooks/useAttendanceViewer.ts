@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { AttendanceRecord } from '../types';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
@@ -66,7 +67,7 @@ export function useAttendanceViewer(
           .order('date', { ascending: true })
           .order('clock_in', { ascending: true });
         if (error) {
-          console.error('Fetch viewer records error:', error.message);
+          logger.error('Fetch viewer records error:', error.message);
           return;
         }
         setMonthlyRecords((data as AttendanceRecord[]) || []);

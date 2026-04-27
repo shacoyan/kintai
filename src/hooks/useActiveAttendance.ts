@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { format } from 'date-fns';
 import { formatSupabaseError } from '../lib/errors';
@@ -56,7 +57,7 @@ export function useActiveAttendance(tenantId: string, storeId: string | null) {
       setUpdatedAt(new Date());
     } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
-      console.error('useActiveAttendance fetch error:', formatSupabaseError(err));
+      logger.error('useActiveAttendance fetch error:', formatSupabaseError(err));
     } finally {
       setLoading(false);
     }

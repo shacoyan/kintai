@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { startOfMonth, format, subMonths, setDate, startOfDay, addHours, addMinutes } from 'date-fns';
 import { useTenant } from './useTenant';
@@ -63,7 +64,7 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
 
         setDeadlineState(data?.deadline_at ? new Date(data.deadline_at) : null);
       } catch (e) {
-        console.error('useShiftSubmissionDeadline fetchDeadline error:', formatSupabaseError(e));
+        logger.error('useShiftSubmissionDeadline fetchDeadline error:', formatSupabaseError(e));
         if (isMounted) {
           setError(new Error(formatSupabaseError(e).message));
         }
@@ -108,7 +109,7 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
 
       setDeadlineState(deadlineAt);
     } catch (e) {
-      console.error('useShiftSubmissionDeadline setDeadline error:', formatSupabaseError(e));
+      logger.error('useShiftSubmissionDeadline setDeadline error:', formatSupabaseError(e));
       const err = new Error(formatSupabaseError(e).message);
       setError(err);
       throw err;
@@ -141,7 +142,7 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
 
       setDeadlineState(null);
     } catch (e) {
-      console.error('useShiftSubmissionDeadline clearDeadline error:', formatSupabaseError(e));
+      logger.error('useShiftSubmissionDeadline clearDeadline error:', formatSupabaseError(e));
       const err = new Error(formatSupabaseError(e).message);
       setError(err);
       throw err;

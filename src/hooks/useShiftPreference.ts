@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { formatSupabaseError } from '../lib/errors';
 import type { ShiftPreference, ShiftPreferenceType } from '../types';
@@ -60,7 +61,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted.message);
-      console.error('fetchMyPreferences error:', formatted);
+      logger.error('fetchMyPreferences error:', formatted);
     } finally {
       setLoading(false);
     }
@@ -88,7 +89,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted.message);
-      console.error('fetchAllPreferences error:', formatted);
+      logger.error('fetchAllPreferences error:', formatted);
     } finally {
       setLoading(false);
     }
@@ -124,7 +125,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted.message);
-      console.error('submitPreference error:', formatted);
+      logger.error('submitPreference error:', formatted);
       throw err;
     }
   }, [tenantId, storeId]);
@@ -140,7 +141,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted.message);
-      console.error('deletePreference error:', formatted);
+      logger.error('deletePreference error:', formatted);
       throw err;
     }
   }, []);
@@ -201,7 +202,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted.message);
-      console.error('approvePreference error:', formatted);
+      logger.error('approvePreference error:', formatted);
       throw err;
     }
   }, []);
@@ -232,7 +233,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted.message);
-      console.error('rejectPreference error:', formatted);
+      logger.error('rejectPreference error:', formatted);
       throw err;
     }
   }, []);
@@ -285,7 +286,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted.message);
-      console.error('revertPreference error:', formatted);
+      logger.error('revertPreference error:', formatted);
       throw err;
     }
   }, []);

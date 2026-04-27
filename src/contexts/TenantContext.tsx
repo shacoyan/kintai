@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { formatSupabaseError } from '../lib/errors';
@@ -80,8 +81,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       if (fetchError) throw fetchError;
       setMembers(data || []);
-    } catch (err: any) {
-      console.error('Failed to fetch members:', formatSupabaseError(err));
+    } catch (err: unknown) {
+      logger.error('Failed to fetch members:', formatSupabaseError(err));
     }
   }, []);
 
@@ -122,7 +123,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setTenants(mappedTenants);
       return mappedTenants;
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
       return [];
     } finally {
@@ -177,7 +178,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (memberError) throw memberError;
 
       return tenantData;
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
       throw err;
     } finally {
@@ -220,7 +221,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (fetchError || !tenantData) throw new Error('参加先テナントの取得に失敗しました');
 
       return tenantData as Tenant;
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
       throw err;
     } finally {
@@ -285,7 +286,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       await fetchTenants();
 
       return newCode;
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
       throw err;
     } finally {
@@ -311,7 +312,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setCurrentTenant({ ...currentTenant, name: newName });
       await fetchTenants();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
       throw err;
     } finally {
@@ -336,7 +337,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setCurrentTenant(null);
       await fetchTenants();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
       throw err;
     } finally {
@@ -356,7 +357,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       });
       if (rpcError) throw rpcError;
       await fetchTenants();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
       throw err;
     } finally {
@@ -376,7 +377,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (rpcError) throw rpcError;
       setCurrentTenant(null);
       await fetchTenants();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
       throw err;
     } finally {
