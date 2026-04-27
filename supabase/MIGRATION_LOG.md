@@ -51,3 +51,9 @@
 | 030 | `030_tenant_roles.sql` | tenant_roles テーブル新設 (役職マスタ: name / default_hourly_rate / default_monthly_salary / color / sort_order) + tenant_members.role_id (FK ON DELETE SET NULL) 追加 + RLS (tenant 所属者 SELECT / owner・manager のみ INSERT/UPDATE/DELETE) | 2026-04-28 |
 | 031 | `031_tenant_soft_delete.sql` | tenants.deleted_at TIMESTAMPTZ 追加 + 部分インデックス (deleted_at IS NULL) + `get_my_tenant_ids()` 再定義 (deleted_at IS NULL の tenants と JOIN) + `soft_delete_tenant(p_tenant_id UUID)` SECURITY DEFINER RPC (オーナーのみ実行可能) + REVOKE PUBLIC / GRANT authenticated | 2026-04-28 |
 | 032 | `032_transfer_ownership.sql` | `transfer_tenant_ownership(p_tenant_id, p_new_owner_user_id)` SECURITY DEFINER RPC 追加 — 旧 owner→manager 降格・新 owner (manager 限定) →owner 昇格・tenants.owner_id 更新を atomic 実行 / 自分自身指定・非 owner 呼び出し・非 manager 譲渡先・非 member 譲渡先を例外化 + REVOKE PUBLIC / GRANT authenticated | 2026-04-28 |
+
+--- Loop 12 Phase 2 ---
+
+| # | ファイル | 内容 | 適用日 |
+|---|---------|------|--------|
+| 033 | `033_invite_code_limits.sql` | 招待コード期限・使用回数上限 — tenants に `invite_code_expires_at TIMESTAMPTZ` / `invite_code_max_uses INTEGER (CHECK >0)` / `invite_code_used_count INTEGER NOT NULL DEFAULT 0 (CHECK >=0)` 追加 + 部分インデックス `idx_tenants_invite_code_expires` + `increment_invite_code_use(p_tenant_id UUID)` SECURITY DEFINER RPC (SELECT FOR UPDATE で atomic に期限/上限検証 + used_count+1) + REVOKE PUBLIC / GRANT authenticated | 未適用 |

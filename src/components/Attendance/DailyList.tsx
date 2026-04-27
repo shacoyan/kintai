@@ -2,7 +2,7 @@ import { eachDayOfInterval, startOfMonth, endOfMonth, format, parseISO, differen
 import { formatInTimeZone } from 'date-fns-tz';
 import { ja } from 'date-fns/locale';
 import { TrendingUp } from 'lucide-react';
-import { AttendanceRecord } from '../../types';
+import { AttendanceRecord, CorrectionRequest } from '../../types';
 import { EmptyState } from '../ui/EmptyState';
 
 interface DailyListProps {
@@ -11,9 +11,10 @@ interface DailyListProps {
   month: number;
   onRequestCorrection?: (date: string, record?: AttendanceRecord) => void;
   onRequestDeletion?: (date: string, record: AttendanceRecord) => void;
+  correctionRequests?: CorrectionRequest[];
 }
 
-export function DailyList({ records, year, month, onRequestCorrection, onRequestDeletion }: DailyListProps) {
+export function DailyList({ records, year, month, onRequestCorrection, onRequestDeletion, correctionRequests }: DailyListProps) {
   const start = startOfMonth(new Date(year, month - 1, 1));
   const end = endOfMonth(new Date(year, month - 1, 1));
   const days = eachDayOfInterval({ start, end });
@@ -51,6 +52,20 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
     recordsByDate.set(record.date, existing);
   }
 
+  // 修正申請中（pending）の日別件数を集計
+  const pendingCountByDate = new Map<string, number>();
+  if (correctionRequests) {
+    for (const req of correctionRequests) {
+      if (req.status !== 'pending' || !req.date) continue;
+      pendingCountByDate.set(req.date, (pendingCountByDate.get(req.date) ?? 0) + 1);
+    }
+  }
+  const pendingBadge = (count: number) => (
+    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+      修正申請中 {count}
+    </span>
+  );
+
   if (records.length === 0) {
     return (
       <EmptyState
@@ -74,11 +89,13 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
           if (isFuture && dayRecords.length === 0) return null;
 
           if (dayRecords.length === 0) {
+            const pendingCount = pendingCountByDate.get(dateStr) ?? 0;
             return (
               <div key={dateStr} className={`px-4 py-3 ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className={`text-sm ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : 'text-neutral-600 dark:text-neutral-300'}`}>
                     {format(day, 'M/d(E)', { locale: ja })}
+                    {pendingCount > 0 && pendingBadge(pendingCount)}
                   </span>
                   <span className="text-xs text-neutral-400 dark:text-neutral-500 tabular-nums">記録なし</span>
                   {onRequestCorrection && (
@@ -92,6 +109,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
             );
           }
 
+          const pendingCountSp = pendingCountByDate.get(dateStr) ?? 0;
           return dayRecords.map((record, index) => {
             const breakMins = getBreakMinutes(record);
             return (
@@ -99,6 +117,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                 <div className="flex items-center justify-between gap-2">
                   <span className={`text-sm ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : 'text-neutral-700 dark:text-neutral-200'}`}>
                     {index === 0 ? format(day, 'M/d(E)', { locale: ja }) : <span className="text-neutral-400 dark:text-neutral-500">↳ 同日</span>}
+                    {index === 0 && pendingCountSp > 0 && pendingBadge(pendingCountSp)}
                   </span>
                   <span className="text-xs tabular-nums text-neutral-600 dark:text-neutral-300">
                     {formatHM(record.clock_in) || '--:--'} - {formatHM(record.clock_out) || '--:--'}
@@ -151,6 +170,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
               if (isFuture && dayRecords.length === 0) return null;
 
               if (dayRecords.length === 0) {
+                const pendingCount = pendingCountByDate.get(dateStr) ?? 0;
                 return (
                   <tr
                     key={dateStr}
@@ -158,6 +178,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                   >
                     <td className={`px-3 py-2 text-neutral-700 dark:text-neutral-200 ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : ''}`}>
                       {format(day, 'M/d(E)', { locale: ja })}
+                      {pendingCount > 0 && pendingBadge(pendingCount)}
                     </td>
                     <td className="px-3 py-2 text-neutral-300 dark:text-neutral-600">--:--</td>
                     <td className="px-3 py-2 text-neutral-300 dark:text-neutral-600">--:--</td>
@@ -177,6 +198,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                 );
               }
 
+              const pendingCountPc = pendingCountByDate.get(dateStr) ?? 0;
               return dayRecords.map((record, index) => {
                 const breakMins = getBreakMinutes(record);
                 const isFirst = index === 0;
@@ -187,6 +209,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                   >
                     <td className={`px-3 py-2 text-neutral-700 dark:text-neutral-200 ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : ''}`}>
                       {index === 0 ? format(day, 'M/d(E)', { locale: ja }) : ''}
+                      {index === 0 && pendingCountPc > 0 && pendingBadge(pendingCountPc)}
                     </td>
                     <td className="px-3 py-2 text-neutral-700 dark:text-neutral-200">
                       {formatHM(record.clock_in) || <span className="text-neutral-300 dark:text-neutral-600">--:--</span>}

@@ -5,6 +5,9 @@ export interface Tenant {
   created_at: string;
   owner_id: string;
   deleted_at: string | null;
+  invite_code_expires_at?: string | null;
+  invite_code_max_uses?: number | null;
+  invite_code_used_count?: number;
 }
 
 export interface TenantMember {

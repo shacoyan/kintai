@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { CorrectionRequest } from '../types';
 import type { NotificationType } from '../types';
@@ -291,6 +291,29 @@ export function useCorrection(tenantId: string) {
       throw err;
     }
   };
+
+  // Realtime 購読: tenant 内の correction_requests を監視し、変更があれば自動再取得
+  useEffect(() => {
+    if (!tenantId) return;
+    const channel = supabase
+      .channel(`correction_requests:${tenantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'correction_requests',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          void fetchRequests();
+        }
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [tenantId, fetchRequests]);
 
   return { requests, loading, error, fetchRequests, submitRequest, reviewRequest, revertRequest };
 }

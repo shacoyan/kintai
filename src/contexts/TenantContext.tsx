@@ -13,7 +13,13 @@ interface TenantContextType {
   fetchTenants: () => Promise<TenantWithRole[]>;
   createTenant: (name: string, displayName: string) => Promise<Tenant>;
   joinTenant: (inviteCode: string, displayName: string) => Promise<Tenant>;
-  regenerateInviteCode: () => Promise<string>;
+  regenerateInviteCode: (
+    tenantId?: string,
+    opts?: {
+      expiresInDays?: 1 | 7 | 30 | null;
+      maxUses?: 1 | 3 | 10 | null;
+    }
+  ) => Promise<string>;
   leaveTenant: () => Promise<void>;
   deleteTenant: () => Promise<void>;
   transferOwnership: (newOwnerUserId: string) => Promise<void>;
@@ -182,38 +188,37 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setLoading(true);
     setError(null);
     try {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      if (authError || !authUser) throw new Error('認証情報の取得に失敗しました');
+      // L12 Phase 2 (Reviewer M3): atomic な join — SELECT FOR UPDATE → 検証 → INSERT → +1 を
+      // 1 トランザクションで完結する RPC に集約。フロント側で SELECT/INSERT を分けると
+      // 上限 1 のコードに同時 join した際、両者が tenant_members INSERT に成功してしまう。
+      const { data: joinedTenantId, error: rpcError } = await supabase.rpc('join_tenant_with_invite', {
+        p_invite_code: inviteCode,
+        p_display_name: displayName,
+      });
 
-      const { data: tenantData, error: tenantError } = await supabase
+      if (rpcError) {
+        const msg = (rpcError.message || '').toLowerCase();
+        if (msg.includes('not authenticated')) throw new Error('認証情報の取得に失敗しました');
+        if (msg.includes('display name required')) throw new Error('表示名を入力してください');
+        if (msg.includes('not found')) throw new Error('無効な招待コードです');
+        if (msg.includes('expired')) throw new Error('招待コードの有効期限が切れています');
+        if (msg.includes('max uses')) throw new Error('招待コードの使用回数上限に達しています');
+        if (msg.includes('already a member')) throw new Error('すでにこのテナントに参加しています');
+        throw new Error(formatSupabaseError(rpcError).message);
+      }
+
+      if (!joinedTenantId) throw new Error('参加処理に失敗しました');
+
+      // 戻り値の互換維持: 参加した tenants 行を取得して返す
+      const { data: tenantData, error: fetchError } = await supabase
         .from('tenants')
         .select('*')
-        .eq('invite_code', inviteCode)
+        .eq('id', joinedTenantId)
         .single();
 
-      if (tenantError || !tenantData) throw new Error('無効な招待コードです');
+      if (fetchError || !tenantData) throw new Error('参加先テナントの取得に失敗しました');
 
-      const { data: existingMember } = await supabase
-        .from('tenant_members')
-        .select('id')
-        .eq('tenant_id', tenantData.id)
-        .eq('user_id', authUser.id)
-        .maybeSingle();
-
-      if (existingMember) throw new Error('すでにこのテナントに参加しています');
-
-      const { error: memberError } = await supabase
-        .from('tenant_members')
-        .insert({
-          tenant_id: tenantData.id,
-          user_id: authUser.id,
-          display_name: displayName,
-          role: 'staff',
-        });
-
-      if (memberError) throw memberError;
-
-      return tenantData;
+      return tenantData as Tenant;
     } catch (err: any) {
       setError(formatSupabaseError(err).message);
       throw err;
@@ -222,25 +227,60 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
-  const regenerateInviteCode = useCallback(async (): Promise<string> => {
+  const regenerateInviteCode = useCallback(async (
+    tenantId?: string,
+    opts?: {
+      expiresInDays?: 1 | 7 | 30 | null;
+      maxUses?: 1 | 3 | 10 | null;
+    }
+  ): Promise<string> => {
     if (!currentTenant) throw new Error('テナントが選択されていません');
     if (myRole !== 'owner') throw new Error('オーナーのみ実行可能です');
+
+    const targetId = tenantId ?? currentTenant.id;
+    if (targetId !== currentTenant.id) {
+      throw new Error('現在選択中のテナントのみ再発行できます');
+    }
 
     setLoading(true);
     setError(null);
     try {
       const newCode = await generateUniqueInviteCode();
 
+      const expiresAt =
+        opts?.expiresInDays != null && opts.expiresInDays > 0
+          ? new Date(Date.now() + opts.expiresInDays * 86400000).toISOString()
+          : null;
+      const maxUses = opts?.maxUses ?? null;
+
+      const updatePayload: {
+        invite_code: string;
+        invite_code_expires_at: string | null;
+        invite_code_max_uses: number | null;
+        invite_code_used_count: number;
+      } = {
+        invite_code: newCode,
+        invite_code_expires_at: expiresAt,
+        invite_code_max_uses: maxUses,
+        invite_code_used_count: 0,
+      };
+
       const { error: updateError } = await supabase
         .from('tenants')
-        .update({ invite_code: newCode })
-        .eq('id', currentTenant.id)
+        .update(updatePayload)
+        .eq('id', targetId)
         .select()
         .single();
 
       if (updateError) throw updateError;
 
-      setCurrentTenant({ ...currentTenant, invite_code: newCode });
+      setCurrentTenant({
+        ...currentTenant,
+        invite_code: newCode,
+        invite_code_expires_at: expiresAt,
+        invite_code_max_uses: maxUses,
+        invite_code_used_count: 0,
+      });
       await fetchTenants();
 
       return newCode;

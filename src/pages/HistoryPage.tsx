@@ -8,7 +8,9 @@ import { useToast } from '../contexts/ToastContext';
 import { DailyList } from '../components/Attendance/DailyList';
 import { MonthlySummary } from '../components/Attendance/MonthlySummary';
 import { CorrectionForm } from '../components/Correction/CorrectionForm';
-import { AttendanceRecord } from '../types';
+import { useCorrection } from '../hooks/useCorrection';
+import { AttendanceRecord, CorrectionRequest } from '../types';
+import { buildCsv, downloadCsv, type CsvRow } from '../lib/csv';
 import {
   format,
   subMonths,
@@ -41,9 +43,13 @@ interface HistoryCalendarProps {
   month: number;
   records: AttendanceRecord[];
   onRequestCorrection?: (date: string, record?: AttendanceRecord) => void;
+  correctionRequests?: CorrectionRequest[];
 }
 
-function HistoryCalendar({ year, month, records, onRequestCorrection }: HistoryCalendarProps) {
+function HistoryCalendar({ year, month, records, onRequestCorrection, correctionRequests }: HistoryCalendarProps) {
+  const pendingDateSet = new Set(
+    (correctionRequests ?? []).filter(r => r.status === 'pending').map(r => r.date)
+  );
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   
   const monthStart = startOfMonth(new Date(year, month - 1, 1));
@@ -124,7 +130,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection }: HistoryC
                     setSelectedDate(isSelected ? null : dateKey);
                   }}
                   disabled={isFuture && isCurrentMonth}
-                  className={`w-full min-h-[56px] p-1 text-left border-b border-r border-neutral-100 dark:border-neutral-700 transition-colors ${
+                  className={`relative w-full min-h-[56px] p-1 text-left border-b border-r border-neutral-100 dark:border-neutral-700 transition-colors ${
                     !isCurrentMonth
                       ? 'bg-neutral-50 dark:bg-neutral-900/30 cursor-default'
                       : isFuture
@@ -168,6 +174,13 @@ function HistoryCalendar({ year, month, records, onRequestCorrection }: HistoryC
                       </div>
                     </div>
                   )}
+
+                  {isCurrentMonth && pendingDateSet.has(dateKey) && (
+                    <span
+                      className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500"
+                      aria-label="修正申請中"
+                    />
+                  )}
                 </button>
 
                 {isSelected && isCurrentMonth && !isFuture && (
@@ -206,7 +219,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection }: HistoryC
 }
 
 export function HistoryPage() {
-  const { currentTenant, myRole, isOwner } = useTenant();
+  const { currentTenant, myRole, isOwner, tenants } = useTenant();
   const tenantId = currentTenant!.id;
   const { currentStore } = useStoreContext();
   const { user } = useAuth();
@@ -218,7 +231,17 @@ export function HistoryPage() {
 
   const { members, fetchMembers } = useTenantAdmin(tenantId);
   const { fetchRecords, monthlyRecords, monthlySummary, loading } = useAttendanceViewer(tenantId, currentStore?.id ?? null, effectiveUserId);
+  const { requests: correctionRequests, fetchRequests: fetchCorrectionRequests } = useCorrection(tenantId);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    void fetchCorrectionRequests();
+  }, [fetchCorrectionRequests]);
+
+  // 自分の表示時のみ自分の修正申請ドットを出す（他メンバー閲覧時は出さない）
+  const ownCorrectionRequests = effectiveUserId === myUserId
+    ? correctionRequests.filter(r => r.user_id === myUserId)
+    : [];
 
   useEffect(() => {
     if (canSwitchUser && currentStore?.id) {
@@ -249,6 +272,27 @@ export function HistoryPage() {
 
   function handleNextMonth() {
     setCurrentDate(prev => addMonths(prev, 1));
+  }
+
+  const formatHM = (t: string | null) => t ? new Date(t).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+
+  function handleDownloadCsv() {
+    const headers = ['日付', '出勤', '退勤', '休憩(分)', '実働(分)', '深夜(分)', '備考'];
+    const rows: CsvRow[] = monthlyRecords.map(r => [
+      r.date,
+      formatHM(r.clock_in),
+      formatHM(r.clock_out),
+      (r.breaks ?? []).reduce((sum, b) => sum + (b.start_time && b.end_time ? Math.max(0, Math.round((new Date(b.end_time).getTime() - new Date(b.start_time).getTime()) / 60000)) : 0), 0),
+      r.total_work_minutes ?? 0,
+      0,
+      r.note ?? ''
+    ]);
+    const csv = buildCsv(headers, rows);
+    const yyyyMm = format(currentDate, 'yyyy-MM');
+    const displayName = effectiveUserId === myUserId
+      ? tenants.find(t => t.id === tenantId)?.display_name ?? 'member'
+      : members.find(m => m.user_id === effectiveUserId)?.display_name ?? 'member';
+    downloadCsv(`kintai_${yyyyMm}_${displayName}.csv`, csv);
   }
 
   function handleRequestCorrection(date: string, record?: AttendanceRecord) {
@@ -315,6 +359,7 @@ export function HistoryPage() {
                 今月へ
               </Button>
             )}
+            <button onClick={handleDownloadCsv} className="px-3 py-1.5 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">CSV ダウンロード</button>
           </div>
           <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
         </div>
@@ -398,6 +443,7 @@ export function HistoryPage() {
                 month={month}
                 onRequestCorrection={handleCorrection}
                 onRequestDeletion={handleDeletion}
+                correctionRequests={ownCorrectionRequests}
               />
             </Card>
           )
@@ -408,6 +454,7 @@ export function HistoryPage() {
               month={month}
               records={monthlyRecords}
               onRequestCorrection={handleCorrection}
+              correctionRequests={ownCorrectionRequests}
             />
             {showEmpty && (
               <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 py-2">
