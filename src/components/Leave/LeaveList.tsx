@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 interface LeaveListProps {
   leaves: LeaveRequest[];
   memberNames?: Map<string, string>;
+  storeNames?: Map<string, string>;
   canManageTenant: boolean;
   onApprove: (leaveId: string) => Promise<void>;
   onReject: (leaveId: string) => Promise<void>;
@@ -38,7 +39,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   cancelled: { label: '取消', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400' },
 };
 
-export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onReject, onCancel, onRefresh }: LeaveListProps) {
+export function LeaveList({ leaves, memberNames, storeNames, canManageTenant, onApprove, onReject, onCancel, onRefresh }: LeaveListProps) {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -93,6 +94,11 @@ export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onR
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge.className}`}>
                       {statusBadge.label}
                     </span>
+                    {leave.store_id && storeNames?.get(leave.store_id) && (
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300">
+                        {storeNames.get(leave.store_id)}
+                      </span>
+                    )}
                   </div>
 
                   {/* 2段目 */}
@@ -165,6 +171,11 @@ export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onR
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge.className}`}>
                         {statusBadge.label}
                       </span>
+                      {leave.store_id && storeNames?.get(leave.store_id) && (
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300">
+                          {storeNames.get(leave.store_id)}
+                        </span>
+                      )}
                     </div>
                     <span className="text-xs text-neutral-500 dark:text-neutral-400">{leave.date}</span>
                   </div>

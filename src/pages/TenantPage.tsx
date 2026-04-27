@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useTenant } from '../hooks/useTenant';
 import TenantSelector from '../components/Tenant/TenantSelector';
 import CreateTenant from '../components/Tenant/CreateTenant';
@@ -13,30 +13,33 @@ type PageState = 'select' | 'create' | 'join';
 const TenantPage: React.FC = () => {
   const [pageState, setPageState] = useState<PageState>('select');
   const navigate = useNavigate();
+  const location = useLocation();
   const { tenants, currentTenant, setCurrentTenant, fetchTenants, createTenant, joinTenant, loading, error } = useTenant();
 
-  // テナント選択済みなら即ダッシュボードへ
+  const returnTo = (location.state as { from?: string } | null)?.from ?? '/';
+
+  // テナント選択済みなら即ダッシュボードへ（または復帰先 URL へ）
   if (currentTenant) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={returnTo} replace />;
   }
 
   const handleSelect = (tenant: TenantWithRole) => {
     setCurrentTenant(tenant);
-    navigate('/', { replace: true });
+    navigate(returnTo, { replace: true });
   };
 
   const handleTenantCreated = async (tenant: Tenant) => {
     const fetched = await fetchTenants();
     const found = fetched.find(t => t.id === tenant.id);
     setCurrentTenant(found || tenant);
-    navigate('/', { replace: true });
+    navigate(returnTo, { replace: true });
   };
 
   const handleTenantJoined = async (tenant: Tenant) => {
     const fetched = await fetchTenants();
     const found = fetched.find(t => t.id === tenant.id);
     setCurrentTenant(found || tenant);
-    navigate('/', { replace: true });
+    navigate(returnTo, { replace: true });
   };
 
   if (loading && pageState === 'select' && tenants.length === 0) {

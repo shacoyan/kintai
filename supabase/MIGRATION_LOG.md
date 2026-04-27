@@ -35,3 +35,9 @@
 | # | ファイル | 内容 | 適用日 |
 |---|---------|------|--------|
 | 024 | `024_payroll_finalization.sql` | tenants.payroll_close_day 追加 / payroll_runs / payroll_run_items テーブル作成 + RLS（owner/manager INSERT・DELETE / 全テナントメンバー SELECT） + インデックス | 2026-04-27 |
+
+--- Loop 11a (Engineer C) ---
+
+| # | ファイル | 内容 | 適用日 |
+|---|---------|------|--------|
+| 027 | `027_correction_leave_store_id.sql` | correction_requests / leave_requests に `store_id UUID NULL REFERENCES stores(id) ON DELETE SET NULL` カラム追加 + idx_*_store_id インデックス。RLS は tenant_id ベースを維持 (表示用補足) | 2026-04-27 |

@@ -102,8 +102,23 @@ export function useAttendance(tenantId: string, storeId: string | null) {
     }
   }, [tenantId, storeId, today]);
 
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  const cleanupChannel = useCallback(() => {
+    const ch = channelRef.current;
+    if (ch) {
+      supabase.removeChannel(ch);
+      channelRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
-    if (!storeId) return;
+    if (!storeId) {
+      cleanupChannel();
+      return;
+    }
+    cleanupChannel(); // 念のため新規作成前に必ず破棄
+
     const channel = supabase
       .channel(`attendance:${tenantId}:${storeId}:${today}`)
       .on(
@@ -132,10 +147,12 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         }
       )
       .subscribe();
+
+    channelRef.current = channel;
     return () => {
-      supabase.removeChannel(channel);
+      cleanupChannel();
     };
-  }, [tenantId, storeId, today, fetchTodayRecords]);
+  }, [tenantId, storeId, today, fetchTodayRecords, cleanupChannel]);
 
   useEffect(() => {
     fetchTodayRecords();

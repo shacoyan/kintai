@@ -115,6 +115,7 @@ export function ShiftPage() {
   }, [allPreferences]);
 
   const adminListStores = useMemo(() => isOwner ? stores : stores.filter(s => isManagerOf(s.id)), [isOwner, stores, isManagerOf]);
+  const storeNames = useMemo(() => new Map(stores.map(s => [s.id, s.name])), [stores]);
 
   const timedPreferences = useMemo(
     () =>
@@ -202,7 +203,7 @@ export function ShiftPage() {
     leaveType: 'paid' | 'half_am' | 'half_pm' | 'absence' | 'other',
     reason?: string,
   ) => {
-    const result = await submitLeave(dates, leaveType, reason);
+    const result = await submitLeave(dates, leaveType, reason, currentStore?.id ?? null);
     if (result.failedDates.length > 0) {
       const msg = result.successCount > 0
         ? `${result.successCount}件 申請しました。${result.failedDates.length}件 失敗（${result.failedDates.join(', ')}）`
@@ -888,6 +889,7 @@ export function ShiftPage() {
           <LeaveList
             leaves={leaves}
             memberNames={canManageTenant ? memberNames : undefined}
+            storeNames={storeNames}
             canManageTenant={canManageTenant}
             onApprove={handleApproveLeaveWrapped}
             onReject={async (leaveId) => { setRejectingLeaveId(leaveId); }}

@@ -131,7 +131,8 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   }, [isPC]);
 
   const { currentTenant, isOwner, myRole, regenerateInviteCode } = useTenant();
-  const { currentStore } = useStoreContext();
+  const { currentStore, stores } = useStoreContext();
+  const storeNames = useMemo(() => new Map(stores.map(s => [s.id, s.name])), [stores]);
   const { showToast } = useToast();
   const canEditDeadline = isOwner || myRole === 'manager';
   // === Loop 7 (Engineer A) ===
@@ -449,7 +450,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               {correctionLoading ? (
                 <PageSkeleton />
               ) : (
-                <CorrectionList requests={pendingRequests} onReview={handleReview} />
+                <CorrectionList requests={pendingRequests} onReview={handleReview} storeNames={storeNames} />
               )}
             </Card>
 
@@ -458,7 +459,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
                   <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">修正申請履歴</h2>
                 </div>
-                <CorrectionList requests={processedRequests} />
+                <CorrectionList requests={processedRequests} storeNames={storeNames} />
               </Card>
             )}
           </div>
@@ -471,6 +472,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <LeaveList
                 leaves={allLeaves}
                 memberNames={leaveMemberNames}
+                storeNames={storeNames}
                 canManageTenant={true}
                 onApprove={handleApproveLeave}
                 onReject={async (leaveId) => { setRejectingLeaveId(leaveId); }}

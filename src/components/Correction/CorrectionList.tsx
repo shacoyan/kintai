@@ -127,7 +127,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
           const typeCfg = typeConfig[requestType];
           const statusTone = statusToTone(request.status);
           const typeTone = typeToTone(requestType);
-          const storeId = (request as any).attendance_records?.store_id ?? null;
+          const storeId = request.store_id ?? (request as any).attendance_records?.store_id ?? null;
           const storeName = storeId ? storeNames?.get(storeId) : null;
           return (
             <div key={request.id} className="px-4 py-4 space-y-2">
@@ -201,7 +201,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
               const typeCfg = typeConfig[requestType];
               const statusTone = statusToTone(request.status);
               const typeTone = typeToTone(requestType);
-              const storeId = (request as any).attendance_records?.store_id ?? null;
+              const storeId = request.store_id ?? (request as any).attendance_records?.store_id ?? null;
               const storeName = storeId ? storeNames?.get(storeId) : null;
               return (
                 <tr key={request.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">

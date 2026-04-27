@@ -27,6 +27,7 @@ export function useCorrection(tenantId: string) {
 
   const submitRequest = async (data: {
     date: string;
+    store_id?: string;
     attendance_record_id?: string;
     requested_clock_in?: string;
     requested_clock_out?: string;
@@ -48,6 +49,10 @@ export function useCorrection(tenantId: string) {
 
     if (data.request_type) {
       insertPayload.request_type = data.request_type;
+    }
+
+    if (data.store_id) {
+      insertPayload.store_id = data.store_id;
     }
 
     if (data.attendance_record_id) {

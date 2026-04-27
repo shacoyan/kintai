@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useTenant } from '../hooks/useTenant';
+import { useAuth } from '../hooks/useAuth';
+import { useTenantAdmin } from '../hooks/useTenantAdmin';
+import { useAttendanceViewer } from '../hooks/useAttendanceViewer';
 import { useStoreContext } from '../contexts/StoreContext';
-import { useAttendance } from '../hooks/useAttendance';
 import { useToast } from '../contexts/ToastContext';
 import { DailyList } from '../components/Attendance/DailyList';
 import { MonthlySummary } from '../components/Attendance/MonthlySummary';
@@ -175,12 +177,14 @@ function HistoryCalendar({ year, month, records, onRequestCorrection }: HistoryC
                     {record?.clock_out && <p>退勤: {format(parseISO(record.clock_out), 'HH:mm')}</p>}
                     {record && workMins > 0 && <p>勤務時間: {formatWorkHours(workMins)}</p>}
                     {!record && <p className="text-neutral-500 dark:text-neutral-400">記録なし</p>}
-                    <div className="pt-1">
-                      <button onClick={(e) => { e.stopPropagation(); onRequestCorrection?.(dateKey, record ?? undefined); }}
-                        className="text-xs text-primary-700 dark:text-primary-300 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
-                        この日を修正申請する
-                      </button>
-                    </div>
+                    {onRequestCorrection && (
+                      <div className="pt-1">
+                        <button onClick={(e) => { e.stopPropagation(); onRequestCorrection?.(dateKey, record ?? undefined); }}
+                          className="text-xs text-primary-700 dark:text-primary-300 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                          この日を修正申請する
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -202,11 +206,25 @@ function HistoryCalendar({ year, month, records, onRequestCorrection }: HistoryC
 }
 
 export function HistoryPage() {
-  const { currentTenant } = useTenant();
+  const { currentTenant, myRole, isOwner } = useTenant();
   const tenantId = currentTenant!.id;
   const { currentStore } = useStoreContext();
-  const { fetchRecords, monthlyRecords, monthlySummary, loading } = useAttendance(tenantId, currentStore?.id ?? null);
+  const { user } = useAuth();
+  
+  const myUserId = user?.id ?? null;
+  const canSwitchUser = isOwner || myRole === 'manager';
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const effectiveUserId = selectedUserId ?? myUserId;
+
+  const { members, fetchMembers } = useTenantAdmin(tenantId);
+  const { fetchRecords, monthlyRecords, monthlySummary, loading } = useAttendanceViewer(tenantId, currentStore?.id ?? null, effectiveUserId);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (canSwitchUser && currentStore?.id) {
+      fetchMembers(currentStore.id);
+    }
+  }, [canSwitchUser, currentStore?.id, fetchMembers]);
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -223,7 +241,7 @@ export function HistoryPage() {
     if (tenantId) {
       fetchRecords(year, month);
     }
-  }, [year, month, tenantId, fetchRecords]);
+  }, [year, month, tenantId, effectiveUserId, fetchRecords]);
 
   function handlePrevMonth() {
     setCurrentDate(prev => subMonths(prev, 1));
@@ -265,6 +283,9 @@ export function HistoryPage() {
 
   const hasRecords = monthlyRecords.length > 0;
   const showEmpty = !loading && !hasRecords && currentStore != null;
+  
+  const handleCorrection = effectiveUserId === myUserId ? handleRequestCorrection : undefined;
+  const handleDeletion = effectiveUserId === myUserId ? handleRequestDeletion : undefined;
 
   const isCurrentMonthShown = (() => {
     const now = new Date();
@@ -322,6 +343,19 @@ export function HistoryPage() {
             </button>
           </div>
         </div>
+
+        {canSwitchUser && currentStore != null && (
+          <div className="flex items-center gap-2 pt-2 justify-center">
+            <label className="text-sm text-neutral-500 dark:text-neutral-400">対象メンバー:</label>
+            <select value={effectiveUserId ?? ''} onChange={(e) => setSelectedUserId(e.target.value || null)}
+              className="px-2 py-1 text-sm border rounded bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100">
+              {myUserId && <option value={myUserId}>自分</option>}
+              {members.filter(m => m.user_id !== myUserId).map(m => (
+                <option key={m.user_id} value={m.user_id}>{m.display_name}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </Card>
 
       <MonthlySummary summary={monthlySummary} />
@@ -362,8 +396,8 @@ export function HistoryPage() {
                 records={monthlyRecords}
                 year={year}
                 month={month}
-                onRequestCorrection={handleRequestCorrection}
-                onRequestDeletion={handleRequestDeletion}
+                onRequestCorrection={handleCorrection}
+                onRequestDeletion={handleDeletion}
               />
             </Card>
           )
@@ -373,7 +407,7 @@ export function HistoryPage() {
               year={year}
               month={month}
               records={monthlyRecords}
-              onRequestCorrection={handleRequestCorrection}
+              onRequestCorrection={handleCorrection}
             />
             {showEmpty && (
               <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 py-2">

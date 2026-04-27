@@ -53,7 +53,7 @@ export function useLeave(tenantId: string) {
     }
   }, [tenantId]);
 
-  const submitLeave = useCallback(async (dates: string[], leaveType: LeaveType, reason?: string): Promise<{ successCount: number; failedDates: string[]; rolledBackCount: number }> => {
+  const submitLeave = useCallback(async (dates: string[], leaveType: LeaveType, reason?: string, storeId?: string | null): Promise<{ successCount: number; failedDates: string[]; rolledBackCount: number }> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
@@ -67,6 +67,7 @@ export function useLeave(tenantId: string) {
             date,
             leave_type: leaveType,
             reason: reason || null,
+            store_id: storeId ?? null,
           })
       )
     );

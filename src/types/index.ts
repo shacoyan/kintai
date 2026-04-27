@@ -87,6 +87,7 @@ export interface LeaveRequest {
   reviewed_at: string | null;
   review_note?: string | null;
   created_at: string;
+  store_id: string | null;
 }
 
 export interface ShiftPreset {
@@ -114,6 +115,7 @@ export interface CorrectionRequest {
   reviewed_by: string | null;
   reviewed_at: string | null;
   created_at: string;
+  store_id: string | null;
 }
 
 export interface Store {

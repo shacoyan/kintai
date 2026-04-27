@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useCorrection } from '../../hooks/useCorrection';
+import { useStoreContext } from '../../contexts/StoreContext';
 import { format, parseISO } from 'date-fns';
 import { BottomSheet } from '../ui/BottomSheet';
 import { ErrorBanner } from '../ui/ErrorBanner';
@@ -34,6 +35,7 @@ export function CorrectionForm({
   storeName,
 }: CorrectionFormProps) {
   const { submitRequest } = useCorrection(tenantId);
+  const { currentStore } = useStoreContext();
 
   const toTimeValue = (iso: string | undefined) => {
     if (!iso) return '';
@@ -128,6 +130,7 @@ export function CorrectionForm({
         requested_clock_out: clockOut,
         reason: reason.trim(),
         request_type: mode,
+        store_id: currentStore?.id,
       });
       onClose();
     } catch (err) {

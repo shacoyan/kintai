@@ -9,8 +9,8 @@ interface DailyListProps {
   records: AttendanceRecord[];
   year: number;
   month: number;
-  onRequestCorrection: (date: string, record?: AttendanceRecord) => void;
-  onRequestDeletion: (date: string, record: AttendanceRecord) => void;
+  onRequestCorrection?: (date: string, record?: AttendanceRecord) => void;
+  onRequestDeletion?: (date: string, record: AttendanceRecord) => void;
 }
 
 export function DailyList({ records, year, month, onRequestCorrection, onRequestDeletion }: DailyListProps) {
@@ -81,10 +81,12 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                     {format(day, 'M/d(E)', { locale: ja })}
                   </span>
                   <span className="text-xs text-neutral-400 dark:text-neutral-500 tabular-nums">記録なし</span>
-                  <button onClick={() => onRequestCorrection(dateStr)}
-                    className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
-                    修正申請
-                  </button>
+                  {onRequestCorrection && (
+                    <button onClick={() => onRequestCorrection(dateStr)}
+                      className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
+                      修正申請
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -107,14 +109,18 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                   <span>労働 {formatMinutes(record.total_work_minutes) || '--'}</span>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => onRequestCorrection(dateStr, record)}
-                    className="flex-1 px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
-                    修正申請
-                  </button>
-                  <button onClick={() => onRequestDeletion(dateStr, record)}
-                    className="flex-1 px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
-                    削除依頼
-                  </button>
+                  {onRequestCorrection && (
+                    <button onClick={() => onRequestCorrection(dateStr, record)}
+                      className="flex-1 px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
+                      修正申請
+                    </button>
+                  )}
+                  {onRequestDeletion && (
+                    <button onClick={() => onRequestDeletion(dateStr, record)}
+                      className="flex-1 px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
+                      削除依頼
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -158,12 +164,14 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                     <td className="px-3 py-2 text-neutral-300 dark:text-neutral-600">--:--</td>
                     <td className="px-3 py-2 text-neutral-300 dark:text-neutral-600">--:--</td>
                     <td className="px-3 py-2">
-                      <button
-                        onClick={() => onRequestCorrection(dateStr)}
-                        className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
-                      >
-                        修正申請
-                      </button>
+                      {onRequestCorrection && (
+                        <button
+                          onClick={() => onRequestCorrection(dateStr)}
+                          className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                        >
+                          修正申請
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -193,18 +201,22 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                       {formatMinutes(record.total_work_minutes) || <span className="text-neutral-300 dark:text-neutral-600">--:--</span>}
                     </td>
                     <td className="px-3 py-2 space-x-1">
-                      <button
-                        onClick={() => onRequestCorrection(dateStr, record)}
-                        className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
-                      >
-                        修正申請
-                      </button>
-                      <button
-                        onClick={() => onRequestDeletion(dateStr, record)}
-                        className="px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
-                      >
-                        削除依頼
-                      </button>
+                      {onRequestCorrection && (
+                        <button
+                          onClick={() => onRequestCorrection(dateStr, record)}
+                          className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                        >
+                          修正申請
+                        </button>
+                      )}
+                      {onRequestDeletion && (
+                        <button
+                          onClick={() => onRequestDeletion(dateStr, record)}
+                          className="px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                        >
+                          削除依頼
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
