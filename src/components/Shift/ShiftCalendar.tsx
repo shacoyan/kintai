@@ -67,6 +67,15 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [baseDate, setBaseDate] = useState(() => new Date());
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 639px)');
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+    handleChange(mql);
+    mql.addEventListener('change', handleChange);
+    return () => mql.removeEventListener('change', handleChange);
+  }, []);
 
   useEffect(() => { onViewMonthChange?.(baseDate); }, [baseDate, onViewMonthChange]);
 
@@ -217,7 +226,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
           <>
             {(() => {
               const entries = [...userColorMap.entries()];
-              const displayEntries = isExpanded ? entries : entries.slice(0, 5);
+              const displayEntries = isExpanded ? entries : entries.slice(0, isMobile ? 3 : 5);
               return displayEntries.map(([uid, colorClass]) => {
                 const bgClass = colorClass.split(' ')[0];
                 return (
@@ -228,12 +237,12 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                 );
               });
             })()}
-            {userColorMap.size > 5 && (
+            {userColorMap.size > (isMobile ? 3 : 5) && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="text-primary-600 dark:text-primary-400 font-medium hover:underline focus:outline-none"
               >
-                {isExpanded ? '閉じる' : `…(+${userColorMap.size - 5})`}
+                {isExpanded ? '閉じる' : `…(+${userColorMap.size - (isMobile ? 3 : 5)})`}
               </button>
             )}
           </>
@@ -338,7 +347,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                             onShiftClick?.(s);
                           }
                         }}
-                        className={`text-[10px] leading-tight px-1 py-0.5 rounded border truncate cursor-pointer hover:opacity-80 transition ${colorClass}`}
+                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border truncate cursor-pointer hover:opacity-80 transition ${colorClass}`}
                       >
                         {memberNames ? (
                           <span title={memberNames.get(s.user_id) ?? ''}>

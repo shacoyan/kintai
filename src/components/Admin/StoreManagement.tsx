@@ -35,6 +35,9 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
   const [togglingMember, setTogglingMember] = useState<string | null>(null);
   const [confirmDeleteStore, setConfirmDeleteStore] = useState<Store | null>(null);
   const [togglingManagerId, setTogglingManagerId] = useState<string | null>(null);
+  const [isLargeScreen, setIsLargeScreen] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : true
+  );
 
   useEffect(() => {
     fetchStores();
@@ -46,6 +49,14 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
       fetchStoreMembers(selectedStore.id);
     }
   }, [selectedStore, fetchStoreMembers]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mql = window.matchMedia('(min-width: 1024px)');
+    const handler = (e: MediaQueryListEvent) => setIsLargeScreen(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
 
   const handleCreateStore = async () => {
     if (!newStoreName.trim()) return;
@@ -132,9 +143,85 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
     }
   };
 
+  let memberManagementContent: React.ReactNode = null;
+  if (selectedStore) {
+    if (allMembers.length === 0) {
+      memberManagementContent = (
+        <EmptyState title="テナントにメンバーがいません" description="先にメンバーをテナントに招待してください" />
+      );
+    } else {
+      memberManagementContent = (
+        <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
+          {allMembers.map((member) => {
+            const assigned = isMemberAssigned(member.id);
+            const toggling = togglingMember === member.id;
+            const is_manager = storeMembers.find(sm => sm.member_id === member.id)?.is_manager === true;
+            return (
+              <label
+                key={member.id}
+                className="flex items-center gap-3 px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={assigned}
+                  disabled={toggling}
+                  onChange={() => handleToggleMember(member.id)}
+                  className="h-4 w-4 text-primary-600 rounded border-neutral-300 dark:border-neutral-600 focus:ring-primary-500 cursor-pointer disabled:opacity-50"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{member.display_name}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    {member.role === 'owner' ? 'オーナー' : member.role === 'manager' ? '店長' : 'スタッフ'}
+                  </p>
+                </div>
+                {toggling && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 flex-shrink-0"></div>
+                )}
+                {!toggling && assigned && (
+                  <Badge tone="primary">
+                    所属中
+                  </Badge>
+                )}
+                {assigned === true && (
+                  <button
+                    role="switch"
+                    aria-checked={is_manager}
+                    aria-label={`${member.display_name} の店長権限`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleToggleStoreManager(member.id, !is_manager);
+                    }}
+                    disabled={!isOwner || togglingManagerId === member.id}
+                    className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                      is_manager
+                        ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300'
+                        : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400'
+                    }`}
+                    title={isOwner ? (is_manager ? '店長権限を外す' : '店長に任命') : 'オーナーのみ操作可能'}
+                  >
+                    {togglingManagerId === member.id ? '...' : (is_manager ? '店長' : '→店長')}
+                  </button>
+                )}
+              </label>
+            );
+          })}
+        </div>
+      );
+    }
+  } else {
+    memberManagementContent = (
+      <EmptyState 
+        icon={<StoreIcon className="w-12 h-12 text-slate-400" />} 
+        title="店舗を選択してください" 
+        description="左の一覧から店舗を選ぶとメンバー管理ができます" 
+      />
+    );
+  }
+
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="lg:grid lg:grid-cols-2 lg:gap-6">
         {/* 左側: 店舗一覧 + 作成フォーム */}
         <Card padding="none">
           <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
@@ -180,7 +267,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                   onClick={() => setSelectedStore(store)}
                 >
                   {editingStoreId === store.id ? (
-                    <div className="flex-1 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex-1 flex flex-col sm:flex-row sm:items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="text"
                         value={editingName}
@@ -192,21 +279,23 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                         autoFocus
                         className="flex-1 px-2 py-1 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                       />
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleSaveEdit(store.id)}
-                        disabled={savingEdit || !editingName.trim()}
-                      >
-                        {savingEdit ? '保存中' : '保存'}
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setEditingStoreId(null)}
-                      >
-                        キャンセル
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleSaveEdit(store.id)}
+                          disabled={savingEdit || !editingName.trim()}
+                        >
+                          {savingEdit ? '保存中' : '保存'}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setEditingStoreId(null)}
+                        >
+                          キャンセル
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <>
@@ -236,86 +325,31 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
         </Card>
 
         {/* 右側: メンバー管理 */}
-        <Card padding="none">
-          <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              {selectedStore ? `${selectedStore.name} のメンバー` : 'メンバー管理'}
-            </h2>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              {selectedStore
-                ? 'チェックを入れるとこの店舗に所属します'
-                : '左の一覧から店舗を選択してください'}
-            </p>
-          </div>
-
-          {!selectedStore ? (
-            <EmptyState 
-              icon={<StoreIcon className="w-12 h-12 text-slate-400" />} 
-              title="店舗を選択してください" 
-              description="左の一覧から店舗を選ぶとメンバー管理ができます" 
-            />
-          ) : allMembers.length === 0 ? (
-            <EmptyState title="テナントにメンバーがいません" description="先にメンバーをテナントに招待してください" />
-          ) : (
-            <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
-              {allMembers.map((member) => {
-                const assigned = isMemberAssigned(member.id);
-                const toggling = togglingMember === member.id;
-                const is_manager = storeMembers.find(sm => sm.member_id === member.id)?.is_manager === true;
-                return (
-                  <label
-                    key={member.id}
-                    className="flex items-center gap-3 px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer transition-colors"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={assigned}
-                      disabled={toggling}
-                      onChange={() => handleToggleMember(member.id)}
-                      className="h-4 w-4 text-primary-600 rounded border-neutral-300 dark:border-neutral-600 focus:ring-primary-500 cursor-pointer disabled:opacity-50"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{member.display_name}</p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        {member.role === 'owner' ? 'オーナー' : member.role === 'manager' ? '店長' : 'スタッフ'}
-                      </p>
-                    </div>
-                    {toggling && (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 flex-shrink-0"></div>
-                    )}
-                    {!toggling && assigned && (
-                      <Badge tone="primary">
-                        所属中
-                      </Badge>
-                    )}
-                    {assigned === true && (
-                      <button
-                        role="switch"
-                        aria-checked={is_manager}
-                        aria-label={`${member.display_name} の店長権限`}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleToggleStoreManager(member.id, !is_manager);
-                        }}
-                        disabled={!isOwner || togglingManagerId === member.id}
-                        className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                          is_manager
-                            ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300'
-                            : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400'
-                        }`}
-                        title={isOwner ? (is_manager ? '店長権限を外す' : '店長に任命') : 'オーナーのみ操作可能'}
-                      >
-                        {togglingManagerId === member.id ? '...' : (is_manager ? '店長' : '→店長')}
-                      </button>
-                    )}
-                  </label>
-                );
-              })}
+        <div className="hidden lg:block">
+          <Card padding="none">
+            <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                {selectedStore ? `${selectedStore.name} のメンバー` : 'メンバー管理'}
+              </h2>
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                {selectedStore
+                  ? 'チェックを入れるとこの店舗に所属します'
+                  : '左の一覧から店舗を選択してください'}
+              </p>
             </div>
-          )}
-        </Card>
+            {memberManagementContent}
+          </Card>
+        </div>
       </div>
+
+      {/* SP: メンバー管理 BottomSheet */}
+      <BottomSheet
+        isOpen={!!selectedStore && !isLargeScreen}
+        onClose={() => setSelectedStore(null)}
+        title={selectedStore ? `${selectedStore.name} のメンバー` : ''}
+      >
+        {memberManagementContent}
+      </BottomSheet>
 
       <BottomSheet
         isOpen={!!confirmDeleteStore}

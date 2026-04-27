@@ -284,7 +284,7 @@ export function HistoryPage() {
       
       <Card padding="md">
         <div className="flex items-center justify-between gap-2">
-          <Button variant="tertiary" size="sm" iconLeft={<ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handlePrevMonth} aria-label="前月">
+          <Button variant="tertiary" size="md" iconLeft={<ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handlePrevMonth} aria-label="前月">
             <span className="sr-only">前月</span>
           </Button>
           <div className="flex items-center gap-2">
@@ -297,7 +297,7 @@ export function HistoryPage() {
               </Button>
             )}
           </div>
-          <Button variant="tertiary" size="sm" iconLeft={<ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handleNextMonth} aria-label="翌月">
+          <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handleNextMonth} aria-label="翌月">
             <span className="sr-only">翌月</span>
           </Button>
         </div>

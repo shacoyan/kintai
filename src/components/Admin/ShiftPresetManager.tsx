@@ -118,8 +118,8 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
       </div>
 
       <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex-1 min-w-[120px]">
+        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
+          <div className="w-full md:flex-1 md:min-w-[120px]">
             <Input
               label="プリセット名"
               type="text"
@@ -128,23 +128,25 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
               placeholder="例: 早番"
             />
           </div>
-          <div>
-            <Select
-              label="開始"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              options={TIME_OPTION_OBJECTS}
-            />
+          <div className="grid grid-cols-2 gap-3 md:contents">
+            <div>
+              <Select
+                label="開始"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                options={TIME_OPTION_OBJECTS}
+              />
+            </div>
+            <div>
+              <Select
+                label="終了"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                options={TIME_OPTION_OBJECTS}
+              />
+            </div>
           </div>
-          <div>
-            <Select
-              label="終了"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              options={TIME_OPTION_OBJECTS}
-            />
-          </div>
-          <div>
+          <div className="w-full md:w-auto">
             <Select
               label="適用範囲"
               value={storeId == null ? 'tenant' : scope}
@@ -162,6 +164,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
             onClick={handleAdd}
             disabled={saving || !name.trim()}
             loading={saving}
+            className="w-full md:w-auto"
           >
             追加
           </Button>

@@ -342,7 +342,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">招待コード（メンバーに共有してください）</p>
-                      <p className="text-2xl font-mono font-bold tracking-widest text-neutral-900 dark:text-neutral-100">
+                      <p className="text-xl sm:text-2xl font-mono font-bold tracking-wide break-all text-neutral-900 dark:text-neutral-100">
                         {currentTenant.invite_code}
                       </p>
                     </div>
@@ -542,14 +542,14 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
     <div className="space-y-6">
       {/* Mobile tabs - horizontal scroll */}
       <div className="md:hidden border-b border-neutral-200 dark:border-neutral-700 overflow-x-auto -mx-4 px-4">
-        <nav role="tablist" className="flex space-x-4 min-w-max" style={{ scrollSnapType: 'x mandatory' }}>
+        <nav role="tablist" className="flex space-x-1 min-w-max" style={{ scrollSnapType: 'x mandatory' }}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
               role="tab"
               aria-selected={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition ${
+              className={`whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm transition ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
                   : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-400 dark:hover:text-neutral-200'

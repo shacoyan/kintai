@@ -82,10 +82,11 @@ export function StoreSelector() {
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        className="flex items-center gap-2 min-h-9 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium border border-slate-300 dark:border-slate-700 rounded-md px-3 py-1 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+        title={currentStore?.name || '店舗を選択'}
+        className="flex items-center gap-2 max-w-[160px] min-h-9 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium border border-slate-300 dark:border-slate-700 rounded-md px-3 py-1 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
       >
         <Store className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-        <span>{currentStore?.name || '店舗を選択'}</span>
+        <span className="truncate">{currentStore?.name || '店舗を選択'}</span>
         <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
         {currentStore && getRoleBadge(currentStore.id)}
       </button>

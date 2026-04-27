@@ -114,7 +114,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       .eq('status', 'approved')
       .gte('date', startDate)
       .lte('date', endDate);
-      
+    
     if (currentStore?.id) {
       query = query.eq('store_id', currentStore.id);
     }
@@ -288,42 +288,44 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4">
         <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4">月次勤怠カレンダー</h3>
         <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">対象店舗: {currentStore?.name ?? '全店舗'}</p>
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">年</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
-            >
-              {yearOptions.map((y) => (
-                <option key={y} value={y}>{y}年</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">月</label>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
-            >
-              {monthOptions.map((m) => (
-                <option key={m} value={m}>{m}月</option>
-              ))}
-            </select>
+        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
+          <div className="grid grid-cols-2 gap-3 md:contents">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">年</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+              >
+                {yearOptions.map((y) => (
+                  <option key={y} value={y}>{y}年</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">月</label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+              >
+                {monthOptions.map((m) => (
+                  <option key={m} value={m}>{m}月</option>
+                ))}
+              </select>
+            </div>
           </div>
           <button
             onClick={handleLoad}
             disabled={loading}
-            className="bg-primary-600 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="w-full md:w-auto bg-primary-600 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
             {loading ? '読込中...' : '表示'}
           </button>
         </div>
 
         {/* 凡例 */}
-        <div className="mt-3 flex flex-wrap gap-4 text-xs text-neutral-600 dark:text-neutral-400">
+        <div className="mt-3 flex flex-wrap gap-3 text-[11px] md:text-xs text-neutral-600 dark:text-neutral-400">
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700" />
             出勤（〜8h）
@@ -351,7 +353,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
               <thead>
                 <tr className="bg-neutral-50 dark:bg-neutral-700">
                   <th
-                    className="sticky left-0 z-10 bg-neutral-50 dark:bg-neutral-700 border-b border-r border-neutral-200 dark:border-neutral-600 px-3 py-2 text-left font-medium text-neutral-600 dark:text-neutral-300 whitespace-nowrap"
+                    className="sticky left-0 top-0 z-20 bg-neutral-50 dark:bg-neutral-700 border-b border-r border-neutral-200 dark:border-neutral-600 px-3 py-2 text-left font-medium text-neutral-600 dark:text-neutral-300 whitespace-nowrap"
                     style={{ minWidth: '100px' }}
                   >
                     スタッフ
@@ -362,10 +364,10 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                     return (
                       <th
                         key={day}
-                        className={`border-b border-r border-neutral-200 dark:border-neutral-600 py-1 font-medium text-center whitespace-nowrap ${
+                        className={`sticky top-0 z-[5] border-b border-r border-neutral-200 dark:border-neutral-600 py-1 font-medium text-center whitespace-nowrap ${
                           weekend
                             ? 'text-danger-500 dark:text-danger-400 bg-rose-50/50 dark:bg-rose-900/10'
-                            : 'text-neutral-600 dark:text-neutral-300'
+                            : 'text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-700'
                         }`}
                         style={{ minWidth: '48px', width: '48px' }}
                       >
@@ -374,10 +376,10 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                       </th>
                     );
                   })}
-                  <th className="border-b border-r border-neutral-200 dark:border-neutral-600 px-2 py-2 font-medium text-center text-neutral-600 dark:text-neutral-300 whitespace-nowrap">
+                  <th className="sticky top-0 z-[5] border-b border-r border-neutral-200 dark:border-neutral-600 px-2 py-2 font-medium text-center text-neutral-600 dark:text-neutral-300 whitespace-nowrap bg-neutral-50 dark:bg-neutral-700">
                     出勤日
                   </th>
-                  <th className="border-b border-neutral-200 dark:border-neutral-600 px-2 py-2 font-medium text-center text-neutral-600 dark:text-neutral-300 whitespace-nowrap">
+                  <th className="sticky top-0 z-[5] border-b border-neutral-200 dark:border-neutral-600 px-2 py-2 font-medium text-center text-neutral-600 dark:text-neutral-300 whitespace-nowrap bg-neutral-50 dark:bg-neutral-700">
                     合計
                   </th>
                 </tr>
@@ -437,7 +439,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                               ${cellBg}
                               ${isSelected ? 'ring-2 ring-inset ring-primary-500' : 'hover:ring-1 hover:ring-inset hover:ring-primary-300'}
                             `}
-                            style={{ minWidth: '48px', width: '48px', height: '36px' }}
+                            style={{ minWidth: '48px', width: '48px', height: '44px' }}
                           >
                             {cellContent}
                           </td>

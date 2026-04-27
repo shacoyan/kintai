@@ -29,7 +29,7 @@ export function MonthlySummary({ summary }: MonthlySummaryProps) {
         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
           今月労働時間
         </h2>
-        <p className="text-4xl tabular-nums font-bold text-neutral-800 dark:text-neutral-200 mt-2">
+        <p className="text-3xl sm:text-4xl tabular-nums font-bold text-neutral-800 dark:text-neutral-200 mt-2">
           {formatMinutes(summary.totalWorkMinutes)}
         </p>
       </div>
@@ -44,7 +44,7 @@ export function MonthlySummary({ summary }: MonthlySummaryProps) {
               <Icon className="h-4 w-4 mr-1.5 text-neutral-400 dark:text-neutral-500" />
               {label}
             </div>
-            <span className="text-2xl font-bold tabular-nums text-neutral-800 dark:text-neutral-200">
+            <span className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-800 dark:text-neutral-200">
               {value}
             </span>
           </div>

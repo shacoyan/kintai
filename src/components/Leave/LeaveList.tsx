@@ -83,13 +83,10 @@ export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onR
 
             return (
               <div key={leave.id} className="px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
-                <div className="flex items-center justify-between mb-1">
+                {/* SP Block */}
+                <div className="md:hidden flex flex-col gap-1.5">
+                  {/* 1段目 */}
                   <div className="flex items-center gap-2">
-                    {memberNames && (
-                      <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                        {memberNames.get(leave.user_id) || '不明'}
-                      </span>
-                    )}
                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${typeColor}`}>
                       {LEAVE_TYPE_LABEL[leave.leave_type]}
                     </span>
@@ -97,50 +94,123 @@ export function LeaveList({ leaves, memberNames, canManageTenant, onApprove, onR
                       {statusBadge.label}
                     </span>
                   </div>
-                  <span className="text-xs text-neutral-500 dark:text-neutral-400">{leave.date}</span>
+
+                  {/* 2段目 */}
+                  <div className="flex items-center justify-between">
+                    {memberNames && (
+                      <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                        {memberNames.get(leave.user_id) || '不明'}
+                      </span>
+                    )}
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">{leave.date}</span>
+                  </div>
+
+                  {/* 3段目 */}
+                  {leave.reason && (
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{leave.reason}</p>
+                  )}
+
+                  {leave.status === 'rejected' && leave.review_note && (
+                    <p className="text-xs text-danger-600 dark:text-danger-400">却下理由: {leave.review_note}</p>
+                  )}
+
+                  {/* 4段目 */}
+                  {leave.status === 'pending' && (
+                    <div className="flex gap-1.5">
+                      {canManageTenant ? (
+                        <>
+                          <Button
+                            onClick={() => handleAction(() => onApprove(leave.id))}
+                            disabled={processing}
+                            variant="primary"
+                            className="h-auto min-h-[44px] px-2.5 py-1 text-xs"
+                          >
+                            承認
+                          </Button>
+                          <Button
+                            onClick={() => handleAction(() => onReject(leave.id))}
+                            disabled={processing}
+                            variant="danger"
+                            className="h-auto min-h-[44px] px-2.5 py-1 text-xs"
+                          >
+                            却下
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          onClick={() => handleAction(() => onCancel(leave.id))}
+                          disabled={processing}
+                          variant="tertiary"
+                          className="h-auto min-h-[44px] px-2.5 py-1 text-xs"
+                        >
+                          取り消し
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {leave.reason && (
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">{leave.reason}</p>
-                )}
-
-                {leave.status === 'rejected' && leave.review_note && (
-                  <p className="text-xs text-danger-600 dark:text-danger-400 mb-1">却下理由: {leave.review_note}</p>
-                )}
-
-                {leave.status === 'pending' && (
-                  <div className="flex gap-1.5 mt-1">
-                    {canManageTenant ? (
-                      <>
-                        <Button
-                          onClick={() => handleAction(() => onApprove(leave.id))}
-                          disabled={processing}
-                          variant="primary"
-                          className="h-auto px-2.5 py-1 text-xs"
-                        >
-                          承認
-                        </Button>
-                        <Button
-                          onClick={() => handleAction(() => onReject(leave.id))}
-                          disabled={processing}
-                          variant="danger"
-                          className="h-auto px-2.5 py-1 text-xs"
-                        >
-                          却下
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        onClick={() => handleAction(() => onCancel(leave.id))}
-                        disabled={processing}
-                        variant="tertiary"
-                        className="h-auto px-2.5 py-1 text-xs"
-                      >
-                        取り消し
-                      </Button>
-                    )}
+                {/* md+ Block */}
+                <div className="hidden md:block">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      {memberNames && (
+                        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          {memberNames.get(leave.user_id) || '不明'}
+                        </span>
+                      )}
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${typeColor}`}>
+                        {LEAVE_TYPE_LABEL[leave.leave_type]}
+                      </span>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge.className}`}>
+                        {statusBadge.label}
+                      </span>
+                    </div>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-400">{leave.date}</span>
                   </div>
-                )}
+
+                  {leave.reason && (
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">{leave.reason}</p>
+                  )}
+
+                  {leave.status === 'rejected' && leave.review_note && (
+                    <p className="text-xs text-danger-600 dark:text-danger-400 mb-1">却下理由: {leave.review_note}</p>
+                  )}
+
+                  {leave.status === 'pending' && (
+                    <div className="flex gap-1.5 mt-1">
+                      {canManageTenant ? (
+                        <>
+                          <Button
+                            onClick={() => handleAction(() => onApprove(leave.id))}
+                            disabled={processing}
+                            variant="primary"
+                            className="px-2.5 py-1 text-xs"
+                          >
+                            承認
+                          </Button>
+                          <Button
+                            onClick={() => handleAction(() => onReject(leave.id))}
+                            disabled={processing}
+                            variant="danger"
+                            className="px-2.5 py-1 text-xs"
+                          >
+                            却下
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          onClick={() => handleAction(() => onCancel(leave.id))}
+                          disabled={processing}
+                          variant="tertiary"
+                          className="px-2.5 py-1 text-xs"
+                        >
+                          取り消し
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })

@@ -240,35 +240,39 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                 
                 <div className="mt-1 flex items-center justify-between gap-2">
                   {isModifying ? (
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={modStart}
-                        onChange={(e) => setModStart(e.target.value)}
-                        className="px-2 py-1 text-sm border border-primary-400 rounded bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
-                      >
-                        {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                      <span className="text-neutral-400">-</span>
-                      <select
-                        value={modEnd}
-                        onChange={(e) => setModEnd(e.target.value)}
-                        className="px-2 py-1 text-sm border border-primary-400 rounded bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
-                      >
-                        {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                      <button
-                        onClick={() => handleModifySubmit(shift.id)}
-                        disabled={processing}
-                        className="px-2 py-1 text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 disabled:opacity-50 transition"
-                      >
-                        確定
-                      </button>
-                      <button
-                        onClick={() => setModifyingId(null)}
-                        className="px-2 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 transition"
-                      >
-                        取消
-                      </button>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2">
+                        <select
+                          value={modStart}
+                          onChange={(e) => setModStart(e.target.value)}
+                          className="px-2 py-1 text-sm border border-primary-400 rounded bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                        >
+                          {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                        <span className="text-neutral-400 hidden sm:inline">-</span>
+                        <select
+                          value={modEnd}
+                          onChange={(e) => setModEnd(e.target.value)}
+                          className="px-2 py-1 text-sm border border-primary-400 rounded bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                        >
+                          {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2">
+                        <button
+                          onClick={() => handleModifySubmit(shift.id)}
+                          disabled={processing}
+                          className="px-2 py-1 min-h-[44px] text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 disabled:opacity-50 transition"
+                        >
+                          確定
+                        </button>
+                        <button
+                          onClick={() => setModifyingId(null)}
+                          className="px-2 py-1 min-h-[44px] text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 transition"
+                        >
+                          取消
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <span className="text-sm text-neutral-700 dark:text-neutral-300 tabular-nums">

@@ -84,7 +84,7 @@ export function TopBar({
   const unread = 0;
 
   return (
-    <div className="flex items-center w-full gap-4">
+    <div className="flex items-center w-full gap-4 flex-wrap">
       <TenantSwitcher />
       {title && (
         <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 truncate">
@@ -92,7 +92,7 @@ export function TopBar({
         </h1>
       )}
       {showRoleBadge && (myRole === 'owner' || myRole === 'manager') && (
-        <span className="hidden md:inline-flex">
+        <span className="hidden lg:inline-flex">
           {myRole === 'owner' ? (
             <Badge tone="primary" withDot>Owner</Badge>
           ) : (
@@ -168,3 +168,4 @@ export function TopBar({
     </div>
   );
 }
+
