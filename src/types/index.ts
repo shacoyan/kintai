@@ -147,3 +147,33 @@ export interface ShiftPreference {
   created_at: string;
   store_id: string | null;
 }
+
+// === Loop 7 (Engineer A) ===
+export interface PayrollRun {
+  id: string;
+  tenant_id: string;
+  store_id: string | null;
+  target_month: string;       // YYYY-MM-01
+  close_day: number;
+  period_start: string;
+  period_end: string;
+  mode: 'actual' | 'shift';
+  total_payment: number;
+  finalized_at: string;
+  finalized_by: string | null;
+  note: string | null;
+}
+
+export interface PayrollRunItem {
+  id: string;
+  run_id: string;
+  user_id: string;
+  display_name: string;
+  pay_type: 'hourly' | 'monthly';
+  hourly_rate: number;
+  monthly_salary: number;
+  work_days: number;
+  normal_minutes: number;
+  night_minutes: number;
+  payment: number;
+}

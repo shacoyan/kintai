@@ -11,12 +11,48 @@ export interface ShiftDeadlineSettingsModalProps {
 
 export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProps): JSX.Element {
   const { open, onClose, targetMonth } = props;
-  const { deadline, loading, error, canEdit, setDeadline, clearDeadline } = useShiftSubmissionDeadline(targetMonth);
+  const { deadline, loading, error, canEdit, setDeadline, clearDeadline, applyDefaultDeadline, getDefaultDeadlineForMonth } = useShiftSubmissionDeadline(targetMonth);
 
   const [dateStr, setDateStr] = useState('');
   const [timeStr, setTimeStr] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [defaultPreview, setDefaultPreview] = useState<Date | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // 開いた時に tenants.default_deadline_day からプレビューを取得
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setPreviewLoading(true);
+    getDefaultDeadlineForMonth()
+      .then((d) => {
+        if (!cancelled) setDefaultPreview(d);
+      })
+      .catch(() => {
+        if (!cancelled) setDefaultPreview(null);
+      })
+      .finally(() => {
+        if (!cancelled) setPreviewLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, getDefaultDeadlineForMonth]);
+
+  const handleApplyDefault = async () => {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await applyDefaultDeadline();
+      onClose();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'デフォルト締切の適用に失敗しました。';
+      setSubmitError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -116,6 +152,31 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
         <div className="text-lg font-bold text-neutral-800 dark:text-neutral-200">
           対象月: {format(targetMonth, 'yyyy年M月')}
         </div>
+
+        {canEdit && (
+          <div className="rounded-md border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/40 p-3 text-sm">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">テナント既定の締切日</p>
+                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+                  {previewLoading
+                    ? '読み込み中...'
+                    : defaultPreview
+                      ? format(defaultPreview, 'yyyy年M月d日 HH:mm')
+                      : '未設定'}
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!defaultPreview || submitting}
+                onClick={handleApplyDefault}
+              >
+                デフォルトを適用
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col gap-3">
           <Input

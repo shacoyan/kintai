@@ -6,8 +6,11 @@ import { parseISO, differenceInMinutes } from 'date-fns';
 import type { AttendanceRecord, TenantMember, Shift } from '../../types';
 import { generatePayrollCsv, downloadCsv } from '../../utils/csvExport';
 import { getNightMinutesInRange, getNightMinutesForShift } from '../../utils/nightShift';
-import { Download, Calculator } from 'lucide-react';
+import { Download, Calculator, Lock, Printer } from 'lucide-react';
 import { EmptyState, ErrorBanner, PageSkeleton, Button, Card, Select, Badge, StatCard } from '../ui';
+import { usePayrollRun } from '../../hooks/usePayrollRun';
+import { useTenant, usePayrollCloseDay } from '../../hooks/useTenant';
+import { PayrollSlipPrintView } from './PayrollSlipPrintView';
 
 interface PayrollCalculationProps {
   tenantId: string;
@@ -260,6 +263,28 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   const { members, allAttendance, loading, error, fetchMembers, fetchAllAttendance } = useTenantAdmin(tenantId);
   const { currentStore } = useStoreContext();
   const { allShifts, loading: shiftsLoading, getAllShifts } = useShift(tenantId, currentStore?.id ?? null);
+  const { myRole } = useTenant();
+  const { closeDay } = usePayrollCloseDay(tenantId);
+  const { fetchRun, finalizeRun, unfinalizeRun, loading: runLoading } = usePayrollRun(tenantId, currentStore?.id ?? null);
+  const deleteRun = unfinalizeRun;
+  const [run, setRun] = useState<{
+    id: string;
+    confirmedAt: string;
+    confirmedBy: string | null;
+    items: Array<{
+      userId: string;
+      displayName: string;
+      payType: 'hourly' | 'monthly';
+      hourlyRate: number;
+      monthlySalary: number;
+      workDays: number;
+      normalMinutes: number;
+      nightMinutes: number;
+      payment: number;
+    }>;
+  } | null>(null);
+
+  
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
@@ -275,6 +300,32 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
     setCalculated(false);
   }, [currentStore?.id]);
 
+  useEffect(() => {
+    const targetMonth = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
+    fetchRun(targetMonth, payrollMode).then((res) => {
+      if (res) {
+        setRun({
+          id: res.run.id,
+          confirmedAt: res.run.finalized_at,
+          confirmedBy: res.run.finalized_by,
+          items: res.items.map((it) => ({
+            userId: it.user_id,
+            displayName: it.display_name,
+            payType: it.pay_type,
+            hourlyRate: it.hourly_rate,
+            monthlySalary: it.monthly_salary,
+            workDays: it.work_days,
+            normalMinutes: it.normal_minutes,
+            nightMinutes: it.night_minutes,
+            payment: it.payment,
+          })),
+        });
+      } else {
+        setRun(null);
+      }
+    });
+  }, [selectedYear, selectedMonth, payrollMode, fetchRun]);
+
   const handleCalculate = async () => {
     setCalculated(false);
     const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`;
@@ -289,9 +340,9 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
     setCalculated(true);
   };
 
-  const isLoading = loading || shiftsLoading;
+  const isLoading = loading || shiftsLoading || runLoading;
 
-  const payrollData: PayrollRow[] = useMemo(() => {
+  const calculatedPayrollData: PayrollRow[] = useMemo(() => {
     if (!calculated) return [];
 
     if (payrollMode === 'shift') {
@@ -306,6 +357,27 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
     });
     return members.map((m) => calcMemberPayroll(m, grouped[m.user_id] || []));
   }, [calculated, allAttendance, allShifts, members, payrollMode]);
+
+  const payrollData: PayrollRow[] = useMemo(() => {
+    if (run && run.items) {
+      return run.items.map(item => ({
+        userId: item.userId,
+        displayName: item.displayName,
+        payType: item.payType,
+        hourlyRate: item.hourlyRate,
+        monthlySalary: item.monthlySalary,
+        nightShiftEnabled: false,
+        workDays: item.workDays,
+        totalMinutes: item.normalMinutes + item.nightMinutes,
+        normalMinutes: item.normalMinutes,
+        nightMinutes: item.nightMinutes,
+        payment: item.payment,
+      }));
+    }
+    return calculatedPayrollData;
+  }, [run, calculatedPayrollData]);
+
+  const isFinalized = !!run;
 
   const totalPayment = payrollData.reduce((s, r) => s + r.payment, 0);
   const grandTotalMinutes = payrollData.reduce((s, r) => s + r.totalMinutes, 0);
@@ -327,11 +399,47 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   // CSVファイル名用の店舗名
   const storeLabel = currentStore?.name ?? '全店舗';
 
+  const handleFinalize = async () => {
+    if (!window.confirm(`${selectedYear}年${selectedMonth}月の給与を確定しますか？`)) return;
+    
+    await finalizeRun({
+      targetMonth: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`,
+      mode: payrollMode,
+      closeDay,
+      payrollData: payrollData.map(r => ({
+        userId: r.userId,
+        displayName: r.displayName,
+        payType: r.payType,
+        hourlyRate: r.hourlyRate,
+        monthlySalary: r.monthlySalary,
+        workDays: r.workDays,
+        normalMinutes: r.normalMinutes,
+        nightMinutes: r.nightMinutes,
+        payment: r.payment,
+      })),
+    });
+    
+    fetchRun(`${selectedYear}-${String(selectedMonth).padStart(2, "0")}`, payrollMode);
+  };
+
+  const handleUnfinalize = async () => {
+    if (!window.confirm(`${selectedYear}年${selectedMonth}月の確定を取り消しますか？`)) return;
+    await deleteRun(run!.id);
+    fetchRun(`${selectedYear}-${String(selectedMonth).padStart(2, "0")}`, payrollMode);
+  };
+
   return (
     <Card padding="none">
       <Card.Header>
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">給与計算</h2>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">月次の勤怠データから給与を計算します</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">給与計算</h2>
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">月次の勤怠データから給与を計算します</p>
+          </div>
+          <div className="text-sm text-neutral-600 dark:text-neutral-400">
+            締め日: {closeDay === 31 || !closeDay ? '月末' : `${closeDay}日`}
+          </div>
+        </div>
       </Card.Header>
 
       <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
@@ -391,13 +499,38 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
             loading={isLoading}
             iconLeft={<Calculator size={16} />}
             onClick={handleCalculate}
-            disabled={isLoading}
+            disabled={isLoading || isFinalized}
           >
             計算
           </Button>
 
+          {!isFinalized && calculated && hasData && (myRole === 'owner' || myRole === 'manager') && (
+            <Button
+              variant="primary"
+              size="md"
+              loading={runLoading}
+              iconLeft={<Lock size={16} />}
+              onClick={handleFinalize}
+              disabled={isLoading}
+            >
+              この月を確定
+            </Button>
+          )}
+
+          {isFinalized && myRole === 'owner' && (
+            <Button
+              variant="danger"
+              size="md"
+              loading={runLoading}
+              onClick={handleUnfinalize}
+              disabled={isLoading}
+            >
+              確定を取消
+            </Button>
+          )}
+
           {/* CSVダウンロード */}
-          {calculated && hasData && (
+          {((calculated && hasData) || isFinalized) && (
             <Button
               variant="secondary"
               size="md"
@@ -418,6 +551,18 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
               CSVダウンロード
             </Button>
           )}
+
+          {/* 給与明細を印刷 */}
+          {((calculated && hasData) || isFinalized) && payrollData.length > 0 && (
+            <Button
+              variant="secondary"
+              size="md"
+              iconLeft={<Printer size={16} />}
+              onClick={() => window.print()}
+            >
+              明細を印刷
+            </Button>
+          )}
         </div>
 
         {/* モード説明バナー */}
@@ -428,17 +573,25 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
         )}
       </div>
 
+      {isFinalized && (
+        <div className="px-6 py-3 border-b border-neutral-100 dark:border-neutral-700 bg-green-50 dark:bg-green-900/20">
+          <Badge tone="success">
+            確定済（{run.confirmedAt} 確定 / 確定者: {run.confirmedBy}）
+          </Badge>
+        </div>
+      )}
+
       {error && (
         <ErrorBanner message={error} onRetry={handleCalculate} />
       )}
 
-      {isLoading && !calculated ? (
+      {isLoading && !calculated && !isFinalized ? (
         <div className="p-6">
           <PageSkeleton />
         </div>
-      ) : calculated && (
+      ) : (calculated || isFinalized) && (
         <div className="overflow-x-auto">
-          {!hasData ? (
+          {(!hasData && !isFinalized) ? (
             <EmptyState 
               icon={<Calculator className="w-12 h-12 text-neutral-400" />} 
               title={`${selectedYear}年${selectedMonth}月のデータはありません`} 
@@ -512,6 +665,26 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
             </>
           )}
         </div>
+      )}
+
+      {/* 印刷専用ビュー（@media print のみ表示） */}
+      {((calculated && hasData) || isFinalized) && payrollData.length > 0 && (
+        <PayrollSlipPrintView
+          storeName={storeLabel}
+          year={selectedYear}
+          month={selectedMonth}
+          rows={payrollData.map((r) => ({
+            userId: r.userId,
+            displayName: r.displayName,
+            payType: r.payType,
+            hourlyRate: r.hourlyRate,
+            monthlySalary: r.monthlySalary,
+            workDays: r.workDays,
+            normalMinutes: r.normalMinutes,
+            nightMinutes: r.nightMinutes,
+            payment: r.payment,
+          }))}
+        />
       )}
     </Card>
   );

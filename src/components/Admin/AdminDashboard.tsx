@@ -8,7 +8,8 @@ import { ActiveMembersCard } from './ActiveMembersCard';
 import { useCorrection } from '../../hooks/useCorrection';
 import { useLeave } from '../../hooks/useLeave';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
-import { useTenant } from '../../hooks/useTenant';
+import { useUnsubmittedMembers } from '../../hooks/useUnsubmittedMembers';
+import { useTenant, usePayrollCloseDay } from '../../hooks/useTenant';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { CorrectionList } from '../Correction/CorrectionList';
 import { LeaveList } from '../Leave/LeaveList';
@@ -34,7 +35,8 @@ import {
   AlertCircle,
   CalendarCheck,
   AlertTriangle,
-  CalendarClock
+  CalendarClock,
+  UserX
 } from 'lucide-react';
 import { StatCard, Card, PageSkeleton, ErrorBanner, Button } from '../ui';
 import type { Shift, AttendanceRecord } from '../../types';
@@ -74,9 +76,32 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const { currentTenant, isOwner, myRole } = useTenant();
   const { currentStore } = useStoreContext();
   const canEditDeadline = isOwner || myRole === 'manager';
+  // === Loop 7 (Engineer A) ===
+  const {
+    closeDay: payrollCloseDay,
+    loading: closeDayLoading,
+    updateCloseDay,
+  } = usePayrollCloseDay(tenantId);
+  const [localCloseDay, setLocalCloseDay] = useState<number>(payrollCloseDay);
+  useEffect(() => {
+    setLocalCloseDay(payrollCloseDay);
+  }, [payrollCloseDay]);
+  // === /Loop 7 (Engineer A) ===
   const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
   const { allLeaves, loading: leaveLoading, getAllLeaves, approveLeave, rejectLeave, getRemainingPaidLeave } = useLeave(tenantId);
   const { members: adminMembers, fetchMembers: fetchAdminMembers } = useTenantAdmin(tenantId);
+
+  // 未提出メンバー検出（次月分のシフト希望）
+  const unsubmittedTargetMonth = useMemo(() => {
+    const next = new Date();
+    next.setMonth(next.getMonth() + 1);
+    return startOfMonth(next);
+  }, []);
+  const { unsubmitted: unsubmittedMembers, loading: unsubmittedLoading } = useUnsubmittedMembers(
+    tenantId,
+    currentStore?.id ?? null,
+    unsubmittedTargetMonth,
+  );
 
   const leaveRange = useMemo(() => {
     const now = new Date();
@@ -252,6 +277,43 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               memberNames={leaveMemberNames}
             />
 
+            {/* 未提出メンバー Card: 0 件 / loading 中は非表示 */}
+            {!unsubmittedLoading && unsubmittedMembers.length > 0 && (
+              <Card padding="md">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <UserX className="w-5 h-5 text-warning-600" aria-hidden="true" />
+                    <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                      シフト希望 未提出メンバー
+                    </h2>
+                  </div>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                    {unsubmittedMembers.length}名
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+                  対象月（{format(unsubmittedTargetMonth, 'yyyy年M月')}）に希望提出がないメンバー一覧です。
+                </p>
+                <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                  {unsubmittedMembers.map((m) => (
+                    <li key={m.user_id} className="flex items-center justify-between py-2">
+                      <span className="text-sm text-neutral-800 dark:text-neutral-200">
+                        {m.display_name}
+                      </span>
+                      <Button
+                        variant="tertiary"
+                        size="sm"
+                        disabled
+                        title="Loop 11 で通知基盤と統合予定"
+                      >
+                        リマインドする
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+
             {currentTenant && (
               <Card>
                 <Card.Header>
@@ -362,6 +424,47 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   >
                     シフト希望締切を設定
                   </Button>
+                </div>
+              </Card>
+            )}
+            {/* === Loop 7 (Engineer A): 給与締め日設定 === */}
+            {canEditDeadline && (
+              <Card padding="md">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div>
+                    <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">給与締め日</h2>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                      毎月の給与計算における締め日（1〜31、31 は月末扱い）
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={localCloseDay}
+                      onChange={(e) =>
+                        setLocalCloseDay(Math.min(31, Math.max(1, Number(e.target.value))))
+                      }
+                      className="w-20 px-2 py-1 border rounded text-sm bg-white dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+                    />
+                    <label className="flex items-center gap-1 text-sm text-neutral-700 dark:text-neutral-300">
+                      <input
+                        type="checkbox"
+                        checked={localCloseDay === 31}
+                        onChange={(e) => setLocalCloseDay(e.target.checked ? 31 : 30)}
+                      />
+                      月末
+                    </label>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      loading={closeDayLoading}
+                      onClick={() => updateCloseDay(localCloseDay)}
+                    >
+                      保存
+                    </Button>
+                  </div>
                 </div>
               </Card>
             )}

@@ -23,6 +23,7 @@ import { ShiftPreferenceCalendar } from '../components/Shift/ShiftPreferenceCale
 import { ShiftPreferenceForm } from '../components/Shift/ShiftPreferenceForm';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
 import { ShiftPreferenceSidebar } from '../components/Shift/ShiftPreferenceSidebar';
+import { BulkApplyPresetModal } from '../components/Shift/BulkApplyPresetModal';
 import { PreferenceActionRow } from '../components/Shift/PreferenceActionRow';
 import { useStoreContext } from '../contexts/StoreContext';
 import type { ShiftPreferenceType } from '../types';
@@ -67,6 +68,7 @@ export function ShiftPage() {
   const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
   const [shiftViewMonth, setShiftViewMonth] = useState<Date>(new Date());
   const [allMemberPrefDate, setAllMemberPrefDate] = useState<string | null>(null);
+  const [showBulkApplyModal, setShowBulkApplyModal] = useState(false);
 
   const pendingPreferenceCount = useMemo(
     () => allPreferences.filter(p => p.status === 'pending').length,
@@ -175,16 +177,23 @@ export function ShiftPage() {
   }, [members]);
 
   const targetMonth = useMemo(() => startOfMonth(addMonths(new Date(), 1)), []);
-  const { deadline } = useShiftSubmissionDeadline(targetMonth);
+  const { deadline, canEdit: canEditDeadline } = useShiftSubmissionDeadline(targetMonth);
+  const isDeadlinePassed = useMemo(() => {
+    if (!storeId || !deadline) return false;
+    return deadline < new Date();
+  }, [storeId, deadline]);
   const deadlineInfo = useMemo(() => {
     if (!storeId) return null;
     if (!deadline) return null;
-    if (deadline < new Date()) return null;
+    if (deadline < new Date()) {
+      // 締切後: 残時間ラベルなしで passed=true を返す
+      return { deadline, targetMonth, remainingLabel: '', passed: true as const };
+    }
     const ms = deadline.getTime() - Date.now();
     const days = Math.floor(ms / (24 * 3600 * 1000));
     const hours = Math.floor((ms % (24 * 3600 * 1000)) / (3600 * 1000));
     const remainingLabel = days > 0 ? `${days}日${hours}時間` : `${hours}時間`;
-    return { deadline, targetMonth, remainingLabel };
+    return { deadline, targetMonth, remainingLabel, passed: false as const };
   }, [storeId, deadline, targetMonth]);
 
   const handleLeaveSubmit = async (
@@ -511,8 +520,7 @@ export function ShiftPage() {
           {preferenceView === 'current' && (
             <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-6 lg:items-start">
               <div className="flex flex-col gap-4">
-                {/* TODO(Phase 4): useShiftSubmissionDeadline + migration 021 へ置換 */}
-                {deadlineInfo && (
+                {deadlineInfo && !deadlineInfo.passed && (
                   <Card padding="md" className="border-l-4 border-warning-500 bg-warning-50 dark:bg-warning-900/30">
                     <Card.Body className="flex items-start gap-3">
                       <AlertTriangle className="w-5 h-5 text-warning-600 mt-0.5 shrink-0" aria-hidden="true" />
@@ -522,6 +530,21 @@ export function ShiftPage() {
                         </p>
                         <p className="text-xs text-warning-700 dark:text-warning-300 mt-1 tabular-nums">
                           残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
+                        </p>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                )}
+                {deadlineInfo && deadlineInfo.passed && (
+                  <Card padding="md" className="border-l-4 border-danger-500 bg-danger-50 dark:bg-danger-900/30">
+                    <Card.Body className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-danger-600 mt-0.5 shrink-0" aria-hidden="true" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-danger-800 dark:text-danger-200">
+                          締切過ぎ — 提出には管理者承認が必要です
+                        </p>
+                        <p className="text-xs text-danger-700 dark:text-danger-300 mt-1 tabular-nums">
+                          {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })} に締め切られました（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
                         </p>
                       </div>
                     </Card.Body>
@@ -555,6 +578,15 @@ export function ShiftPage() {
                     >
                       全員の希望
                     </button>
+                    {storeId && (
+                      <button
+                        type="button"
+                        onClick={() => setShowBulkApplyModal(true)}
+                        className="px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring bg-white dark:bg-neutral-800 border border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30"
+                      >
+                        プリセット一括適用
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -658,6 +690,8 @@ export function ShiftPage() {
                         presets={presets}
                         selectableStores={stores}
                         defaultStoreId={storeId}
+                        isDeadlinePassed={isDeadlinePassed}
+                        canBypassDeadline={canEditDeadline}
                       />
                     )}
                   </BottomSheet>
@@ -882,6 +916,19 @@ export function ShiftPage() {
       >
         <div />
       </BottomSheet>
+      {storeId && canManageTenant && (
+        <BulkApplyPresetModal
+          isOpen={showBulkApplyModal}
+          onClose={() => setShowBulkApplyModal(false)}
+          tenantId={tenantId}
+          storeId={storeId}
+          presets={presets}
+          members={members}
+          onApplied={() => {
+            fetchPreferenceRange();
+          }}
+        />
+      )}
     </div>
   );
 }

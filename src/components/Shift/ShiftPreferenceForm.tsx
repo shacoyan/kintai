@@ -21,6 +21,10 @@ interface ShiftPreferenceFormProps {
   presets?: ShiftPreset[];
   selectableStores: Store[];
   defaultStoreId: string | null;
+  /** 締切を過ぎている場合 true（バナー側で判定して渡す） */
+  isDeadlinePassed?: boolean;
+  /** owner/manager は締切後もバイパスできる */
+  canBypassDeadline?: boolean;
 }
 
 const TIME_OPTIONS: string[] = (() => {
@@ -54,6 +58,8 @@ export function ShiftPreferenceForm({
   presets,
   selectableStores,
   defaultStoreId,
+  isDeadlinePassed = false,
+  canBypassDeadline = false,
 }: ShiftPreferenceFormProps) {
   const [preferenceType, setPreferenceType] = useState<ShiftPreferenceType>(
     existingPreference?.preference_type ?? 'available',
@@ -73,10 +79,16 @@ export function ShiftPreferenceForm({
   const [error, setError] = useState<string | null>(null);
 
   const showTimeFields = preferenceType !== 'unavailable';
+  // 締切ガード: 締切後かつバイパス権限なし → 送信不可（client guard。RLS でも二重ガードされる）
+  const lockedByDeadline = isDeadlinePassed && !canBypassDeadline;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (lockedByDeadline) {
+      setError('提出締切を過ぎています。管理者にお問い合わせください。');
+      return;
+    }
     if (showTimeFields && startTime === endTime) {
       setError('開始と終了時刻が同じです');
       return;
@@ -116,12 +128,22 @@ export function ShiftPreferenceForm({
   };
 
   const busy = submitting || deleting;
+  const submitDisabled = busy || lockedByDeadline;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" aria-busy={busy || undefined}>
       <p className="text-sm font-semibold text-neutral-700 tabular-nums">{date}</p>
 
       {error && <ErrorBanner message={error} />}
+
+      {lockedByDeadline && (
+        <div
+          role="alert"
+          className="rounded-md border border-danger-200 bg-danger-50 dark:bg-danger-900/30 px-3 py-2 text-xs text-danger-800 dark:text-danger-200"
+        >
+          提出締切を過ぎています。新規登録・更新には管理者の代理入力が必要です。
+        </div>
+      )}
 
       {/* 希望タイプ選択 */}
       <div>
@@ -235,10 +257,15 @@ export function ShiftPreferenceForm({
           size="lg"
           fullWidth
           loading={submitting}
-          disabled={busy}
+          disabled={submitDisabled}
         >
           {existingPreference ? '更新する' : '登録する'}
         </Button>
+        {lockedByDeadline && (
+          <p className="text-xs text-neutral-500 text-center">
+            締切後のため送信できません
+          </p>
+        )}
         {existingPreference && onDelete && (
           <Button
             type="button"

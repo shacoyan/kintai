@@ -54,5 +54,32 @@ export function useShiftPreset(tenantId: string, storeId: string | null) {
     setPresets(prev => prev.filter(p => p.id !== id));
   }, []);
 
-  return { presets, loading, fetchPresets, addPreset, deletePreset };
+  const updatePreset = useCallback(async (id: string, name: string, startTime: string, endTime: string, scope: 'store' | 'tenant') => {
+    if (scope === 'store' && storeId === null) {
+      throw new Error('店舗が選択されていません');
+    }
+    const { error } = await supabase
+      .from('shift_presets')
+      .update({
+        name,
+        start_time: startTime,
+        end_time: endTime,
+        store_id: scope === 'store' ? storeId : null,
+      })
+      .eq('id', id);
+    if (error) throw new Error(`プリセットの更新に失敗しました: ${error.message}`);
+    await fetchPresets();
+  }, [storeId, fetchPresets]);
+
+  const reorderPresets = useCallback(async (orderedIds: string[]) => {
+    await Promise.all(orderedIds.map((id, index) =>
+      supabase
+        .from('shift_presets')
+        .update({ sort_order: index })
+        .eq('id', id)
+    ));
+    await fetchPresets();
+  }, [fetchPresets]);
+
+  return { presets, loading, fetchPresets, addPreset, deletePreset, updatePreset, reorderPresets };
 }

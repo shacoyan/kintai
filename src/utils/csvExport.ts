@@ -1,6 +1,7 @@
 import { parseISO, differenceInMinutes } from 'date-fns';
 import type { AttendanceRecord, TenantMember } from '../types';
 import { getNightMinutesInRange } from './nightShift';
+import { getPayType } from './payType';
 
 interface CsvRow {
   date: string;
@@ -31,6 +32,7 @@ export function generatePayrollCsv(
 ): string {
   const memberMap = new Map(members.map(m => [m.user_id, m]));
   const rows: CsvRow[] = [];
+  let totalHourlyPayment = 0;
 
   for (const r of records) {
     if (!r.clock_in) continue;
@@ -64,7 +66,7 @@ export function generatePayrollCsv(
     }
 
     const normalMins = workMins - nightMins;
-    const payType = member.pay_type ?? 'hourly';
+    const payType = getPayType(member);
     const rate = member.hourly_rate ?? 0;
     let payment: number;
     let rateLabel: string;
@@ -75,6 +77,7 @@ export function generatePayrollCsv(
     } else {
       payment = Math.ceil((normalMins / 60) * rate + (nightMins / 60) * rate * 1.25);
       rateLabel = `${rate.toLocaleString()}円/時`;
+      totalHourlyPayment += payment;
     }
 
     rows.push({
@@ -102,11 +105,18 @@ export function generatePayrollCsv(
     [r.date, r.name, r.clockIn, r.clockOut, r.breakMinutes, r.workTime, r.nightTime, r.rateLabel, r.payment].map(csvEscape).join(',')
   );
 
+  const emptyCols9 = Array(9).fill('').map(csvEscape).join(',');
+  lines.push(`${csvEscape('時給合計')},${Array(7).fill('').map(csvEscape).join(',')},${csvEscape(totalHourlyPayment)}`);
+
   // 月給スタッフの合計行を追加
-  const monthlyMembers = members.filter(m => (m.pay_type ?? 'hourly') === 'monthly');
+  const monthlyMembers = members.filter(m => getPayType(m) === 'monthly');
+  const totalMonthlySalary = monthlyMembers.reduce((sum, m) => sum + (m.monthly_salary ?? 0), 0);
+  
+  lines.push(`${csvEscape('月給合計')},${Array(7).fill('').map(csvEscape).join(',')},${csvEscape(totalMonthlySalary)}`);
+  lines.push(`${csvEscape('総支給額')},${Array(7).fill('').map(csvEscape).join(',')},${csvEscape(totalHourlyPayment + totalMonthlySalary)}`);
+
   for (const m of monthlyMembers) {
-    const emptyCols = Array(8).fill('').map(csvEscape).join(',');
-    lines.push(`${emptyCols},${csvEscape(`月給: ${m.display_name} ¥${(m.monthly_salary ?? 0).toLocaleString()}`)}`);
+    lines.push(`${emptyCols9},${csvEscape(`月給: ${m.display_name} ¥${(m.monthly_salary ?? 0).toLocaleString()}`)}`);
   }
 
   // UTF-8 BOM
