@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Clock, History, CheckCircle2, Circle, XCircle, Loader2, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Clock, History, CheckCircle2, Circle, XCircle, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, Card, Badge, BottomSheet } from '../components/ui';
+import { Spinner } from '../components/ui/Spinner';
 import type { BadgeTone } from '../components/ui';
 import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
@@ -403,8 +404,9 @@ export function ShiftPage() {
           </header>
 
           {shiftLoading && (
-            <div className="flex justify-center py-4">
-              <Loader2 className="w-6 h-6 text-primary-500 animate-spin" aria-label="読み込み中" />
+            <div className="flex items-center justify-center gap-2 py-4" role="status" aria-live="polite">
+              <Spinner size="md" label="読み込み中" />
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">読み込み中…</span>
             </div>
           )}
 
@@ -482,8 +484,9 @@ export function ShiftPage() {
       {activeTab === 'preference' && (
         <div className="flex flex-col gap-4 pb-24">
           {prefLoading && (
-            <div className="flex justify-center py-4">
-              <Loader2 className="w-6 h-6 text-primary-500 animate-spin" aria-label="読み込み中" />
+            <div className="flex items-center justify-center gap-2 py-4" role="status" aria-live="polite">
+              <Spinner size="md" label="読み込み中" />
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">読み込み中…</span>
             </div>
           )}
 
@@ -521,7 +524,7 @@ export function ShiftPage() {
             <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-6 lg:items-start">
               <div className="flex flex-col gap-4">
                 {deadlineInfo && !deadlineInfo.passed && (
-                  <Card padding="md" className="border-l-4 border-warning-500 bg-warning-50 dark:bg-warning-900/30">
+                  <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-warning-500 bg-warning-50 dark:bg-warning-900/30">
                     <Card.Body className="flex items-start gap-3">
                       <AlertTriangle className="w-5 h-5 text-warning-600 mt-0.5 shrink-0" aria-hidden="true" />
                       <div className="flex-1">
@@ -536,7 +539,7 @@ export function ShiftPage() {
                   </Card>
                 )}
                 {deadlineInfo && deadlineInfo.passed && (
-                  <Card padding="md" className="border-l-4 border-danger-500 bg-danger-50 dark:bg-danger-900/30">
+                  <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-danger-500 bg-danger-50 dark:bg-danger-900/30">
                     <Card.Body className="flex items-start gap-3">
                       <AlertTriangle className="w-5 h-5 text-danger-600 mt-0.5 shrink-0" aria-hidden="true" />
                       <div className="flex-1">
@@ -857,8 +860,9 @@ export function ShiftPage() {
       {activeTab === 'leave' && (
         <div className="space-y-6">
           {leaveLoading && (
-            <div className="flex justify-center py-4">
-              <Loader2 className="w-6 h-6 text-primary-500 animate-spin" aria-label="読み込み中" />
+            <div className="flex items-center justify-center gap-2 py-4" role="status" aria-live="polite">
+              <Spinner size="md" label="読み込み中" />
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">読み込み中…</span>
             </div>
           )}
 

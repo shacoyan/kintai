@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { MemberManagement } from './MemberManagement';
@@ -84,6 +84,52 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const [deadlineModalOpen, setDeadlineModalOpen] = useState(false);
   const [regenConfirmOpen, setRegenConfirmOpen] = useState(false);
   const [regenLoading, setRegenLoading] = useState(false);
+
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [isPC, setIsPC] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)');
+    setIsPC(mql.matches);
+    const handler = (e: MediaQueryListEvent) => setIsPC(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+
+  const onTabKeyDown = useCallback((e: React.KeyboardEvent, idx: number) => {
+    const enabledTabs = tabs;
+    let nextIdx = idx;
+
+    if (isPC && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault();
+      nextIdx = e.key === 'ArrowUp' ? (idx - 1 + enabledTabs.length) % enabledTabs.length : (idx + 1) % enabledTabs.length;
+    } else if (!isPC && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault();
+      nextIdx = e.key === 'ArrowLeft' ? (idx - 1 + enabledTabs.length) % enabledTabs.length : (idx + 1) % enabledTabs.length;
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      nextIdx = 0;
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      nextIdx = enabledTabs.length - 1;
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setActiveTab(enabledTabs[idx].id);
+      return;
+    } else {
+      return;
+    }
+
+    const nextTab = enabledTabs[nextIdx];
+    if (nextTab) {
+      setActiveTab(nextTab.id);
+      const targetIdx = nextIdx;
+      requestAnimationFrame(() => {
+        tabRefs.current[targetIdx]?.focus();
+      });
+    }
+  }, [isPC]);
+
   const { currentTenant, isOwner, myRole, regenerateInviteCode } = useTenant();
   const { currentStore } = useStoreContext();
   const { showToast } = useToast();
@@ -543,11 +589,16 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       {/* Mobile tabs - horizontal scroll */}
       <div className="md:hidden border-b border-neutral-200 dark:border-neutral-700 overflow-x-auto -mx-4 px-4">
         <nav role="tablist" className="flex space-x-1 min-w-max" style={{ scrollSnapType: 'x mandatory' }}>
-          {tabs.map((tab) => (
+          {tabs.map((tab, idx) => (
             <button
               key={tab.id}
               role="tab"
+              id={`admin-tab-${tab.id}`}
+              aria-controls={`admin-tabpanel-${tab.id}`}
               aria-selected={activeTab === tab.id}
+              tabIndex={activeTab === tab.id ? 0 : -1}
+              ref={(el) => { tabRefs.current[idx] = el; }}
+              onKeyDown={(e) => onTabKeyDown(e, idx)}
               onClick={() => setActiveTab(tab.id)}
               className={`whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm transition ${
                 activeTab === tab.id
@@ -578,7 +629,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       </div>
 
       {/* Mobile content */}
-      <div className="md:hidden" role="tabpanel">
+      <div className="md:hidden" role="tabpanel" id={`admin-tabpanel-${activeTab}`} aria-labelledby={`admin-tab-${activeTab}`} tabIndex={0}>
         {renderContent()}
       </div>
 
@@ -592,38 +643,49 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 <div key={section.label}>
                   {sectionIndex > 0 && <div className="border-t border-neutral-100 dark:border-neutral-800 my-2" />}
                   <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider px-3 pt-3 pb-1">{section.label}</div>
-                  {tabs.filter(tab => (section.items as readonly string[]).includes(tab.id)).map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      aria-current={activeTab === tab.id ? 'page' : undefined}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
-                        activeTab === tab.id
-                          ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 font-semibold border-l-2 border-primary-600 dark:border-primary-400 rounded-l-none'
-                          : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800/60'
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        <tab.icon size={16} />
-                        <span>{tab.label}</span>
-                      </span>
-                      {tab.id === 'leaves' && pendingLeaves.length > 0 && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
-                          {pendingLeaves.length}
+                  {tabs.filter(tab => (section.items as readonly string[]).includes(tab.id)).map((tab) => {
+                    const tabIdx = tabs.findIndex(t => t.id === tab.id);
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        role="tab"
+                        id={`admin-tab-${tab.id}`}
+                        aria-controls={`admin-tabpanel-${tab.id}`}
+                        aria-selected={isActive}
+                        tabIndex={isActive ? 0 : -1}
+                        ref={(el) => { tabRefs.current[tabIdx] = el; }}
+                        onKeyDown={(e) => onTabKeyDown(e, tabIdx)}
+                        onClick={() => setActiveTab(tab.id)}
+                        aria-current={isActive ? 'page' : undefined}
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
+                          isActive
+                            ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 font-semibold border-l-2 border-primary-600 dark:border-primary-400 rounded-l-none'
+                            : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800/60'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <tab.icon size={16} />
+                          <span>{tab.label}</span>
                         </span>
-                      )}
-                      {tab.id === 'corrections' && pendingRequests.length > 0 && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
-                          {pendingRequests.length}
-                        </span>
-                      )}
-                      {tab.id === 'mismatch' && mismatches.length > 0 && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">
-                          {mismatches.length}
-                        </span>
-                      )}
-                    </button>
-                  ))}
+                        {tab.id === 'leaves' && pendingLeaves.length > 0 && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                            {pendingLeaves.length}
+                          </span>
+                        )}
+                        {tab.id === 'corrections' && pendingRequests.length > 0 && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                            {pendingRequests.length}
+                          </span>
+                        )}
+                        {tab.id === 'mismatch' && mismatches.length > 0 && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">
+                            {mismatches.length}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               ))}
             </div>
@@ -631,7 +693,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
         </nav>
 
         {/* Content */}
-        <div className="flex-1 min-w-0" role="tabpanel">
+        <div className="flex-1 min-w-0" role="tabpanel" id={`admin-tabpanel-${activeTab}`} aria-labelledby={`admin-tab-${activeTab}`} tabIndex={0}>
           {renderContent()}
         </div>
       </div>

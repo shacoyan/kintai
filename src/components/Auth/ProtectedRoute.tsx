@@ -1,16 +1,13 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { PageLoader } from '../ui';
 
 export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="h-screen w-screen flex justify-center items-center bg-neutral-50">
-        <div className="w-16 h-16 border-4 border-primary-200 border-t-blue-600 rounded-full animate-spin"></div>
-      </div>
-    );
+    return <PageLoader variant="screen" label="認証情報を確認しています…" />;
   }
 
   if (!user) {

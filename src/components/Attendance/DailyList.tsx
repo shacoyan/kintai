@@ -80,9 +80,9 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                   <span className={`text-sm ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : 'text-neutral-600 dark:text-neutral-300'}`}>
                     {format(day, 'M/d(E)', { locale: ja })}
                   </span>
-                  <span className="text-xs text-neutral-300 dark:text-neutral-600 tabular-nums">記録なし</span>
+                  <span className="text-xs text-neutral-400 dark:text-neutral-500 tabular-nums">記録なし</span>
                   <button onClick={() => onRequestCorrection(dateStr)}
-                    className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors">
+                    className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
                     修正申請
                   </button>
                 </div>
@@ -108,11 +108,11 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => onRequestCorrection(dateStr, record)}
-                    className="flex-1 px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors">
+                    className="flex-1 px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
                     修正申請
                   </button>
                   <button onClick={() => onRequestDeletion(dateStr, record)}
-                    className="flex-1 px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 transition-colors">
+                    className="flex-1 px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
                     削除依頼
                   </button>
                 </div>
@@ -160,7 +160,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                     <td className="px-3 py-2">
                       <button
                         onClick={() => onRequestCorrection(dateStr)}
-                        className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
+                        className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                       >
                         修正申請
                       </button>
@@ -195,13 +195,13 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                     <td className="px-3 py-2 space-x-1">
                       <button
                         onClick={() => onRequestCorrection(dateStr, record)}
-                        className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
+                        className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                       >
                         修正申請
                       </button>
                       <button
                         onClick={() => onRequestDeletion(dateStr, record)}
-                        className="px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 transition-colors"
+                        className="px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                       >
                         削除依頼
                       </button>

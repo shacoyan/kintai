@@ -15,7 +15,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const firstItemRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<(HTMLElement | null)[]>([]);
 
   const handleToggle = useCallback(() => {
     setIsOpen((prev) => !prev);
@@ -46,10 +46,49 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
         handleClose();
       } else if (e.key === 'ArrowDown' && isOpen) {
         e.preventDefault();
-        firstItemRef.current?.focus();
+        itemRefs.current[0]?.focus();
       }
     },
     [isOpen, handleClose]
+  );
+
+  const focusItem = useCallback((idx: number) => {
+    const len = tenants.length + 1;
+    const validIdx = ((idx % len) + len) % len;
+    itemRefs.current[validIdx]?.focus();
+  }, [tenants.length]);
+
+  const onItemKeyDown = useCallback(
+    (e: React.KeyboardEvent, idx: number) => {
+      const len = tenants.length + 1;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        focusItem(idx + 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        focusItem(idx - 1);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        focusItem(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        focusItem(len - 1);
+      } else if (e.key === 'Tab') {
+        setIsOpen(false);
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (idx === tenants.length) {
+          handleNavigateToNewWorkspace();
+        } else {
+          const tenant = tenants[idx];
+          if (tenant && currentTenant && currentTenant.id !== tenant.id) {
+            handleSelect(tenant);
+          }
+        }
+      }
+    },
+    [tenants, currentTenant, focusItem, handleSelect, handleNavigateToNewWorkspace]
   );
 
   useEffect(() => {
@@ -78,6 +117,12 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
 
     document.addEventListener('keydown', handleEscapeKey);
     return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    itemRefs.current[0]?.focus();
   }, [isOpen]);
 
   if (tenants.length === 0 || !currentTenant) {
@@ -163,18 +208,15 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
             return (
               <div
                 key={tenant.id}
-                ref={index === 0 ? firstItemRef : null}
+                ref={(el) => {
+                  itemRefs.current[index] = el;
+                }}
                 role="menuitem"
                 tabIndex={isCurrent ? -1 : 0}
                 onClick={() => {
                   if (!isCurrent) handleSelect(tenant);
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    if (!isCurrent) handleSelect(tenant);
-                  }
-                }}
+                onKeyDown={(e) => onItemKeyDown(e, index)}
                 className={`flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer outline-none transition-colors ${
                   isCurrent
                     ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 font-semibold'
@@ -209,7 +251,11 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
           <button
             type="button"
             role="menuitem"
+            ref={(el) => {
+              itemRefs.current[tenants.length] = el;
+            }}
             onClick={handleNavigateToNewWorkspace}
+            onKeyDown={(e) => onItemKeyDown(e, tenants.length)}
             className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 focus:bg-neutral-50 dark:focus:bg-neutral-800/50 focus-visible:outline-none transition-colors"
           >
             <Plus size={16} aria-hidden="true" />

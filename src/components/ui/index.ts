@@ -34,6 +34,15 @@ export type { ToastItem, ToastProps, ToastViewportProps, ToastTone } from './Toa
 export { BrandMark } from './BrandMark';
 export type { BrandMarkProps, BrandMarkSize } from './BrandMark';
 
+export { ErrorBoundary } from './ErrorBoundary';
+export type { ErrorBoundaryProps, ErrorBoundaryFallbackProps } from './ErrorBoundary';
+
+export { PageLoader } from './PageLoader';
+export type { PageLoaderProps, PageLoaderVariant } from './PageLoader';
+
+export { Spinner } from './Spinner';
+export type { SpinnerProps, SpinnerSize } from './Spinner';
+
 // 既存（Phase 1 では再 export のみ、内部は Phase 2 以降で差替）
 export { BottomSheet } from './BottomSheet';
 export { EmptyState } from './EmptyState';

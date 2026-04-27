@@ -10,6 +10,7 @@ export function StoreSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -32,6 +33,52 @@ export function StoreSelector() {
     document.addEventListener('keydown', onEsc);
     return () => document.removeEventListener('keydown', onEsc);
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      itemRefs.current[0]?.focus();
+    }
+  }, [isOpen]);
+
+  function focusItem(idx: number) {
+    const len = stores.length;
+    if (len === 0) return;
+    const wrapped = ((idx % len) + len) % len;
+    itemRefs.current[wrapped]?.focus();
+  }
+
+  function onItemKeyDown(e: React.KeyboardEvent<HTMLButtonElement>, idx: number, store: typeof stores[number]) {
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        focusItem(idx + 1);
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        focusItem(idx - 1);
+        break;
+      case 'Home':
+        e.preventDefault();
+        focusItem(0);
+        break;
+      case 'End':
+        e.preventDefault();
+        focusItem(stores.length - 1);
+        break;
+      case 'Tab':
+        setIsOpen(false);
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        setCurrentStore(store);
+        setIsOpen(false);
+        triggerRef.current?.focus();
+        break;
+      default:
+        break;
+    }
+  }
 
   function getRoleBadge(storeId: string) {
     if (isOwner) return <Badge tone="primary">Owner</Badge>;
@@ -96,11 +143,12 @@ export function StoreSelector() {
           role="menu"
           className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 py-1 max-h-64 overflow-y-auto"
         >
-          {stores.map((store) => {
+          {stores.map((store, idx) => {
             const isSelected = store.id === currentStore?.id;
             return (
               <button
                 key={store.id}
+                ref={(el) => { itemRefs.current[idx] = el; }}
                 type="button"
                 role="menuitem"
                 onClick={() => {
@@ -108,6 +156,7 @@ export function StoreSelector() {
                   setIsOpen(false);
                   triggerRef.current?.focus();
                 }}
+                onKeyDown={(e) => onItemKeyDown(e, idx, store)}
                 className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:bg-slate-100 dark:focus:bg-slate-700 transition-colors"
               >
                 <span className="w-4 h-4 flex items-center justify-center shrink-0">

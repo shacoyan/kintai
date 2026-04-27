@@ -1,4 +1,5 @@
 import { Calendar, Coffee, TrendingUp } from 'lucide-react';
+import { EmptyState } from '../ui/EmptyState';
 
 interface MonthlySummaryProps {
   summary: {
@@ -10,6 +11,16 @@ interface MonthlySummaryProps {
 }
 
 export function MonthlySummary({ summary }: MonthlySummaryProps) {
+  if (summary.workDays === 0 && summary.totalWorkMinutes === 0) {
+    return (
+      <EmptyState
+        icon={<Calendar className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
+        title="今月はまだ打刻記録がありません"
+        description="出勤すると、ここに月次サマリーが表示されます"
+      />
+    );
+  }
+
   const formatMinutes = (minutes: number) => {
     const abs = Math.abs(minutes);
     const h = Math.floor(abs / 60);

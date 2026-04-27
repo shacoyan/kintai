@@ -12,6 +12,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import TenantPage from './pages/TenantPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { HistoryPage } from './pages/HistoryPage';
+import { ErrorBoundary, PageLoader } from './components/ui';
 
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
 const ShiftPage = lazy(() => import('./pages/ShiftPage').then(m => ({ default: m.ShiftPage })));
@@ -21,71 +22,97 @@ const App: React.FC = () => {
     <AuthProvider>
       <TenantProvider>
         <StoreProvider>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route
-            path="/tenant"
-            element={
-              <ProtectedRoute>
-                <TenantPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <RequireTenant>
-                  <Layout>
-                    <DashboardPage />
-                  </Layout>
-                </RequireTenant>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/history"
-            element={
-              <ProtectedRoute>
-                <RequireTenant>
-                  <Layout>
-                    <HistoryPage />
-                  </Layout>
-                </RequireTenant>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shift"
-            element={
-              <ProtectedRoute>
-                <RequireTenant>
-                  <Layout>
-                    <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-primary-500 border-t-transparent rounded-full" /></div>}>
-                      <ShiftPage />
-                    </Suspense>
-                  </Layout>
-                </RequireTenant>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <RequireTenant>
-                  <Layout>
-                    <Suspense fallback={<div className="flex justify-center items-center h-screen"><div className="animate-spin h-8 w-8 border-4 border-primary-500 border-t-transparent rounded-full" /></div>}>
-                      <AdminPage />
-                    </Suspense>
-                  </Layout>
-                </RequireTenant>
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <ErrorBoundary scope="app">
+          <Routes>
+            <Route
+              path="/login"
+              element={
+                <ErrorBoundary scope="route">
+                  <LoginPage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                <ErrorBoundary scope="route">
+                  <ResetPasswordPage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/tenant"
+              element={
+                <ProtectedRoute>
+                  <ErrorBoundary scope="route">
+                    <TenantPage />
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <RequireTenant>
+                    <Layout>
+                      <ErrorBoundary scope="route">
+                        <DashboardPage />
+                      </ErrorBoundary>
+                    </Layout>
+                  </RequireTenant>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <ProtectedRoute>
+                  <RequireTenant>
+                    <Layout>
+                      <ErrorBoundary scope="route">
+                        <HistoryPage />
+                      </ErrorBoundary>
+                    </Layout>
+                  </RequireTenant>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/shift"
+              element={
+                <ProtectedRoute>
+                  <RequireTenant>
+                    <Layout>
+                      <ErrorBoundary scope="route">
+                        <Suspense fallback={<PageLoader variant="screen" />}>
+                          <ShiftPage />
+                        </Suspense>
+                      </ErrorBoundary>
+                    </Layout>
+                  </RequireTenant>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <RequireTenant>
+                    <Layout>
+                      <ErrorBoundary scope="route">
+                        <Suspense fallback={<PageLoader variant="screen" />}>
+                          <AdminPage />
+                        </Suspense>
+                      </ErrorBoundary>
+                    </Layout>
+                  </RequireTenant>
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ErrorBoundary>
         </StoreProvider>
       </TenantProvider>
     </AuthProvider>

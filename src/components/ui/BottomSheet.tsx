@@ -11,6 +11,7 @@ interface BottomSheetProps {
 
 export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, description, footer, children }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const reactId = useId();
   const titleId = title ? `bottomsheet-title-${reactId}` : undefined;
   const descId = description ? `bottomsheet-desc-${reactId}` : undefined;
@@ -25,6 +26,18 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
     return () => document.removeEventListener('keydown', handler);
   }, [isOpen, onClose]);
 
+  // Save previously focused element and restore on close
+  useEffect(() => {
+    if (isOpen) {
+      previouslyFocusedRef.current = document.activeElement as HTMLElement;
+    } else {
+      if (previouslyFocusedRef.current) {
+        previouslyFocusedRef.current.focus();
+        previouslyFocusedRef.current = null;
+      }
+    }
+  }, [isOpen]);
+
   // Trap focus inside the sheet
   useEffect(() => {
     if (!isOpen || !sheetRef.current) return;
@@ -32,6 +45,30 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
     if (focusable.length > 0) focusable[0].focus();
+  }, [isOpen]);
+
+  // Tab trapping
+  useEffect(() => {
+    if (!isOpen || !sheetRef.current) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const focusables = sheetRef.current!.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, [isOpen]);
 
   // Prevent body scroll when open

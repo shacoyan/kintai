@@ -5,6 +5,8 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 
 interface CorrectionFormProps {
   isOpen: boolean;
@@ -181,46 +183,30 @@ export function CorrectionForm({
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">出勤時刻</label>
-              <input
-                type="time"
-                value={requestedClockIn}
-                onChange={(e) => setRequestedClockIn(e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-neutral-900 dark:text-neutral-100"
-              />
-            </div>
+            <Input
+              type="time"
+              label="出勤時刻"
+              value={requestedClockIn}
+              onChange={(e) => setRequestedClockIn(e.target.value)}
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                退勤時刻
-                {isOvernight && (
-                  <span className="ml-2 text-xs text-amber-600 dark:text-amber-400 font-normal">（翌日）</span>
-                )}
-              </label>
-              <input
-                type="time"
-                value={requestedClockOut}
-                onChange={(e) => setRequestedClockOut(e.target.value)}
-                className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-neutral-900 dark:text-neutral-100"
-              />
-            </div>
+            <Input
+              type="time"
+              label={isOvernight ? '退勤時刻（翌日）' : '退勤時刻'}
+              value={requestedClockOut}
+              onChange={(e) => setRequestedClockOut(e.target.value)}
+            />
           </>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-            {isDelete ? '削除理由' : '修正理由'} <span className="text-danger-500">*</span>
-          </label>
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            rows={4}
-            required
-            placeholder={isDelete ? '削除理由を入力してください' : '修正理由を入力してください'}
-            className="w-full px-3 py-2 bg-white dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none text-neutral-900 dark:text-neutral-100"
-          />
-        </div>
+        <Textarea
+          label={isDelete ? '削除理由' : '修正理由'}
+          required
+          rows={4}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder={isDelete ? '削除理由を入力してください' : '修正理由を入力してください'}
+        />
 
         {error && (
           <ErrorBanner message={error} />

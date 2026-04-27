@@ -130,7 +130,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection }: HistoryC
                       : isSelected
                       ? 'bg-primary-50 dark:bg-primary-900/20'
                       : 'hover:bg-neutral-50 dark:hover:bg-neutral-700/50'
-                  }`}
+                  } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
                 >
                   <span
                     className={`text-xs font-medium block mb-0.5 ${
@@ -177,7 +177,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection }: HistoryC
                     {!record && <p className="text-neutral-500 dark:text-neutral-400">記録なし</p>}
                     <div className="pt-1">
                       <button onClick={(e) => { e.stopPropagation(); onRequestCorrection?.(dateKey, record ?? undefined); }}
-                        className="text-xs text-primary-700 dark:text-primary-300 underline hover:no-underline">
+                        className="text-xs text-primary-700 dark:text-primary-300 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                         この日を修正申請する
                       </button>
                     </div>
@@ -284,9 +284,7 @@ export function HistoryPage() {
       
       <Card padding="md">
         <div className="flex items-center justify-between gap-2">
-          <Button variant="tertiary" size="md" iconLeft={<ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handlePrevMonth} aria-label="前月">
-            <span className="sr-only">前月</span>
-          </Button>
+          <Button variant="tertiary" size="md" iconLeft={<ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handlePrevMonth} aria-label="前月"><></></Button>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
               {format(currentDate, 'yyyy年M月', { locale: ja })}
@@ -297,9 +295,7 @@ export function HistoryPage() {
               </Button>
             )}
           </div>
-          <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handleNextMonth} aria-label="翌月">
-            <span className="sr-only">翌月</span>
-          </Button>
+          <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
         </div>
 
         <div className="flex justify-center mt-2">
@@ -310,7 +306,7 @@ export function HistoryPage() {
                 viewMode === 'list'
                   ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
-              }`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
             >
               リスト
             </button>
@@ -320,7 +316,7 @@ export function HistoryPage() {
                 viewMode === 'calendar'
                   ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
-              }`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
             >
               カレンダー
             </button>
