@@ -22,6 +22,7 @@ import { ShiftPreferenceCalendar } from '../components/Shift/ShiftPreferenceCale
 import { ShiftPreferenceForm } from '../components/Shift/ShiftPreferenceForm';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
 import { ShiftPreferenceSidebar } from '../components/Shift/ShiftPreferenceSidebar';
+import { PreferenceActionRow } from '../components/Shift/PreferenceActionRow';
 import { useStoreContext } from '../contexts/StoreContext';
 import type { ShiftPreferenceType } from '../types';
 
@@ -51,7 +52,7 @@ export function ShiftPage() {
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
-  const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference } = useShiftPreference(tenantId, storeId);
+  const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference } = useShiftPreference(tenantId, storeId);
 
   const [activeTab, setActiveTab] = useState<TabId>('shift');
   const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
@@ -69,8 +70,8 @@ export function ShiftPage() {
   );
 
   const preferencesForCalendar = useMemo(() => {
-    const base = canManageTenant && showAllMembersPrefs ? allPreferences : myPreferences;
-    return base.filter(p => p.status !== 'rejected');
+    if (canManageTenant && showAllMembersPrefs) return allPreferences;
+    return myPreferences.filter(p => p.status !== 'rejected');
   }, [canManageTenant, showAllMembersPrefs, allPreferences, myPreferences]);
 
   const preferencesForAdminList = useMemo(() => {
@@ -93,6 +94,20 @@ export function ShiftPage() {
       unavailableCount: active.filter((p) => p.preference_type === 'unavailable').length,
     };
   }, [myPreferences]);
+
+  const adminSummary = useMemo(() => {
+    const now = new Date();
+    const ym = format(now, 'yyyy-MM');
+    const monthPrefs = allPreferences.filter(p => p.date.startsWith(ym));
+    return {
+      preferredCount: monthPrefs.filter(p => p.preference_type === 'preferred').length,
+      availableCount: monthPrefs.filter(p => p.preference_type === 'available').length,
+      unavailableCount: monthPrefs.filter(p => p.preference_type === 'unavailable').length,
+      monthLabel: format(now, 'yyyy年M月'),
+    };
+  }, [allPreferences]);
+
+  const adminListStores = useMemo(() => isOwner ? stores : stores.filter(s => isManagerOf(s.id)), [isOwner, stores, isManagerOf]);
 
   const timedPreferences = useMemo(
     () =>
@@ -202,6 +217,48 @@ export function ShiftPage() {
   const handleRejectPreference = async (id: string) => {
     await rejectPreference(id);
     fetchPreferenceRange();
+  };
+
+  const handleRevertPreference = async (id: string) => {
+    await revertPreference(id);
+    fetchPreferenceRange();
+    fetchRange();
+  };
+
+  const handleBulkApprovePreferences = async (ids: string[]) => {
+    let errors = 0;
+    for (const id of ids) {
+      const pref = allPreferences.find(p => p.id === id);
+      if (!pref) continue;
+      if (pref.preference_type === 'unavailable') continue;
+      try {
+        await approvePreference(id, pref.start_time ?? undefined, pref.end_time ?? undefined);
+      } catch {
+        errors += 1;
+      }
+    }
+    fetchPreferenceRange();
+    fetchRange();
+    if (errors > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(`[bulkApprovePreferences] ${errors} 件で承認エラーが発生しました`);
+    }
+  };
+
+  const handleBulkRejectPreferences = async (ids: string[]) => {
+    let errors = 0;
+    for (const id of ids) {
+      try {
+        await rejectPreference(id);
+      } catch {
+        errors += 1;
+      }
+    }
+    fetchPreferenceRange();
+    if (errors > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(`[bulkRejectPreferences] ${errors} 件で却下エラーが発生しました`);
+    }
   };
 
   const laborEstimates = useMemo(() => {
@@ -548,56 +605,27 @@ export function ShiftPage() {
                     onClose={() => setAllMemberPrefDate(null)}
                     title={allMemberPrefDate ? `${allMemberPrefDate} の希望一覧` : undefined}
                   >
-                    {allMemberPrefDate && (
-                      <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
-                        {allMemberPrefsForDate.length === 0 && (
-                          <li className="px-4 py-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
-                            この日の希望はありません
-                          </li>
-                        )}
-                        {allMemberPrefsForDate.map((p) => {
-                          const style = PREF_LIST_STYLE[p.preference_type];
-                          return (
-                            <li key={p.id} className="px-4 py-3 flex items-center gap-3">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                                  {memberNames.get(p.user_id) ?? '不明'}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${style.iconBox}`}>
-                                    <style.Icon className="w-3 h-3" />
-                                    {style.label}
-                                  </span>
-                                  {p.start_time && p.end_time && (
-                                    <span className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
-                                      {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              {p.status === 'pending' && p.preference_type !== 'unavailable' && (
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <Button
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() => handleApprovePreference(p.id, p.start_time ?? undefined, p.end_time ?? undefined)}
-                                  >
-                                    承認
-                                  </Button>
-                                  <Button
-                                    variant="tertiary"
-                                    size="sm"
-                                    onClick={() => handleRejectPreference(p.id)}
-                                  >
-                                    却下
-                                  </Button>
-                                </div>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
+                    <ul className="divide-y divide-neutral-100 dark:divide-neutral-700 p-2 space-y-2">
+                      {allMemberPrefsForDate.length === 0 && (
+                        <li className="px-4 py-6 text-center text-sm text-neutral-500 dark:text-neutral-400">この日の希望はありません</li>
+                      )}
+                      {allMemberPrefsForDate.map(p => (
+                        <li key={p.id}>
+                          <PreferenceActionRow
+                            preference={p}
+                            memberName={memberNames.get(p.user_id)}
+                            onApprove={handleApprovePreference}
+                            onReject={handleRejectPreference}
+                            canManage={p.store_id ? isManagerOf(p.store_id) : false}
+                            variant="full"
+                            onMutated={fetchPreferenceRange}
+                            onRevert={handleRevertPreference}
+                            storeName={adminListStores.find(s => s.id === p.store_id)?.name}
+                            showStoreBadge={adminListStores.length >= 2}
+                          />
+                        </li>
+                      ))}
+                    </ul>
                   </BottomSheet>
                 </div>
 
@@ -608,7 +636,11 @@ export function ShiftPage() {
                       memberNames={memberNames}
                       onApprove={handleApprovePreference}
                       onReject={handleRejectPreference}
+                      onBulkApprove={handleBulkApprovePreferences}
+                      onBulkReject={handleBulkRejectPreferences}
+                      onRevert={handleRevertPreference}
                       onRefresh={fetchPreferenceRange}
+                      stores={adminListStores}
                       historyMode={false}
                       canManageStore={(sid) => sid ? isManagerOf(sid) : false}
                     />
@@ -641,9 +673,11 @@ export function ShiftPage() {
                   memberNames={memberNames}
                   pendingPreferenceCount={pendingPreferenceCount}
                   preferenceSummary={preferenceSummary}
+                  adminSummary={adminSummary}
                   timedPreferences={timedPreferences}
                   onApprovePreference={handleApprovePreference}
                   onRejectPreference={handleRejectPreference}
+                  onRevertPreference={handleRevertPreference}
                   canManageStore={(sid) => sid ? isManagerOf(sid) : false}
                   onSubmitPreference={handlePrefSubmit}
                   onDeletePreference={handlePrefDelete}
@@ -665,7 +699,11 @@ export function ShiftPage() {
                     memberNames={memberNames}
                     onApprove={handleApprovePreference}
                     onReject={handleRejectPreference}
+                    onBulkApprove={handleBulkApprovePreferences}
+                    onBulkReject={handleBulkRejectPreferences}
+                    onRevert={handleRevertPreference}
                     onRefresh={fetchPreferenceRange}
+                    stores={adminListStores}
                     historyMode
                     canManageStore={(sid) => sid ? isManagerOf(sid) : false}
                   />

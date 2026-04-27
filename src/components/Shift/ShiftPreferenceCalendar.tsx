@@ -392,6 +392,7 @@ export function ShiftPreferenceCalendar({
                         <PreferenceActionRow
                           preference={p}
                           memberName={memberNames?.get(p.user_id)}
+                          memberDotClass={tone.split(' ')[0]}
                           onApprove={onApprovePreference ?? (async () => {})}
                           onReject={onRejectPreference ?? (async () => {})}
                           canManage={canManageStore?.(p.store_id) ?? false}

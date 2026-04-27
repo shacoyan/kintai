@@ -27,6 +27,13 @@ export interface ShiftPreferenceSidebarProps {
   stores: Store[];
   defaultStoreId: string;
   onMutated: () => void;
+  adminSummary?: {
+    preferredCount: number;
+    availableCount: number;
+    unavailableCount: number;
+    monthLabel: string;
+  };
+  onRevertPreference?: (id: string) => Promise<void>;
 }
 
 export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
@@ -49,6 +56,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
     stores,
     defaultStoreId,
     onMutated,
+    adminSummary,
   } = props;
 
   const dateFilteredPreferences = useMemo(() => {
@@ -121,6 +129,26 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
               </div>
             </div>
           </Card>
+
+          {adminSummary && (
+            <Card padding="sm">
+              <Card.Header>{adminSummary.monthLabel}の希望</Card.Header>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-warning-600 dark:text-warning-400 tabular-nums">{adminSummary.preferredCount}</div>
+                  <div className="text-xs text-neutral-500">希望</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-info-600 dark:text-info-400 tabular-nums">{adminSummary.availableCount}</div>
+                  <div className="text-xs text-neutral-500">出勤可</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-neutral-500 dark:text-neutral-400 tabular-nums">{adminSummary.unavailableCount}</div>
+                  <div className="text-xs text-neutral-500">不可</div>
+                </div>
+              </div>
+            </Card>
+          )}
 
           <Card padding="sm">
             <Card.Header className="flex justify-between items-center">

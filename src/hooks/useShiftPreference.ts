@@ -148,10 +148,49 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     if (error) throw new Error(`希望の却下に失敗しました: ${error.message}`);
   }, []);
 
+  // 承認・却下済みの希望を保留に戻す
+  const revertPreference = useCallback(async (preferenceId: string) => {
+    // 希望レコードを取得
+    const { data: pref, error: fetchError } = await supabase
+      .from('shift_preferences')
+      .select('*')
+      .eq('id', preferenceId)
+      .single();
+    if (fetchError || !pref) throw new Error(`希望の取得に失敗しました: ${fetchError?.message}`);
+
+    // pendingなら何もしない
+    if (pref.status === 'pending') return;
+
+    // approvedの場合は対応するshiftsレコードを削除
+    if (pref.status === 'approved') {
+      const { error: deleteError } = await supabase
+        .from('shifts')
+        .delete()
+        .match({
+          tenant_id: pref.tenant_id,
+          user_id: pref.user_id,
+          date: pref.date,
+          store_id: pref.store_id,
+          status: 'approved',
+          start_time: pref.start_time,
+          end_time: pref.end_time,
+        });
+      if (deleteError) throw new Error(`シフトの削除に失敗しました: ${deleteError.message}`);
+    }
+
+    // ステータスをpendingに更新
+    const { error: updateError } = await supabase
+      .from('shift_preferences')
+      .update({ status: 'pending' })
+      .eq('id', preferenceId);
+    if (updateError) throw new Error(`希望の保留化に失敗しました: ${updateError.message}`);
+  }, []);
+
   return {
     myPreferences, allPreferences, loading,
     fetchMyPreferences, fetchAllPreferences,
     submitPreference, deletePreference,
     approvePreference, rejectPreference,
+    revertPreference,
   };
 }
