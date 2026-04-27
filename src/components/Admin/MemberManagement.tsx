@@ -3,6 +3,7 @@ import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useTenant } from '../../hooks/useTenant';
 import type { TenantMember } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
+import { useStoreContext } from '../../contexts/StoreContext';
 import { BottomSheet } from '../ui/BottomSheet';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
@@ -24,6 +25,7 @@ const roleBadge: Record<string, { label: string; className: string }> = {
 export function MemberManagement({ tenantId }: MemberManagementProps) {
   const { showToast } = useToast();
   const { myRole } = useTenant();
+  const { currentStore } = useStoreContext();
   const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary, deleteMember, updateRole, updatePaidLeaveDays } = useTenantAdmin(tenantId);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingRoleId, setTogglingRoleId] = useState<string | null>(null);
@@ -36,8 +38,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchMembers();
-  }, [fetchMembers]);
+    fetchMembers(currentStore?.id ?? null);
+  }, [fetchMembers, currentStore?.id]);
 
   const handleStartEdit = (member: TenantMember) => {
     setEditingId(member.id);
@@ -188,6 +190,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">メンバー管理</h2>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">各メンバーの時給・深夜給を設定できます</p>
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">対象: {currentStore ? currentStore.name : '全店舗'}</p>
         </div>
 
         {/* カード型レイアウト（モバイル対応） */}

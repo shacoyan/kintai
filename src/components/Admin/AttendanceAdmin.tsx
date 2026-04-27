@@ -214,6 +214,11 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           setSaving(false);
           return;
         }
+        if (!currentStore?.id) {
+          showToast('店舗を選択してください', 'error');
+          setSaving(false);
+          return;
+        }
         const clockInISO = new Date(edit.clock_in).toISOString();
         const clockOutISO = edit.clock_out ? new Date(edit.clock_out).toISOString() : null;
         let totalWorkMinutes: number | null = null;
@@ -227,6 +232,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           .from('attendance_records')
           .insert({
             tenant_id: tenantId,
+            store_id: currentStore.id,
             user_id: selectedCell.userId,
             date: selectedCell.date,
             clock_in: clockInISO,

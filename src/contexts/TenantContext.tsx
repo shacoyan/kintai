@@ -12,6 +12,8 @@ interface TenantContextType {
   fetchTenants: () => Promise<TenantWithRole[]>;
   createTenant: (name: string, displayName: string) => Promise<Tenant>;
   joinTenant: (inviteCode: string, displayName: string) => Promise<Tenant>;
+  regenerateInviteCode: () => Promise<string>;
+  leaveTenant: () => Promise<void>;
   loading: boolean;
   error: string | null;
   isOwner: boolean;
@@ -117,6 +119,24 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, []);
 
+  const generateUniqueInviteCode = useCallback(async (): Promise<string> => {
+    let inviteCode: string | null = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const candidate = crypto.randomUUID().substring(0, 6).toUpperCase();
+      const { data: existing } = await supabase
+        .from('tenants')
+        .select('id')
+        .eq('invite_code', candidate)
+        .maybeSingle();
+      if (!existing) {
+        inviteCode = candidate;
+        break;
+      }
+    }
+    if (!inviteCode) throw new Error('招待コードの生成に失敗しました。再度お試しください。');
+    return inviteCode;
+  }, []);
+
   const createTenant = useCallback(async (name: string, displayName: string): Promise<Tenant> => {
     setLoading(true);
     setError(null);
@@ -124,20 +144,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       if (authError || !authUser) throw new Error('認証情報の取得に失敗しました');
 
-      let inviteCode: string | null = null;
-      for (let attempt = 0; attempt < 5; attempt++) {
-        const candidate = crypto.randomUUID().substring(0, 6).toUpperCase();
-        const { data: existing } = await supabase
-          .from('tenants')
-          .select('id')
-          .eq('invite_code', candidate)
-          .maybeSingle();
-        if (!existing) {
-          inviteCode = candidate;
-          break;
-        }
-      }
-      if (!inviteCode) throw new Error('招待コードの生成に失敗しました。再度お試しください。');
+      const inviteCode = await generateUniqueInviteCode();
 
       const { data: tenantData, error: tenantError } = await supabase
         .from('tenants')
@@ -165,7 +172,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [generateUniqueInviteCode]);
 
   const joinTenant = useCallback(async (inviteCode: string, displayName: string): Promise<Tenant> => {
     setLoading(true);
@@ -211,6 +218,61 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLoading(false);
     }
   }, []);
+
+  const regenerateInviteCode = useCallback(async (): Promise<string> => {
+    if (!currentTenant) throw new Error('テナントが選択されていません');
+    if (myRole !== 'owner') throw new Error('オーナーのみ実行可能です');
+
+    setLoading(true);
+    setError(null);
+    try {
+      const newCode = await generateUniqueInviteCode();
+
+      const { error: updateError } = await supabase
+        .from('tenants')
+        .update({ invite_code: newCode })
+        .eq('id', currentTenant.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      setCurrentTenant({ ...currentTenant, invite_code: newCode });
+      await fetchTenants();
+
+      return newCode;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [currentTenant, myRole, generateUniqueInviteCode, setCurrentTenant, fetchTenants]);
+
+  const leaveTenant = useCallback(async (): Promise<void> => {
+    if (!currentTenant) throw new Error('テナントが選択されていません');
+    if (isOwner) throw new Error('オーナーは脱退できません。先に他のメンバーにオーナー権を移譲してください');
+    if (!myMemberId) throw new Error('メンバー情報の取得に失敗しました');
+
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: deleteError } = await supabase
+        .from('tenant_members')
+        .delete()
+        .eq('id', myMemberId);
+
+      if (deleteError) throw deleteError;
+
+      setCurrentTenant(null);
+      await fetchTenants();
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [currentTenant, isOwner, myMemberId, setCurrentTenant, fetchTenants]);
 
   // ログイン時にテナント一覧を取得
   useEffect(() => {
@@ -264,6 +326,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       fetchTenants,
       createTenant,
       joinTenant,
+      regenerateInviteCode,
+      leaveTenant,
       loading,
       error,
       isOwner,

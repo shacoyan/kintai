@@ -1,4 +1,5 @@
 import { StoreSelector } from '../Store/StoreSelector';
+import { TenantSwitcher } from '../Tenant/TenantSwitcher';
 import { BrandMark } from '../ui';
 
 export function MobileHeader() {
@@ -10,6 +11,7 @@ export function MobileHeader() {
           kintai
         </span>
       </div>
+      <TenantSwitcher compact />
       <div className="flex-1" />
       <StoreSelector />
     </div>

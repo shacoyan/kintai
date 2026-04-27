@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Clock, List, Calendar, LayoutDashboard, LogOut, type LucideIcon } from 'lucide-react';
+import { Clock, List, Calendar, LayoutDashboard, LogOut, ArrowLeftRight, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTenant } from '../../hooks/useTenant';
 import { Badge, BrandMark } from '../ui';
+import LeaveTenantButton from '../Tenant/LeaveTenantButton';
 
 function NavItem({
   to,
@@ -80,6 +81,13 @@ export function Sidebar() {
       )}
 
       <div className="flex-1" />
+
+      <div className="border-t border-neutral-200 my-1" />
+
+      <div className="flex flex-col gap-2">
+        <NavItem to="/tenant" icon={ArrowLeftRight} label="ワークスペースを切替" />
+        <LeaveTenantButton />
+      </div>
 
       <div className="border-t border-neutral-200 my-1" />
 

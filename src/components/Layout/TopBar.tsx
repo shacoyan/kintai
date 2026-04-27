@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../hooks/useTenant';
 import { Badge, Button } from '../ui';
 import { StoreSelector } from '../Store/StoreSelector';
+import { TenantSwitcher } from '../Tenant/TenantSwitcher';
 
 export interface TopBarProps {
   title?: string;
@@ -84,6 +85,7 @@ export function TopBar({
 
   return (
     <div className="flex items-center w-full gap-4">
+      <TenantSwitcher />
       {title && (
         <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 truncate">
           {title}

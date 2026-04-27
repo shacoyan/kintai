@@ -12,19 +12,50 @@ export function useTenantAdmin(tenantId: string) {
   const stopLoading = () => setLoadingCount(c => Math.max(0, c - 1));
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMembers = useCallback(async () => {
+  const fetchMembers = useCallback(async (storeId?: string | null) => {
     startLoading();
     setError(null);
     try {
-      const { data, error: e } = await supabase
-        .from('tenant_members')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: true });
-      if (e) {
-        setError(e.message);
+      if (storeId != null) {
+        const { data: storeMembersData, error: storeMembersError } = await supabase
+          .from('store_members')
+          .select('member_id')
+          .eq('store_id', storeId);
+
+        if (storeMembersError) {
+          setError(storeMembersError.message);
+          return;
+        }
+
+        const memberIds = (storeMembersData || []).map((sm: any) => sm.member_id);
+        if (memberIds.length === 0) {
+          setMembers([]);
+          return;
+        }
+
+        const { data, error: e } = await supabase
+          .from('tenant_members')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .in('id', memberIds)
+          .order('created_at', { ascending: true });
+
+        if (e) {
+          setError(e.message);
+        } else {
+          setMembers((data as TenantMember[]) || []);
+        }
       } else {
-        setMembers((data as TenantMember[]) || []);
+        const { data, error: e } = await supabase
+          .from('tenant_members')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .order('created_at', { ascending: true });
+        if (e) {
+          setError(e.message);
+        } else {
+          setMembers((data as TenantMember[]) || []);
+        }
       }
     } finally {
       stopLoading();

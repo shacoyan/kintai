@@ -11,6 +11,7 @@ import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useUnsubmittedMembers } from '../../hooks/useUnsubmittedMembers';
 import { useTenant, usePayrollCloseDay } from '../../hooks/useTenant';
 import { useStoreContext } from '../../contexts/StoreContext';
+import { useToast } from '../../contexts/ToastContext';
 import { CorrectionList } from '../Correction/CorrectionList';
 import { LeaveList } from '../Leave/LeaveList';
 import { RejectLeaveModal } from '../Leave/RejectLeaveModal';
@@ -20,6 +21,7 @@ import { StoreManagement } from './StoreManagement';
 import { ShiftMismatchAlert } from './ShiftMismatchAlert';
 import { ShiftDeadlineSettingsModal } from './ShiftDeadlineSettingsModal';
 import { detectMismatches } from '../../utils/shiftMismatch';
+import { useSearchParams } from 'react-router-dom';
 import {
   QrCode,
   Check,
@@ -36,7 +38,8 @@ import {
   CalendarCheck,
   AlertTriangle,
   CalendarClock,
-  UserX
+  UserX,
+  RefreshCw
 } from 'lucide-react';
 import { StatCard, Card, PageSkeleton, ErrorBanner, Button } from '../ui';
 import type { Shift, AttendanceRecord } from '../../types';
@@ -67,14 +70,23 @@ const SECTIONS = [
 ] as const;
 
 export function AdminDashboard({ tenantId }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
+  const [searchParams] = useSearchParams();
+  const initialTab = (() => {
+    const t = searchParams.get('tab');
+    if (t && tabs.some(x => x.id === t)) return t as TabId;
+    return 'dashboard';
+  })();
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [rejectingLeaveId, setRejectingLeaveId] = useState<string | null>(null);
   const [approveConfirm, setApproveConfirm] = useState<{ leaveId: string; userId: string } | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [deadlineModalOpen, setDeadlineModalOpen] = useState(false);
-  const { currentTenant, isOwner, myRole } = useTenant();
+  const [regenConfirmOpen, setRegenConfirmOpen] = useState(false);
+  const [regenLoading, setRegenLoading] = useState(false);
+  const { currentTenant, isOwner, myRole, regenerateInviteCode } = useTenant();
   const { currentStore } = useStoreContext();
+  const { showToast } = useToast();
   const canEditDeadline = isOwner || myRole === 'manager';
   // === Loop 7 (Engineer A) ===
   const {
@@ -160,24 +172,31 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       const startDate = format(startOfMonth(now), 'yyyy-MM-dd');
       const endDate = format(endOfMonth(now), 'yyyy-MM-dd');
 
-      const [shiftsRes, attendanceRes] = await Promise.all([
-        supabase
-          .from('shifts')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .eq('status', 'approved')
-          .gte('date', startDate)
-          .lte('date', endDate)
-          .order('date', { ascending: true }),
-        supabase
-          .from('attendance_records')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .gte('date', startDate)
-          .lte('date', endDate)
-          .order('date', { ascending: true })
-          .order('clock_in', { ascending: true }),
-      ]);
+      let shiftsQuery = supabase
+        .from('shifts')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'approved')
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true });
+      if (currentStore?.id) {
+        shiftsQuery = shiftsQuery.eq('store_id', currentStore.id);
+      }
+
+      let attendanceQuery = supabase
+        .from('attendance_records')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true })
+        .order('clock_in', { ascending: true });
+      if (currentStore?.id) {
+        attendanceQuery = attendanceQuery.eq('store_id', currentStore.id);
+      }
+
+      const [shiftsRes, attendanceRes] = await Promise.all([shiftsQuery, attendanceQuery]);
 
       if (shiftsRes.error) throw shiftsRes.error;
       if (attendanceRes.error) throw attendanceRes.error;
@@ -189,7 +208,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
     } finally {
       setMismatchLoading(false);
     }
-  }, [tenantId]);
+  }, [tenantId, currentStore?.id]);
 
   useEffect(() => {
     if (activeTab === 'mismatch') {
@@ -330,22 +349,34 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   </div>
                 </Card.Header>
                 <Card.Body>
-                  <button
-                    onClick={handleCopyCode}
-                    className="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 inline-flex items-center space-x-2"
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>コピーしました</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4" />
-                        <span>コピー</span>
-                      </>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleCopyCode}
+                      className="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 inline-flex items-center space-x-2"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>コピーしました</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>コピー</span>
+                        </>
+                      )}
+                    </button>
+                    {isOwner && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        iconLeft={<RefreshCw size={14} />}
+                        onClick={() => setRegenConfirmOpen(true)}
+                      >
+                        再発行
+                      </Button>
                     )}
-                  </button>
+                  </div>
                 </Card.Body>
               </Card>
             )}
@@ -477,6 +508,9 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">シフト不一致アラート</h2>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    対象: {currentStore?.name ?? '全店舗'}
+                  </p>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
                     今月の承認済みシフトと実績の差異を表示します（猶予15分）
                   </p>
@@ -627,6 +661,40 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
             </Button>
             <Button variant="primary" size="sm" onClick={handleConfirmApprove}>
               承認する
+            </Button>
+          </div>
+        }
+      >
+        <div />
+      </BottomSheet>
+      <BottomSheet
+        isOpen={regenConfirmOpen}
+        onClose={() => setRegenConfirmOpen(false)}
+        title='招待コードを再発行しますか？'
+        description='現在のコードは無効になります。新しいコードを再共有してください。'
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setRegenConfirmOpen(false)}>
+              キャンセル
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              loading={regenLoading}
+              onClick={async () => {
+                setRegenLoading(true);
+                try {
+                  const code = await regenerateInviteCode();
+                  showToast(`新しい招待コード: ${code}`, 'success');
+                  setRegenConfirmOpen(false);
+                } catch (e) {
+                  showToast(e instanceof Error ? e.message : '再発行に失敗しました', 'error');
+                } finally {
+                  setRegenLoading(false);
+                }
+              }}
+            >
+              再発行する
             </Button>
           </div>
         }

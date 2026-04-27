@@ -292,8 +292,8 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   const [payrollMode, setPayrollMode] = useState<'actual' | 'shift'>('actual');
 
   useEffect(() => {
-    fetchMembers();
-  }, [fetchMembers]);
+    fetchMembers(currentStore?.id ?? null);
+  }, [fetchMembers, currentStore?.id]);
 
   // currentStore 変更時に calculated を false に戻す
   useEffect(() => {
