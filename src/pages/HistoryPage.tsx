@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTenant } from '../hooks/useTenant';
 import { useAuth } from '../hooks/useAuth';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
@@ -25,6 +25,7 @@ import {
 } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CalendarX } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton, HistorySkeleton } from '../components/ui';
 
 // safelist: bg-info-500, bg-info-400, bg-success-500, bg-success-400, bg-danger-500, bg-danger-400, text-info-500, text-info-400, text-danger-500, text-danger-400
@@ -251,7 +252,16 @@ export function HistoryPage() {
     }
   }, [canSwitchUser, currentStore?.id, fetchMembers]);
 
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialDate = useMemo(() => {
+    const dateParam = searchParams.get('date');
+    if (dateParam && /^\d{4}-\d{2}(-\d{2})?$/.test(dateParam)) {
+      const [y, m] = dateParam.split('-').map(Number);
+      if (y && m && m >= 1 && m <= 12) return new Date(y, m - 1, 1);
+    }
+    return new Date();
+  }, []); // 初回のみ
+  const [currentDate, setCurrentDate] = useState<Date>(initialDate);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [correctionModal, setCorrectionModal] = useState<CorrectionModalState>({
     isOpen: false,
@@ -261,6 +271,13 @@ export function HistoryPage() {
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
+
+  useEffect(() => {
+    const ym = `${year}-${String(month).padStart(2, '0')}`;
+    if (searchParams.get('date') !== ym) {
+      setSearchParams({ date: ym }, { replace: true });
+    }
+  }, [year, month, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!tenantId) return;

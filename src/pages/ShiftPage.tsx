@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Clock, History, CheckCircle2, Circle, XCircle, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { Button, Card, Badge, BottomSheet, ShiftSkeleton } from '../components/ui';
 import { Spinner } from '../components/ui/Spinner';
@@ -67,7 +68,23 @@ export function ShiftPage() {
   const [selectedPrefDate, setSelectedPrefDate] = useState<string | null>(null);
   const [showAllMembersPrefs, setShowAllMembersPrefs] = useState(false);
   const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
-  const [shiftViewMonth, setShiftViewMonth] = useState<Date>(new Date());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialShiftMonth = useMemo(() => {
+    const monthParam = searchParams.get('month');
+    if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
+      const [y, m] = monthParam.split('-').map(Number);
+      if (y && m && m >= 1 && m <= 12) return new Date(y, m - 1, 1);
+    }
+    return new Date();
+  }, []); // 初回のみ
+  const [shiftViewMonth, setShiftViewMonth] = useState<Date>(initialShiftMonth);
+
+  useEffect(() => {
+    const ym = format(shiftViewMonth, 'yyyy-MM');
+    if (searchParams.get('month') !== ym) {
+      setSearchParams({ month: ym }, { replace: true });
+    }
+  }, [shiftViewMonth, searchParams, setSearchParams]);
   const [allMemberPrefDate, setAllMemberPrefDate] = useState<string | null>(null);
   const [showBulkApplyModal, setShowBulkApplyModal] = useState(false);
 
