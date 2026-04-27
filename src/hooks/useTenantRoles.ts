@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { formatSupabaseError } from '../lib/errors';
 import type { TenantRole } from '../types';
 
 export function useTenantRoles(tenantId: string) {
@@ -22,7 +23,7 @@ export function useTenantRoles(tenantId: string) {
       }
       setRoles((data ?? []) as TenantRole[]);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '役職の取得に失敗しました');
+      setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
     }
@@ -56,7 +57,7 @@ export function useTenantRoles(tenantId: string) {
       await fetchRoles();
       return data as TenantRole;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '役職の作成に失敗しました');
+      setError(formatSupabaseError(err).message);
       throw err;
     }
   }, [tenantId, fetchRoles]);
@@ -82,7 +83,7 @@ export function useTenantRoles(tenantId: string) {
 
       await fetchRoles();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '役職の更新に失敗しました');
+      setError(formatSupabaseError(err).message);
       throw err;
     }
   }, [tenantId, fetchRoles]);
@@ -102,7 +103,7 @@ export function useTenantRoles(tenantId: string) {
 
       await fetchRoles();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '役職の削除に失敗しました');
+      setError(formatSupabaseError(err).message);
       throw err;
     }
   }, [tenantId, fetchRoles]);

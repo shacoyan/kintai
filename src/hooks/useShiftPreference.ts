@@ -2,6 +2,32 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { formatSupabaseError } from '../lib/errors';
 import type { ShiftPreference, ShiftPreferenceType } from '../types';
+import type { NotificationType } from '../types';
+
+async function notify(args: {
+  tenantId: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body?: string | null;
+  link?: string | null;
+}) {
+  try {
+    const { error: nerr } = await supabase
+      .from('notifications')
+      .insert({
+        tenant_id: args.tenantId,
+        user_id: args.userId,
+        type: args.type,
+        title: args.title,
+        body: args.body ?? null,
+        link: args.link ?? null,
+      });
+    if (nerr) console.warn('[notify] insert failed:', nerr.message);
+  } catch (e) {
+    console.warn('[notify] threw:', e);
+  }
+}
 
 export function useShiftPreference(tenantId: string, storeId: string | null) {
   const [myPreferences, setMyPreferences] = useState<ShiftPreference[]>([]);
@@ -164,6 +190,14 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
           store_id: pref.store_id,
         });
       if (insertError) throw new Error(`シフト作成に失敗しました: ${insertError.message}`);
+
+      await notify({
+        tenantId: pref.tenant_id,
+        userId: pref.user_id,
+        type: 'preference_approved' as NotificationType,
+        title: 'シフト希望が承認されました',
+        link: `/shift?tab=preferences&date=${pref.date}`,
+      });
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted.message);
@@ -175,11 +209,26 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
   // 店長: 希望を却下
   const rejectPreference = useCallback(async (preferenceId: string) => {
     try {
+      const { data: pref, error: fetchError } = await supabase
+        .from('shift_preferences')
+        .select('user_id, tenant_id, date')
+        .eq('id', preferenceId)
+        .single();
+      if (fetchError || !pref) throw new Error(`希望の取得に失敗しました: ${fetchError?.message}`);
+
       const { error } = await supabase
         .from('shift_preferences')
         .update({ status: 'rejected' })
         .eq('id', preferenceId);
       if (error) throw error;
+
+      await notify({
+        tenantId: pref.tenant_id,
+        userId: pref.user_id,
+        type: 'preference_rejected' as NotificationType,
+        title: 'シフト希望が却下されました',
+        link: '/shift?tab=preferences',
+      });
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted.message);
@@ -225,6 +274,14 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
         .update({ status: 'pending' })
         .eq('id', preferenceId);
       if (updateError) throw new Error(`希望の保留化に失敗しました: ${updateError.message}`);
+
+      await notify({
+        tenantId: pref.tenant_id,
+        userId: pref.user_id,
+        type: 'preference_reverted' as NotificationType,
+        title: 'シフト希望のステータスが戻されました',
+        link: '/shift?tab=preferences',
+      });
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted.message);

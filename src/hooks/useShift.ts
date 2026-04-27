@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Shift, TenantMember } from '../types';
+import type { Shift, TenantMember, NotificationType } from '../types';
 import { getNightMinutesForShift } from '../utils/nightShift';
 import { formatSupabaseError } from '../lib/errors';
 
@@ -11,6 +11,31 @@ interface LaborCostEstimate {
   shiftMinutes: number;
   nightMinutes: number;
   estimatedCost: number;
+}
+
+async function notify(args: {
+  tenantId: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body?: string | null;
+  link?: string | null;
+}) {
+  try {
+    const { error: nerr } = await supabase
+      .from('notifications')
+      .insert({
+        tenant_id: args.tenantId,
+        user_id: args.userId,
+        type: args.type,
+        title: args.title,
+        body: args.body ?? null,
+        link: args.link ?? null,
+      });
+    if (nerr) console.warn('[notify] insert failed:', nerr.message);
+  } catch (e) {
+    console.warn('[notify] threw:', e);
+  }
 }
 
 export function useShift(tenantId: string, storeId: string | null) {
@@ -113,30 +138,50 @@ export function useShift(tenantId: string, storeId: string | null) {
   const approveShift = useCallback(async (shiftId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
-    const { error: e } = await supabase
+    const { data, error: e } = await supabase
       .from('shifts')
       .update({
         status: 'approved',
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
       })
-      .eq('id', shiftId);
+      .eq('id', shiftId)
+      .select('user_id, date, start_time')
+      .single();
     if (e) throw new Error(`シフト承認に失敗しました: ${e.message}`);
-  }, []);
+    await notify({
+      tenantId: tenantId,
+      userId: data.user_id,
+      type: 'shift_approved',
+      title: 'シフトが承認されました',
+      body: `${data.date} のシフトが承認されました`,
+      link: '/shift?date=' + data.date,
+    });
+  }, [tenantId]);
 
   const rejectShift = useCallback(async (shiftId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
-    const { error: e } = await supabase
+    const { data, error: e } = await supabase
       .from('shifts')
       .update({
         status: 'rejected',
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
       })
-      .eq('id', shiftId);
+      .eq('id', shiftId)
+      .select('user_id, date, start_time')
+      .single();
     if (e) throw new Error(`シフト却下に失敗しました: ${e.message}`);
-  }, []);
+    await notify({
+      tenantId: tenantId,
+      userId: data.user_id,
+      type: 'shift_rejected',
+      title: 'シフトが却下されました',
+      body: `${data.date} のシフトが却下されました`,
+      link: '/shift?date=' + data.date,
+    });
+  }, [tenantId]);
 
   const modifyShift = useCallback(async (shiftId: string, newStartTime: string, newEndTime: string, newStoreId?: string) => {
     const { data: { user } } = await supabase.auth.getUser();

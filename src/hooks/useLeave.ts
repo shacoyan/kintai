@@ -2,6 +2,32 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { formatSupabaseError } from '../lib/errors';
 import type { LeaveRequest, LeaveType } from '../types';
+import type { NotificationType } from '../types';
+
+async function notify(args: {
+  tenantId: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body?: string | null;
+  link?: string | null;
+}) {
+  try {
+    const { error: nerr } = await supabase
+      .from('notifications')
+      .insert({
+        tenant_id: args.tenantId,
+        user_id: args.userId,
+        type: args.type,
+        title: args.title,
+        body: args.body ?? null,
+        link: args.link ?? null,
+      });
+    if (nerr) console.warn('[notify] insert failed:', nerr.message);
+  } catch (e) {
+    console.warn('[notify] threw:', e);
+  }
+}
 
 export function useLeave(tenantId: string) {
   const [myLeaves, setMyLeaves] = useState<LeaveRequest[]>([]);
@@ -126,21 +152,31 @@ export function useLeave(tenantId: string) {
   const approveLeave = useCallback(async (leaveId: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
-    const { error: e } = await supabase
+    const { data, error: e } = await supabase
       .from('leave_requests')
       .update({
         status: 'approved',
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
       })
-      .eq('id', leaveId);
+      .eq('id', leaveId)
+      .select('tenant_id, user_id, date')
+      .single();
     if (e) throw new Error(`休暇承認に失敗しました: ${e.message}`);
+    await notify({
+      tenantId: data.tenant_id,
+      userId: data.user_id,
+      type: 'leave_approved',
+      title: '休暇申請が承認されました',
+      body: `${data.date}`,
+      link: `/leave?date=${data.date}`,
+    });
   }, []);
 
   const rejectLeave = useCallback(async (leaveId: string, reviewNote: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
-    const { error: e } = await supabase
+    const { data, error: e } = await supabase
       .from('leave_requests')
       .update({
         status: 'rejected',
@@ -148,8 +184,18 @@ export function useLeave(tenantId: string) {
         reviewed_at: new Date().toISOString(),
         review_note: reviewNote,
       })
-      .eq('id', leaveId);
+      .eq('id', leaveId)
+      .select('tenant_id, user_id, date')
+      .single();
     if (e) throw new Error(`休暇却下に失敗しました: ${e.message}`);
+    await notify({
+      tenantId: data.tenant_id,
+      userId: data.user_id,
+      type: 'leave_rejected',
+      title: '休暇申請が却下されました',
+      body: reviewNote || null,
+      link: `/leave?date=${data.date}`,
+    });
   }, []);
 
   const getRemainingPaidLeave = useCallback(async (userId?: string): Promise<number> => {

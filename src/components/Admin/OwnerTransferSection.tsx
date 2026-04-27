@@ -3,6 +3,7 @@ import { useTenant } from '../../contexts/TenantContext';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useToast } from '../../contexts/ToastContext';
 import { BottomSheet } from '../ui/BottomSheet';
+import { formatSupabaseError } from '../../lib/errors';
 
 interface OwnerTransferSectionProps {
   tenantId: string;
@@ -45,8 +46,8 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
       showToast('権限を移譲しました', 'success');
       setIsConfirmOpen(false);
       setSelectedUserId('');
-    } catch (err: any) {
-      showToast(err.message || '権限の移譲に失敗しました', 'error');
+    } catch (err) {
+      showToast(formatSupabaseError(err).message, 'error');
     } finally {
       setSubmitting(false);
     }

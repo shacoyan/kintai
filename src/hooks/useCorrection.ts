@@ -1,8 +1,19 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { CorrectionRequest } from '../types';
+import type { NotificationType } from '../types';
 import { differenceInMinutes, parseISO } from 'date-fns';
 import { formatSupabaseError } from '../lib/errors';
+
+async function notify(args: { tenantId: string; userId: string; type: NotificationType; title: string; body?: string | null; link?: string | null; }) {
+  try {
+    const { error: nerr } = await supabase.from('notifications').insert({
+      tenant_id: args.tenantId, user_id: args.userId, type: args.type,
+      title: args.title, body: args.body ?? null, link: args.link ?? null,
+    });
+    if (nerr) console.warn('[notify] insert failed:', nerr.message);
+  } catch (e) { console.warn('[notify] threw:', e); }
+}
 
 export function useCorrection(tenantId: string) {
   const [requests, setRequests] = useState<CorrectionRequest[]>([]);
@@ -89,7 +100,7 @@ export function useCorrection(tenantId: string) {
         throw error;
       }
       await fetchRequests();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Submit correction request error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
@@ -223,11 +234,37 @@ export function useCorrection(tenantId: string) {
           }
 
           await options?.onApproved?.(target);
+          await notify({
+            tenantId: target.tenant_id,
+            userId: target.user_id,
+            type: 'correction_approved',
+            title: '修正申請が承認されました',
+            body: target.date,
+            link: `/history?date=${target.date}`,
+          });
+        }
+      } else if (reviewStatus === 'rejected') {
+        const { data: targetData } = await supabase
+          .from('correction_requests')
+          .select('*')
+          .eq('id', requestId)
+          .single();
+        const target = targetData as CorrectionRequest | null;
+
+        if (target) {
+          await notify({
+            tenantId: target.tenant_id,
+            userId: target.user_id,
+            type: 'correction_rejected',
+            title: '修正申請が却下されました',
+            body: target.date,
+            link: `/history?date=${target.date}`,
+          });
         }
       }
 
       await fetchRequests();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Review correction request error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;
@@ -248,7 +285,7 @@ export function useCorrection(tenantId: string) {
       }
       // 承認済の場合、すでに attendance_records へ反映済の修正は取り消さない（巻き戻しは別途手動で）
       await fetchRequests();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Revert correction request error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
       throw err;

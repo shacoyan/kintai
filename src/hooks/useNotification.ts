@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import type { NotificationItem } from '../types';
 import { supabase } from '../lib/supabase';
+import { formatSupabaseError } from '../lib/errors';
 
 export function useNotification(userId: string | null) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -23,8 +24,7 @@ export function useNotification(userId: string | null) {
       if (fetchError) throw fetchError;
       setNotifications((data ?? []) as NotificationItem[]);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message);
+      setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
     }
@@ -44,8 +44,7 @@ export function useNotification(userId: string | null) {
       if (fetchError) throw fetchError;
       setNotifications((data ?? []) as NotificationItem[]);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message);
+      setError(formatSupabaseError(err).message);
     } finally {
       setLoading(false);
     }
@@ -65,8 +64,7 @@ export function useNotification(userId: string | null) {
           prev.map((n) => (n.id === id ? { ...n, read_at: now } : n))
         );
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        setError(message);
+        setError(formatSupabaseError(err).message);
       }
     },
     [userId]
@@ -87,8 +85,7 @@ export function useNotification(userId: string | null) {
         prev.map((n) => (unreadIds.includes(n.id) ? { ...n, read_at: now } : n))
       );
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message);
+      setError(formatSupabaseError(err).message);
     }
   }, [userId, notifications]);
 
