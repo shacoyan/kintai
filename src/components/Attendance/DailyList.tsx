@@ -1,6 +1,7 @@
 import { eachDayOfInterval, startOfMonth, endOfMonth, format, parseISO, differenceInMinutes } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { ja } from 'date-fns/locale';
+import { TrendingUp } from 'lucide-react';
 import { AttendanceRecord } from '../../types';
 import { EmptyState } from '../ui/EmptyState';
 
@@ -53,7 +54,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
   if (records.length === 0) {
     return (
       <EmptyState
-        icon="📊"
+        icon={<TrendingUp className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
         title="勤怠記録がありません"
         description="出勤すると、ここに記録が表示されます"
       />
@@ -61,91 +62,157 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[600px] text-sm">
-        <thead>
-          <tr className="border-b border-neutral-200 bg-neutral-50">
-            <th className="px-3 py-2 text-left font-medium text-neutral-600">日付</th>
-            <th className="px-3 py-2 text-left font-medium text-neutral-600">出勤</th>
-            <th className="px-3 py-2 text-left font-medium text-neutral-600">退勤</th>
-            <th className="px-3 py-2 text-left font-medium text-neutral-600">休憩</th>
-            <th className="px-3 py-2 text-left font-medium text-neutral-600">労働時間</th>
-            <th className="px-3 py-2 text-left font-medium text-neutral-600"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {days.map((day) => {
-            const dateStr = format(day, 'yyyy-MM-dd');
-            const dayRecords = recordsByDate.get(dateStr) || [];
-            const isToday = dateStr === today;
+    <>
+      {/* SP: カードリスト */}
+      <div className="sm:hidden divide-y divide-neutral-200 dark:divide-neutral-700">
+        {days.map(day => {
+          const dateStr = format(day, 'yyyy-MM-dd');
+          const dayRecords = recordsByDate.get(dateStr) || [];
+          const isToday = dateStr === today;
+          const isFuture = dateStr > today;
 
-            if (dayRecords.length === 0) {
-              return (
-                <tr
-                  key={dateStr}
-                  className={`border-b border-neutral-100 ${isToday ? 'bg-primary-50' : ''}`}
-                >
-                  <td className={`px-3 py-2 ${isToday ? 'font-bold' : ''}`}>
+          if (isFuture && dayRecords.length === 0) return null;
+
+          if (dayRecords.length === 0) {
+            return (
+              <div key={dateStr} className={`px-4 py-3 ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`text-sm ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : 'text-neutral-600 dark:text-neutral-300'}`}>
                     {format(day, 'M/d(E)', { locale: ja })}
-                  </td>
-                  <td className="px-3 py-2 text-neutral-300">--:--</td>
-                  <td className="px-3 py-2 text-neutral-300">--:--</td>
-                  <td className="px-3 py-2 text-neutral-300">--:--</td>
-                  <td className="px-3 py-2 text-neutral-300">--:--</td>
-                  <td className="px-3 py-2">
-                    <button
-                      onClick={() => onRequestCorrection(dateStr)}
-                      className="px-2 py-1 text-xs text-primary-600 bg-primary-50 rounded hover:bg-primary-100 transition-colors"
-                    >
-                      修正申請
-                    </button>
-                  </td>
-                </tr>
-              );
-            }
+                  </span>
+                  <span className="text-xs text-neutral-300 dark:text-neutral-600 tabular-nums">記録なし</span>
+                  <button onClick={() => onRequestCorrection(dateStr)}
+                    className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors">
+                    修正申請
+                  </button>
+                </div>
+              </div>
+            );
+          }
 
-            return dayRecords.map((record, index) => {
-              const breakMins = getBreakMinutes(record);
-              return (
-                <tr
-                  key={record.id}
-                  className={`border-b border-neutral-100 ${isToday ? 'bg-primary-50' : ''}`}
-                >
-                  <td className={`px-3 py-2 ${isToday ? 'font-bold' : ''}`}>
-                    {index === 0 ? format(day, 'M/d(E)', { locale: ja }) : ''}
-                  </td>
-                  <td className="px-3 py-2">
-                    {formatHM(record.clock_in) || '--:--'}
-                  </td>
-                  <td className="px-3 py-2">
-                    {formatHM(record.clock_out) || '--:--'}
-                  </td>
-                  <td className="px-3 py-2">
-                    {breakMins > 0 ? formatMinutes(breakMins) : '--:--'}
-                  </td>
-                  <td className="px-3 py-2">
-                    {formatMinutes(record.total_work_minutes) || '--:--'}
-                  </td>
-                  <td className="px-3 py-2 space-x-1">
-                    <button
-                      onClick={() => onRequestCorrection(dateStr, record)}
-                      className="px-2 py-1 text-xs text-primary-600 bg-primary-50 rounded hover:bg-primary-100 transition-colors"
-                    >
-                      修正申請
-                    </button>
-                    <button
-                      onClick={() => onRequestDeletion(dateStr, record)}
-                      className="px-2 py-1 text-xs text-danger-600 bg-danger-50 rounded hover:bg-danger-100 transition-colors"
-                    >
-                      削除依頼
-                    </button>
-                  </td>
-                </tr>
-              );
-            });
-          })}
-        </tbody>
-      </table>
-    </div>
+          return dayRecords.map((record, index) => {
+            const breakMins = getBreakMinutes(record);
+            return (
+              <div key={record.id} className={`px-4 py-3 space-y-2 ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`text-sm ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : 'text-neutral-700 dark:text-neutral-200'}`}>
+                    {index === 0 ? format(day, 'M/d(E)', { locale: ja }) : <span className="text-neutral-400 dark:text-neutral-500">↳ 同日</span>}
+                  </span>
+                  <span className="text-xs tabular-nums text-neutral-600 dark:text-neutral-300">
+                    {formatHM(record.clock_in) || '--:--'} - {formatHM(record.clock_out) || '--:--'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
+                  <span>休憩 {breakMins > 0 ? formatMinutes(breakMins) : '--'}</span>
+                  <span>労働 {formatMinutes(record.total_work_minutes) || '--'}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => onRequestCorrection(dateStr, record)}
+                    className="flex-1 px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors">
+                    修正申請
+                  </button>
+                  <button onClick={() => onRequestDeletion(dateStr, record)}
+                    className="flex-1 px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 transition-colors">
+                    削除依頼
+                  </button>
+                </div>
+              </div>
+            );
+          });
+        })}
+      </div>
+
+      {/* PC: テーブル */}
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="w-full min-w-[600px] text-sm">
+          <thead>
+            <tr className="border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700">
+              <th className="px-3 py-2 text-left font-medium text-neutral-600 dark:text-neutral-300">日付</th>
+              <th className="px-3 py-2 text-left font-medium text-neutral-600 dark:text-neutral-300">出勤</th>
+              <th className="px-3 py-2 text-left font-medium text-neutral-600 dark:text-neutral-300">退勤</th>
+              <th className="px-3 py-2 text-left font-medium text-neutral-600 dark:text-neutral-300">休憩</th>
+              <th className="px-3 py-2 text-left font-medium text-neutral-600 dark:text-neutral-300">労働時間</th>
+              <th className="px-3 py-2 text-left font-medium text-neutral-600 dark:text-neutral-300"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {days.map(day => {
+              const dateStr = format(day, 'yyyy-MM-dd');
+              const dayRecords = recordsByDate.get(dateStr) || [];
+              const isToday = dateStr === today;
+              const isFuture = dateStr > today;
+
+              if (isFuture && dayRecords.length === 0) return null;
+
+              if (dayRecords.length === 0) {
+                return (
+                  <tr
+                    key={dateStr}
+                    className={`border-b border-neutral-100 dark:border-neutral-800 ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}
+                  >
+                    <td className={`px-3 py-2 text-neutral-700 dark:text-neutral-200 ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : ''}`}>
+                      {format(day, 'M/d(E)', { locale: ja })}
+                    </td>
+                    <td className="px-3 py-2 text-neutral-300 dark:text-neutral-600">--:--</td>
+                    <td className="px-3 py-2 text-neutral-300 dark:text-neutral-600">--:--</td>
+                    <td className="px-3 py-2 text-neutral-300 dark:text-neutral-600">--:--</td>
+                    <td className="px-3 py-2 text-neutral-300 dark:text-neutral-600">--:--</td>
+                    <td className="px-3 py-2">
+                      <button
+                        onClick={() => onRequestCorrection(dateStr)}
+                        className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
+                      >
+                        修正申請
+                      </button>
+                    </td>
+                  </tr>
+                );
+              }
+
+              return dayRecords.map((record, index) => {
+                const breakMins = getBreakMinutes(record);
+                const isFirst = index === 0;
+                return (
+                  <tr
+                    key={record.id}
+                    className={`${isFirst ? 'border-t border-neutral-200 dark:border-neutral-700' : 'border-t border-neutral-100/50 dark:border-neutral-800/50'} border-b border-neutral-100 dark:border-neutral-800 ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}
+                  >
+                    <td className={`px-3 py-2 text-neutral-700 dark:text-neutral-200 ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : ''}`}>
+                      {index === 0 ? format(day, 'M/d(E)', { locale: ja }) : ''}
+                    </td>
+                    <td className="px-3 py-2 text-neutral-700 dark:text-neutral-200">
+                      {formatHM(record.clock_in) || <span className="text-neutral-300 dark:text-neutral-600">--:--</span>}
+                    </td>
+                    <td className="px-3 py-2 text-neutral-700 dark:text-neutral-200">
+                      {formatHM(record.clock_out) || <span className="text-neutral-300 dark:text-neutral-600">--:--</span>}
+                    </td>
+                    <td className="px-3 py-2 text-neutral-700 dark:text-neutral-200">
+                      {breakMins > 0 ? formatMinutes(breakMins) : <span className="text-neutral-300 dark:text-neutral-600">--:--</span>}
+                    </td>
+                    <td className="px-3 py-2 text-neutral-700 dark:text-neutral-200">
+                      {formatMinutes(record.total_work_minutes) || <span className="text-neutral-300 dark:text-neutral-600">--:--</span>}
+                    </td>
+                    <td className="px-3 py-2 space-x-1">
+                      <button
+                        onClick={() => onRequestCorrection(dateStr, record)}
+                        className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors"
+                      >
+                        修正申請
+                      </button>
+                      <button
+                        onClick={() => onRequestDeletion(dateStr, record)}
+                        className="px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 transition-colors"
+                      >
+                        削除依頼
+                      </button>
+                    </td>
+                  </tr>
+                );
+              });
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }

@@ -46,7 +46,6 @@ export function useCorrection(tenantId: string) {
       status: 'pending',
     };
 
-    // request_type カラムが存在しない場合にも対応
     if (data.request_type) {
       insertPayload.request_type = data.request_type;
     }
@@ -65,7 +64,6 @@ export function useCorrection(tenantId: string) {
       .from('correction_requests')
       .insert(insertPayload);
 
-    // request_type カラムが未追加の場合、フォールバック（reason に種別を含めて再送）
     if (error && insertPayload.request_type) {
       const fallbackPayload = { ...insertPayload };
       fallbackPayload.reason = `[${data.request_type}] ${data.reason}`;
@@ -83,14 +81,14 @@ export function useCorrection(tenantId: string) {
 
   const reviewRequest = async (
     requestId: string,
-    reviewStatus: 'approved' | 'rejected'
+    reviewStatus: 'approved' | 'rejected',
+    options?: { onApproved?: (target: CorrectionRequest) => void | Promise<void> }
   ) => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    // Update the request status
     const { error } = await supabase
       .from('correction_requests')
       .update({
@@ -104,7 +102,6 @@ export function useCorrection(tenantId: string) {
       throw error;
     }
 
-    // On approval, apply the change — fetch fresh from DB to avoid stale closure
     if (reviewStatus === 'approved') {
       const { data: targetData } = await supabase
         .from('correction_requests')
@@ -115,7 +112,6 @@ export function useCorrection(tenantId: string) {
 
       if (target) {
         if (target.request_type === 'delete' && target.attendance_record_id) {
-          // 削除
           const { error: delError } = await supabase
             .from('attendance_records')
             .delete()
@@ -127,7 +123,6 @@ export function useCorrection(tenantId: string) {
           let clockIn = target.requested_clock_in || null;
           let clockOut = target.requested_clock_out || null;
 
-          // 片方のみ変更の場合、既存レコードからもう片方を取得
           if (target.attendance_record_id && (!clockIn || !clockOut)) {
             const { data: existingRecord } = await supabase
               .from('attendance_records')
@@ -140,11 +135,24 @@ export function useCorrection(tenantId: string) {
             }
           }
 
-          // total_work_minutes を計算
           let totalWorkMinutes: number | null = null;
           if (clockIn && clockOut) {
-            totalWorkMinutes = differenceInMinutes(parseISO(clockOut), parseISO(clockIn));
-            // 既存レコードがあれば休憩分を差し引く
+            let outDate = parseISO(clockOut);
+            const inDate = parseISO(clockIn);
+
+            // 夜勤跨ぎ補正: clockOut が clockIn より前 → 翌日扱い
+            if (outDate < inDate) {
+              outDate = new Date(outDate.getTime() + 24 * 60 * 60 * 1000);
+              clockOut = outDate.toISOString();
+            }
+
+            // 24時間超過バリデーション
+            if (Math.abs(differenceInMinutes(outDate, inDate)) > 24 * 60) {
+              throw new Error('24時間以上の修正は無効です');
+            }
+
+            totalWorkMinutes = differenceInMinutes(outDate, inDate);
+
             if (target.attendance_record_id) {
               const { data: breaks } = await supabase
                 .from('breaks')
@@ -164,7 +172,6 @@ export function useCorrection(tenantId: string) {
           }
 
           if (target.attendance_record_id) {
-            // 既存レコードを更新
             const updateData: Record<string, any> = {};
             if (clockIn) updateData.clock_in = clockIn;
             if (clockOut) updateData.clock_out = clockOut;
@@ -179,7 +186,6 @@ export function useCorrection(tenantId: string) {
               }
             }
           } else if (clockIn) {
-            // レコードなしの日 → 新規作成
             const { error: insError } = await supabase
               .from('attendance_records')
               .insert({
@@ -195,11 +201,23 @@ export function useCorrection(tenantId: string) {
             }
           }
         }
+
+        await options?.onApproved?.(target);
       }
     }
 
     await fetchRequests();
   };
 
-  return { requests, loading, fetchRequests, submitRequest, reviewRequest };
+  const revertRequest = async (requestId: string) => {
+    const { error } = await supabase
+      .from('correction_requests')
+      .update({ status: 'pending', reviewed_by: null, reviewed_at: null })
+      .eq('id', requestId);
+    if (error) throw error;
+    // 承認済の場合、すでに attendance_records へ反映済の修正は取り消さない（巻き戻しは別途手動で）
+    await fetchRequests();
+  };
+
+  return { requests, loading, fetchRequests, submitRequest, reviewRequest, revertRequest };
 }

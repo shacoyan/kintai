@@ -1,12 +1,19 @@
+import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { FileEdit } from 'lucide-react';
 import { CorrectionRequest } from '../../types';
 import { Badge, Button, EmptyState } from '../ui';
 import type { BadgeTone } from '../ui';
 
+type FilterKey = 'all' | 'pending' | 'approved' | 'rejected' | 'correction' | 'delete';
+
 interface CorrectionListProps {
   requests: CorrectionRequest[];
   onReview?: (id: string, status: 'approved' | 'rejected') => void;
+  onRevert?: (id: string) => void | Promise<void>;
+  showFilter?: boolean;
+  memberNames?: Map<string, string>;
+  storeNames?: Map<string, string>;
 }
 
 const statusConfig = {
@@ -19,6 +26,15 @@ const typeConfig = {
   correction: { label: '修正' },
   delete: { label: '削除' },
 } as const;
+
+const filterTabs: { key: FilterKey; label: string }[] = [
+  { key: 'all', label: 'すべて' },
+  { key: 'pending', label: '承認待ち' },
+  { key: 'approved', label: '承認済' },
+  { key: 'rejected', label: '却下' },
+  { key: 'correction', label: '修正のみ' },
+  { key: 'delete', label: '削除のみ' },
+];
 
 function statusToTone(status: 'pending' | 'approved' | 'rejected'): BadgeTone {
   return status === 'approved' ? 'success' : status === 'pending' ? 'warning' : 'danger';
@@ -37,35 +53,94 @@ function formatTime(time: string | null): string {
   }
 }
 
-export function CorrectionList({ requests, onReview }: CorrectionListProps) {
-  if (requests.length === 0) {
+export function CorrectionList({ requests, onReview, onRevert, showFilter = false, memberNames, storeNames }: CorrectionListProps) {
+  const [confirming, setConfirming] = useState<{ id: string; action: 'approve' | 'reject' } | null>(null);
+  const [filterKey, setFilterKey] = useState<FilterKey>('all');
+
+  const filtered = showFilter
+    ? requests.filter(r => {
+        switch (filterKey) {
+          case 'all': return true;
+          case 'pending': return r.status === 'pending';
+          case 'approved': return r.status === 'approved';
+          case 'rejected': return r.status === 'rejected';
+          case 'correction': return (r.request_type ?? 'correction') === 'correction';
+          case 'delete': return r.request_type === 'delete';
+        }
+      })
+    : requests;
+
+  if (filtered.length === 0) {
     return (
-      <EmptyState
-        icon={<FileEdit className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
-        title="修正申請はありません"
-        description="履歴画面から打刻の修正を申請できます"
-      />
+      <>
+        {showFilter && (
+          <div className="flex border-b border-neutral-200 dark:border-neutral-700 mb-4 overflow-x-auto">
+            {filterTabs.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setFilterKey(tab.key)}
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                  filterKey === tab.key
+                    ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+        <EmptyState
+          icon={<FileEdit className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
+          title="修正申請はありません"
+          description="履歴画面から打刻の修正を申請できます"
+        />
+      </>
     );
   }
 
   return (
     <>
+      {showFilter && (
+        <div className="flex border-b border-neutral-200 dark:border-neutral-700 mb-4 overflow-x-auto">
+          {filterTabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setFilterKey(tab.key)}
+              className={`px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors ${
+                filterKey === tab.key
+                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* モバイル: カード表示 */}
       <div className="sm:hidden divide-y divide-neutral-200 dark:divide-neutral-700">
-        {requests.map((request) => {
+        {filtered.map((request) => {
           const statusCfg = statusConfig[request.status];
           const requestType = request.request_type || 'correction';
           const typeCfg = typeConfig[requestType];
           const statusTone = statusToTone(request.status);
           const typeTone = typeToTone(requestType);
+          const storeId = (request as any).attendance_records?.store_id ?? null;
+          const storeName = storeId ? storeNames?.get(storeId) : null;
           return (
             <div key={request.id} className="px-4 py-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{request.date}</span>
                 <div className="flex gap-2">
+                  {storeName && <Badge tone="primary">{storeName}</Badge>}
                   <Badge tone={typeTone}>{typeCfg.label}</Badge>
                   <Badge tone={statusTone}>{statusCfg.label}</Badge>
                 </div>
+              </div>
+              <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                {memberNames?.get(request.user_id)}
               </div>
               {requestType !== 'delete' && (
                 <div className="flex gap-4 text-sm text-neutral-600 dark:text-neutral-400 tabular-nums">
@@ -74,14 +149,26 @@ export function CorrectionList({ requests, onReview }: CorrectionListProps) {
                 </div>
               )}
               <p className="text-sm text-neutral-700 dark:text-neutral-300">{request.reason}</p>
-              {onReview && request.status === 'pending' && (
+              {(onReview || onRevert) && (
                 <div className="flex gap-2 pt-1">
-                  <Button variant="primary" size="sm" className="flex-1" onClick={() => onReview(request.id, 'approved')}>
-                    承認
-                  </Button>
-                  <Button variant="danger" size="sm" className="flex-1" onClick={() => onReview(request.id, 'rejected')}>
-                    却下
-                  </Button>
+                  {confirming?.id === request.id && confirming.action === 'approve' ? (
+                    <div className="flex gap-1 flex-1">
+                      <Button variant="primary" size="sm" className="flex-1" onClick={() => { onReview?.(request.id, 'approved'); setConfirming(null); }}>確定</Button>
+                      <Button variant="tertiary" size="sm" className="flex-1" onClick={() => setConfirming(null)}>戻す</Button>
+                    </div>
+                  ) : confirming?.id === request.id && confirming.action === 'reject' ? (
+                    <div className="flex gap-1 flex-1">
+                      <Button variant="danger" size="sm" className="flex-1" onClick={() => { onReview?.(request.id, 'rejected'); setConfirming(null); }}>確定</Button>
+                      <Button variant="tertiary" size="sm" className="flex-1" onClick={() => setConfirming(null)}>戻す</Button>
+                    </div>
+                  ) : request.status === 'pending' && onReview ? (
+                    <div className="flex gap-1 flex-1">
+                      <Button variant="primary" size="sm" className="flex-1" onClick={() => setConfirming({ id: request.id, action: 'approve' })}>承認</Button>
+                      <Button variant="danger" size="sm" className="flex-1" onClick={() => setConfirming({ id: request.id, action: 'reject' })}>却下</Button>
+                    </div>
+                  ) : request.status !== 'pending' && onRevert ? (
+                    <Button variant="tertiary" size="sm" className="flex-1" onClick={() => { if (window.confirm('この修正申請の承認を巻き戻しますか？\n勤怠レコードに加えた修正は元に戻されます。')) onRevert(request.id); }}>巻き戻す</Button>
+                  ) : null}
                 </div>
               )}
             </div>
@@ -95,26 +182,33 @@ export function CorrectionList({ requests, onReview }: CorrectionListProps) {
           <thead className="bg-neutral-50 dark:bg-neutral-700">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">日付</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">申請者</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">種類</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">申請出勤</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">申請退勤</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">理由</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">ステータス</th>
-              {onReview && (
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">店舗</th>
+              {(onReview || onRevert) && (
                 <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">操作</th>
               )}
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700 tabular-nums">
-            {requests.map((request) => {
+            {filtered.map((request) => {
               const statusCfg = statusConfig[request.status];
               const requestType = request.request_type || 'correction';
               const typeCfg = typeConfig[requestType];
               const statusTone = statusToTone(request.status);
               const typeTone = typeToTone(requestType);
+              const storeId = (request as any).attendance_records?.store_id ?? null;
+              const storeName = storeId ? storeNames?.get(storeId) : null;
               return (
                 <tr key={request.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
                   <td className="px-4 py-3 text-sm text-neutral-900 dark:text-neutral-100 whitespace-nowrap">{request.date}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-900 dark:text-neutral-100 whitespace-nowrap">
+                    {memberNames?.get(request.user_id) ?? '-'}
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <Badge tone={typeTone}>{typeCfg.label}</Badge>
                   </td>
@@ -128,17 +222,28 @@ export function CorrectionList({ requests, onReview }: CorrectionListProps) {
                   <td className="px-4 py-3 whitespace-nowrap">
                     <Badge tone={statusTone}>{statusCfg.label}</Badge>
                   </td>
-                  {onReview && (
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {storeName ? <Badge tone="primary">{storeName}</Badge> : <span className="text-sm text-neutral-400 dark:text-neutral-500">-</span>}
+                  </td>
+                  {(onReview || onRevert) && (
                     <td className="px-4 py-3 text-sm whitespace-nowrap">
-                      {request.status === 'pending' ? (
-                        <div className="flex gap-2">
-                          <Button variant="primary" size="sm" onClick={() => onReview(request.id, 'approved')}>
-                            承認
-                          </Button>
-                          <Button variant="danger" size="sm" onClick={() => onReview(request.id, 'rejected')}>
-                            却下
-                          </Button>
+                      {confirming?.id === request.id && confirming.action === 'approve' ? (
+                        <div className="flex gap-1">
+                          <Button variant="primary" size="sm" onClick={() => { onReview?.(request.id, 'approved'); setConfirming(null); }}>確定</Button>
+                          <Button variant="tertiary" size="sm" onClick={() => setConfirming(null)}>戻す</Button>
                         </div>
+                      ) : confirming?.id === request.id && confirming.action === 'reject' ? (
+                        <div className="flex gap-1">
+                          <Button variant="danger" size="sm" onClick={() => { onReview?.(request.id, 'rejected'); setConfirming(null); }}>確定</Button>
+                          <Button variant="tertiary" size="sm" onClick={() => setConfirming(null)}>戻す</Button>
+                        </div>
+                      ) : request.status === 'pending' && onReview ? (
+                        <div className="flex gap-1">
+                          <Button variant="primary" size="sm" onClick={() => setConfirming({ id: request.id, action: 'approve' })}>承認</Button>
+                          <Button variant="danger" size="sm" onClick={() => setConfirming({ id: request.id, action: 'reject' })}>却下</Button>
+                        </div>
+                      ) : request.status !== 'pending' && onRevert ? (
+                        <Button variant="tertiary" size="sm" onClick={() => { if (window.confirm('この修正申請の承認を巻き戻しますか？\n勤怠レコードに加えた修正は元に戻されます。')) onRevert(request.id); }}>巻き戻す</Button>
                       ) : (
                         <span className="text-xs text-neutral-400 dark:text-neutral-500">-</span>
                       )}

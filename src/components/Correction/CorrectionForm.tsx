@@ -15,6 +15,8 @@ interface CorrectionFormProps {
   existingClockIn?: string;
   existingClockOut?: string;
   mode?: 'correction' | 'delete';
+  memberName?: string;
+  storeName?: string;
 }
 
 export function CorrectionForm({
@@ -26,6 +28,8 @@ export function CorrectionForm({
   existingClockIn,
   existingClockOut,
   mode = 'correction',
+  memberName,
+  storeName,
 }: CorrectionFormProps) {
   const { submitRequest } = useCorrection(tenantId);
 
@@ -58,6 +62,17 @@ export function CorrectionForm({
   const isDelete = mode === 'delete';
   const isOvernight = !!(requestedClockIn && requestedClockOut && requestedClockOut < requestedClockIn);
 
+  let description = `対象日: ${date}`;
+  if (memberName) {
+    description += ` / 対象メンバー: ${memberName}`;
+  }
+  if (storeName) {
+    description += ` / 店舗: ${storeName}`;
+  }
+  if (isDelete) {
+    description += '（削除）';
+  }
+
   const buildTimestamps = () => {
     if (!requestedClockIn && !requestedClockOut) return { clockIn: undefined, clockOut: undefined };
 
@@ -89,6 +104,13 @@ export function CorrectionForm({
       return;
     }
 
+    if (!isDelete && existingClockIn) {
+      if (toTimeValue(existingClockIn) === requestedClockIn && toTimeValue(existingClockOut) === requestedClockOut) {
+        setError('変更がありません。出勤または退勤時刻を修正してください');
+        return;
+      }
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -118,7 +140,7 @@ export function CorrectionForm({
       isOpen={isOpen}
       onClose={onClose}
       title={isDelete ? '勤怠削除依頼' : '勤怠修正申請'}
-      description={`対象日: ${date}${isDelete ? '（削除）' : ''}`}
+      description={description}
       footer={
         <div className="flex gap-3">
           <Button
@@ -153,6 +175,12 @@ export function CorrectionForm({
 
         {!isDelete && (
           <>
+            {existingClockIn && (
+              <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                現在の打刻: {toTimeValue(existingClockIn)} - {toTimeValue(existingClockOut)}
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">出勤時刻</label>
               <input

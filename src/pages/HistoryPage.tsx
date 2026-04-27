@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTenant } from '../hooks/useTenant';
 import { useStoreContext } from '../contexts/StoreContext';
 import { useAttendance } from '../hooks/useAttendance';
+import { useToast } from '../contexts/ToastContext';
 import { DailyList } from '../components/Attendance/DailyList';
 import { MonthlySummary } from '../components/Attendance/MonthlySummary';
 import { CorrectionForm } from '../components/Correction/CorrectionForm';
@@ -22,6 +23,8 @@ import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CalendarX } from 'lucide-react';
 import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton } from '../components/ui';
 
+// safelist: bg-info-500, bg-info-400, bg-success-500, bg-success-400, bg-danger-500, bg-danger-400, text-info-500, text-info-400, text-danger-500, text-danger-400
+
 interface CorrectionModalState {
   isOpen: boolean;
   date: string;
@@ -31,26 +34,22 @@ interface CorrectionModalState {
   mode: 'correction' | 'delete';
 }
 
-// カレンダービューコンポーネント
 interface HistoryCalendarProps {
   year: number;
   month: number;
   records: AttendanceRecord[];
-  onClickDay: (date: string, record?: AttendanceRecord) => void;
+  onRequestCorrection?: (date: string, record?: AttendanceRecord) => void;
 }
 
-function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarProps) {
+function HistoryCalendar({ year, month, records, onRequestCorrection }: HistoryCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-
-  // 対象月の日付グリッドを生成（月曜始まり）
+  
   const monthStart = startOfMonth(new Date(year, month - 1, 1));
   const monthEnd = endOfMonth(monthStart);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const gridEnd = endOfMonth(monthEnd);
 
-  // グリッド終わりを日曜日に揃える
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
-  // 6行×7列になるよう末尾を埋める
   const totalCells = Math.ceil(days.length / 7) * 7;
   while (days.length < totalCells) {
     const last = days[days.length - 1];
@@ -59,16 +58,15 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
     days.push(next);
   }
 
-  // recordsをdate keyでマップ化
   const recordMap = new Map<string, AttendanceRecord>();
   records.forEach(r => {
     if (r.date) recordMap.set(r.date, r);
   });
 
   const weekDayLabels = ['月', '火', '水', '木', '金', '土', '日'];
+  const today = format(new Date(), 'yyyy-MM-dd');
 
   function calcWorkMinutes(record: AttendanceRecord): number {
-    // total_work_minutes が設定されている場合はそちらを優先
     if (record.total_work_minutes != null) return record.total_work_minutes;
     if (!record.clock_in || !record.clock_out) return 0;
     return Math.max(0, differenceInMinutes(parseISO(record.clock_out), parseISO(record.clock_in)));
@@ -80,9 +78,13 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
     return `${h}:${String(m).padStart(2, '0')}`;
   }
 
+  const legends: { color: string; label: string }[] = [
+    { color: 'bg-success-500 dark:bg-success-400', label: '通常勤務' },
+    { color: 'bg-info-500 dark:bg-info-400', label: '8時間以上' },
+  ];
+
   return (
     <Card padding="none">
-      {/* 曜日ヘッダー */}
       <div className="grid grid-cols-7 border-b border-neutral-200 dark:border-neutral-700">
         {weekDayLabels.map((day, i) => (
           <div
@@ -100,7 +102,6 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
         ))}
       </div>
 
-      {/* 日付グリッド + 凡例 */}
       <div className="px-4 pb-4">
         <div className="grid grid-cols-7">
           {days.map((day, idx) => {
@@ -108,30 +109,34 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
             const record = recordMap.get(dateKey);
             const isCurrentMonth = isSameMonth(day, new Date(year, month - 1, 1));
             const workMins = record ? calcWorkMinutes(record) : 0;
-            const isOvertime = workMins >= 8 * 60; // 8時間以上
+            const isOvertime = workMins >= 8 * 60; 
             const isSelected = selectedDate === dateKey;
-            const dayOfWeek = day.getDay(); // 0=日, 6=土
+            const dayOfWeek = day.getDay(); 
+            const isFuture = dateKey > today;
 
             return (
               <div key={idx}>
                 <button
                   onClick={() => {
-                    if (!isCurrentMonth) return;
+                    if (!isCurrentMonth || isFuture) return;
                     setSelectedDate(isSelected ? null : dateKey);
-                    if (record) onClickDay(dateKey, record);
                   }}
+                  disabled={isFuture && isCurrentMonth}
                   className={`w-full min-h-[56px] p-1 text-left border-b border-r border-neutral-100 dark:border-neutral-700 transition-colors ${
                     !isCurrentMonth
                       ? 'bg-neutral-50 dark:bg-neutral-900/30 cursor-default'
+                      : isFuture
+                      ? 'cursor-default'
                       : isSelected
                       ? 'bg-primary-50 dark:bg-primary-900/20'
                       : 'hover:bg-neutral-50 dark:hover:bg-neutral-700/50'
                   }`}
                 >
-                  {/* 日付番号 */}
                   <span
                     className={`text-xs font-medium block mb-0.5 ${
                       !isCurrentMonth
+                        ? 'text-neutral-300 dark:text-neutral-600'
+                        : isFuture
                         ? 'text-neutral-300 dark:text-neutral-600'
                         : dayOfWeek === 0
                         ? 'text-danger-500 dark:text-danger-400'
@@ -143,8 +148,7 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
                     {format(day, 'd')}
                   </span>
 
-                  {/* 勤怠インジケーター */}
-                  {isCurrentMonth && record && record.clock_in && (
+                  {isCurrentMonth && !isFuture && record && record.clock_in && (
                     <div className="flex flex-col gap-0.5">
                       <div className="flex items-center gap-1">
                         <span
@@ -164,19 +168,19 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
                   )}
                 </button>
 
-                {/* 選択時の詳細ポップオーバー（展開） */}
-                {isSelected && record && isCurrentMonth && (
-                  <div className="col-span-7 bg-primary-50 dark:bg-primary-900/20 border-b border-primary-200 dark:border-primary-800 px-3 py-2 text-xs text-neutral-700 dark:text-neutral-300 space-y-0.5">
+                {isSelected && isCurrentMonth && !isFuture && (
+                  <div className="col-span-7 bg-primary-50 dark:bg-primary-900/20 border-b border-primary-200 dark:border-primary-800 px-3 py-2 text-xs text-neutral-700 dark:text-neutral-300 space-y-1">
                     <p className="font-semibold text-primary-700 dark:text-primary-300">{dateKey}</p>
-                    {record.clock_in && (
-                      <p>出勤: {format(parseISO(record.clock_in), 'HH:mm')}</p>
-                    )}
-                    {record.clock_out && (
-                      <p>退勤: {format(parseISO(record.clock_out), 'HH:mm')}</p>
-                    )}
-                    {workMins > 0 && (
-                      <p>勤務時間: {formatWorkHours(workMins)}</p>
-                    )}
+                    {record?.clock_in && <p>出勤: {format(parseISO(record.clock_in), 'HH:mm')}</p>}
+                    {record?.clock_out && <p>退勤: {format(parseISO(record.clock_out), 'HH:mm')}</p>}
+                    {record && workMins > 0 && <p>勤務時間: {formatWorkHours(workMins)}</p>}
+                    {!record && <p className="text-neutral-500 dark:text-neutral-400">記録なし</p>}
+                    <div className="pt-1">
+                      <button onClick={(e) => { e.stopPropagation(); onRequestCorrection?.(dateKey, record ?? undefined); }}
+                        className="text-xs text-primary-700 dark:text-primary-300 underline hover:no-underline">
+                        この日を修正申請する
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -184,16 +188,13 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
           })}
         </div>
 
-        {/* 凡例 */}
         <div className="px-4 py-2 border-t border-neutral-100 dark:border-neutral-700 flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-success-500 dark:bg-success-400" />
-            <span>通常勤務</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-info-500 dark:bg-info-400" />
-            <span>8時間以上</span>
-          </div>
+          {legends.map((legend) => (
+            <div key={legend.label} className="flex items-center gap-1">
+              <span className={`w-2 h-2 rounded-full ${legend.color}`} />
+              <span>{legend.label}</span>
+            </div>
+          ))}
         </div>
       </div>
     </Card>
@@ -202,10 +203,10 @@ function HistoryCalendar({ year, month, records, onClickDay }: HistoryCalendarPr
 
 export function HistoryPage() {
   const { currentTenant } = useTenant();
-  // RequireTenant ガードにより currentTenant は必ず存在する
   const tenantId = currentTenant!.id;
   const { currentStore } = useStoreContext();
   const { fetchRecords, monthlyRecords, monthlySummary, loading } = useAttendance(tenantId, currentStore?.id ?? null);
+  const { showToast } = useToast();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -254,18 +255,21 @@ export function HistoryPage() {
     });
   }
 
-  function handleCloseCorrectionModal() {
+  function handleCloseCorrectionModal(submitted?: boolean) {
     setCorrectionModal({ isOpen: false, date: '', mode: 'correction' });
     fetchRecords(year, month);
-  }
-
-  // カレンダーの日付クリック時（修正申請は出さず詳細表示のみ）
-  function handleCalendarDayClick(_date: string, _record?: AttendanceRecord) {
-    // カレンダービューではクリックで展開表示のみ（インライン実装）
+    if (submitted) {
+      showToast(correctionModal.mode === 'delete' ? '削除依頼を送信しました' : '修正申請を送信しました', 'success');
+    }
   }
 
   const hasRecords = monthlyRecords.length > 0;
   const showEmpty = !loading && !hasRecords && currentStore != null;
+
+  const isCurrentMonthShown = (() => {
+    const now = new Date();
+    return now.getFullYear() === year && now.getMonth() + 1 === month;
+  })();
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -277,21 +281,27 @@ export function HistoryPage() {
           </div>
         </Card>
       )}
-      {/* 月ナビゲーション + ビュー切り替え */}
+      
       <Card padding="md">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <Button variant="tertiary" size="sm" iconLeft={<ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handlePrevMonth} aria-label="前月">
             <span className="sr-only">前月</span>
           </Button>
-          <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-            {format(currentDate, 'yyyy年M月(E)', { locale: ja })}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+              {format(currentDate, 'yyyy年M月', { locale: ja })}
+            </h2>
+            {!isCurrentMonthShown && (
+              <Button variant="tertiary" size="sm" onClick={() => setCurrentDate(new Date())}>
+                今月へ
+              </Button>
+            )}
+          </div>
           <Button variant="tertiary" size="sm" iconLeft={<ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handleNextMonth} aria-label="翌月">
             <span className="sr-only">翌月</span>
           </Button>
         </div>
 
-        {/* ビュー切り替えトグル */}
         <div className="flex justify-center mt-2">
           <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-700 rounded-md">
             <button
@@ -318,7 +328,6 @@ export function HistoryPage() {
         </div>
       </Card>
 
-      {/* 月次サマリー */}
       <MonthlySummary summary={monthlySummary} />
 
       {loading ? (
@@ -330,7 +339,6 @@ export function HistoryPage() {
           </Card>
         ) : (
           <Card padding="none">
-            {/* カレンダー風 Skeleton: 7 列 x 6 行 */}
             <div className="p-4">
               <Skeleton variant="rectangular" height={28} className="mb-3" />
               <div className="grid grid-cols-7 gap-1">
@@ -342,15 +350,14 @@ export function HistoryPage() {
           </Card>
         )
       ) : (
-        <>
-          {showEmpty && (
+        viewMode === 'list' ? (
+          showEmpty ? (
             <EmptyState
               icon={<CalendarX className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
               title="今月の勤怠データがまだありません"
               description="打刻するとここに記録が表示されます。"
             />
-          )}
-          {viewMode === 'list' ? (
+          ) : (
             <Card padding="none">
               <Card.Header>
                 <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">日別勤怠記録</h3>
@@ -363,18 +370,24 @@ export function HistoryPage() {
                 onRequestDeletion={handleRequestDeletion}
               />
             </Card>
-          ) : (
+          )
+        ) : (
+          <>
             <HistoryCalendar
               year={year}
               month={month}
               records={monthlyRecords}
-              onClickDay={handleCalendarDayClick}
+              onRequestCorrection={handleRequestCorrection}
             />
-          )}
-        </>
+            {showEmpty && (
+              <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 py-2">
+                今月の打刻データがまだありません
+              </p>
+            )}
+          </>
+        )
       )}
 
-      {/* 修正申請モーダル */}
       <CorrectionForm
         isOpen={correctionModal.isOpen}
         onClose={handleCloseCorrectionModal}
