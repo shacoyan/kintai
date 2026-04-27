@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { ShiftPreference } from '../../types';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
+import { abbreviateName } from '../../utils/displayNameAbbrev';
 
 export interface PreferenceActionRowProps {
   preference: ShiftPreference;
@@ -28,6 +29,14 @@ const PREFERENCE_ICON: Record<string, LucideIcon> = {
   unavailable: XCircle,
 };
 
+const STATUS_DOT_CLASS: Record<string, string> = {
+  pending: 'bg-warning-500 dark:bg-warning-400',
+  approved: 'bg-success-500 dark:bg-success-400',
+  rejected: 'bg-danger-500 dark:bg-danger-400',
+  modified: 'bg-primary-500 dark:bg-primary-400',
+  cancelled: 'bg-neutral-400 dark:bg-neutral-500',
+};
+
 interface CardState {
   loading: boolean;
   error: string | null;
@@ -38,7 +47,7 @@ interface CardState {
 
 export function PreferenceActionRow({
   preference,
-  memberName = '不明',
+  memberName,
   onApprove,
   onReject,
   canManage,
@@ -94,75 +103,79 @@ export function PreferenceActionRow({
   const isUnavailable = preference.preference_type === 'unavailable';
 
   if (variant === 'compact') {
-    const Ic = PREFERENCE_ICON[preference.preference_type] ?? Circle;
+    const abbreviation = memberName ? abbreviateName(memberName) : '?';
+    const statusDotClass = STATUS_DOT_CLASS[preference.status] || STATUS_DOT_CLASS.pending;
+    const typeLabel = preference.preference_type === 'preferred' ? '希' : preference.preference_type === 'available' ? '可' : '不';
+    const timeLabel = !isUnavailable && preference.start_time ? preference.start_time.slice(0, 5) : '';
+
+    if (isUnavailable) {
+      return (
+        <div className="flex items-center gap-1 py-0.5 text-[10px] leading-tight text-neutral-900 dark:text-neutral-100">
+          <span className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass}`} />
+          <span className="font-medium">{abbreviation}</span>
+          <span className="text-neutral-600 dark:text-neutral-400">不可</span>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex items-center justify-between h-6 text-[10px]" title={state.error ?? undefined}>
-        <div className="flex items-center gap-1 min-w-0 flex-1">
-          <span
-            className={`flex-shrink-0 w-2 h-2 rounded-full ${
-              preference.preference_type === 'preferred'
-                ? 'bg-primary-600 dark:bg-primary-400'
-                : preference.preference_type === 'available'
-                ? 'bg-success-600 dark:bg-success-400'
-                : 'bg-danger-600 dark:bg-danger-400'
-            }`}
-          />
-          <span className="truncate text-neutral-900 dark:text-neutral-100 font-medium">
-            {memberName}
+      <div className="flex flex-col py-0.5" title={state.error ?? undefined}>
+        {/* 1行目: dot + 略称 + 種別 + 時刻 */}
+        <div className="flex items-center gap-1 text-[10px] leading-tight text-neutral-900 dark:text-neutral-100">
+          <span className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass}`} />
+          <span className="font-medium truncate">{abbreviation}</span>
+          <span className="text-neutral-600 dark:text-neutral-400 flex-shrink-0">
+            {typeLabel === '希' ? '希望' : typeLabel === '可' ? '出勤可' : '不可'}
           </span>
-          {!isUnavailable && (
-            <>
-              <Ic className="w-3 h-3 flex-shrink-0 text-neutral-600 dark:text-neutral-400" />
-              <span className="text-neutral-600 dark:text-neutral-400">
-                {preference.start_time ? preference.start_time.slice(0, 5) : ''}
-              </span>
-            </>
+          {timeLabel && (
+            <span className="text-neutral-500 dark:text-neutral-400 tabular-nums flex-shrink-0">
+              {timeLabel}
+            </span>
           )}
         </div>
         
-        <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-          {state.loading && <Loader2 className="w-3 h-3 animate-spin text-neutral-500 dark:text-neutral-400" />}
-          
-          {isUnavailable && !state.loading && (
-            <Badge tone="neutral">不可</Badge>
-          )}
-          
-          {!isPending && !isUnavailable && !state.loading && (
-            <>
-              {isApproved && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-success-100 text-success-700 dark:bg-success-800 dark:text-success-200">
-                  <CheckCircle2 className="w-3 h-3" />済
-                </span>
-              )}
-              {!isApproved && (
-                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300">
-                  <XCircle className="w-3 h-3" />却下
-                </span>
-              )}
-            </>
-          )}
-          
-          {isPending && !isUnavailable && canManage && !state.loading && (
-            <>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleApprove(); }}
-                className="flex items-center justify-center w-5 h-5 rounded-md text-success-700 bg-success-50 hover:bg-success-100 dark:text-success-300 dark:bg-success-900 dark:hover:bg-success-800 transition"
-                aria-label="承認"
-              >
-                <Check className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleReject(); }}
-                className="flex items-center justify-center w-5 h-5 rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:hover:bg-danger-800 transition"
-                aria-label="却下"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </>
-          )}
-        </div>
+        {/* 2行目: アクション (pending + canManageのみ) */}
+        {isPending && canManage && (
+          <div className="flex items-center justify-end gap-1 mt-0.5">
+            {state.loading && <Loader2 className="w-3 h-3 animate-spin text-neutral-500 dark:text-neutral-400" />}
+            
+            {!state.loading && (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleApprove(); }}
+                  className="inline-flex items-center justify-center w-4 h-4 rounded-md text-success-700 bg-success-50 hover:bg-success-100 dark:text-success-300 dark:bg-success-900 dark:hover:bg-success-800 transition"
+                  aria-label="承認"
+                >
+                  <Check className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleReject(); }}
+                  className="inline-flex items-center justify-center w-4 h-4 rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:hover:bg-danger-800 transition"
+                  aria-label="却下"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {!isPending && !isUnavailable && !state.loading && (
+          <div className="flex items-center justify-end mt-0.5">
+            {isApproved && (
+              <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-medium bg-success-100 text-success-700 dark:bg-success-800 dark:text-success-200">
+                <CheckCircle2 className="w-2.5 h-2.5" />承認済
+              </span>
+            )}
+            {!isApproved && (
+              <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300">
+                <XCircle className="w-2.5 h-2.5" />却下
+              </span>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -186,7 +199,7 @@ export function PreferenceActionRow({
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-              {memberName}
+              {memberName ?? '不明'}
             </span>
             <span className="text-xs text-neutral-500 dark:text-neutral-400">{preference.date}</span>
           </div>
@@ -351,3 +364,4 @@ export function PreferenceActionRow({
     </div>
   );
 }
+

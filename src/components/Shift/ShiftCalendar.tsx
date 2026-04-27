@@ -3,6 +3,7 @@ import { format, startOfWeek, addDays, startOfMonth, endOfMonth, addWeeks, isAft
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Shift } from '../../types';
+import { abbreviateName } from '../../utils/displayNameAbbrev';
 
 type ViewMode = 'week' | '2week' | 'month';
 
@@ -173,6 +174,15 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
 
       {/* Compact Legend */}
       <div className="flex items-center flex-wrap gap-x-4 gap-y-1 px-1 py-1.5 bg-neutral-50 dark:bg-neutral-800 rounded-md text-xs">
+        {/* Status Legend (L2-04) */}
+        <div className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 flex-wrap border-r border-neutral-200 dark:border-neutral-600 pr-4 mr-2">
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-warning-400" /> 申請中</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success-500" /> 承認済</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-danger-500" /> 却下</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-info-500" /> 修正</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-neutral-400" /> 取消</span>
+        </div>
+        
         {memberNames ? (
           <>
             {(() => {
@@ -248,7 +258,16 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
             return (
               <div
                 key={dateStr}
+                role="button"
+                tabIndex={0}
+                aria-label={`${dateStr} の詳細`}
                 onClick={() => onDateClick(dateStr)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onDateClick(dateStr);
+                  }
+                }}
                 className={`min-h-[70px] sm:min-h-[80px] border-b border-r border-neutral-100 dark:border-neutral-700 p-1 cursor-pointer transition ${
                   !isCurrentMonth ? 'bg-neutral-50 dark:bg-neutral-700/50 opacity-50' : ''
                 } ${
@@ -272,11 +291,22 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     return (
                       <div
                         key={s.id}
+                        role="button"
+                        tabIndex={0}
                         onClick={(e) => { e.stopPropagation(); onShiftClick?.(s); }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            onShiftClick?.(s);
+                          }
+                        }}
                         className={`text-[10px] leading-tight px-1 py-0.5 rounded border truncate cursor-pointer hover:opacity-80 transition ${colorClass}`}
                       >
                         {memberNames ? (
-                          <span>{memberNames.get(s.user_id)?.charAt(0) || '?'} {s.start_time.slice(0, 5)}-{s.end_time.slice(0, 5)}</span>
+                          <span title={memberNames.get(s.user_id) ?? ''}>
+                            {abbreviateName(memberNames.get(s.user_id))} {s.start_time.slice(0, 5)}-{s.end_time.slice(0, 5)}
+                          </span>
                         ) : (
                           <span>{s.start_time.slice(0, 5)}-{s.end_time.slice(0, 5)}</span>
                         )}
@@ -284,7 +314,14 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     );
                   })}
                   {dayShifts.length > 3 && (
-                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400">+{dayShifts.length - 3}件</div>
+                    <button 
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onDateClick(dateStr); }}
+                      aria-label={`${dateStr} の全シフトを表示`}
+                      className="text-[10px] text-neutral-500 dark:text-neutral-400 hover:underline focus:outline-none"
+                    >
+                      +{dayShifts.length - 3}件
+                    </button>
                   )}
                 </div>
               </div>

@@ -35,9 +35,9 @@ interface PrefListStyle {
 }
 
 const PREF_LIST_STYLE: Record<ShiftPreferenceType, PrefListStyle> = {
-  preferred: { Icon: CheckCircle2, label: '希望', iconBox: 'bg-primary-50 text-primary-700' },
-  available: { Icon: Circle, label: '出勤可能', iconBox: 'bg-info-50 text-info-500' },
-  unavailable: { Icon: XCircle, label: '出勤不可', iconBox: 'bg-warning-50 text-warning-500' },
+  preferred: { Icon: CheckCircle2, label: '希望', iconBox: 'bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300' },
+  available: { Icon: Circle, label: '出勤可能', iconBox: 'bg-info-50 text-info-500 dark:bg-info-900/40 dark:text-info-300' },
+  unavailable: { Icon: XCircle, label: '出勤不可', iconBox: 'bg-warning-50 text-warning-500 dark:bg-warning-900/40 dark:text-warning-300' },
 };
 
 export function ShiftPage() {
@@ -55,6 +55,7 @@ export function ShiftPage() {
 
   const [activeTab, setActiveTab] = useState<TabId>('shift');
   const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
+  const [selectedShiftDate, setSelectedShiftDate] = useState<string | null>(null);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [selectedPrefDate, setSelectedPrefDate] = useState<string | null>(null);
   const [showAllMembersPrefs, setShowAllMembersPrefs] = useState(false);
@@ -150,7 +151,7 @@ export function ShiftPage() {
 
   const memberNames = useMemo(() => {
     const map = new Map<string, string>();
-    members.forEach(m => map.set(m.user_id, m.display_name));
+    members.forEach(m => map.set(m.user_id, m.display_name ?? '不明'));
     return map;
   }, [members]);
 
@@ -205,8 +206,11 @@ export function ShiftPage() {
 
   const laborEstimates = useMemo(() => {
     if (!canManageTenant || members.length === 0) return [];
-    return getLaborCostEstimate(shifts, members);
-  }, [canManageTenant, shifts, members, getLaborCostEstimate]);
+    const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+    const monthShifts = shifts.filter(s => s.date >= monthStart && s.date <= monthEnd);
+    return getLaborCostEstimate(monthShifts, members);
+  }, [canManageTenant, shifts, members, getLaborCostEstimate, shiftViewMonth]);
 
   const pendingShifts = shifts.filter(s => s.status === 'pending');
 
@@ -221,7 +225,7 @@ export function ShiftPage() {
     return (
       <div className="p-6">
         <Card padding="md">
-          <Card.Body className="text-center text-sm text-neutral-700">
+          <Card.Body className="text-center text-sm text-neutral-700 dark:text-neutral-300">
             店舗を選択してください。ヘッダーの店舗セレクターから操作対象の店舗を選ぶと、シフト・希望が表示されます。
           </Card.Body>
         </Card>
@@ -231,7 +235,7 @@ export function ShiftPage() {
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-neutral-200">
+      <div className="border-b border-neutral-200 dark:border-neutral-700">
         <nav className="flex space-x-8">
           {([
             { id: 'shift' as TabId, label: 'シフト' },
@@ -243,8 +247,8 @@ export function ShiftPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition ${
                 activeTab === tab.id
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'
+                  ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
+                  : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
               }`}
             >
               {tab.label}
@@ -263,8 +267,8 @@ export function ShiftPage() {
         <div className="space-y-6">
           <header className="flex items-end justify-between gap-3">
             <div>
-              <h2 className="text-lg md:text-xl font-semibold text-neutral-900">シフト</h2>
-              <p className="text-sm text-neutral-500 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
+              <h2 className="text-lg md:text-xl font-semibold text-neutral-900 dark:text-neutral-100">シフト</h2>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
             </div>
             {canManageTenant && pendingShifts.length > 0 && (
               <Badge tone="warning" withDot>{pendingShifts.length} 件 承認待ち</Badge>
@@ -279,7 +283,7 @@ export function ShiftPage() {
 
           <ShiftCalendar
             shifts={shifts}
-            onDateClick={() => {}}
+            onDateClick={(date) => setSelectedShiftDate(date)}
             onShiftClick={(shift) => setSelectedShift(shift)}
             memberNames={canManageTenant ? memberNames : undefined}
             onViewMonthChange={setShiftViewMonth}
@@ -302,6 +306,30 @@ export function ShiftPage() {
             />
           )}
 
+          <BottomSheet
+            isOpen={!!selectedShiftDate}
+            onClose={() => setSelectedShiftDate(null)}
+            title={selectedShiftDate ? `${selectedShiftDate} のシフト一覧` : ''}
+          >
+            <div className="space-y-2 p-4">
+              {shifts.filter(s => s.date === selectedShiftDate).map(s => (
+                <button 
+                  key={s.id} 
+                  onClick={() => { setSelectedShift(s); setSelectedShiftDate(null); }}
+                  className="w-full text-left p-3 bg-neutral-50 dark:bg-neutral-800 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                >
+                  <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{memberNames.get(s.user_id) ?? '不明'}</div>
+                  <div className="text-xs text-neutral-600 dark:text-neutral-400">
+                    {s.start_time?.slice(0,5) ?? '--:--'}〜{s.end_time?.slice(0,5) ?? '--:--'} / {s.status}
+                  </div>
+                </button>
+              ))}
+              {shifts.filter(s => s.date === selectedShiftDate).length === 0 && (
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-6">この日にシフトはありません</p>
+              )}
+            </div>
+          </BottomSheet>
+
           {canManageTenant && (
             <>
               <ShiftAdminPanel
@@ -316,7 +344,7 @@ export function ShiftPage() {
                 canManageStore={(sid) => sid ? isManagerOf(sid) : false}
               />
 
-              <LaborCostSummary estimates={laborEstimates} />
+              <LaborCostSummary estimates={laborEstimates} targetMonth={shiftViewMonth} />
             </>
           )}
         </div>
@@ -331,15 +359,15 @@ export function ShiftPage() {
           )}
 
           {/* 表示切替: 現在 / 履歴 (両ビュー共通) */}
-          <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 rounded-md self-start">
+          <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-md self-start">
             <button
               type="button"
               onClick={() => setPreferenceView('current')}
               aria-pressed={preferenceView === 'current'}
               className={`inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold rounded transition-colors duration-120 focus-ring ${
                 preferenceView === 'current'
-                  ? 'bg-white text-primary-700 shadow-xs'
-                  : 'bg-transparent text-neutral-600 hover:text-neutral-900'
+                  ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
+                  : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -351,8 +379,8 @@ export function ShiftPage() {
               aria-pressed={preferenceView === 'history'}
               className={`inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold rounded transition-colors duration-120 focus-ring ${
                 preferenceView === 'history'
-                  ? 'bg-white text-primary-700 shadow-xs'
-                  : 'bg-transparent text-neutral-600 hover:text-neutral-900'
+                  ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
+                  : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
               }`}
             >
               <History className="w-3.5 h-3.5" />
@@ -365,14 +393,14 @@ export function ShiftPage() {
               <div className="flex flex-col gap-4">
                 {/* TODO(Phase 4): useShiftSubmissionDeadline + migration 021 へ置換 */}
                 {deadlineInfo && (
-                  <Card padding="md" className="border-l-4 border-warning-500 bg-warning-50">
+                  <Card padding="md" className="border-l-4 border-warning-500 bg-warning-50 dark:bg-warning-900/30">
                     <Card.Body className="flex items-start gap-3">
                       <AlertTriangle className="w-5 h-5 text-warning-600 mt-0.5 shrink-0" aria-hidden="true" />
                       <div className="flex-1">
-                        <p className="text-sm font-semibold text-warning-800">
+                        <p className="text-sm font-semibold text-warning-800 dark:text-warning-200">
                           シフト希望の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })}
                         </p>
-                        <p className="text-xs text-warning-700 mt-1 tabular-nums">
+                        <p className="text-xs text-warning-700 dark:text-warning-300 mt-1 tabular-nums">
                           残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
                         </p>
                       </div>
@@ -382,7 +410,7 @@ export function ShiftPage() {
 
                 {canManageTenant && (
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-semibold text-neutral-500 tracking-wider">カレンダー表示:</span>
+                    <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 tracking-wider">カレンダー表示:</span>
                     <button
                       type="button"
                       onClick={() => setShowAllMembersPrefs(false)}
@@ -390,7 +418,7 @@ export function ShiftPage() {
                       className={`px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring ${
                         !showAllMembersPrefs
                           ? 'bg-primary-600 text-white'
-                          : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                          : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
                       }`}
                     >
                       自分の希望
@@ -402,7 +430,7 @@ export function ShiftPage() {
                       className={`px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring ${
                         showAllMembersPrefs
                           ? 'bg-primary-600 text-white'
-                          : 'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                          : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
                       }`}
                     >
                       全員の希望
@@ -433,22 +461,22 @@ export function ShiftPage() {
                     <Card padding="md">
                       <Card.Body className="grid grid-cols-3 gap-3 text-center">
                         <div>
-                          <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
+                          <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
                             {preferenceSummary.preferredCount}
                           </p>
-                          <p className="text-[11px] text-neutral-500 mt-0.5">希望日</p>
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">希望日</p>
                         </div>
-                        <div className="border-x border-neutral-100">
-                          <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
+                        <div className="border-x border-neutral-100 dark:border-neutral-700">
+                          <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
                             {preferenceSummary.availableCount}
                           </p>
-                          <p className="text-[11px] text-neutral-500 mt-0.5">出勤可</p>
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">出勤可</p>
                         </div>
                         <div>
-                          <p className="text-2xl font-semibold text-neutral-900 tabular-nums">
+                          <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
                             {preferenceSummary.unavailableCount}
                           </p>
-                          <p className="text-[11px] text-neutral-500 mt-0.5">出勤不可</p>
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">出勤不可</p>
                         </div>
                       </Card.Body>
                     </Card>
@@ -459,10 +487,10 @@ export function ShiftPage() {
                 {!(canManageTenant && showAllMembersPrefs) && timedPreferences.length > 0 && (
                   <div className="lg:hidden">
                     <Card padding="none">
-                      <Card.Header className="border-b border-neutral-100 mb-0 pb-3 px-4 pt-4 text-sm font-semibold text-neutral-700">
+                      <Card.Header className="border-b border-neutral-100 dark:border-neutral-700 mb-0 pb-3 px-4 pt-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                         時間指定の詳細
                       </Card.Header>
-                      <ul className="divide-y divide-neutral-100">
+                      <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
                         {timedPreferences.map((p) => {
                           const style = PREF_LIST_STYLE[p.preference_type];
                           return (
@@ -470,21 +498,21 @@ export function ShiftPage() {
                               <button
                                 type="button"
                                 onClick={() => setSelectedPrefDate(p.date)}
-                                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-neutral-50 text-left focus-ring"
+                                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left focus-ring"
                               >
                                 <div className={`w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0 ${style.iconBox}`}>
                                   <span className="text-[10px] font-semibold leading-none">{p.date.slice(5, 7)}/</span>
                                   <span className="text-[14px] font-bold tabular-nums leading-none">{p.date.slice(8, 10)}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-neutral-900">{style.label}</p>
+                                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{style.label}</p>
                                   {p.start_time && p.end_time && (
-                                    <p className="text-xs text-neutral-500 tabular-nums">
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
                                       {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
                                     </p>
                                   )}
                                 </div>
-                                <ChevronRight className="w-4 h-4 text-neutral-400" aria-hidden="true" />
+                                <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
                               </button>
                             </li>
                           );
@@ -520,9 +548,9 @@ export function ShiftPage() {
                     title={allMemberPrefDate ? `${allMemberPrefDate} の希望一覧` : undefined}
                   >
                     {allMemberPrefDate && (
-                      <ul className="divide-y divide-neutral-100">
+                      <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
                         {allMemberPrefsForDate.length === 0 && (
-                          <li className="px-4 py-6 text-center text-sm text-neutral-500">
+                          <li className="px-4 py-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
                             この日の希望はありません
                           </li>
                         )}
@@ -531,7 +559,7 @@ export function ShiftPage() {
                           return (
                             <li key={p.id} className="px-4 py-3 flex items-center gap-3">
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-neutral-900">
+                                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                                   {memberNames.get(p.user_id) ?? '不明'}
                                 </p>
                                 <div className="flex items-center gap-2 mt-1">
@@ -540,7 +568,7 @@ export function ShiftPage() {
                                     {style.label}
                                   </span>
                                   {p.start_time && p.end_time && (
-                                    <span className="text-xs text-neutral-500 tabular-nums">
+                                    <span className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
                                       {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
                                     </span>
                                   )}
@@ -588,7 +616,7 @@ export function ShiftPage() {
 
                 {/* sticky 追加ボタン（自分視点のみ） */}
                 {!(canManageTenant && showAllMembersPrefs) && (
-                  <div className="lg:hidden sticky bottom-0 -mx-4 px-4 py-3 bg-white/95 backdrop-blur border-t border-neutral-200 z-10">
+                  <div className="lg:hidden sticky bottom-0 -mx-4 px-4 py-3 bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-700 z-10">
                     <Button
                       variant="primary"
                       size="lg"
@@ -647,7 +675,7 @@ export function ShiftPage() {
                 <div className="flex flex-col gap-2">
                   {myPreferencesForHistory.length === 0 && (
                     <Card padding="md">
-                      <p className="text-center text-sm text-neutral-500">履歴はありません</p>
+                      <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">履歴はありません</p>
                     </Card>
                   )}
                   {myPreferencesForHistory.map((pref) => {
@@ -664,7 +692,7 @@ export function ShiftPage() {
                       <Card key={pref.id} padding="md">
                         <Card.Body className="flex flex-col gap-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold text-neutral-900 tabular-nums">{pref.date}</span>
+                            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{pref.date}</span>
                             <Badge tone={statusTone} withDot>{statusLabel}</Badge>
                           </div>
                           <div className="flex items-center gap-2">
@@ -673,13 +701,13 @@ export function ShiftPage() {
                               {style.label}
                             </span>
                             {pref.start_time && pref.end_time && (
-                              <span className="text-xs text-neutral-500 tabular-nums">
+                              <span className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
                                 {pref.start_time.slice(0, 5)} - {pref.end_time.slice(0, 5)}
                               </span>
                             )}
                           </div>
                           {pref.note && (
-                            <p className="text-xs text-neutral-500">{pref.note}</p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{pref.note}</p>
                           )}
                         </Card.Body>
                       </Card>

@@ -58,6 +58,14 @@ const MEMBER_TONE_CLASSES = [
   'bg-neutral-100 text-neutral-700',
 ];
 
+const STATUS_LEGEND = [
+  { key: 'pending', dot: 'bg-warning-500 dark:bg-warning-400', label: '申請中' },
+  { key: 'approved', dot: 'bg-success-500 dark:bg-success-400', label: '承認済' },
+  { key: 'rejected', dot: 'bg-danger-500 dark:bg-danger-400', label: '却下' },
+  { key: 'modified', dot: 'bg-primary-500 dark:bg-primary-400', label: '修正' },
+  { key: 'cancelled', dot: 'bg-neutral-400 dark:bg-neutral-500', label: '取消' },
+];
+
 export function ShiftPreferenceCalendar({
   preferences,
   onDateClick,
@@ -175,66 +183,79 @@ export function ShiftPreferenceCalendar({
       </div>
 
       {/* Compact 凡例 (U3) */}
-      <div className="px-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-600">
-        {isAdminView && memberNames ? (
-          <>
-            {memberEntries.slice(0, 5).map(([uid, tone]) => (
-              <div key={uid} className="inline-flex items-center gap-1.5">
+      <div className="px-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-600">
+          {isAdminView && memberNames ? (
+            <>
+              {memberEntries.slice(0, 5).map(([uid, tone]) => (
+                <div key={uid} className="inline-flex items-center gap-1.5">
+                  <span
+                    className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
+                    aria-hidden="true"
+                  />
+                  <span className="text-neutral-700">{memberNames.get(uid) ?? '不明'}</span>
+                </div>
+              ))}
+              {memberEntries.length > 5 && (
+                <>
+                  {!showAllMembers && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllMembers(true)}
+                      className="inline-flex items-center gap-0.5 text-primary-600 hover:underline focus-ring rounded"
+                    >
+                      +{memberEntries.length - 5}
+                      <ChevronDown className="w-3 h-3" aria-hidden="true" />
+                    </button>
+                  )}
+                  {showAllMembers &&
+                    memberEntries.slice(5).map(([uid, tone]) => (
+                      <div key={uid} className="inline-flex items-center gap-1.5">
+                        <span
+                          className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
+                          aria-hidden="true"
+                        />
+                        <span className="text-neutral-700">{memberNames.get(uid) ?? '不明'}</span>
+                      </div>
+                    ))}
+                  {showAllMembers && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllMembers(false)}
+                      className="inline-flex items-center gap-0.5 text-primary-600 hover:underline focus-ring rounded"
+                    >
+                      閉じる
+                      <ChevronUp className="w-3 h-3" aria-hidden="true" />
+                    </button>
+                  )}
+                </>
+              )}
+            </>
+          ) : (
+            (Object.entries(PREFERENCE_STYLE) as Array<
+              [ShiftPreferenceType, PrefStyle]
+            >).map(([key, st]) => (
+              <div key={key} className="inline-flex items-center gap-1.5">
                 <span
-                  className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
+                  className={'inline-block w-2.5 h-2.5 rounded-sm ' + st.dot}
                   aria-hidden="true"
                 />
-                <span className="text-neutral-700">{memberNames.get(uid) ?? '不明'}</span>
+                <span>{st.label}</span>
               </div>
-            ))}
-            {memberEntries.length > 5 && (
-              <>
-                {!showAllMembers && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllMembers(true)}
-                    className="inline-flex items-center gap-0.5 text-primary-600 hover:underline focus-ring rounded"
-                  >
-                    +{memberEntries.length - 5}
-                    <ChevronDown className="w-3 h-3" aria-hidden="true" />
-                  </button>
-                )}
-                {showAllMembers &&
-                  memberEntries.slice(5).map(([uid, tone]) => (
-                    <div key={uid} className="inline-flex items-center gap-1.5">
-                      <span
-                        className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
-                        aria-hidden="true"
-                      />
-                      <span className="text-neutral-700">{memberNames.get(uid) ?? '不明'}</span>
-                    </div>
-                  ))}
-                {showAllMembers && (
-                  <button
-                    type="button"
-                    onClick={() => setShowAllMembers(false)}
-                    className="inline-flex items-center gap-0.5 text-primary-600 hover:underline focus-ring rounded"
-                  >
-                    閉じる
-                    <ChevronUp className="w-3 h-3" aria-hidden="true" />
-                  </button>
-                )}
-              </>
-            )}
-          </>
-        ) : (
-          (Object.entries(PREFERENCE_STYLE) as Array<
-            [ShiftPreferenceType, PrefStyle]
-          >).map(([key, st]) => (
-            <div key={key} className="inline-flex items-center gap-1.5">
+            ))
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+          {STATUS_LEGEND.map((s) => (
+            <div key={s.key} className="inline-flex items-center gap-1.5">
               <span
-                className={'inline-block w-2.5 h-2.5 rounded-sm ' + st.dot}
+                className={'inline-block w-2 h-2 rounded-full ' + s.dot}
                 aria-hidden="true"
               />
-              <span>{st.label}</span>
+              <span>{s.label}</span>
             </div>
-          ))
-        )}
+          ))}
+        </div>
       </div>
 
       {/* empty state バナー */}
@@ -287,7 +308,6 @@ export function ShiftPreferenceCalendar({
           const dayPrefs = preferencesByDate.get(dateStr) || [];
           const dayOfWeek = idx % 7;
 
-          // スタッフビューでは自分の希望は通常 1 件
           const primaryPref = dayPrefs[0];
           const style = primaryPref ? PREFERENCE_STYLE[primaryPref.preference_type] : null;
           const hasTime =
@@ -308,7 +328,7 @@ export function ShiftPreferenceCalendar({
             stateCell = style.cellClass + ' hover:opacity-90';
           } else {
             stateCell =
-              'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50';
+              'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800';
           }
           const todayRing = isToday ? ' ring-2 ring-primary-500' : '';
           const dayNumColor =
@@ -323,6 +343,10 @@ export function ShiftPreferenceCalendar({
           const ariaLabel = `${format(d, 'yyyy年M月d日 (E)', { locale: ja })}${
             primaryPref ? ` ${PREFERENCE_STYLE[primaryPref.preference_type].label}` : ''
           }`;
+
+          const MAX_VISIBLE = 3;
+          const visiblePrefs = dayPrefs.slice(0, MAX_VISIBLE);
+          const overflowCount = dayPrefs.length - MAX_VISIBLE;
 
           const cellChildren = (
             <>
@@ -355,15 +379,15 @@ export function ShiftPreferenceCalendar({
                 </>
               )}
 
-              {/* 店長ビュー: 全件 PreferenceActionRow スタック表示 */}
+              {/* 店長ビュー: 最大 3 件 PreferenceActionRow 表示 + +N件 */}
               {isAdminView && dayPrefs.length > 0 && (
-                <div className="flex flex-col gap-0.5 px-0.5 pb-1">
-                  {dayPrefs.map(p => {
+                <div className="flex flex-col gap-0.5 px-0.5 pb-1 w-full">
+                  {visiblePrefs.map(p => {
                     const tone = userToneMap.get(p.user_id) ?? MEMBER_TONE_CLASSES[0];
                     return (
                       <div
                         key={p.id}
-                        className={tone + ' rounded-sm'}
+                        className={tone + ' rounded-sm px-1 py-0.5 w-full'}
                       >
                         <PreferenceActionRow
                           preference={p}
@@ -377,12 +401,23 @@ export function ShiftPreferenceCalendar({
                       </div>
                     );
                   })}
+                  {overflowCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDateClick(dateStr);
+                      }}
+                      className="w-full text-left text-[10px] text-primary-600 dark:text-primary-400 px-1 hover:underline"
+                    >
+                      +{overflowCount}件
+                    </button>
+                  )}
                 </div>
               )}
             </>
           );
 
-          // P0-1 修正: admin view では button-in-button を避けるため div + role="gridcell"
           return isAdminView ? (
             <div
               key={dateStr}
