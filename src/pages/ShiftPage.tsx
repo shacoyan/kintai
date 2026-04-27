@@ -27,7 +27,7 @@ import { ShiftPreferenceSidebar } from '../components/Shift/ShiftPreferenceSideb
 import { BulkApplyPresetModal } from '../components/Shift/BulkApplyPresetModal';
 import { PreferenceActionRow } from '../components/Shift/PreferenceActionRow';
 import { useStoreContext } from '../contexts/StoreContext';
-import type { ShiftPreferenceType } from '../types';
+import type { ShiftPreferenceType, LeaveType } from '../types';
 
 type TabId = 'shift' | 'leave' | 'preference';
 type PreferenceView = 'current' | 'history';
@@ -200,7 +200,7 @@ export function ShiftPage() {
 
   const handleLeaveSubmit = async (
     dates: string[],
-    leaveType: 'paid' | 'half_am' | 'half_pm' | 'absence' | 'other',
+    leaveType: LeaveType,
     reason?: string,
   ) => {
     const result = await submitLeave(dates, leaveType, reason, currentStore?.id ?? null);

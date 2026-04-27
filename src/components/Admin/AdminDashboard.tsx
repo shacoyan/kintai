@@ -20,6 +20,7 @@ import { ShiftPresetManager } from './ShiftPresetManager';
 import { StoreManagement } from './StoreManagement';
 import { ShiftMismatchAlert } from './ShiftMismatchAlert';
 import { ShiftDeadlineSettingsModal } from './ShiftDeadlineSettingsModal';
+import { AdminSettings } from './AdminSettings';
 import { detectMismatches } from '../../utils/shiftMismatch';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -39,7 +40,8 @@ import {
   AlertTriangle,
   CalendarClock,
   UserX,
-  RefreshCw
+  RefreshCw,
+  Settings,
 } from 'lucide-react';
 import { StatCard, Card, PageSkeleton, ErrorBanner, Button } from '../ui';
 import type { Shift, AttendanceRecord } from '../../types';
@@ -58,6 +60,7 @@ const tabs = [
   { id: 'presets' as const, label: 'プリセット', icon: Sliders },
   { id: 'stores' as const, label: '店舗', icon: Store },
   { id: 'mismatch' as const, label: '不一致', icon: AlertCircle },
+  { id: 'settings' as const, label: '設定', icon: Settings },
 ];
 
 type TabId = typeof tabs[number]['id'];
@@ -66,7 +69,7 @@ const SECTIONS = [
   { label: '概要', items: ['dashboard'] },
   { label: 'メンバー管理', items: ['members'] },
   { label: '給与・勤怠', items: ['payroll', 'attendance', 'corrections', 'leaves', 'mismatch'] },
-  { label: '設定', items: ['presets', 'stores'] },
+  { label: '設定', items: ['presets', 'stores', 'settings'] },
 ] as const;
 
 export function AdminDashboard({ tenantId }: AdminDashboardProps) {
@@ -550,6 +553,8 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
             <StoreManagement tenantId={tenantId} />
           </div>
         )}
+        {activeTab === 'settings' && <AdminSettings tenantId={tenantId} />}
+
         {activeTab === 'mismatch' && (
           <div className="space-y-4">
             <Card padding="md">

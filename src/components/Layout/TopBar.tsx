@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sun, Moon, Monitor, Bell, User, LogOut } from 'lucide-react';
+import { Sun, Moon, Monitor, User, LogOut } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../hooks/useTenant';
 import { Badge, Button } from '../ui';
 import { StoreSelector } from '../Store/StoreSelector';
 import { TenantSwitcher } from '../Tenant/TenantSwitcher';
+import { NotificationBell } from '../Notification/NotificationBell';
 
 export interface TopBarProps {
   title?: string;
@@ -81,8 +82,6 @@ export function TopBar({
   const nextTheme = THEME_CYCLE[(currentIndex + 1) % THEME_CYCLE.length];
   const ThemeIcon = THEME_ICONS[theme as ThemeValue] ?? Monitor;
 
-  const unread = 0;
-
   return (
     <div className="flex items-center w-full gap-4 flex-wrap">
       <TenantSwitcher />
@@ -102,18 +101,7 @@ export function TopBar({
       )}
       <div className="flex-1" />
       {rightSlot}
-      {showNotificationBell && (
-        <button
-          type="button"
-          aria-label="通知"
-          className="relative p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-        >
-          <Bell size={18} />
-          {unread > 0 && (
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger-500" />
-          )}
-        </button>
-      )}
+      {showNotificationBell && <NotificationBell />}
       {showStoreSelector && <StoreSelector />}
       {showThemeToggle && (
         <button

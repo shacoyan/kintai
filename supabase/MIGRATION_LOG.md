@@ -41,3 +41,13 @@
 | # | ファイル | 内容 | 適用日 |
 |---|---------|------|--------|
 | 027 | `027_correction_leave_store_id.sql` | correction_requests / leave_requests に `store_id UUID NULL REFERENCES stores(id) ON DELETE SET NULL` カラム追加 + idx_*_store_id インデックス。RLS は tenant_id ベースを維持 (表示用補足) | 2026-04-27 |
+
+--- Loop 11b Phase 1 ---
+
+| # | ファイル | 内容 | 適用日 |
+|---|---------|------|--------|
+| 028 | `028_notifications.sql` | notifications テーブル新設 (tenant_id / user_id / type CHECK 10種 / title / body / link / read_at / created_at) + idx 3本 (user_unread / user_recent / tenant) + RLS 4ポリシー (受信者 SELECT/UPDATE/DELETE own、同 tenant の owner/manager のみ INSERT 可で受信者 user_id が同 tenant member であることを WITH CHECK で検証) | 2026-04-28 |
+| 029 | `029_leave_type_extend.sql` | leave_requests.leave_type CHECK 制約拡張 — 既存 (paid/half_am/half_pm/absence/other) に法定休暇 5種 (special/maternity/paternity/compassionate/comp_holiday) 追加 | 2026-04-28 |
+| 030 | `030_tenant_roles.sql` | tenant_roles テーブル新設 (役職マスタ: name / default_hourly_rate / default_monthly_salary / color / sort_order) + tenant_members.role_id (FK ON DELETE SET NULL) 追加 + RLS (tenant 所属者 SELECT / owner・manager のみ INSERT/UPDATE/DELETE) | 2026-04-28 |
+| 031 | `031_tenant_soft_delete.sql` | tenants.deleted_at TIMESTAMPTZ 追加 + 部分インデックス (deleted_at IS NULL) + `get_my_tenant_ids()` 再定義 (deleted_at IS NULL の tenants と JOIN) + `soft_delete_tenant(p_tenant_id UUID)` SECURITY DEFINER RPC (オーナーのみ実行可能) + REVOKE PUBLIC / GRANT authenticated | 2026-04-28 |
+| 032 | `032_transfer_ownership.sql` | `transfer_tenant_ownership(p_tenant_id, p_new_owner_user_id)` SECURITY DEFINER RPC 追加 — 旧 owner→manager 降格・新 owner (manager 限定) →owner 昇格・tenants.owner_id 更新を atomic 実行 / 自分自身指定・非 owner 呼び出し・非 manager 譲渡先・非 member 譲渡先を例外化 + REVOKE PUBLIC / GRANT authenticated | 2026-04-28 |

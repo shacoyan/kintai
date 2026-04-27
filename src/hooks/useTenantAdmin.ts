@@ -220,6 +220,19 @@ export function useTenantAdmin(tenantId: string) {
     await fetchMembers();
   }, [fetchMembers]);
 
+  const updateRoleId = useCallback(async (memberId: string, roleId: string | null) => {
+    const { data, error: e } = await supabase
+      .from('tenant_members')
+      .update({ role_id: roleId })
+      .eq('id', memberId)
+      .eq('tenant_id', tenantId)
+      .select()
+      .single();
+    if (e) throw new Error(`役職の更新に失敗しました: ${e.message}`);
+    if (!data) throw new Error('役職の更新に失敗しました（権限がない可能性があります）');
+    await fetchMembers();
+  }, [tenantId, fetchMembers]);
+
   return {
     members,
     allAttendance,
@@ -238,5 +251,6 @@ export function useTenantAdmin(tenantId: string) {
     updatePayType,
     updateMonthlySalary,
     updatePaidLeaveDays,
+    updateRoleId,
   };
 }

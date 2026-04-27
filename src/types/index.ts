@@ -4,6 +4,7 @@ export interface Tenant {
   invite_code: string;
   created_at: string;
   owner_id: string;
+  deleted_at: string | null;
 }
 
 export interface TenantMember {
@@ -17,6 +18,18 @@ export interface TenantMember {
   pay_type: 'hourly' | 'monthly';
   monthly_salary: number | null;
   paid_leave_days: number | null;
+  role_id: string | null;
+  created_at: string;
+}
+
+export interface TenantRole {
+  id: string;
+  tenant_id: string;
+  name: string;
+  default_hourly_rate: number | null;
+  default_monthly_salary: number | null;
+  color: string | null;
+  sort_order: number;
   created_at: string;
 }
 
@@ -73,7 +86,9 @@ export interface Shift {
   store_id: string | null;
 }
 
-export type LeaveType = 'paid' | 'half_am' | 'half_pm' | 'absence' | 'other';
+export type LeaveType =
+  | 'paid' | 'half_am' | 'half_pm' | 'absence' | 'other'
+  | 'special' | 'maternity' | 'paternity' | 'compassionate' | 'comp_holiday';
 
 export interface LeaveRequest {
   id: string;
@@ -178,4 +193,29 @@ export interface PayrollRunItem {
   normal_minutes: number;
   night_minutes: number;
   payment: number;
+}
+
+// === Loop 11b L11b-1 (Engineer A) — in-app 通知 ===
+export type NotificationType =
+  | 'shift_approved'
+  | 'shift_rejected'
+  | 'preference_approved'
+  | 'preference_rejected'
+  | 'preference_reverted'
+  | 'correction_approved'
+  | 'correction_rejected'
+  | 'leave_approved'
+  | 'leave_rejected'
+  | 'generic';
+
+export interface NotificationItem {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read_at: string | null;
+  created_at: string;
 }

@@ -3,7 +3,8 @@ import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useShift } from '../../hooks/useShift';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { parseISO, differenceInMinutes } from 'date-fns';
-import type { AttendanceRecord, TenantMember, Shift } from '../../types';
+import type { AttendanceRecord, TenantMember, Shift, TenantRole } from '../../types';
+import { useTenantRoles } from '../../hooks/useTenantRoles';
 import { generatePayrollCsv, downloadCsv } from '../../utils/csvExport';
 import { getNightMinutesInRange, getNightMinutesForShift } from '../../utils/nightShift';
 import { Download, Calculator, Lock, Printer } from 'lucide-react';
@@ -43,11 +44,34 @@ function splitNightMinutes(clockIn: string, clockOut: string): { normal: number;
   return { normal: totalMins - nightMins, night: nightMins };
 }
 
+/**
+ * Loop 11b L11b-3: 役職フォールバック付き時給/月給算出
+ * 個別 hourly_rate が設定されていればそれを優先、未設定なら役職の default を継承、それも無ければ 0。
+ */
+function getEffectiveHourlyRate(m: TenantMember, rolesMap: Map<string, TenantRole>): number {
+  if (m.hourly_rate != null) return m.hourly_rate;
+  if (m.role_id) {
+    const role = rolesMap.get(m.role_id);
+    if (role?.default_hourly_rate != null) return role.default_hourly_rate;
+  }
+  return 0;
+}
+
+function getEffectiveMonthlySalary(m: TenantMember, rolesMap: Map<string, TenantRole>): number {
+  if (m.monthly_salary != null) return m.monthly_salary;
+  if (m.role_id) {
+    const role = rolesMap.get(m.role_id);
+    if (role?.default_monthly_salary != null) return role.default_monthly_salary;
+  }
+  return 0;
+}
+
 function calcMemberPayroll(
   member: TenantMember,
-  records: AttendanceRecord[]
+  records: AttendanceRecord[],
+  rolesMap: Map<string, TenantRole>
 ): PayrollRow {
-  const rate = member.hourly_rate ?? 0;
+  const rate = getEffectiveHourlyRate(member, rolesMap);
   const dates = new Set<string>();
   let totalMinutes = 0;
   let normalMinutes = 0;
@@ -100,7 +124,7 @@ function calcMemberPayroll(
   }
 
   const payType = member.pay_type ?? 'hourly';
-  const monthlySalary = member.monthly_salary ?? 0;
+  const monthlySalary = getEffectiveMonthlySalary(member, rolesMap);
 
   let payment: number;
   if (payType === 'monthly') {
@@ -131,11 +155,12 @@ function calcMemberPayroll(
  */
 function calcMemberShiftPayroll(
   member: TenantMember,
-  shifts: Shift[]
+  shifts: Shift[],
+  rolesMap: Map<string, TenantRole>
 ): PayrollRow {
-  const rate = member.hourly_rate ?? 0;
+  const rate = getEffectiveHourlyRate(member, rolesMap);
   const payType = member.pay_type ?? 'hourly';
-  const monthlySalary = member.monthly_salary ?? 0;
+  const monthlySalary = getEffectiveMonthlySalary(member, rolesMap);
 
   // 承認済み（approved / modified）シフトのみを対象とする
   const approvedShifts = shifts.filter(
@@ -266,6 +291,15 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   const { myRole } = useTenant();
   const { closeDay } = usePayrollCloseDay(tenantId);
   const { fetchRun, finalizeRun, unfinalizeRun, loading: runLoading } = usePayrollRun(tenantId, currentStore?.id ?? null);
+  // === Loop 11b L11b-3: 役職時給フォールバック ===
+  const { roles: tenantRoles, fetchRoles: fetchTenantRoles } = useTenantRoles(tenantId);
+  useEffect(() => { fetchTenantRoles(); }, [fetchTenantRoles]);
+  const rolesMap = useMemo(() => {
+    const m = new Map<string, typeof tenantRoles[number]>();
+    for (const r of tenantRoles) m.set(r.id, r);
+    return m;
+  }, [tenantRoles]);
+  // === /Loop 11b L11b-3 ===
   const deleteRun = unfinalizeRun;
   const [run, setRun] = useState<{
     id: string;
@@ -346,7 +380,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
     if (!calculated) return [];
 
     if (payrollMode === 'shift') {
-      return members.map((m) => calcMemberShiftPayroll(m, allShifts));
+      return members.map((m) => calcMemberShiftPayroll(m, allShifts, rolesMap));
     }
 
     // 実績ベース
@@ -355,8 +389,8 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
       if (!grouped[r.user_id]) grouped[r.user_id] = [];
       grouped[r.user_id].push(r);
     });
-    return members.map((m) => calcMemberPayroll(m, grouped[m.user_id] || []));
-  }, [calculated, allAttendance, allShifts, members, payrollMode]);
+    return members.map((m) => calcMemberPayroll(m, grouped[m.user_id] || [], rolesMap));
+  }, [calculated, allAttendance, allShifts, members, payrollMode, rolesMap]);
 
   const payrollData: PayrollRow[] = useMemo(() => {
     if (run && run.items) {

@@ -12,11 +12,16 @@ interface LeaveFormProps {
 }
 
 const LEAVE_TYPE_OPTIONS: { value: LeaveType; label: string }[] = [
-  { value: 'paid', label: '有給休暇' },
-  { value: 'half_am', label: '午前半休（有給）' },
-  { value: 'half_pm', label: '午後半休（有給）' },
-  { value: 'absence', label: '欠勤' },
-  { value: 'other', label: 'その他' },
+  { value: 'paid',          label: '有給休暇' },
+  { value: 'half_am',       label: '午前半休（有給）' },
+  { value: 'half_pm',       label: '午後半休（有給）' },
+  { value: 'special',       label: '慶弔休暇' },
+  { value: 'maternity',     label: '産前産後休暇' },
+  { value: 'paternity',     label: '育児休業' },
+  { value: 'compassionate', label: '忌引' },
+  { value: 'comp_holiday',  label: '振替休日' },
+  { value: 'absence',       label: '欠勤' },
+  { value: 'other',         label: 'その他' },
 ];
 
 export function LeaveForm({ onSubmit, onCancel, remainingPaidLeave }: LeaveFormProps) {

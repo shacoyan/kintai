@@ -49,8 +49,13 @@ const STATUS_DOT: Record<string, string> = {
 
 const LEAVE_TYPE_DOT: Record<string, string> = {
   paid: 'bg-success-500',
-  half_am: 'bg-success-500',
-  half_pm: 'bg-success-500',
+  half_am: 'bg-teal-500',
+  half_pm: 'bg-cyan-500',
+  special: 'bg-amber-500',
+  maternity: 'bg-pink-500',
+  paternity: 'bg-indigo-500',
+  compassionate: 'bg-neutral-500',
+  comp_holiday: 'bg-violet-500',
   absence: 'bg-neutral-400',
   other: 'bg-info-500',
 };
@@ -59,6 +64,11 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
   paid: '有給',
   half_am: '半休(午前)',
   half_pm: '半休(午後)',
+  special: '慶弔',
+  maternity: '産休',
+  paternity: '育休',
+  compassionate: '忌引',
+  comp_holiday: '振休',
   absence: '欠勤',
   other: 'その他',
 };

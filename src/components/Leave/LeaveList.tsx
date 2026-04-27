@@ -20,16 +20,26 @@ const LEAVE_TYPE_LABEL: Record<LeaveType, string> = {
   paid: '有給',
   half_am: 'AM半休',
   half_pm: 'PM半休',
+  special: '慶弔',
+  maternity: '産休',
+  paternity: '育休',
+  compassionate: '忌引',
+  comp_holiday: '振休',
   absence: '欠勤',
   other: 'その他',
 };
 
 const LEAVE_TYPE_COLOR: Record<LeaveType, string> = {
-  paid: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300',
-  half_am: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
-  half_pm: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
-  absence: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200',
-  other: 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-300',
+  paid:          'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300',
+  half_am:       'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
+  half_pm:       'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
+  special:       'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  maternity:     'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
+  paternity:     'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  compassionate: 'bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200',
+  comp_holiday:  'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300',
+  absence:       'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200',
+  other:         'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-300',
 };
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {

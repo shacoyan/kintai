@@ -14,6 +14,8 @@ interface TenantContextType {
   joinTenant: (inviteCode: string, displayName: string) => Promise<Tenant>;
   regenerateInviteCode: () => Promise<string>;
   leaveTenant: () => Promise<void>;
+  deleteTenant: () => Promise<void>;
+  transferOwnership: (newOwnerUserId: string) => Promise<void>;
   loading: boolean;
   error: string | null;
   isOwner: boolean;
@@ -104,6 +106,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           invite_code: item.tenants!.invite_code,
           created_at: item.tenants!.created_at,
           owner_id: item.tenants!.owner_id,
+          deleted_at: item.tenants!.deleted_at ?? null,
           role: item.role as UserRole,
           display_name: item.display_name,
           member_id: item.id,
@@ -189,7 +192,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       if (tenantError || !tenantData) throw new Error('無効な招待コードです');
 
-      // 既存メンバーシップの重複チェック
       const { data: existingMember } = await supabase
         .from('tenant_members')
         .select('id')
@@ -274,7 +276,46 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentTenant, isOwner, myMemberId, setCurrentTenant, fetchTenants]);
 
-  // ログイン時にテナント一覧を取得
+  const transferOwnership = useCallback(async (newOwnerUserId: string): Promise<void> => {
+    if (!currentTenant) throw new Error('テナントが選択されていません');
+    if (!isOwner) throw new Error('オーナーのみ実行可能です');
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: rpcError } = await supabase.rpc('transfer_tenant_ownership', {
+        p_tenant_id: currentTenant.id,
+        p_new_owner_user_id: newOwnerUserId,
+      });
+      if (rpcError) throw rpcError;
+      await fetchTenants();
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [currentTenant, isOwner, fetchTenants]);
+
+  const deleteTenant = useCallback(async (): Promise<void> => {
+    if (!currentTenant) throw new Error('テナントが選択されていません');
+    if (!isOwner) throw new Error('オーナーのみ実行可能です');
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: rpcError } = await supabase.rpc('soft_delete_tenant', {
+        p_tenant_id: currentTenant.id,
+      });
+      if (rpcError) throw rpcError;
+      setCurrentTenant(null);
+      await fetchTenants();
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [currentTenant, isOwner, setCurrentTenant, fetchTenants]);
+
   useEffect(() => {
     if (!user) {
       setTenants([]);
@@ -295,7 +336,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             setCurrentTenantState(found);
             fetchMembers(found.id);
           } else {
-            // 保存されたテナントが見つからない場合はクリア
             localStorage.removeItem('kintai_current_tenant');
             setCurrentTenantState(null);
           }
@@ -307,7 +347,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, [user, fetchTenants, fetchMembers]);
 
-  // テナント切替時にメンバーを再取得
   useEffect(() => {
     if (currentTenant) {
       fetchMembers(currentTenant.id);
@@ -328,6 +367,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       joinTenant,
       regenerateInviteCode,
       leaveTenant,
+      deleteTenant,
+      transferOwnership,
       loading,
       error,
       isOwner,

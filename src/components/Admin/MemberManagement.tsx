@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
+import { useTenantRoles } from '../../hooks/useTenantRoles';
 import { useTenant } from '../../hooks/useTenant';
 import type { TenantMember } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
@@ -26,7 +27,13 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const { showToast } = useToast();
   const { myRole } = useTenant();
   const { currentStore } = useStoreContext();
-  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary, deleteMember, updateRole, updatePaidLeaveDays } = useTenantAdmin(tenantId);
+  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary, deleteMember, updateRole, updatePaidLeaveDays, updateRoleId } = useTenantAdmin(tenantId);
+  const { roles, fetchRoles } = useTenantRoles(tenantId);
+  const rolesMap = useMemo(() => {
+    const m = new Map<string, typeof roles[number]>();
+    for (const r of roles) m.set(r.id, r);
+    return m;
+  }, [roles]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingRoleId, setTogglingRoleId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -51,6 +58,19 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   useEffect(() => {
     fetchMembers(currentStore?.id ?? null);
   }, [fetchMembers, currentStore?.id]);
+
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
+
+  const handleRoleIdChange = async (member: TenantMember, roleId: string) => {
+    try {
+      await updateRoleId(member.id, roleId === '' ? null : roleId);
+      showToast('役職を更新しました', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : '役職の更新に失敗しました', 'error');
+    }
+  };
 
   const handleStartEdit = (member: TenantMember) => {
     setEditingId(member.id);
@@ -278,8 +298,23 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     </div>
                   </div>
 
-                  {/* 下段: 給与タイプ・時給/月給・有給・深夜給 */}
+                  {/* 下段: 役職・給与タイプ・時給/月給・有給・深夜給 */}
                   <div className="space-y-2 md:ml-12">
+                    {/* 役職セレクト */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400 w-14">役職</span>
+                      <select
+                        value={member.role_id ?? ''}
+                        onChange={(e) => handleRoleIdChange(member, e.target.value)}
+                        className="text-sm border border-neutral-300 dark:border-neutral-600 rounded-md px-2 py-1 bg-white dark:bg-neutral-700 dark:text-neutral-100 min-h-[36px]"
+                        aria-label={`${member.display_name} の役職`}
+                      >
+                        <option value="">未設定</option>
+                        {roles.map((r) => (
+                          <option key={r.id} value={r.id}>{r.name}</option>
+                        ))}
+                      </select>
+                    </div>
                     {/* 給与タイプ切替 */}
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-neutral-500 dark:text-neutral-400 w-14">給与形態</span>
@@ -353,9 +388,13 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             >
                               {rate > 0 ? (
                                 <>¥{rate.toLocaleString()}</>
-                              ) : (
-                                <>未設定</>
-                              )}
+                              ) : (() => {
+                                const inheritedRate = member.role_id ? (rolesMap.get(member.role_id)?.default_hourly_rate ?? null) : null;
+                                if (inheritedRate != null && inheritedRate > 0) {
+                                  return (<span className="text-[11px] text-neutral-500 dark:text-neutral-400">役職時給 ¥{inheritedRate.toLocaleString()} (継承)</span>);
+                                }
+                                return (<>未設定</>);
+                              })()}
                               <Pencil className="w-3.5 h-3.5 text-neutral-400" />
                             </button>
                           )}
