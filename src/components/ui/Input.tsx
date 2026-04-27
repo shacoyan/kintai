@@ -13,7 +13,7 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
 
 const FIELD_BASE =
   'w-full h-12 md:h-10 border rounded-md bg-white px-3.5 text-body ' +
-  'placeholder:text-neutral-300 transition-colors duration-120 ' +
+  'placeholder:text-neutral-300 motion-safe:transition-colors duration-120 ' +
   'focus:outline-none focus-visible:ring-2 ' +
   'disabled:bg-neutral-50 disabled:cursor-not-allowed ' +
   'dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:disabled:bg-neutral-900';

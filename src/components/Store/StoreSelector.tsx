@@ -130,7 +130,7 @@ export function StoreSelector() {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         title={currentStore?.name || '店舗を選択'}
-        className="flex items-center gap-2 max-w-[160px] min-h-9 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium border border-slate-300 dark:border-slate-700 rounded-md px-3 py-1 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+        className="flex items-center gap-2 max-w-[160px] min-h-9 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium border border-slate-300 dark:border-slate-700 rounded-md px-3 py-1 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 motion-safe:transition-colors"
       >
         <Store className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
         <span className="truncate">{currentStore?.name || '店舗を選択'}</span>
@@ -157,7 +157,7 @@ export function StoreSelector() {
                   triggerRef.current?.focus();
                 }}
                 onKeyDown={(e) => onItemKeyDown(e, idx, store)}
-                className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:bg-slate-100 dark:focus:bg-slate-700 transition-colors"
+                className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:bg-slate-100 dark:focus:bg-slate-700 motion-safe:transition-colors"
               >
                 <span className="w-4 h-4 flex items-center justify-center shrink-0">
                   {isSelected && <Check className="w-4 h-4 text-primary-600 dark:text-primary-400" />}

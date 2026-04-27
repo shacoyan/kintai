@@ -20,7 +20,7 @@ function NavItem({
     <Link
       to={to}
       aria-current={active ? 'page' : undefined}
-      className={`flex items-center gap-3 px-3 h-10 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
+      className={`flex items-center gap-3 px-3 h-10 rounded-lg text-sm motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
         active
           ? 'bg-primary-50 text-primary-700'
           : 'text-neutral-700 hover:bg-neutral-100'

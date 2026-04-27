@@ -15,7 +15,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   height,
   count = 1,
 }) => {
-  const baseClass = 'animate-pulse bg-neutral-200 dark:bg-neutral-700';
+  const baseClass = 'motion-safe:animate-pulse bg-neutral-200 dark:bg-neutral-700';
   const variantClass = {
     text: 'rounded h-4',
     circular: 'rounded-full',
@@ -72,5 +72,49 @@ export const ListRowSkeleton: React.FC = () => (
   <div className="py-3 px-4 border-b border-neutral-100 dark:border-neutral-800 space-y-2">
     <Skeleton variant="text" width="70%" height={16} />
     <Skeleton variant="text" width="40%" height={12} />
+  </div>
+);
+
+// Page-specific skeleton variants (Loop 12 L12-13)
+export const DashboardSkeleton: React.FC = () => (
+  <div className="space-y-6 p-4">
+    <Skeleton variant="text" width="40%" height={28} />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <CardSkeleton />
+      <CardSkeleton />
+      <CardSkeleton />
+    </div>
+    <Skeleton variant="rectangular" height={120} />
+  </div>
+);
+
+export const HistorySkeleton: React.FC = () => (
+  <div className="space-y-4 p-4">
+    <Skeleton variant="text" width="30%" height={28} />
+    <Skeleton variant="rectangular" height={280} />
+    <TableSkeleton rows={6} />
+  </div>
+);
+
+export const ShiftSkeleton: React.FC = () => (
+  <div className="space-y-4 p-4">
+    <Skeleton variant="text" width="35%" height={28} />
+    <div className="grid grid-cols-7 gap-2">
+      {Array.from({ length: 35 }).map((_, i) => (
+        <Skeleton key={i} variant="rectangular" height={80} />
+      ))}
+    </div>
+  </div>
+);
+
+export const AdminSkeleton: React.FC = () => (
+  <div className="space-y-4 p-4">
+    <Skeleton variant="text" width="30%" height={28} />
+    <div className="flex gap-2">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Skeleton key={i} variant="rectangular" width={80} height={32} />
+      ))}
+    </div>
+    <TableSkeleton rows={8} />
   </div>
 );

@@ -31,7 +31,7 @@ export function Spinner(props: SpinnerProps): JSX.Element {
     >
       <Loader2
         size={px}
-        className="animate-spin"
+        className="motion-safe:animate-spin"
         aria-hidden="true"
       />
       <span className="sr-only">{label}</span>

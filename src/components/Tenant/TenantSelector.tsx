@@ -39,7 +39,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
               <button
                 key={tenant.id}
                 onClick={() => onSelect(tenant)}
-                className="w-full flex items-center justify-between p-4 bg-white dark:bg-neutral-800 shadow-sm rounded-lg border border-neutral-200 dark:border-neutral-700 hover:shadow-md hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-200 text-left focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full flex items-center justify-between p-4 bg-white dark:bg-neutral-800 shadow-sm rounded-lg border border-neutral-200 dark:border-neutral-700 hover:shadow-md hover:border-primary-300 dark:hover:border-primary-600 motion-safe:transition-all duration-200 text-left focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <div className="min-w-0">
                   <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100 truncate">{tenant.name}</p>

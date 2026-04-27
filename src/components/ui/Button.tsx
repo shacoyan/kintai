@@ -31,7 +31,7 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 
 const BASE_CLASSES =
   'rounded-md font-semibold inline-flex items-center justify-center gap-2 ' +
-  'transition-colors duration-120 ease-out-expo focus-ring ' +
+  'motion-safe:transition-colors duration-120 ease-out-expo focus-ring ' +
   'disabled:opacity-50 disabled:cursor-not-allowed';
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -69,7 +69,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {loading ? (
         <>
           <Loader2
-            className="w-4 h-4 animate-spin"
+            className="w-4 h-4 motion-safe:animate-spin"
             role="status"
             aria-label="読み込み中"
           />

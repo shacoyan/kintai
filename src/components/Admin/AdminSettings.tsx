@@ -2,6 +2,7 @@ import { RoleManagementSection } from './RoleManagementSection';
 import { OwnerTransferSection } from './OwnerTransferSection';
 import { InviteCodeSettingsSection } from './InviteCodeSettingsSection';
 import { TenantDeleteSection } from './TenantDeleteSection';
+import { TenantNameEditSection } from './TenantNameEditSection';
 
 interface AdminSettingsProps {
   tenantId: string;
@@ -29,11 +30,14 @@ export function AdminSettings({ tenantId }: AdminSettingsProps) {
       {/* --- Safe section: 役職管理 (Engineer C) --- */}
       <RoleManagementSection tenantId={tenantId} />
 
-      {/* --- Danger zone: オーナー権限移譲 (Engineer E / L11b-5) --- */}
-      <OwnerTransferSection tenantId={tenantId} />
+      {/* --- Operational: テナント表示名編集 (Loop 12 Phase 3 / L12-10) --- */}
+      <TenantNameEditSection tenantId={tenantId} />
 
       {/* --- Operational: 招待コード設定 (Loop 12 Phase 2 C / L12-8) --- */}
       <InviteCodeSettingsSection tenantId={tenantId} />
+
+      {/* --- Danger zone: オーナー権限移譲 (Engineer E / L11b-5) --- */}
+      <OwnerTransferSection tenantId={tenantId} />
 
       {/* --- Danger zone: テナント削除 (Engineer D / L11b-4) --- */}
       <TenantDeleteSection tenantId={tenantId} />

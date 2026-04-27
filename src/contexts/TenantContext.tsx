@@ -20,6 +20,7 @@ interface TenantContextType {
       maxUses?: 1 | 3 | 10 | null;
     }
   ) => Promise<string>;
+  updateTenantName: (tenantId: string, newName: string) => Promise<void>;
   leaveTenant: () => Promise<void>;
   deleteTenant: () => Promise<void>;
   transferOwnership: (newOwnerUserId: string) => Promise<void>;
@@ -292,6 +293,32 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentTenant, myRole, generateUniqueInviteCode, setCurrentTenant, fetchTenants]);
 
+  const updateTenantName = useCallback(async (tenantId: string, newName: string): Promise<void> => {
+    if (myRole !== 'owner') throw new Error('オーナーのみ実行可能です');
+    if (!currentTenant) throw new Error('テナントが選択されていません');
+    if (currentTenant.id !== tenantId) throw new Error('現在選択中のテナントのみ更新できます');
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: updateError } = await supabase
+        .from('tenants')
+        .update({ name: newName })
+        .eq('id', tenantId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      setCurrentTenant({ ...currentTenant, name: newName });
+      await fetchTenants();
+    } catch (err: any) {
+      setError(formatSupabaseError(err).message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [currentTenant, myRole, setCurrentTenant, fetchTenants]);
+
   const leaveTenant = useCallback(async (): Promise<void> => {
     if (!currentTenant) throw new Error('テナントが選択されていません');
     if (isOwner) throw new Error('オーナーは脱退できません。先に他のメンバーにオーナー権を移譲してください');
@@ -407,6 +434,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       createTenant,
       joinTenant,
       regenerateInviteCode,
+      updateTenantName,
       leaveTenant,
       deleteTenant,
       transferOwnership,

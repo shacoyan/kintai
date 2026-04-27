@@ -25,7 +25,7 @@ import {
 } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CalendarX } from 'lucide-react';
-import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton } from '../components/ui';
+import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton, HistorySkeleton } from '../components/ui';
 
 // safelist: bg-info-500, bg-info-400, bg-success-500, bg-success-400, bg-danger-500, bg-danger-400, text-info-500, text-info-400, text-danger-500, text-danger-400
 
@@ -130,7 +130,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                     setSelectedDate(isSelected ? null : dateKey);
                   }}
                   disabled={isFuture && isCurrentMonth}
-                  className={`relative w-full min-h-[56px] p-1 text-left border-b border-r border-neutral-100 dark:border-neutral-700 transition-colors ${
+                  className={`relative w-full min-h-[56px] p-1 text-left border-b border-r border-neutral-100 dark:border-neutral-700 motion-safe:transition-colors ${
                     !isCurrentMonth
                       ? 'bg-neutral-50 dark:bg-neutral-900/30 cursor-default'
                       : isFuture
@@ -336,6 +336,15 @@ export function HistoryPage() {
     return now.getFullYear() === year && now.getMonth() + 1 === month;
   })();
 
+  // 初回ロード時 (loading かつ初期データ未取得) はページ全体スケルトン
+  if (loading && !hasRecords && currentStore != null) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <HistorySkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {currentStore == null && (
@@ -368,7 +377,7 @@ export function HistoryPage() {
           <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-700 rounded-md">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors ${
                 viewMode === 'list'
                   ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
@@ -378,7 +387,7 @@ export function HistoryPage() {
             </button>
             <button
               onClick={() => setViewMode('calendar')}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors ${
                 viewMode === 'calendar'
                   ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'

@@ -3,7 +3,7 @@ import { format, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns'
 import { ja } from 'date-fns/locale';
 import { Clock, History, CheckCircle2, Circle, XCircle, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Button, Card, Badge, BottomSheet } from '../components/ui';
+import { Button, Card, Badge, BottomSheet, ShiftSkeleton } from '../components/ui';
 import { Spinner } from '../components/ui/Spinner';
 import type { BadgeTone } from '../components/ui';
 import { useTenant } from '../hooks/useTenant';
@@ -362,6 +362,23 @@ export function ShiftPage() {
     );
   }
 
+  // 初回ロード時 (各 hook の loading かつ初期データ未取得) はページ全体スケルトン
+  const initialLoading =
+    (shiftLoading || leaveLoading || prefLoading) &&
+    myShifts.length === 0 &&
+    allShifts.length === 0 &&
+    myLeaves.length === 0 &&
+    allLeaves.length === 0 &&
+    myPreferences.length === 0 &&
+    allPreferences.length === 0;
+  if (initialLoading) {
+    return (
+      <div className="max-w-5xl mx-auto">
+        <ShiftSkeleton />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="border-b border-neutral-200 dark:border-neutral-700">
@@ -374,7 +391,7 @@ export function ShiftPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition ${
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm motion-safe:transition ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
                   : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
@@ -447,7 +464,7 @@ export function ShiftPage() {
                 <button 
                   key={s.id} 
                   onClick={() => { setSelectedShift(s); setSelectedShiftDate(null); }}
-                  className="w-full text-left p-3 bg-neutral-50 dark:bg-neutral-800 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                  className="w-full text-left p-3 bg-neutral-50 dark:bg-neutral-800 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 >
                   <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{memberNames.get(s.user_id) ?? '不明'}</div>
                   <div className="text-xs text-neutral-600 dark:text-neutral-400">
@@ -497,7 +514,7 @@ export function ShiftPage() {
               type="button"
               onClick={() => setPreferenceView('current')}
               aria-pressed={preferenceView === 'current'}
-              className={`inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold rounded transition-colors duration-120 focus-ring ${
+              className={`inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 focus-ring ${
                 preferenceView === 'current'
                   ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
                   : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
@@ -510,7 +527,7 @@ export function ShiftPage() {
               type="button"
               onClick={() => setPreferenceView('history')}
               aria-pressed={preferenceView === 'history'}
-              className={`inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold rounded transition-colors duration-120 focus-ring ${
+              className={`inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 focus-ring ${
                 preferenceView === 'history'
                   ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
                   : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
@@ -562,7 +579,7 @@ export function ShiftPage() {
                       type="button"
                       onClick={() => setShowAllMembersPrefs(false)}
                       aria-pressed={!showAllMembersPrefs}
-                      className={`px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring ${
+                      className={`px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 focus-ring ${
                         !showAllMembersPrefs
                           ? 'bg-primary-600 text-white'
                           : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
@@ -574,7 +591,7 @@ export function ShiftPage() {
                       type="button"
                       onClick={() => setShowAllMembersPrefs(true)}
                       aria-pressed={showAllMembersPrefs}
-                      className={`px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring ${
+                      className={`px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 focus-ring ${
                         showAllMembersPrefs
                           ? 'bg-primary-600 text-white'
                           : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
@@ -586,7 +603,7 @@ export function ShiftPage() {
                       <button
                         type="button"
                         onClick={() => setShowBulkApplyModal(true)}
-                        className="px-3 h-8 text-xs font-semibold rounded-md transition-colors duration-120 focus-ring bg-white dark:bg-neutral-800 border border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30"
+                        className="px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 focus-ring bg-white dark:bg-neutral-800 border border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30"
                       >
                         プリセット一括適用
                       </button>
@@ -878,7 +895,7 @@ export function ShiftPage() {
               ) : (
                 <button
                   onClick={() => setShowLeaveForm(true)}
-                  className="w-full px-4 py-3 text-sm font-medium text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                  className="w-full px-4 py-3 text-sm font-medium text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 motion-safe:transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 >
                   + 休暇申請
                 </button>

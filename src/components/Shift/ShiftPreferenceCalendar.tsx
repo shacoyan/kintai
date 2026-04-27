@@ -266,7 +266,7 @@ export function ShiftPreferenceCalendar({
             <button
               type="button"
               onClick={navigateToNextPrefMonth}
-              className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded transition inline-flex items-center gap-1 shrink-0"
+              className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded motion-safe:transition inline-flex items-center gap-1 shrink-0"
             >
               次の希望がある月へ
               <NextPrefIcon className="w-3 h-3" aria-hidden="true" />
@@ -318,8 +318,8 @@ export function ShiftPreferenceCalendar({
           const pendingCount = dayPrefs.filter(p => p.status === 'pending').length;
 
           const baseCell = isAdminView
-            ? 'min-h-[88px] lg:min-h-[120px] rounded-lg flex flex-col items-stretch gap-0.5 text-[11px] transition-colors duration-120 focus-ring select-none cursor-pointer relative'
-            : 'aspect-square min-h-[44px] md:min-h-[56px] rounded-lg flex flex-col items-center justify-center gap-0.5 text-[11px] transition-colors duration-120 focus-ring select-none cursor-pointer';
+            ? 'min-h-[88px] lg:min-h-[120px] rounded-lg flex flex-col items-stretch gap-0.5 text-[11px] motion-safe:transition-colors duration-120 focus-ring select-none cursor-pointer relative'
+            : 'aspect-square min-h-[44px] md:min-h-[56px] rounded-lg flex flex-col items-center justify-center gap-0.5 text-[11px] motion-safe:transition-colors duration-120 focus-ring select-none cursor-pointer';
 
           let stateCell: string;
           if (!isCurrentMonth) {

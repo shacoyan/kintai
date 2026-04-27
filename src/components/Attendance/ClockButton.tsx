@@ -127,7 +127,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           disabled={config.disabled || processing}
           aria-label={config.label}
           aria-pressed={status !== 'not_started'}
-          className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg transition-all duration-300 select-none ${flashGreen ? 'bg-success-400 scale-105' : config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
+          className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg motion-safe:transition-all duration-300 select-none ${flashGreen ? 'bg-success-400 scale-105' : config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
         >
           {processing ? '処理中...' : config.label}
         </button>

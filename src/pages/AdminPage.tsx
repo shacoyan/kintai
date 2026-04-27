@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { useTenant } from '../hooks/useTenant';
 import { AdminDashboard } from '../components/Admin/AdminDashboard';
-import { PageSkeleton } from '../components/ui';
+import { AdminSkeleton } from '../components/ui';
 
 export function AdminPage() {
   const [currentMonth] = useState(() => new Date());
@@ -15,7 +15,7 @@ export function AdminPage() {
   if (myRole === null) {
     return (
       <div className="max-w-6xl mx-auto py-12">
-        <PageSkeleton />
+        <AdminSkeleton />
       </div>
     );
   }

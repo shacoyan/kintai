@@ -183,7 +183,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
           />
         ) : (
           presets.map((preset, index) => (
-            <div key={preset.id} className="px-6 py-3 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+            <div key={preset.id} className="px-6 py-3 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-800/50 motion-safe:transition-colors">
               {editingId === preset.id ? (
                 <div className="flex flex-wrap items-end gap-3 flex-1">
                   <div className="flex-1 min-w-[120px]">

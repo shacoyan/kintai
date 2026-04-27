@@ -161,7 +161,7 @@ export function ShiftPreferenceForm({
                 onClick={() => setPreferenceType(cfg.value)}
                 className={
                   'flex flex-col items-center justify-center gap-1 h-16 rounded-lg ' +
-                  'transition-colors duration-120 focus-ring ' +
+                  'motion-safe:transition-colors duration-120 focus-ring ' +
                   (isSelected
                     ? 'bg-primary-50 ring-2 ring-primary-500 text-primary-700'
                     : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50')

@@ -57,3 +57,9 @@
 | # | ファイル | 内容 | 適用日 |
 |---|---------|------|--------|
 | 033 | `033_invite_code_limits.sql` | 招待コード期限・使用回数上限 — tenants に `invite_code_expires_at TIMESTAMPTZ` / `invite_code_max_uses INTEGER (CHECK >0)` / `invite_code_used_count INTEGER NOT NULL DEFAULT 0 (CHECK >=0)` 追加 + 部分インデックス `idx_tenants_invite_code_expires` + `increment_invite_code_use(p_tenant_id UUID)` SECURITY DEFINER RPC (SELECT FOR UPDATE で atomic に期限/上限検証 + used_count+1) + REVOKE PUBLIC / GRANT authenticated | 未適用 |
+
+--- Loop 12 Phase 3 ---
+
+| # | ファイル | 内容 | 適用日 |
+|---|---------|------|--------|
+| 034 | `034_tenant_member_self_delete.sql` | tenant_members 自己 DELETE RLS — `tenant_members_delete_self_non_owner` ポリシー追加 (`user_id = auth.uid() AND role <> 'owner'`)。owner 以外のメンバーが自分自身の行を DELETE 可能に。owner 退会は UI + RLS で二重ブロック (オーナー移譲 RPC を先に実行する運用) | 未適用 |

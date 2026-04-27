@@ -86,7 +86,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
         <h3 className="text-lg font-semibold text-gray-800 mb-4">オーナー権限の移譲</h3>
         
         {loading ? (
-          <div className="text-sm text-gray-500 animate-pulse">読み込み中...</div>
+          <div className="text-sm text-gray-500 motion-safe:animate-pulse">読み込み中...</div>
         ) : managerCandidates.length === 0 ? (
           <div className="text-center py-6">
             <p className="text-gray-500 text-sm">先にスタッフを店長 (manager) に昇格させてください</p>

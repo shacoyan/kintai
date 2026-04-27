@@ -8,7 +8,7 @@ function LoadingSpinner() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
       <div className="flex flex-col items-center gap-3">
         <div
-          className="h-10 w-10 animate-spin rounded-full border-4 border-neutral-200 border-t-primary-600"
+          className="h-10 w-10 motion-safe:animate-spin rounded-full border-4 border-neutral-200 border-t-primary-600"
           role="status"
           aria-label="読み込み中"
         />

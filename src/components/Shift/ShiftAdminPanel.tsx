@@ -128,14 +128,14 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
               <button
                 onClick={() => { handleAction(() => onBulkApprove(pendingShifts.map(s => s.id))); setBulkConfirming(false); }}
                 disabled={processing}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 disabled:opacity-50 transition flex items-center"
+                className="px-3 py-1.5 text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 disabled:opacity-50 motion-safe:transition flex items-center"
               >
-                {processing && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+                {processing && <Loader2 className="w-4 h-4 motion-safe:animate-spin mr-1" />}
                 <span>{pendingShifts.length}件 承認する</span>
               </button>
               <button
                 onClick={() => setBulkConfirming(false)}
-                className="px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 transition"
+                className="px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
               >
                 戻す
               </button>
@@ -144,9 +144,9 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             <button
               onClick={() => setBulkConfirming(true)}
               disabled={processing}
-              className="px-3 py-1.5 text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 disabled:opacity-50 transition flex items-center"
+              className="px-3 py-1.5 text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 disabled:opacity-50 motion-safe:transition flex items-center"
             >
-              {processing && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
+              {processing && <Loader2 className="w-4 h-4 motion-safe:animate-spin mr-1" />}
               <span>一括承認</span>
               <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-success-500 rounded-full tabular-nums">{pendingShifts.length}</span>
             </button>
@@ -159,7 +159,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
           <button
             onClick={() => setStatusFilter('pending')}
             aria-pressed={statusFilter === 'pending'}
-            className={`flex-1 px-4 py-2 text-sm font-medium text-center transition-colors focus:outline-none ${
+            className={`flex-1 px-4 py-2 text-sm font-medium text-center motion-safe:transition-colors focus:outline-none ${
               statusFilter === 'pending'
                 ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
                 : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
@@ -170,7 +170,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
           <button
             onClick={() => setStatusFilter('approved')}
             aria-pressed={statusFilter === 'approved'}
-            className={`flex-1 px-4 py-2 text-sm font-medium text-center transition-colors focus:outline-none ${
+            className={`flex-1 px-4 py-2 text-sm font-medium text-center motion-safe:transition-colors focus:outline-none ${
               statusFilter === 'approved'
                 ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
                 : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
@@ -181,7 +181,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
           <button
             onClick={() => setStatusFilter('all')}
             aria-pressed={statusFilter === 'all'}
-            className={`flex-1 px-4 py-2 text-sm font-medium text-center transition-colors focus:outline-none ${
+            className={`flex-1 px-4 py-2 text-sm font-medium text-center motion-safe:transition-colors focus:outline-none ${
               statusFilter === 'all'
                 ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
                 : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
@@ -221,7 +221,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             const canManageRow = canManageStore(shift.store_id);
 
             return (
-              <div key={shift.id} className="px-4 sm:px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
+              <div key={shift.id} className="px-4 sm:px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 motion-safe:transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
@@ -263,13 +263,13 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                         <button
                           onClick={() => handleModifySubmit(shift.id)}
                           disabled={processing}
-                          className="px-2 py-1 min-h-[44px] text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 disabled:opacity-50 transition"
+                          className="px-2 py-1 min-h-[44px] text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 disabled:opacity-50 motion-safe:transition"
                         >
                           確定
                         </button>
                         <button
                           onClick={() => setModifyingId(null)}
-                          className="px-2 py-1 min-h-[44px] text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 transition"
+                          className="px-2 py-1 min-h-[44px] text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
                         >
                           取消
                         </button>
@@ -293,13 +293,13 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onApprove(shift.id)); setConfirmingId(null); }}
                             disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
                           >
                             承認する
                           </button>
                           <button
                             onClick={() => setConfirmingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
                           >
                             戻す
                           </button>
@@ -308,7 +308,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                         <button
                           onClick={() => setConfirmingId({ id: shift.id, action: 'approve' })}
                           disabled={processing}
-                          className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 transition"
+                          className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
                         >
                           承認
                         </button>
@@ -316,7 +316,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       <button
                         onClick={() => handleModifyStart(shift)}
                         disabled={processing}
-                        className="px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 transition"
+                        className="px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 motion-safe:transition"
                       >
                         修正
                       </button>
@@ -325,13 +325,13 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onReject(shift.id)); setConfirmingId(null); }}
                             disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
                           >
                             却下する
                           </button>
                           <button
                             onClick={() => setConfirmingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
                           >
                             戻す
                           </button>
@@ -340,7 +340,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                         <button
                           onClick={() => setConfirmingId({ id: shift.id, action: 'reject' })}
                           disabled={processing}
-                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 disabled:opacity-50 transition"
+                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 disabled:opacity-50 motion-safe:transition"
                         >
                           却下
                         </button>
@@ -353,7 +353,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       <button
                         onClick={() => handleModifyStart(shift)}
                         disabled={processing}
-                        className="px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 transition"
+                        className="px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 motion-safe:transition"
                       >
                         修正
                       </button>
@@ -362,13 +362,13 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onDelete(shift.id)); setDeletingId(null); }}
                             disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
                           >
                             削除する
                           </button>
                           <button
                             onClick={() => setDeletingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
                           >
                             戻す
                           </button>
@@ -376,7 +376,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       ) : (
                         <button
                           onClick={() => setDeletingId(shift.id)}
-                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 transition"
+                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 motion-safe:transition"
                         >
                           削除
                         </button>
@@ -391,13 +391,13 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onApprove(shift.id)); setConfirmingId(null); }}
                             disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
                           >
                             復活承認する
                           </button>
                           <button
                             onClick={() => setConfirmingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
                           >
                             戻す
                           </button>
@@ -406,7 +406,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                         <button
                           onClick={() => setConfirmingId({ id: shift.id, action: 'restore' })}
                           disabled={processing}
-                          className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 transition"
+                          className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
                         >
                           復活承認
                         </button>
@@ -416,13 +416,13 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onDelete(shift.id)); setDeletingId(null); }}
                             disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
                           >
                             削除する
                           </button>
                           <button
                             onClick={() => setDeletingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
                           >
                             戻す
                           </button>
@@ -430,7 +430,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       ) : (
                         <button
                           onClick={() => setDeletingId(shift.id)}
-                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 transition"
+                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 motion-safe:transition"
                         >
                           削除
                         </button>
@@ -443,7 +443,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       <button
                         onClick={() => handleModifyStart(shift)}
                         disabled={processing}
-                        className="px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 transition"
+                        className="px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 motion-safe:transition"
                       >
                         再修正
                       </button>
@@ -452,13 +452,13 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onDelete(shift.id)); setDeletingId(null); }}
                             disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
                           >
                             削除する
                           </button>
                           <button
                             onClick={() => setDeletingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 transition"
+                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
                           >
                             戻す
                           </button>
@@ -466,7 +466,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       ) : (
                         <button
                           onClick={() => setDeletingId(shift.id)}
-                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 transition"
+                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 motion-safe:transition"
                         >
                           削除
                         </button>
@@ -494,7 +494,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             type="button"
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-3 py-1 text-xs font-medium border border-neutral-300 dark:border-neutral-600 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="px-3 py-1 text-xs font-medium border border-neutral-300 dark:border-neutral-600 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition"
           >
             前
           </button>
@@ -505,7 +505,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             type="button"
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="px-3 py-1 text-xs font-medium border border-neutral-300 dark:border-neutral-600 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="px-3 py-1 text-xs font-medium border border-neutral-300 dark:border-neutral-600 rounded hover:bg-neutral-100 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition"
           >
             次
           </button>

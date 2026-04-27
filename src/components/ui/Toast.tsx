@@ -136,7 +136,7 @@ export function Toast(props: ToastProps): JSX.Element {
       onFocus={handleFocus}
       onBlur={handleBlur}
       className={cn(
-        'pointer-events-auto flex max-w-sm items-start gap-3 rounded-md bg-neutral-900 px-4 py-3 text-body-sm text-white shadow-lg animate-fade-in',
+        'pointer-events-auto flex max-w-sm items-start gap-3 rounded-md bg-neutral-900 px-4 py-3 text-body-sm text-white shadow-lg motion-safe:animate-fade-in',
         TONE_BORDER[tone],
       )}
     >
@@ -159,7 +159,7 @@ export function Toast(props: ToastProps): JSX.Element {
         type="button"
         aria-label="閉じる"
         onClick={() => onDismiss(id)}
-        className="-mr-1 -mt-1 shrink-0 rounded p-1 text-white/70 transition-colors duration-120 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/40"
+        className="-mr-1 -mt-1 shrink-0 rounded p-1 text-white/70 motion-safe:transition-colors duration-120 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/40"
       >
         <X size={14} aria-hidden="true" />
       </button>

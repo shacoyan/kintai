@@ -47,4 +47,4 @@ export type { SpinnerProps, SpinnerSize } from './Spinner';
 export { BottomSheet } from './BottomSheet';
 export { EmptyState } from './EmptyState';
 export { ErrorBanner } from './ErrorBanner';
-export { Skeleton, CardSkeleton, TableSkeleton, PageSkeleton, ListRowSkeleton } from './Skeleton';
+export { Skeleton, CardSkeleton, TableSkeleton, PageSkeleton, ListRowSkeleton, DashboardSkeleton, HistorySkeleton, ShiftSkeleton, AdminSkeleton } from './Skeleton';

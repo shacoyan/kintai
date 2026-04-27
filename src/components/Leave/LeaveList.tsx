@@ -94,7 +94,7 @@ export function LeaveList({ leaves, memberNames, storeNames, canManageTenant, on
             const typeColor = LEAVE_TYPE_COLOR[leave.leave_type] || LEAVE_TYPE_COLOR.other;
 
             return (
-              <div key={leave.id} className="px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors">
+              <div key={leave.id} className="px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 motion-safe:transition-colors">
                 {/* SP Block */}
                 <div className="md:hidden flex flex-col gap-1.5">
                   {/* 1段目 */}

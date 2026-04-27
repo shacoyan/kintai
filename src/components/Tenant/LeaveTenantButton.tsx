@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { useToast } from '../../contexts/ToastContext';
+import { formatSupabaseError } from '../../lib/errors';
 import { Button, BottomSheet } from '../ui';
 
 const LeaveTenantButton: React.FC = () => {
@@ -22,8 +23,8 @@ const LeaveTenantButton: React.FC = () => {
       setIsOpen(false);
       showToast('ワークスペースから抜けました', 'success');
       navigate('/tenant');
-    } catch {
-      setErrorMsg('サポートに連絡してください: support@example.com');
+    } catch (err) {
+      setErrorMsg(formatSupabaseError(err).message);
     } finally {
       setIsLeaving(false);
     }
@@ -49,8 +50,8 @@ const LeaveTenantButton: React.FC = () => {
       <BottomSheet
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        title="このワークスペースから抜けますか？"
-        description="自分のメンバーシップが削除されます。元に戻すには再度招待コードで参加してください。"
+        title="本当にこのテナントから退会しますか？"
+        description="オーナーは退会できません。自分のメンバーシップが削除されます。元に戻すには再度招待コードで参加してください。"
         footer={
           <>
             <Button variant="secondary" size="sm" onClick={() => setIsOpen(false)}>

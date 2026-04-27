@@ -78,7 +78,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
               </p>
               <button
                 onClick={handleCopy}
-                className="px-3 py-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-colors inline-flex items-center"
+                className="px-3 py-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors inline-flex items-center"
               >
                 {copied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
                 {copied ? 'コピー済' : 'コピー'}
