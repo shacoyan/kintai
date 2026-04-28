@@ -82,7 +82,9 @@ export function ShiftPage() {
   useEffect(() => {
     const ym = format(shiftViewMonth, 'yyyy-MM');
     if (searchParams.get('month') !== ym) {
-      setSearchParams({ month: ym }, { replace: true });
+      const next = new URLSearchParams(searchParams);
+      next.set('month', ym);
+      setSearchParams(next, { replace: true });
     }
   }, [shiftViewMonth, searchParams, setSearchParams]);
   const [allMemberPrefDate, setAllMemberPrefDate] = useState<string | null>(null);

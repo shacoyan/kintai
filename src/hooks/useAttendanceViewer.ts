@@ -67,7 +67,7 @@ export function useAttendanceViewer(
           .order('date', { ascending: true })
           .order('clock_in', { ascending: true });
         if (error) {
-          logger.error('Fetch viewer records error:', error.message);
+          logger.error('Fetch viewer records error:', error);
           return;
         }
         setMonthlyRecords((data as AttendanceRecord[]) || []);

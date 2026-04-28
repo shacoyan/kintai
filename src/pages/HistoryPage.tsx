@@ -275,7 +275,9 @@ export function HistoryPage() {
   useEffect(() => {
     const ym = `${year}-${String(month).padStart(2, '0')}`;
     if (searchParams.get('date') !== ym) {
-      setSearchParams({ date: ym }, { replace: true });
+      const next = new URLSearchParams(searchParams);
+      next.set('date', ym);
+      setSearchParams(next, { replace: true });
     }
   }, [year, month, searchParams, setSearchParams]);
 

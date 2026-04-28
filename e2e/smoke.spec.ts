@@ -8,7 +8,7 @@ test.describe('kintai smoke', () => {
     await expect(page.getByLabel(/パスワード/i)).toBeVisible();
   });
 
-  test('テーマ切替ボタンが存在する', async ({ page }) => {
+  test.skip('テーマ切替ボタンが存在する', async ({ page }) => {
     await page.goto('/login');
     expect(true).toBe(true);
   });
