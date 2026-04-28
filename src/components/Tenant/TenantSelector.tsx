@@ -53,7 +53,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
           </div>
         ) : (
           <EmptyState
-            icon={<Building2 className="w-12 h-12 text-slate-400" />}
+            icon={<Building2 className="w-12 h-12 text-neutral-400" />}
             title="参加中のワークスペースがありません"
             description="新しく作成するか、招待コードで既存のワークスペースに参加してください"
           />

@@ -113,7 +113,7 @@ export function StoreSelector() {
     const store = stores[0];
     return (
       <div className="flex items-center gap-2 min-h-9">
-        <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+        <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
           {store.name}
         </span>
         {getRoleBadge(store.id)}
@@ -130,18 +130,18 @@ export function StoreSelector() {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         title={currentStore?.name || '店舗を選択'}
-        className="flex items-center gap-2 max-w-[160px] min-h-9 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium border border-slate-300 dark:border-slate-700 rounded-md px-3 py-1 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 motion-safe:transition-colors"
+        className="flex items-center gap-2 max-w-[160px] min-h-9 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-medium border border-neutral-300 dark:border-neutral-700 rounded-md px-3 py-1 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 motion-safe:transition-colors"
       >
-        <Store className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
+        <Store className="w-4 h-4 text-neutral-500 dark:text-neutral-400 shrink-0" />
         <span className="truncate">{currentStore?.name || '店舗を選択'}</span>
-        <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+        <ChevronDown className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
         {currentStore && getRoleBadge(currentStore.id)}
       </button>
 
       {isOpen && (
         <div
           role="menu"
-          className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 py-1 max-h-64 overflow-y-auto"
+          className="absolute right-0 mt-2 w-64 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg z-50 py-1 max-h-64 overflow-y-auto"
         >
           {stores.map((store, idx) => {
             const isSelected = store.id === currentStore?.id;
@@ -157,12 +157,12 @@ export function StoreSelector() {
                   triggerRef.current?.focus();
                 }}
                 onKeyDown={(e) => onItemKeyDown(e, idx, store)}
-                className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 focus:outline-none focus:bg-slate-100 dark:focus:bg-slate-700 motion-safe:transition-colors"
+                className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus:bg-neutral-100 dark:focus:bg-neutral-700 motion-safe:transition-colors"
               >
                 <span className="w-4 h-4 flex items-center justify-center shrink-0">
                   {isSelected && <Check className="w-4 h-4 text-primary-600 dark:text-primary-400" />}
                 </span>
-                <span className="flex-1 truncate text-slate-900 dark:text-slate-100">
+                <span className="flex-1 truncate text-neutral-900 dark:text-neutral-100">
                   {store.name}
                 </span>
                 {isOwner ? (

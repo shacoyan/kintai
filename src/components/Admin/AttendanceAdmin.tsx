@@ -464,7 +464,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
       {loaded && members.length === 0 && (
         <EmptyState
-          icon={<Users className="w-12 h-12 text-slate-400" />}
+          icon={<Users className="w-12 h-12 text-neutral-400" />}
           title="メンバーが登録されていません"
           description="メンバー管理タブからメンバーを追加してください"
         />

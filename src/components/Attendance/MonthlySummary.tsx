@@ -49,7 +49,7 @@ export function MonthlySummary({ summary }: MonthlySummaryProps) {
         {subStats.map(({ label, value, Icon }) => (
           <div
             key={label}
-            className="bg-white dark:bg-slate-800 border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 shadow-sm"
+            className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 shadow-sm"
           >
             <div className="flex items-center text-sm text-neutral-500 dark:text-neutral-400 mb-1">
               <Icon className="h-4 w-4 mr-1.5 text-neutral-400 dark:text-neutral-500" />

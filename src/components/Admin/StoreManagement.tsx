@@ -213,7 +213,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
   } else {
     memberManagementContent = (
       <EmptyState 
-        icon={<StoreIcon className="w-12 h-12 text-slate-400" />} 
+        icon={<StoreIcon className="w-12 h-12 text-neutral-400" />} 
         title="店舗を選択してください" 
         description="左の一覧から店舗を選ぶとメンバー管理ができます" 
       />

@@ -228,7 +228,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
         {/* カード型レイアウト（モバイル対応） */}
         <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
           {members.length === 0 ? (
-            <EmptyState icon={<Users className="w-12 h-12 text-slate-400" />} title="メンバーがいません" description="招待コードをメンバーに共有してください" />
+            <EmptyState icon={<Users className="w-12 h-12 text-neutral-400" />} title="メンバーがいません" description="招待コードをメンバーに共有してください" />
           ) : (
             members.map((member) => {
               const badge = roleBadge[member.role] || roleBadge.staff;
