@@ -46,7 +46,7 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
             </h3>
           </div>
 
-          <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6 leading-relaxed">
             テナントを削除すると、所属メンバー全員のアクセスが停止します。データは法定保管期間後に削除されます。この操作は取り消せません。
           </p>
 

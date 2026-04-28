@@ -59,10 +59,10 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
   if (!isOwner) {
     return (
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4 border border-neutral-100 dark:border-neutral-700">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-neutral-100 mb-2">
+        <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-2">
           招待コード設定
         </h3>
-        <p className="text-sm text-gray-500 dark:text-neutral-400">
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
           オーナーのみ実行可能です
         </p>
       </div>
@@ -86,30 +86,30 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
 
   return (
     <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4 border border-neutral-100 dark:border-neutral-700">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-neutral-100 mb-4">
+      <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">
         招待コード設定
       </h3>
 
       {/* 現在の状態 */}
       <div className="mb-5 p-3 rounded-md bg-neutral-50 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-700 space-y-1">
-        <div className="text-sm text-gray-700 dark:text-neutral-300">
+        <div className="text-sm text-neutral-700 dark:text-neutral-300">
           現在の招待コード:
           <span className="ml-2 font-mono text-base font-semibold tracking-widest text-neutral-900 dark:text-neutral-100">
             {inviteCode || '—'}
           </span>
         </div>
-        <div className="text-sm text-gray-700 dark:text-neutral-300">
+        <div className="text-sm text-neutral-700 dark:text-neutral-300">
           残り使用回数:
           <span className="ml-2 font-medium text-neutral-900 dark:text-neutral-100">
             {remainingUses == null ? '無制限' : `${remainingUses} 回`}
             {codeMax != null && (
-              <span className="ml-1 text-xs text-gray-500 dark:text-neutral-400">
+              <span className="ml-1 text-xs text-neutral-500 dark:text-neutral-400">
                 ({codeUsed} / {codeMax})
               </span>
             )}
           </span>
         </div>
-        <div className="text-sm text-gray-700 dark:text-neutral-300">
+        <div className="text-sm text-neutral-700 dark:text-neutral-300">
           有効期限:
           <span className="ml-2 font-medium text-neutral-900 dark:text-neutral-100">
             {formatExpiresAt(expiresAt)}
@@ -119,14 +119,14 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
 
       {/* 期限選択 */}
       <fieldset className="mb-4">
-        <legend className="text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+        <legend className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
           有効期限
         </legend>
         <div className="flex flex-wrap gap-3">
           {EXPIRES_LABELS.map((opt) => (
             <label
               key={String(opt.value)}
-              className="inline-flex items-center text-sm text-gray-700 dark:text-neutral-300 cursor-pointer"
+              className="inline-flex items-center text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer"
             >
               <input
                 type="radio"
@@ -145,14 +145,14 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
 
       {/* 回数選択 */}
       <fieldset className="mb-5">
-        <legend className="text-sm font-medium text-gray-700 dark:text-neutral-300 mb-2">
+        <legend className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
           使用回数上限
         </legend>
         <div className="flex flex-wrap gap-3">
           {MAX_USES_LABELS.map((opt) => (
             <label
               key={String(opt.value)}
-              className="inline-flex items-center text-sm text-gray-700 dark:text-neutral-300 cursor-pointer"
+              className="inline-flex items-center text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer"
             >
               <input
                 type="radio"
@@ -180,13 +180,13 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
           type="button"
           onClick={handleRegenerate}
           disabled={submitting}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-gray-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed"
+          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed"
         >
           {submitting ? '再発行中...' : '招待コードを再発行'}
         </button>
       </div>
 
-      <p className="mt-3 text-xs text-gray-500 dark:text-neutral-400 leading-relaxed">
+      <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
         再発行すると以前のコードは無効になります。設定した期限・回数は新コードに適用され、使用回数カウントは 0 にリセットされます。
       </p>
     </div>

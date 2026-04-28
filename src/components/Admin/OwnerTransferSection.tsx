@@ -25,8 +25,8 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
   if (!isOwner) {
     return (
       <div className="bg-white dark:bg-neutral-900 rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-neutral-100 mb-4">オーナー権限の移譲</h3>
-        <p className="text-gray-500 dark:text-neutral-400 text-sm">オーナーのみ実行可能です</p>
+        <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">オーナー権限の移譲</h3>
+        <p className="text-neutral-500 dark:text-neutral-400 text-sm">オーナーのみ実行可能です</p>
       </div>
     );
   }
@@ -65,7 +65,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
         type="button"
         onClick={handleCloseSheet}
         disabled={submitting}
-        className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-neutral-200 bg-gray-100 dark:bg-neutral-800 rounded-md hover:bg-gray-200 dark:hover:bg-neutral-700 disabled:opacity-50"
+        className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 bg-neutral-100 dark:bg-neutral-800 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50"
       >
         キャンセル
       </button>
@@ -83,18 +83,18 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
   return (
     <>
       <div className="bg-white dark:bg-neutral-900 rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-neutral-100 mb-4">オーナー権限の移譲</h3>
+        <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">オーナー権限の移譲</h3>
         
         {loading ? (
-          <div className="text-sm text-gray-500 dark:text-neutral-400 motion-safe:animate-pulse">読み込み中...</div>
+          <div className="text-sm text-neutral-500 dark:text-neutral-400 motion-safe:animate-pulse">読み込み中...</div>
         ) : managerCandidates.length === 0 ? (
           <div className="text-center py-6">
-            <p className="text-gray-500 dark:text-neutral-400 text-sm">先にスタッフを店長 (manager) に昇格させてください</p>
+            <p className="text-neutral-500 dark:text-neutral-400 text-sm">先にスタッフを店長 (manager) に昇格させてください</p>
           </div>
         ) : (
           <form onSubmit={handleOpenConfirm} className="space-y-4">
             <div>
-              <label htmlFor="transfer-target" className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">
+              <label htmlFor="transfer-target" className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">
                 譲渡先のユーザー
               </label>
               <select
@@ -102,7 +102,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
                 required
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 dark:border-neutral-700 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-neutral-300 dark:border-neutral-700 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md border"
               >
                 <option value="" disabled>
                   店長を選択してください
@@ -118,7 +118,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
               <button
                 type="submit"
                 disabled={!selectedUserId}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed"
               >
                 権限を移譲する
               </button>
