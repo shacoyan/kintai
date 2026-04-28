@@ -108,7 +108,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-gray-900">役職管理</h3>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-neutral-100">役職管理</h3>
         <Button variant="primary" size="sm" onClick={openCreateForm} className="flex items-center gap-1">
           <Plus className="w-4 h-4" />
           役職を追加
@@ -126,7 +126,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
           {/* PC Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs text-gray-500 uppercase border-b">
+              <thead className="text-xs text-gray-500 dark:text-neutral-400 uppercase border-b">
                 <tr>
                   <th className="px-4 py-3">名前</th>
                   <th className="px-4 py-3">デフォ時給</th>
@@ -138,8 +138,8 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
               </thead>
               <tbody>
                 {roles.map((role) => (
-                  <tr key={role.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{role.name}</td>
+                  <tr key={role.id} className="border-b hover:bg-gray-50 dark:hover:bg-neutral-800">
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-neutral-100">{role.name}</td>
                     <td className="px-4 py-3">{formatCurrency(role.default_hourly_rate)}</td>
                     <td className="px-4 py-3">{formatCurrency(role.default_monthly_salary)}</td>
                     <td className="px-4 py-3">
@@ -149,10 +149,10 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
                     </td>
                     <td className="px-4 py-3">{role.sort_order ?? 0}</td>
                     <td className="px-4 py-3 flex gap-2">
-                      <button onClick={() => openEditForm(role)} className="text-gray-500 hover:text-blue-600" aria-label={`役職『${role.name}』を編集`}>
+                      <button onClick={() => openEditForm(role)} className="text-gray-500 dark:text-neutral-400 hover:text-blue-600" aria-label={`役職『${role.name}』を編集`}>
                         <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => openDeleteConfirm(role)} className="text-gray-500 hover:text-red-600" aria-label={`役職『${role.name}』を削除`}>
+                      <button onClick={() => openDeleteConfirm(role)} className="text-gray-500 dark:text-neutral-400 hover:text-red-600" aria-label={`役職『${role.name}』を削除`}>
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
@@ -165,28 +165,28 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
           {/* SP Card List */}
           <div className="md:hidden space-y-4">
             {roles.map((role) => (
-              <div key={role.id} className="p-4 bg-white border rounded-lg shadow-sm">
+              <div key={role.id} className="p-4 bg-white dark:bg-neutral-900 border rounded-lg shadow-sm">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
                     {role.color && <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: role.color }} />}
-                    <h4 className="text-base font-bold text-gray-900">{role.name}</h4>
+                    <h4 className="text-base font-bold text-gray-900 dark:text-neutral-100">{role.name}</h4>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => openEditForm(role)} className="p-1 text-gray-400 hover:text-blue-600" aria-label={`役職『${role.name}』を編集`}>
+                    <button onClick={() => openEditForm(role)} className="p-1 text-gray-400 dark:text-neutral-500 hover:text-blue-600" aria-label={`役職『${role.name}』を編集`}>
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => openDeleteConfirm(role)} className="p-1 text-gray-400 hover:text-red-600" aria-label={`役職『${role.name}』を削除`}>
+                    <button onClick={() => openDeleteConfirm(role)} className="p-1 text-gray-400 dark:text-neutral-500 hover:text-red-600" aria-label={`役職『${role.name}』を削除`}>
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  <dt className="text-gray-500">デフォ時給</dt>
-                  <dd className="text-gray-900">{formatCurrency(role.default_hourly_rate)}</dd>
-                  <dt className="text-gray-500">デフォ月給</dt>
-                  <dd className="text-gray-900">{formatCurrency(role.default_monthly_salary)}</dd>
-                  <dt className="text-gray-500">並び順</dt>
-                  <dd className="text-gray-900">{role.sort_order ?? 0}</dd>
+                  <dt className="text-gray-500 dark:text-neutral-400">デフォ時給</dt>
+                  <dd className="text-gray-900 dark:text-neutral-100">{formatCurrency(role.default_hourly_rate)}</dd>
+                  <dt className="text-gray-500 dark:text-neutral-400">デフォ月給</dt>
+                  <dd className="text-gray-900 dark:text-neutral-100">{formatCurrency(role.default_monthly_salary)}</dd>
+                  <dt className="text-gray-500 dark:text-neutral-400">並び順</dt>
+                  <dd className="text-gray-900 dark:text-neutral-100">{role.sort_order ?? 0}</dd>
                 </dl>
               </div>
             ))}
@@ -208,26 +208,26 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
       >
         <div className="space-y-4 p-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">役職名 <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">役職名 <span className="text-red-500">*</span></label>
             <Input placeholder="例: マネージャー" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">デフォルト時給</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">デフォルト時給</label>
             <Input type="number" placeholder="例: 1500" value={defaultHourlyRate} onChange={(e) => setDefaultHourlyRate(e.target.value)} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">デフォルト月給</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">デフォルト月給</label>
             <Input type="number" placeholder="例: 250000" value={defaultMonthlySalary} onChange={(e) => setDefaultMonthlySalary(e.target.value)} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">カラー</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">カラー</label>
             <div className="flex gap-2 items-center">
               <input type="color" value={color || '#000000'} onChange={(e) => setColor(e.target.value)} className="w-10 h-10 rounded cursor-pointer border p-1" />
               <Input placeholder="#3b82f6" value={color} onChange={(e) => setColor(e.target.value)} />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">並び順</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-neutral-200 mb-1">並び順</label>
             <Input type="number" placeholder="0" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />
           </div>
         </div>
@@ -245,7 +245,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
           </div>
         }
       >
-        <div className="p-4 text-sm text-gray-700">
+        <div className="p-4 text-sm text-gray-700 dark:text-neutral-200">
           役職『{deletingRole?.name}』を削除します。割り当てられているメンバーの役職は未設定になります。
         </div>
       </BottomSheet>
