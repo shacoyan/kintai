@@ -38,6 +38,12 @@ const TIME_OPTIONS: string[] = (() => {
   return arr;
 })();
 
+function validateTimeRange(start: string, end: string): { ok: boolean; message?: string } {
+  if (start === end) return { ok: false, message: '開始と終了が同じ時刻です' };
+  if (start > end) return { ok: false, message: '終了は開始より後にしてください（夜勤跨ぎは未対応）' };
+  return { ok: true };
+}
+
 export function ShiftPreferenceForm({
   date,
   existingPreference,
@@ -66,6 +72,7 @@ export function ShiftPreferenceForm({
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ start?: string; end?: string }>({});
 
   const showTimeFields = preferenceType !== 'unavailable';
   // 締切ガード: 締切後かつバイパス権限なし → 送信不可（client guard。RLS でも二重ガードされる）
@@ -78,9 +85,14 @@ export function ShiftPreferenceForm({
       setError('提出締切を過ぎています。管理者にお問い合わせください。');
       return;
     }
-    if (showTimeFields && startTime === endTime) {
-      setError('開始と終了時刻が同じです');
-      return;
+    if (showTimeFields) {
+      const v = validateTimeRange(startTime, endTime);
+      if (!v.ok) {
+        setFieldErrors({ start: v.message, end: v.message });
+        setError(v.message ?? '時刻が不正です');
+        return;
+      }
+      setFieldErrors({});
     }
     if (!storeId) {
       setError('店舗を選択してください');
@@ -120,7 +132,15 @@ export function ShiftPreferenceForm({
   const submitDisabled = busy || lockedByDeadline;
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5" aria-busy={busy || undefined}>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5" aria-busy={busy || undefined} aria-describedby="shift-pref-form-help">
+      <div
+        id="shift-pref-form-help"
+        role="note"
+        className="text-sm text-neutral-600 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-900 p-3 rounded-md"
+      >
+        シフト希望は、希望日と時刻を選んで登録してください。締切前なら何度でも変更できます。
+      </div>
+
       <p className="text-sm font-semibold text-neutral-700 tabular-nums">{date}</p>
 
       {error && <ErrorBanner message={error} />}
@@ -134,6 +154,15 @@ export function ShiftPreferenceForm({
         </div>
       )}
 
+      {existingPreference && (
+        <div
+          role="status"
+          className="rounded-md border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 text-xs text-amber-700 dark:text-amber-300"
+        >
+          この日付には既に希望が登録されています。送信すると上書きされます。
+        </div>
+      )}
+
       {/* 希望タイプ選択 */}
       <div>
         <span className="block text-label text-neutral-700 mb-2">希望タイプ</span>
@@ -144,8 +173,10 @@ export function ShiftPreferenceForm({
             return (
               <button
                 key={t.type}
+                id={`pref-type-${t.type}-btn`}
                 type="button"
                 aria-pressed={isSelected}
+                aria-describedby={`pref-type-${t.type}-desc`}
                 onClick={() => setPreferenceType(t.type)}
                 className={
                   'flex flex-col items-center justify-center gap-1 h-16 rounded-lg ' +
@@ -157,6 +188,7 @@ export function ShiftPreferenceForm({
               >
                 <Icon className="w-5 h-5" aria-hidden="true" />
                 <span className="text-xs font-semibold">{t.label}</span>
+                <span id={`pref-type-${t.type}-desc`} className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 block">{t.description}</span>
               </button>
             );
           })}
@@ -207,7 +239,8 @@ export function ShiftPreferenceForm({
           <Select
             label="開始時刻"
             value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
+            error={fieldErrors.start}
+            onChange={(e) => { setStartTime(e.target.value); setFieldErrors(prev => ({ ...prev, start: undefined, end: undefined })); }}
           >
             {TIME_OPTIONS.map((t) => (
               <option key={t} value={t}>
@@ -218,7 +251,8 @@ export function ShiftPreferenceForm({
           <Select
             label="終了時刻"
             value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
+            error={fieldErrors.end}
+            onChange={(e) => { setEndTime(e.target.value); setFieldErrors(prev => ({ ...prev, start: undefined, end: undefined })); }}
           >
             {TIME_OPTIONS.map((t) => (
               <option key={t} value={t}>
@@ -240,6 +274,9 @@ export function ShiftPreferenceForm({
 
       {/* アクション */}
       <div className="flex flex-col gap-2 pt-1">
+        {Object.values(fieldErrors).filter(Boolean).length > 0 && (
+          <p role="alert" className="text-xs text-danger-700 dark:text-danger-300">入力時刻にエラーがあります。修正してください。</p>
+        )}
         <Button
           type="submit"
           variant="primary"
@@ -248,7 +285,7 @@ export function ShiftPreferenceForm({
           loading={submitting}
           disabled={submitDisabled}
         >
-          {existingPreference ? '更新する' : '登録する'}
+          {existingPreference ? '上書きする' : '登録する'}
         </Button>
         {lockedByDeadline && (
           <p className="text-xs text-neutral-500 text-center">

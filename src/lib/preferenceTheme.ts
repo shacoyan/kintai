@@ -16,6 +16,7 @@ export interface PreferenceTheme {
   tone: PreferenceTone;
   label: string;
   shortLabel: string;
+  description: string;
   Icon: LucideIcon;
   cellClass: string;
   countTextClass: string;
@@ -33,6 +34,7 @@ export const PREFERENCE_THEME: Record<ShiftPreferenceType, PreferenceTheme> = {
     tone: 'primary',
     label: '希望',
     shortLabel: '希',
+    description: '希望して入りたい日',
     Icon: Star,
     cellClass:
       'bg-primary-50 ring-1 ring-primary-300 text-primary-700 dark:bg-primary-900/30 dark:ring-primary-700 dark:text-primary-200',
@@ -51,6 +53,7 @@ export const PREFERENCE_THEME: Record<ShiftPreferenceType, PreferenceTheme> = {
     tone: 'success',
     label: '出勤可能',
     shortLabel: '可',
+    description: '出勤可能 (調整OK)',
     Icon: CheckCircle2,
     cellClass:
       'bg-success-50 ring-1 ring-success-300 text-success-700 dark:bg-success-900/30 dark:ring-success-700 dark:text-success-200',
@@ -69,6 +72,7 @@ export const PREFERENCE_THEME: Record<ShiftPreferenceType, PreferenceTheme> = {
     tone: 'neutral',
     label: '出勤不可',
     shortLabel: '不',
+    description: '出勤できない日',
     Icon: Ban,
     cellClass:
       'bg-neutral-50 ring-1 ring-neutral-300 text-neutral-700 dark:bg-neutral-900/30 dark:ring-neutral-700 dark:text-neutral-200',
