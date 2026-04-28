@@ -3,6 +3,7 @@ import type { Shift, TenantMember } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
 import { Loader2 } from 'lucide-react';
 import { EmptyState } from '../ui';
+import { ActionMenu, type ActionMenuItem } from '../ui/ActionMenu';
 
 interface ShiftAdminPanelProps {
   shifts: Shift[];
@@ -129,14 +130,14 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
               <button
                 onClick={() => { handleAction(() => onBulkApprove(pendingShifts.map(s => s.id))); setBulkConfirming(false); }}
                 disabled={processing}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 disabled:opacity-50 motion-safe:transition flex items-center"
+                className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 disabled:opacity-50 motion-safe:transition flex items-center"
               >
                 {processing && <Loader2 className="w-4 h-4 motion-safe:animate-spin mr-1" />}
                 <span>{pendingShifts.length}件 承認する</span>
               </button>
               <button
                 onClick={() => setBulkConfirming(false)}
-                className="px-3 py-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
+                className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
               >
                 戻す
               </button>
@@ -145,7 +146,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             <button
               onClick={() => setBulkConfirming(true)}
               disabled={processing}
-              className="px-3 py-1.5 text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 disabled:opacity-50 motion-safe:transition flex items-center"
+              className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 disabled:opacity-50 motion-safe:transition flex items-center"
             >
               {processing && <Loader2 className="w-4 h-4 motion-safe:animate-spin mr-1" />}
               <span>一括承認</span>
@@ -223,6 +224,29 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             const badge = STATUS_BADGE[shift.status] || STATUS_BADGE.pending;
             const isModifying = modifyingId === shift.id;
             const canManageRow = canManageStore(shift.store_id);
+            const menuTitle = `${memberMap.get(shift.user_id) ?? '不明'} ${shift.date}`;
+
+            let actionItems: ActionMenuItem[] = [];
+            if (!isModifying && canManageRow) {
+              if (shift.status === 'pending') {
+                actionItems = [
+                  { key: 'modify', label: '修正', onSelect: () => handleModifyStart(shift), tone: 'primary' },
+                  { key: 'reject', label: '却下', onSelect: () => setConfirmingId({ id: shift.id, action: 'reject' }), tone: 'danger' }
+                ];
+              } else if (shift.status === 'approved') {
+                actionItems = [
+                  { key: 'delete', label: '削除', onSelect: () => setDeletingId(shift.id), tone: 'danger' }
+                ];
+              } else if (shift.status === 'rejected') {
+                actionItems = [
+                  { key: 'delete', label: '削除', onSelect: () => setDeletingId(shift.id), tone: 'danger' }
+                ];
+              } else if (shift.status === 'modified') {
+                actionItems = [
+                  { key: 'delete', label: '削除', onSelect: () => setDeletingId(shift.id), tone: 'danger' }
+                ];
+              }
+            }
 
             return (
               <div key={shift.id} className="px-4 sm:px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 motion-safe:transition-colors">
@@ -291,189 +315,165 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                   )}
 
                   {!isModifying && canManageRow && shift.status === 'pending' && (
-                    <div className="flex gap-1.5">
-                      {confirmingId?.id === shift.id && confirmingId.action === 'approve' ? (
-                        <>
-                          <button
-                            onClick={() => { handleAction(() => onApprove(shift.id)); setConfirmingId(null); }}
-                            disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
-                          >
-                            承認する
-                          </button>
-                          <button
-                            onClick={() => setConfirmingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
-                          >
-                            戻す
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => setConfirmingId({ id: shift.id, action: 'approve' })}
-                          disabled={processing}
-                          className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
-                        >
-                          承認
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleModifyStart(shift)}
-                        disabled={processing}
-                        className="px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 motion-safe:transition"
-                      >
-                        修正
-                      </button>
+                    <div className="flex items-center gap-1.5">
                       {confirmingId?.id === shift.id && confirmingId.action === 'reject' ? (
                         <>
                           <button
                             onClick={() => { handleAction(() => onReject(shift.id)); setConfirmingId(null); }}
                             disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
                           >
                             却下する
                           </button>
                           <button
                             onClick={() => setConfirmingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
+                          >
+                            戻す
+                          </button>
+                        </>
+                      ) : confirmingId?.id === shift.id && confirmingId.action === 'approve' ? (
+                        <>
+                          <button
+                            onClick={() => { handleAction(() => onApprove(shift.id)); setConfirmingId(null); }}
+                            disabled={processing}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
+                          >
+                            承認する
+                          </button>
+                          <button
+                            onClick={() => setConfirmingId(null)}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
                           >
                             戻す
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => setConfirmingId({ id: shift.id, action: 'reject' })}
-                          disabled={processing}
-                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 disabled:opacity-50 motion-safe:transition"
-                        >
-                          却下
-                        </button>
+                        <>
+                          <button
+                            onClick={() => setConfirmingId({ id: shift.id, action: 'approve' })}
+                            disabled={processing}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
+                          >
+                            承認
+                          </button>
+                          <ActionMenu items={actionItems} align="end" bottomSheetTitle={menuTitle} />
+                        </>
                       )}
                     </div>
                   )}
 
                   {!isModifying && canManageRow && shift.status === 'approved' && (
-                    <div className="flex gap-1.5">
-                      <button
-                        onClick={() => handleModifyStart(shift)}
-                        disabled={processing}
-                        className="px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 motion-safe:transition"
-                      >
-                        修正
-                      </button>
+                    <div className="flex items-center gap-1.5">
                       {deletingId === shift.id ? (
                         <>
                           <button
                             onClick={() => { handleAction(() => onDelete(shift.id)); setDeletingId(null); }}
                             disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
                           >
                             削除する
                           </button>
                           <button
                             onClick={() => setDeletingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
                           >
                             戻す
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => setDeletingId(shift.id)}
-                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 motion-safe:transition"
-                        >
-                          削除
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleModifyStart(shift)}
+                            disabled={processing}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 motion-safe:transition"
+                          >
+                            修正
+                          </button>
+                          <ActionMenu items={actionItems} align="end" bottomSheetTitle={menuTitle} />
+                        </>
                       )}
                     </div>
                   )}
 
                   {!isModifying && canManageRow && shift.status === 'rejected' && (
-                    <div className="flex gap-1.5">
-                      {confirmingId?.id === shift.id && confirmingId.action === 'restore' ? (
+                    <div className="flex items-center gap-1.5">
+                      {deletingId === shift.id ? (
+                        <>
+                          <button
+                            onClick={() => { handleAction(() => onDelete(shift.id)); setDeletingId(null); }}
+                            disabled={processing}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
+                          >
+                            削除する
+                          </button>
+                          <button
+                            onClick={() => setDeletingId(null)}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
+                          >
+                            戻す
+                          </button>
+                        </>
+                      ) : confirmingId?.id === shift.id && confirmingId.action === 'restore' ? (
                         <>
                           <button
                             onClick={() => { handleAction(() => onApprove(shift.id)); setConfirmingId(null); }}
                             disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
                           >
                             復活承認する
                           </button>
                           <button
                             onClick={() => setConfirmingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
                           >
                             戻す
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => setConfirmingId({ id: shift.id, action: 'restore' })}
-                          disabled={processing}
-                          className="px-2.5 py-1 text-xs font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
-                        >
-                          復活承認
-                        </button>
-                      )}
-                      {deletingId === shift.id ? (
                         <>
                           <button
-                            onClick={() => { handleAction(() => onDelete(shift.id)); setDeletingId(null); }}
+                            onClick={() => setConfirmingId({ id: shift.id, action: 'restore' })}
                             disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
                           >
-                            削除する
+                            復活承認
                           </button>
-                          <button
-                            onClick={() => setDeletingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
-                          >
-                            戻す
-                          </button>
+                          <ActionMenu items={actionItems} align="end" bottomSheetTitle={menuTitle} />
                         </>
-                      ) : (
-                        <button
-                          onClick={() => setDeletingId(shift.id)}
-                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 motion-safe:transition"
-                        >
-                          削除
-                        </button>
                       )}
                     </div>
                   )}
 
                   {!isModifying && canManageRow && shift.status === 'modified' && (
-                    <div className="flex gap-1.5">
-                      <button
-                        onClick={() => handleModifyStart(shift)}
-                        disabled={processing}
-                        className="px-2.5 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 motion-safe:transition"
-                      >
-                        再修正
-                      </button>
+                    <div className="flex items-center gap-1.5">
                       {deletingId === shift.id ? (
                         <>
                           <button
                             onClick={() => { handleAction(() => onDelete(shift.id)); setDeletingId(null); }}
                             disabled={processing}
-                            className="px-2.5 py-1 text-xs font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
                           >
                             削除する
                           </button>
                           <button
                             onClick={() => setDeletingId(null)}
-                            className="px-2.5 py-1 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
                           >
                             戻す
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => setDeletingId(shift.id)}
-                          className="px-2.5 py-1 text-xs font-medium text-danger-600 dark:text-danger-400 bg-danger-50 dark:bg-danger-900/20 rounded hover:bg-danger-100 dark:hover:bg-danger-900/30 motion-safe:transition"
-                        >
-                          削除
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleModifyStart(shift)}
+                            disabled={processing}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 motion-safe:transition"
+                          >
+                            再修正
+                          </button>
+                          <ActionMenu items={actionItems} align="end" bottomSheetTitle={menuTitle} />
+                        </>
                       )}
                     </div>
                   )}
