@@ -15,6 +15,7 @@ interface ShiftPreferenceCalendarProps {
   onRejectPreference?: (id: string) => Promise<void>;
   canManageStore?: (storeId: string | null) => boolean;
   onMutated?: () => void;
+  showStatusLegend?: boolean;
 }
 
 const MEMBER_TONE_CLASSES = [
@@ -34,6 +35,182 @@ const STATUS_LEGEND = [
   { key: 'cancelled', dot: 'bg-neutral-400 dark:bg-neutral-500', label: '取消' },
 ];
 
+function CalendarLegend({
+  showStatusLegend,
+  memberNames,
+  memberEntries,
+  showAllMembers,
+  setShowAllMembers,
+  isAdminView,
+}: {
+  showStatusLegend: boolean;
+  memberNames?: Map<string, string>;
+  memberEntries: Array<[string, string]>;
+  showAllMembers: boolean;
+  setShowAllMembers: (v: boolean) => void;
+  isAdminView: boolean;
+}) {
+  return (
+    <>
+      {/* SP: 折りたたみ */}
+      <div className="md:hidden">
+        <details>
+          <summary className="list-none flex items-center gap-1 cursor-pointer text-sm font-semibold text-neutral-700 dark:text-neutral-200 select-none focus-ring rounded">
+            凡例
+            <ChevronDown className="w-4 h-4" aria-hidden="true" />
+          </summary>
+          <div className="mt-2 space-y-2">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-400">
+              {isAdminView && memberNames ? (
+                <>
+                  {memberEntries.slice(0, 5).map(([uid, tone]) => (
+                    <div key={uid} className="inline-flex items-center gap-1.5">
+                      <span
+                        className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
+                        aria-hidden="true"
+                      />
+                      <span className="text-neutral-700 dark:text-neutral-300">{memberNames.get(uid) ?? '不明'}</span>
+                    </div>
+                  ))}
+                  {memberEntries.length > 5 && (
+                    <>
+                      {!showAllMembers && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllMembers(true)}
+                          className="inline-flex items-center gap-0.5 text-primary-600 dark:text-primary-400 hover:underline focus-ring rounded"
+                        >
+                          +{memberEntries.length - 5}
+                          <ChevronDown className="w-3 h-3" aria-hidden="true" />
+                        </button>
+                      )}
+                      {showAllMembers &&
+                        memberEntries.slice(5).map(([uid, tone]) => (
+                          <div key={uid} className="inline-flex items-center gap-1.5">
+                            <span
+                              className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
+                              aria-hidden="true"
+                            />
+                            <span className="text-neutral-700 dark:text-neutral-300">{memberNames.get(uid) ?? '不明'}</span>
+                          </div>
+                        ))}
+                      {showAllMembers && (
+                        <button
+                          type="button"
+                          onClick={() => setShowAllMembers(false)}
+                          className="inline-flex items-center gap-0.5 text-primary-600 dark:text-primary-400 hover:underline focus-ring rounded"
+                        >
+                          閉じる
+                          <ChevronUp className="w-3 h-3" aria-hidden="true" />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </>
+              ) : (
+                PREFERENCE_THEME_LIST.map((theme) => (
+                  <div key={theme.type} className="inline-flex items-center gap-1.5">
+                    <theme.Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span className={'w-2 h-2 rounded-full ' + theme.dotClass} aria-hidden="true" />
+                    <span>{theme.label}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            {showStatusLegend && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+                {STATUS_LEGEND.map((s) => (
+                  <div key={s.key} className="inline-flex items-center gap-1.5">
+                    <span
+                      className={'inline-block w-2 h-2 rounded-full ' + s.dot}
+                      aria-hidden="true"
+                    />
+                    <span>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </details>
+      </div>
+
+      {/* PC: 常時展開 */}
+      <div className="hidden md:block px-1 space-y-1">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-400">
+          {isAdminView && memberNames ? (
+            <>
+              {memberEntries.slice(0, 5).map(([uid, tone]) => (
+                <div key={uid} className="inline-flex items-center gap-1.5">
+                  <span
+                    className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
+                    aria-hidden="true"
+                  />
+                  <span className="text-neutral-700 dark:text-neutral-300">{memberNames.get(uid) ?? '不明'}</span>
+                </div>
+              ))}
+              {memberEntries.length > 5 && (
+                <>
+                  {!showAllMembers && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllMembers(true)}
+                      className="inline-flex items-center gap-0.5 text-primary-600 dark:text-primary-400 hover:underline focus-ring rounded"
+                    >
+                      +{memberEntries.length - 5}
+                      <ChevronDown className="w-3 h-3" aria-hidden="true" />
+                    </button>
+                  )}
+                  {showAllMembers &&
+                    memberEntries.slice(5).map(([uid, tone]) => (
+                      <div key={uid} className="inline-flex items-center gap-1.5">
+                        <span
+                          className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
+                          aria-hidden="true"
+                        />
+                        <span className="text-neutral-700 dark:text-neutral-300">{memberNames.get(uid) ?? '不明'}</span>
+                      </div>
+                    ))}
+                  {showAllMembers && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllMembers(false)}
+                      className="inline-flex items-center gap-0.5 text-primary-600 dark:text-primary-400 hover:underline focus-ring rounded"
+                    >
+                      閉じる
+                      <ChevronUp className="w-3 h-3" aria-hidden="true" />
+                    </button>
+                  )}
+                </>
+              )}
+            </>
+          ) : (
+            PREFERENCE_THEME_LIST.map((theme) => (
+              <div key={theme.type} className="inline-flex items-center gap-1.5">
+                <theme.Icon className="w-3.5 h-3.5" aria-hidden="true" />
+                <span className={'w-2 h-2 rounded-full ' + theme.dotClass} aria-hidden="true" />
+                <span>{theme.label}</span>
+              </div>
+            ))
+          )}
+        </div>
+        {showStatusLegend && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+            {STATUS_LEGEND.map((s) => (
+              <div key={s.key} className="inline-flex items-center gap-1.5">
+                <span
+                  className={'inline-block w-2 h-2 rounded-full ' + s.dot}
+                  aria-hidden="true"
+                />
+                <span>{s.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 export function ShiftPreferenceCalendar({
   preferences,
   onDateClick,
@@ -43,6 +220,7 @@ export function ShiftPreferenceCalendar({
   onRejectPreference,
   canManageStore,
   onMutated,
+  showStatusLegend = false,
 }: ShiftPreferenceCalendarProps) {
   const [baseDate, setBaseDate] = useState(() => new Date());
   const [showAllMembers, setShowAllMembers] = useState(false);
@@ -123,19 +301,19 @@ export function ShiftPreferenceCalendar({
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 focus-ring"
+          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
           aria-label="前月"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="text-center">
-          <p className="text-base font-semibold text-neutral-900 tabular-nums">
+          <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
             {format(baseDate, 'yyyy年M月', { locale: ja })}
           </p>
           <button
             type="button"
             onClick={() => setBaseDate(new Date())}
-            className="text-[11px] font-semibold text-primary-600 hover:underline mt-0.5"
+            className="text-[11px] font-semibold text-primary-600 dark:text-primary-400 hover:underline mt-0.5"
           >
             今月へ戻る
           </button>
@@ -143,96 +321,32 @@ export function ShiftPreferenceCalendar({
         <button
           type="button"
           onClick={() => navigate(1)}
-          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 focus-ring"
+          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
           aria-label="次月"
         >
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
 
-      {/* Compact 凡例 (U3) */}
-      <div className="px-1 space-y-1">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-600">
-          {isAdminView && memberNames ? (
-            <>
-              {memberEntries.slice(0, 5).map(([uid, tone]) => (
-                <div key={uid} className="inline-flex items-center gap-1.5">
-                  <span
-                    className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
-                    aria-hidden="true"
-                  />
-                  <span className="text-neutral-700">{memberNames.get(uid) ?? '不明'}</span>
-                </div>
-              ))}
-              {memberEntries.length > 5 && (
-                <>
-                  {!showAllMembers && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllMembers(true)}
-                      className="inline-flex items-center gap-0.5 text-primary-600 hover:underline focus-ring rounded"
-                    >
-                      +{memberEntries.length - 5}
-                      <ChevronDown className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  )}
-                  {showAllMembers &&
-                    memberEntries.slice(5).map(([uid, tone]) => (
-                      <div key={uid} className="inline-flex items-center gap-1.5">
-                        <span
-                          className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
-                          aria-hidden="true"
-                        />
-                        <span className="text-neutral-700">{memberNames.get(uid) ?? '不明'}</span>
-                      </div>
-                    ))}
-                  {showAllMembers && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllMembers(false)}
-                      className="inline-flex items-center gap-0.5 text-primary-600 hover:underline focus-ring rounded"
-                    >
-                      閉じる
-                      <ChevronUp className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  )}
-                </>
-              )}
-            </>
-          ) : (
-            PREFERENCE_THEME_LIST.map((theme) => (
-              <div key={theme.type} className="inline-flex items-center gap-1.5">
-                <span
-                  className={'inline-block w-2.5 h-2.5 rounded-sm ' + theme.dotClass}
-                  aria-hidden="true"
-                />
-                <span>{theme.label}</span>
-              </div>
-            ))
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-400">
-          {STATUS_LEGEND.map((s) => (
-            <div key={s.key} className="inline-flex items-center gap-1.5">
-              <span
-                className={'inline-block w-2 h-2 rounded-full ' + s.dot}
-                aria-hidden="true"
-              />
-              <span>{s.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* 凡例 (CalendarLegend) */}
+      <CalendarLegend
+        showStatusLegend={!!showStatusLegend}
+        memberNames={memberNames}
+        memberEntries={memberEntries}
+        showAllMembers={showAllMembers}
+        setShowAllMembers={setShowAllMembers}
+        isAdminView={isAdminView}
+      />
 
       {/* empty state バナー */}
       {isCurrentMonthEmpty && (
-        <div className="bg-warning-50 border border-warning-200 rounded-lg p-3 flex items-center justify-between gap-3">
-          <p className="text-sm text-warning-800">今月のシフト希望はまだありません</p>
+        <div className="bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 rounded-lg p-3 flex items-center justify-between gap-3">
+          <p className="text-sm text-warning-800 dark:text-warning-200">今月のシフト希望はまだありません</p>
           {nextPrefMonth && (
             <button
               type="button"
               onClick={navigateToNextPrefMonth}
-              className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded motion-safe:transition inline-flex items-center gap-1 shrink-0"
+              className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded motion-safe:transition inline-flex items-center gap-1 shrink-0"
             >
               次の希望がある月へ
               <NextPrefIcon className="w-3 h-3" aria-hidden="true" />
@@ -242,7 +356,7 @@ export function ShiftPreferenceCalendar({
       )}
 
       {/* 曜日ヘッダ */}
-      <div className="grid grid-cols-7 gap-1.5 px-0.5">
+      <div className="grid grid-cols-7 gap-1 md:gap-1.5 px-0.5">
         {weekDays.map((d, i) => (
           <div
             key={d}
@@ -252,7 +366,7 @@ export function ShiftPreferenceCalendar({
                 ? 'text-info-500'
                 : i === 6
                 ? 'text-danger-500'
-                : 'text-neutral-500')
+                : 'text-neutral-500 dark:text-neutral-400')
             }
           >
             {d}
@@ -262,7 +376,7 @@ export function ShiftPreferenceCalendar({
 
       {/* 日マス */}
       <div 
-        className="grid grid-cols-7 gap-1.5" 
+        className="grid grid-cols-7 gap-1 md:gap-1.5" 
         role="grid" 
         aria-label="シフト希望カレンダー"
         style={isAdminView ? { gridAutoRows: 'minmax(88px, auto)' } : { gridAutoRows: '1fr' }}
@@ -285,11 +399,11 @@ export function ShiftPreferenceCalendar({
 
           const baseCell = isAdminView
             ? 'min-h-[88px] lg:min-h-[120px] rounded-lg flex flex-col items-stretch gap-0.5 text-[11px] motion-safe:transition-colors duration-120 focus-ring select-none cursor-pointer relative'
-            : 'aspect-square min-h-[44px] md:min-h-[56px] rounded-lg flex flex-col items-center justify-center gap-0.5 text-[11px] motion-safe:transition-colors duration-120 focus-ring select-none cursor-pointer';
+            : 'min-h-[64px] md:min-h-[72px] rounded-lg flex flex-col items-center justify-center gap-0.5 text-[11px] motion-safe:transition-colors duration-120 focus-ring select-none cursor-pointer';
 
           let stateCell: string;
           if (!isCurrentMonth) {
-            stateCell = 'bg-neutral-100 text-neutral-500 cursor-not-allowed';
+            stateCell = 'bg-neutral-100 text-neutral-500 cursor-not-allowed dark:bg-neutral-800 dark:text-neutral-500';
           } else if (theme && !isAdminView) {
             stateCell = theme.cellClass + ' hover:opacity-90';
           } else {
@@ -299,12 +413,12 @@ export function ShiftPreferenceCalendar({
           const todayRing = isToday ? ' ring-2 ring-primary-500' : '';
           const dayNumColor =
             !isCurrentMonth
-              ? 'text-neutral-500'
+              ? 'text-neutral-500 dark:text-neutral-500'
               : dayOfWeek === 6
               ? 'text-danger-500'
               : dayOfWeek === 5
               ? 'text-info-500'
-              : 'text-neutral-700';
+              : 'text-neutral-700 dark:text-neutral-300';
 
           const ariaLabel = `${format(d, 'yyyy年M月d日 (E)', { locale: ja })}${
             primaryPref ? ` ${getPreferenceTheme(primaryPref.preference_type).label}` : ''

@@ -639,6 +639,7 @@ export function ShiftPage() {
                   onRejectPreference={canManageTenant && showAllMembersPrefs ? handleRejectPreference : undefined}
                   canManageStore={(sid) => sid ? isManagerOf(sid) : false}
                   onMutated={fetchPreferenceRange}
+                  showStatusLegend={canManageTenant && showAllMembersPrefs}
                 />
 
                 {/* 提出予定サマリ（自分視点のみ） */}
@@ -779,7 +780,7 @@ export function ShiftPage() {
 
                 {/* sticky 追加ボタン（自分視点のみ） */}
                 {!(canManageTenant && showAllMembersPrefs) && (
-                  <div className="lg:hidden sticky bottom-0 -mx-4 px-4 py-3 bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-700 z-10">
+                  <div className="lg:hidden sticky bottom-0 -mx-4 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-700 z-10">
                     <Button
                       variant="primary"
                       size="lg"

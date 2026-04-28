@@ -22,6 +22,7 @@ export interface PreferenceActionRowProps {
   storeName?: string;
   showStoreBadge?: boolean;
   memberDotClass?: string;
+  showInlineActions?: boolean;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -62,6 +63,7 @@ export function PreferenceActionRow({
   storeName,
   showStoreBadge,
   memberDotClass,
+  showInlineActions = false,
 }: PreferenceActionRowProps) {
   const [state, setState] = useState<CardState>({
     loading: false,
@@ -167,7 +169,7 @@ export function PreferenceActionRow({
           )}
         </div>
         
-        {isPending && canManage && (
+        {isPending && canManage && showInlineActions && (
           <div className="flex items-center justify-end gap-1 mt-0.5">
             {state.loading && <Loader2 className="w-3 h-3 motion-safe:animate-spin text-neutral-500 dark:text-neutral-400" />}
             
