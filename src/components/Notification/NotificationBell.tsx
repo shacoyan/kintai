@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTenant } from '../../contexts/TenantContext';
 import { useNotification } from '../../hooks/useNotification';
 import { BottomSheet, EmptyState } from '../ui';
 import type { NotificationItem } from '../../types';
@@ -27,10 +28,18 @@ function formatRelativeTime(dateString: string): string {
 }
 
 export function NotificationBell() {
-  const navigate = useNavigate();
   const { user } = useAuth();
+  const { currentTenant } = useTenant();
+
+  if (!user || !currentTenant) return null;
+
+  return <NotificationBellInner userId={user.id} />;
+}
+
+function NotificationBellInner({ userId }: { userId: string }) {
+  const navigate = useNavigate();
   const { notifications, unreadCount, markAsRead, markAllAsRead, fetchAll } =
-    useNotification(user?.id ?? null);
+    useNotification(userId);
 
   const [isOpen, setIsOpen] = useState(false);
   const [isAllOpen, setIsAllOpen] = useState(false);
