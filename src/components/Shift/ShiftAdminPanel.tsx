@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import type { Shift, TenantMember } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
 import { Loader2 } from 'lucide-react';
+import { EmptyState } from '../ui';
 
 interface ShiftAdminPanelProps {
   shifts: Shift[];
@@ -213,7 +214,10 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
 
       <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
         {displayedShifts.length === 0 ? (
-          <div className="px-6 py-8 text-center text-neutral-500 dark:text-neutral-400">シフト申請はありません</div>
+          <EmptyState
+            size="md"
+            title="シフト申請はありません"
+          />
         ) : (
           visibleShifts.map((shift) => {
             const badge = STATUS_BADGE[shift.status] || STATUS_BADGE.pending;

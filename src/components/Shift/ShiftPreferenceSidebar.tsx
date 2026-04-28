@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Plus, ChevronRight } from 'lucide-react';
-import { Card, Button } from '../ui';
+import { Card, Button, EmptyState } from '../ui';
 import { PreferenceActionRow } from './PreferenceActionRow';
 import { ShiftPreferenceForm } from './ShiftPreferenceForm';
 import { PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
@@ -149,9 +149,10 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
                 カレンダーで日付を選択すると、その日のシフト希望一覧が表示されます。
               </div>
             ) : dateFilteredPreferences.length === 0 ? (
-              <div className="text-sm text-neutral-500">
-                この日の希望はありません
-              </div>
+              <EmptyState
+                size="sm"
+                title="この日の希望はありません"
+              />
             ) : (
               <ul className="space-y-2">
                 {dateFilteredPreferences.map(p => (

@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ChevronRight as Next
 import type { ShiftPreference } from '../../types';
 import { PreferenceActionRow } from './PreferenceActionRow';
 import { getPreferenceTheme, PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
+import { EmptyState } from '../ui';
 
 interface ShiftPreferenceCalendarProps {
   preferences: ShiftPreference[];
@@ -340,19 +341,11 @@ export function ShiftPreferenceCalendar({
 
       {/* empty state バナー */}
       {isCurrentMonthEmpty && (
-        <div className="bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800 rounded-lg p-3 flex items-center justify-between gap-3">
-          <p className="text-sm text-warning-800 dark:text-warning-200">今月のシフト希望はまだありません</p>
-          {nextPrefMonth && (
-            <button
-              type="button"
-              onClick={navigateToNextPrefMonth}
-              className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 rounded motion-safe:transition inline-flex items-center gap-1 shrink-0"
-            >
-              次の希望がある月へ
-              <NextPrefIcon className="w-3 h-3" aria-hidden="true" />
-            </button>
-          )}
-        </div>
+        <EmptyState
+          tone="warning"
+          title="今月のシフト希望はまだありません"
+          action={nextPrefMonth ? { label: '次の希望がある月へ', onClick: navigateToNextPrefMonth, iconRight: <NextPrefIcon className="w-3 h-3" /> } : undefined}
+        />
       )}
 
       {/* 曜日ヘッダ */}

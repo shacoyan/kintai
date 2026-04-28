@@ -494,9 +494,10 @@ export function HistoryPage() {
               correctionRequests={ownCorrectionRequests}
             />
             {showEmpty && (
-              <p className="text-center text-sm text-neutral-500 dark:text-neutral-400 py-2">
-                今月の打刻データがまだありません
-              </p>
+              <EmptyState
+                size="sm"
+                title="今月の打刻データがまだありません"
+              />
             )}
           </>
         )

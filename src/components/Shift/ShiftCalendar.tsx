@@ -4,6 +4,7 @@ import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Shift, LeaveRequest } from '../../types';
 import { abbreviateName } from '../../utils/displayNameAbbrev';
+import { EmptyState } from '../ui';
 
 type ViewMode = 'week' | '2week' | 'month';
 
@@ -268,18 +269,11 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
 
       {/* Empty state banner */}
       {isCurrentMonthEmpty && (
-        <div className="flex items-center justify-between p-3 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg text-primary-800 dark:text-primary-300">
-          <span className="text-sm font-medium">今月のシフトはまだありません</span>
-          {shifts.some(s => isAfter(parseISO(s.date), startOfDay(baseDate))) && (
-            <button
-              onClick={navigateToNextShiftMonth}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-700 dark:text-primary-200 bg-primary-100 dark:bg-primary-800/40 rounded-md hover:bg-primary-200 dark:hover:bg-primary-800/60 motion-safe:transition"
-            >
-              次のシフトがある月へ
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+        <EmptyState
+          tone="info"
+          title="今月のシフトはまだありません"
+          action={shifts.some(s => isAfter(parseISO(s.date), startOfDay(baseDate))) ? { label: '次のシフトがある月へ', onClick: navigateToNextShiftMonth, iconRight: <ChevronRight className="w-4 h-4" />, variant: 'tertiary' } : undefined}
+        />
       )}
 
       {/* Calendar grid */}

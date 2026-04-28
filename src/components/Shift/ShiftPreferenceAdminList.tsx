@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import type { ShiftPreference } from '../../types';
 import { Loader2 } from 'lucide-react';
 import { PreferenceActionRow } from './PreferenceActionRow';
+import { EmptyState } from '../ui';
 
 interface ShiftPreferenceAdminListProps {
   preferences: ShiftPreference[];
@@ -295,9 +296,10 @@ export function ShiftPreferenceAdminList({
       {renderBulkActionBar()}
 
       {sortedDisplayed.length === 0 && (
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 py-4 text-center">
-          {historyMode ? '履歴はありません' : (statusFilter === 'all' ? '希望がありません' : '未対応の希望はありません')}
-        </p>
+        <EmptyState
+          size="sm"
+          title={historyMode ? '履歴はありません' : (statusFilter === 'all' ? '希望がありません' : '未対応の希望はありません')}
+        />
       )}
 
       <div className="space-y-2">

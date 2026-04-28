@@ -3,7 +3,7 @@ import { format, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns'
 import { ja } from 'date-fns/locale';
 import { Clock, History, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { Button, Card, Badge, BottomSheet, ShiftSkeleton } from '../components/ui';
+import { Button, Card, Badge, BottomSheet, ShiftSkeleton, EmptyState } from '../components/ui';
 import { getPreferenceTheme } from '../lib/preferenceTheme';
 import { Spinner } from '../components/ui/Spinner';
 import type { BadgeTone } from '../components/ui';
@@ -486,7 +486,10 @@ export function ShiftPage() {
                 </button>
               ))}
               {shifts.filter(s => s.date === selectedShiftDate).length === 0 && (
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center py-6">この日にシフトはありません</p>
+                <EmptyState
+                  size="sm"
+                  title="この日にシフトはありません"
+                />
               )}
             </div>
           </BottomSheet>
@@ -738,7 +741,12 @@ export function ShiftPage() {
                   >
                     <ul className="divide-y divide-neutral-100 dark:divide-neutral-700 p-2 space-y-2">
                       {allMemberPrefsForDate.length === 0 && (
-                        <li className="px-4 py-6 text-center text-sm text-neutral-500 dark:text-neutral-400">この日の希望はありません</li>
+                        <li>
+                          <EmptyState
+                            size="sm"
+                            title="この日の希望はありません"
+                          />
+                        </li>
                       )}
                       {allMemberPrefsForDate.map(p => (
                         <li key={p.id}>
@@ -845,7 +853,10 @@ export function ShiftPage() {
                 <div className="flex flex-col gap-2">
                   {myPreferencesForHistory.length === 0 && (
                     <Card padding="md">
-                      <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">履歴はありません</p>
+                      <EmptyState
+                        size="sm"
+                        title="履歴はありません"
+                      />
                     </Card>
                   )}
                   {myPreferencesForHistory.map((pref) => {
