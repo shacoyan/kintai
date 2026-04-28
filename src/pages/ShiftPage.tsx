@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Clock, History, CheckCircle2, Circle, XCircle, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Clock, History, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import type { LucideIcon } from 'lucide-react';
 import { Button, Card, Badge, BottomSheet, ShiftSkeleton } from '../components/ui';
+import { getPreferenceTheme } from '../lib/preferenceTheme';
 import { Spinner } from '../components/ui/Spinner';
 import type { BadgeTone } from '../components/ui';
 import { useTenant } from '../hooks/useTenant';
@@ -32,18 +32,6 @@ import type { ShiftPreferenceType, LeaveType } from '../types';
 
 type TabId = 'shift' | 'leave' | 'preference';
 type PreferenceView = 'current' | 'history';
-
-interface PrefListStyle {
-  Icon: LucideIcon;
-  label: string;
-  iconBox: string;
-}
-
-const PREF_LIST_STYLE: Record<ShiftPreferenceType, PrefListStyle> = {
-  preferred: { Icon: CheckCircle2, label: '希望', iconBox: 'bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300' },
-  available: { Icon: Circle, label: '出勤可能', iconBox: 'bg-info-50 text-info-500 dark:bg-info-900/40 dark:text-info-300' },
-  unavailable: { Icon: XCircle, label: '出勤不可', iconBox: 'bg-warning-50 text-warning-500 dark:bg-warning-900/40 dark:text-warning-300' },
-};
 
 export function ShiftPage() {
   const { currentTenant, myRole, isOwner } = useTenant();
@@ -116,23 +104,25 @@ export function ShiftPage() {
     [myPreferences]
   );
 
-  const preferenceSummary = useMemo(() => {
+  const preferenceSummary = useMemo<Record<ShiftPreferenceType, number>>(() => {
     const active = myPreferences.filter((p) => p.status !== 'rejected');
     return {
-      preferredCount: active.filter((p) => p.preference_type === 'preferred').length,
-      availableCount: active.filter((p) => p.preference_type === 'available').length,
-      unavailableCount: active.filter((p) => p.preference_type === 'unavailable').length,
+      preferred: active.filter((p) => p.preference_type === 'preferred').length,
+      available: active.filter((p) => p.preference_type === 'available').length,
+      unavailable: active.filter((p) => p.preference_type === 'unavailable').length,
     };
   }, [myPreferences]);
 
-  const adminSummary = useMemo(() => {
+  const adminSummary = useMemo<{ counts: Record<ShiftPreferenceType, number>; monthLabel: string }>(() => {
     const now = new Date();
     const ym = format(now, 'yyyy-MM');
     const monthPrefs = allPreferences.filter(p => p.date.startsWith(ym));
     return {
-      preferredCount: monthPrefs.filter(p => p.preference_type === 'preferred').length,
-      availableCount: monthPrefs.filter(p => p.preference_type === 'available').length,
-      unavailableCount: monthPrefs.filter(p => p.preference_type === 'unavailable').length,
+      counts: {
+        preferred: monthPrefs.filter(p => p.preference_type === 'preferred').length,
+        available: monthPrefs.filter(p => p.preference_type === 'available').length,
+        unavailable: monthPrefs.filter(p => p.preference_type === 'unavailable').length,
+      },
       monthLabel: format(now, 'yyyy年M月'),
     };
   }, [allPreferences]);
@@ -658,19 +648,19 @@ export function ShiftPage() {
                       <Card.Body className="grid grid-cols-3 gap-3 text-center">
                         <div>
                           <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
-                            {preferenceSummary.preferredCount}
+                            {preferenceSummary.preferred}
                           </p>
                           <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">希望日</p>
                         </div>
                         <div className="border-x border-neutral-100 dark:border-neutral-700">
                           <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
-                            {preferenceSummary.availableCount}
+                            {preferenceSummary.available}
                           </p>
                           <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">出勤可</p>
                         </div>
                         <div>
                           <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
-                            {preferenceSummary.unavailableCount}
+                            {preferenceSummary.unavailable}
                           </p>
                           <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">出勤不可</p>
                         </div>
@@ -688,7 +678,7 @@ export function ShiftPage() {
                       </Card.Header>
                       <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
                         {timedPreferences.map((p) => {
-                          const style = PREF_LIST_STYLE[p.preference_type];
+                          const theme = getPreferenceTheme(p.preference_type);
                           return (
                             <li key={p.id}>
                               <button
@@ -696,12 +686,12 @@ export function ShiftPage() {
                                 onClick={() => setSelectedPrefDate(p.date)}
                                 className="w-full px-4 py-3 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left focus-ring"
                               >
-                                <div className={`w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0 ${style.iconBox}`}>
+                                <div className={`w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0 ${theme.iconBoxClass}`}>
                                   <span className="text-[10px] font-semibold leading-none">{p.date.slice(5, 7)}/</span>
                                   <span className="text-[14px] font-bold tabular-nums leading-none">{p.date.slice(8, 10)}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{style.label}</p>
+                                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{theme.label}</p>
                                   {p.start_time && p.end_time && (
                                     <p className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
                                       {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
@@ -858,7 +848,7 @@ export function ShiftPage() {
                     </Card>
                   )}
                   {myPreferencesForHistory.map((pref) => {
-                    const style = PREF_LIST_STYLE[pref.preference_type];
+                    const theme = getPreferenceTheme(pref.preference_type);
                     const statusTone: BadgeTone =
                       pref.status === 'approved'
                         ? 'success'
@@ -875,9 +865,9 @@ export function ShiftPage() {
                             <Badge tone={statusTone} withDot>{statusLabel}</Badge>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${style.iconBox}`}>
-                              <style.Icon className="w-3 h-3" />
-                              {style.label}
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${theme.iconBoxClass}`}>
+                              <theme.Icon className="w-3 h-3" />
+                              {theme.label}
                             </span>
                             {pref.start_time && pref.end_time && (
                               <span className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">

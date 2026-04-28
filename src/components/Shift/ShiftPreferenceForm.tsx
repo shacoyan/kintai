@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { CheckCircle2, Circle, XCircle, Trash2 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import type { ShiftPreference, ShiftPreferenceType, ShiftPreset, Store } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
+import { PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
 import { Button, Select, Textarea, ErrorBanner } from '../ui';
 
 interface ShiftPreferenceFormProps {
@@ -37,18 +37,6 @@ const TIME_OPTIONS: string[] = (() => {
   }
   return arr;
 })();
-
-interface PrefConfig {
-  value: ShiftPreferenceType;
-  label: string;
-  Icon: LucideIcon;
-}
-
-const PREF_CONFIGS: PrefConfig[] = [
-  { value: 'preferred', label: '希望', Icon: CheckCircle2 },
-  { value: 'available', label: '出勤可能', Icon: Circle },
-  { value: 'unavailable', label: '出勤不可', Icon: XCircle },
-];
 
 export function ShiftPreferenceForm({
   date,
@@ -150,25 +138,25 @@ export function ShiftPreferenceForm({
       <div>
         <span className="block text-label text-neutral-700 mb-2">希望タイプ</span>
         <div role="group" aria-label="希望タイプ" className="grid grid-cols-3 gap-2">
-          {PREF_CONFIGS.map((cfg) => {
-            const isSelected = preferenceType === cfg.value;
-            const Icon = cfg.Icon;
+          {PREFERENCE_THEME_LIST.map((t) => {
+            const isSelected = preferenceType === t.type;
+            const Icon = t.Icon;
             return (
               <button
-                key={cfg.value}
+                key={t.type}
                 type="button"
                 aria-pressed={isSelected}
-                onClick={() => setPreferenceType(cfg.value)}
+                onClick={() => setPreferenceType(t.type)}
                 className={
                   'flex flex-col items-center justify-center gap-1 h-16 rounded-lg ' +
                   'motion-safe:transition-colors duration-120 focus-ring ' +
                   (isSelected
-                    ? 'bg-primary-50 ring-2 ring-primary-500 text-primary-700'
+                    ? `${t.cellClass} ring-2`
                     : 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800')
                 }
               >
                 <Icon className="w-5 h-5" aria-hidden="true" />
-                <span className="text-xs font-semibold">{cfg.label}</span>
+                <span className="text-xs font-semibold">{t.label}</span>
               </button>
             );
           })}

@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Plus, CheckCircle2, Circle, XCircle, ChevronRight } from 'lucide-react';
+import { Plus, ChevronRight } from 'lucide-react';
 import { Card, Button } from '../ui';
 import { PreferenceActionRow } from './PreferenceActionRow';
 import { ShiftPreferenceForm } from './ShiftPreferenceForm';
+import { PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
 
 import type { ShiftPreference, ShiftPreset, Store, ShiftPreferenceType } from '../../types';
 
@@ -16,7 +17,7 @@ export interface ShiftPreferenceSidebarProps {
   myPreferences: ShiftPreference[];
   memberNames: Map<string, string>;
   pendingPreferenceCount: number;
-  preferenceSummary: { preferredCount: number; availableCount: number; unavailableCount: number };
+  preferenceSummary: Record<ShiftPreferenceType, number>;
   timedPreferences: ShiftPreference[];
   onApprovePreference: (id: string, startTime?: string, endTime?: string) => Promise<void>;
   onRejectPreference: (id: string) => Promise<void>;
@@ -28,9 +29,7 @@ export interface ShiftPreferenceSidebarProps {
   defaultStoreId: string;
   onMutated: () => void;
   adminSummary?: {
-    preferredCount: number;
-    availableCount: number;
-    unavailableCount: number;
+    counts: Record<ShiftPreferenceType, number>;
     monthLabel: string;
   };
   onRevertPreference?: (id: string) => Promise<void>;
@@ -112,21 +111,13 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
           <Card padding="sm">
             <Card.Header>凡例</Card.Header>
             <div className="flex flex-col gap-2 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-warning-500 shrink-0" />
-                <CheckCircle2 className="w-4 h-4 text-warning-500 shrink-0" />
-                <span>希望</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-primary-500 shrink-0" />
-                <Circle className="w-4 h-4 text-primary-500 shrink-0" />
-                <span>出勤可</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-neutral-400 shrink-0" />
-                <XCircle className="w-4 h-4 text-neutral-400 shrink-0" />
-                <span>不可</span>
-              </div>
+              {PREFERENCE_THEME_LIST.map(t => (
+                <div key={t.type} className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${t.dotClass}`} />
+                  <t.Icon className={`w-4 h-4 shrink-0 ${t.iconColorClass}`} aria-hidden="true" />
+                  <span>{t.label}</span>
+                </div>
+              ))}
             </div>
           </Card>
 
@@ -134,18 +125,12 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
             <Card padding="sm">
               <Card.Header>{adminSummary.monthLabel}の希望</Card.Header>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-warning-600 dark:text-warning-400 tabular-nums">{adminSummary.preferredCount}</div>
-                  <div className="text-xs text-neutral-500">希望</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-info-600 dark:text-info-400 tabular-nums">{adminSummary.availableCount}</div>
-                  <div className="text-xs text-neutral-500">出勤可</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-neutral-500 dark:text-neutral-400 tabular-nums">{adminSummary.unavailableCount}</div>
-                  <div className="text-xs text-neutral-500">不可</div>
-                </div>
+                {PREFERENCE_THEME_LIST.map(t => (
+                  <div key={t.type}>
+                    <div className={`text-2xl font-bold tabular-nums ${t.countTextClass}`}>{adminSummary.counts[t.type]}</div>
+                    <div className="text-xs text-neutral-500">{t.label}</div>
+                  </div>
+                ))}
               </div>
             </Card>
           )}
@@ -228,24 +213,14 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
           <Card padding="sm">
             <Card.Header>サマリ</Card.Header>
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="space-y-1">
-                <div className="text-3xl font-bold text-warning-500">
-                  {preferenceSummary.preferredCount}
+              {PREFERENCE_THEME_LIST.map(t => (
+                <div key={t.type} className="space-y-1">
+                  <div className={`text-3xl font-bold tabular-nums ${t.countTextClass}`}>
+                    {preferenceSummary[t.type]}
+                  </div>
+                  <div className="text-xs text-neutral-500">{t.label}</div>
                 </div>
-                <div className="text-xs text-neutral-500">希望</div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-3xl font-bold text-primary-500">
-                  {preferenceSummary.availableCount}
-                </div>
-                <div className="text-xs text-neutral-500">出勤可</div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-3xl font-bold text-neutral-400">
-                  {preferenceSummary.unavailableCount}
-                </div>
-                <div className="text-xs text-neutral-500">不可</div>
-              </div>
+              ))}
             </div>
           </Card>
 

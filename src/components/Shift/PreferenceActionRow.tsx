@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Check, X, Loader2, CheckCircle2, Circle, XCircle, RotateCcw } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { Check, X, Loader2, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 import type { ShiftPreference } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
+import { getPreferenceTheme } from '../../lib/preferenceTheme';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { abbreviateName } from '../../utils/displayNameAbbrev';
@@ -30,12 +30,6 @@ for (let h = 0; h < 24; h++) {
     TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:${m}`);
   }
 }
-
-const PREFERENCE_ICON: Record<string, LucideIcon> = {
-  preferred: CheckCircle2,
-  available: Circle,
-  unavailable: XCircle,
-};
 
 const STATUS_DOT_CLASS: Record<string, string> = {
   pending: 'bg-warning-500 dark:bg-warning-400',
@@ -142,7 +136,7 @@ export function PreferenceActionRow({
   if (variant === 'compact') {
     const abbreviation = memberName ? abbreviateName(memberName) : '?';
     const statusDotClass = STATUS_DOT_CLASS[preference.status] || STATUS_DOT_CLASS.pending;
-    const typeLabel = preference.preference_type === 'preferred' ? '希' : preference.preference_type === 'available' ? '可' : '不';
+    const theme = getPreferenceTheme(preference.preference_type);
     const timeLabel = !isUnavailable && preference.start_time ? preference.start_time.slice(0, 5) : '';
     const memberTitle = `${memberName ?? '不明'} (${preference.preference_type})`;
 
@@ -164,7 +158,7 @@ export function PreferenceActionRow({
           <span className={`flex-shrink-0 w-2 h-2 rounded-sm ${memberDotClass ?? 'bg-neutral-300'}`} aria-hidden="true" />
           <span className="font-medium truncate">{abbreviation}</span>
           <span className="text-neutral-600 dark:text-neutral-400 flex-shrink-0">
-            {typeLabel === '希' ? '希望' : typeLabel === '可' ? '出勤可' : '不可'}
+            {theme.label}
           </span>
           {timeLabel && (
             <span className="text-neutral-500 dark:text-neutral-400 tabular-nums flex-shrink-0">
@@ -218,8 +212,9 @@ export function PreferenceActionRow({
     );
   }
 
-  const Ic = PREFERENCE_ICON[preference.preference_type] ?? Circle;
-  
+  const theme = getPreferenceTheme(preference.preference_type);
+  const Ic = theme.Icon;
+
   return (
     <div
       className={`rounded-lg border p-3 space-y-2 motion-safe:transition ${
@@ -256,19 +251,11 @@ export function PreferenceActionRow({
             <span className="text-xs text-neutral-500 dark:text-neutral-400">{preference.date}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span
-              className={`text-base leading-none font-bold ${
-                preference.preference_type === 'preferred'
-                  ? 'text-primary-600 dark:text-primary-400'
-                  : preference.preference_type === 'available'
-                  ? 'text-success-600 dark:text-success-400'
-                  : 'text-danger-600 dark:text-danger-400'
-              }`}
-            >
+            <span className={`text-base leading-none font-bold ${theme.iconColorClass}`}>
               <Ic className="w-4 h-4" />
             </span>
             <span className="text-xs text-neutral-600 dark:text-neutral-300">
-              {preference.preference_type === 'preferred' ? '希望' : preference.preference_type === 'available' ? '出勤可能' : '出勤不可'}
+              {theme.label}
             </span>
             {preference.preference_type !== 'unavailable' && preference.start_time && preference.end_time && (
               <span className="text-xs text-neutral-500 dark:text-neutral-400">

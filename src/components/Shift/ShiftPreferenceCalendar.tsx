@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { format, startOfWeek, addDays, startOfMonth, endOfMonth, isSameMonth, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, XCircle, ChevronDown, ChevronUp, ChevronRight as NextPrefIcon } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import type { ShiftPreference, ShiftPreferenceType } from '../../types';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ChevronRight as NextPrefIcon } from 'lucide-react';
+import type { ShiftPreference } from '../../types';
 import { PreferenceActionRow } from './PreferenceActionRow';
+import { getPreferenceTheme, PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
 
 interface ShiftPreferenceCalendarProps {
   preferences: ShiftPreference[];
@@ -16,38 +16,6 @@ interface ShiftPreferenceCalendarProps {
   canManageStore?: (storeId: string | null) => boolean;
   onMutated?: () => void;
 }
-
-interface PrefStyle {
-  Icon: LucideIcon;
-  cellClass: string;
-  dot: string;
-  text: string;
-  label: string;
-}
-
-const PREFERENCE_STYLE: Record<ShiftPreferenceType, PrefStyle> = {
-  preferred: {
-    Icon: CheckCircle2,
-    cellClass: 'bg-primary-50 ring-1 ring-primary-300 text-primary-700',
-    dot: 'bg-primary-500',
-    text: 'text-primary-700',
-    label: '希望',
-  },
-  available: {
-    Icon: Circle,
-    cellClass: 'bg-info-50 ring-1 ring-info-500/40 text-info-500',
-    dot: 'bg-info-500',
-    text: 'text-info-500',
-    label: '出勤可能',
-  },
-  unavailable: {
-    Icon: XCircle,
-    cellClass: 'bg-warning-50 ring-1 ring-warning-500/40 text-warning-500',
-    dot: 'bg-warning-500',
-    text: 'text-warning-500',
-    label: '出勤不可',
-  },
-};
 
 const MEMBER_TONE_CLASSES = [
   'bg-primary-50 text-primary-700',
@@ -232,15 +200,13 @@ export function ShiftPreferenceCalendar({
               )}
             </>
           ) : (
-            (Object.entries(PREFERENCE_STYLE) as Array<
-              [ShiftPreferenceType, PrefStyle]
-            >).map(([key, st]) => (
-              <div key={key} className="inline-flex items-center gap-1.5">
+            PREFERENCE_THEME_LIST.map((theme) => (
+              <div key={theme.type} className="inline-flex items-center gap-1.5">
                 <span
-                  className={'inline-block w-2.5 h-2.5 rounded-sm ' + st.dot}
+                  className={'inline-block w-2.5 h-2.5 rounded-sm ' + theme.dotClass}
                   aria-hidden="true"
                 />
-                <span>{st.label}</span>
+                <span>{theme.label}</span>
               </div>
             ))
           )}
@@ -309,7 +275,7 @@ export function ShiftPreferenceCalendar({
           const dayOfWeek = idx % 7;
 
           const primaryPref = dayPrefs[0];
-          const style = primaryPref ? PREFERENCE_STYLE[primaryPref.preference_type] : null;
+          const theme = primaryPref ? getPreferenceTheme(primaryPref.preference_type) : null;
           const hasTime =
             primaryPref?.preference_type !== 'unavailable' &&
             !!primaryPref?.start_time &&
@@ -324,8 +290,8 @@ export function ShiftPreferenceCalendar({
           let stateCell: string;
           if (!isCurrentMonth) {
             stateCell = 'bg-neutral-100 text-neutral-500 cursor-not-allowed';
-          } else if (style && !isAdminView) {
-            stateCell = style.cellClass + ' hover:opacity-90';
+          } else if (theme && !isAdminView) {
+            stateCell = theme.cellClass + ' hover:opacity-90';
           } else {
             stateCell =
               'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800';
@@ -341,7 +307,7 @@ export function ShiftPreferenceCalendar({
               : 'text-neutral-700';
 
           const ariaLabel = `${format(d, 'yyyy年M月d日 (E)', { locale: ja })}${
-            primaryPref ? ` ${PREFERENCE_STYLE[primaryPref.preference_type].label}` : ''
+            primaryPref ? ` ${getPreferenceTheme(primaryPref.preference_type).label}` : ''
           }`;
 
           const MAX_VISIBLE = 3;
@@ -354,7 +320,7 @@ export function ShiftPreferenceCalendar({
                 <span
                   className={
                     'text-xs font-semibold tabular-nums ' +
-                    (style && !isAdminView ? '' : dayNumColor)
+                    (theme && !isAdminView ? '' : dayNumColor)
                   }
                 >
                   {format(d, 'd')}
@@ -367,14 +333,14 @@ export function ShiftPreferenceCalendar({
               </div>
 
               {/* スタッフビュー: 時間 or アイコン */}
-              {!isAdminView && primaryPref && style && (
+              {!isAdminView && primaryPref && theme && (
                 <>
                   {hasTime && primaryPref.start_time && primaryPref.end_time ? (
                     <span className="text-[9px] font-semibold tabular-nums leading-none">
                       {primaryPref.start_time.slice(0, 5)}
                     </span>
                   ) : (
-                    <style.Icon className="w-3 h-3" aria-hidden="true" />
+                    <theme.Icon className="w-3 h-3" aria-hidden="true" />
                   )}
                 </>
               )}
