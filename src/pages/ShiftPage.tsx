@@ -558,9 +558,9 @@ export function ShiftPage() {
             <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-6 lg:items-start">
               <div className="flex flex-col gap-4">
                 {deadlineInfo && !deadlineInfo.passed && (
-                  <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-warning-500 bg-warning-50 dark:bg-warning-900/30">
+                  <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-warning-500 dark:border-warning-400 bg-warning-50 dark:bg-warning-900/30">
                     <Card.Body className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-warning-600 mt-0.5 shrink-0" aria-hidden="true" />
+                      <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-400 mt-0.5 shrink-0" aria-hidden="true" />
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-warning-800 dark:text-warning-200">
                           シフト希望の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })}
@@ -573,9 +573,9 @@ export function ShiftPage() {
                   </Card>
                 )}
                 {deadlineInfo && deadlineInfo.passed && (
-                  <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-danger-500 bg-danger-50 dark:bg-danger-900/30">
+                  <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-danger-500 dark:border-danger-400 bg-danger-50 dark:bg-danger-900/30">
                     <Card.Body className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-danger-600 mt-0.5 shrink-0" aria-hidden="true" />
+                      <AlertTriangle className="w-5 h-5 text-danger-600 dark:text-danger-400 mt-0.5 shrink-0" aria-hidden="true" />
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-danger-800 dark:text-danger-200">
                           締切過ぎ — 提出には管理者承認が必要です

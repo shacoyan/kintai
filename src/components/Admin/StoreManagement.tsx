@@ -167,7 +167,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                   checked={assigned}
                   disabled={toggling}
                   onChange={() => handleToggleMember(member.id)}
-                  className="h-4 w-4 text-primary-600 rounded border-neutral-300 dark:border-neutral-600 focus:ring-primary-500 cursor-pointer disabled:opacity-50"
+                  className="h-4 w-4 text-primary-600 dark:text-primary-400 rounded border-neutral-300 dark:border-neutral-600 focus:ring-primary-500 cursor-pointer disabled:opacity-50"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{member.display_name}</p>
@@ -176,7 +176,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                   </p>
                 </div>
                 {toggling && (
-                  <div className="motion-safe:animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 flex-shrink-0"></div>
+                  <div className="motion-safe:animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 dark:border-primary-400 flex-shrink-0"></div>
                 )}
                 {!toggling && assigned && (
                   <Badge tone="primary">
@@ -213,7 +213,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
   } else {
     memberManagementContent = (
       <EmptyState 
-        icon={<StoreIcon className="w-12 h-12 text-neutral-400" />} 
+        icon={<StoreIcon className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />} 
         title="店舗を選択してください" 
         description="左の一覧から店舗を選ぶとメンバー管理ができます" 
       />
@@ -263,7 +263,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                 <div
                   key={store.id}
                   className={`px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700 motion-safe:transition-colors ${
-                    selectedStore?.id === store.id ? 'bg-primary-50 dark:bg-primary-900/30 border-l-4 border-primary-500' : ''
+                    selectedStore?.id === store.id ? 'bg-primary-50 dark:bg-primary-900/30 border-l-4 border-primary-500 dark:border-primary-400' : ''
                   }`}
                   onClick={() => setSelectedStore(store)}
                 >

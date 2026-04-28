@@ -208,7 +208,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
       </div>
 
       {error && (
-        <div className="mx-6 mt-4 p-3 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-neutral-700 rounded-md">
+        <div className="mx-6 mt-4 p-3 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-md">
           <p className="text-sm text-danger-600 dark:text-danger-400">{error}</p>
         </div>
       )}
@@ -274,15 +274,15 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                         <select
                           value={modStart}
                           onChange={(e) => setModStart(e.target.value)}
-                          className="px-2 py-1 text-sm border border-primary-400 rounded bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                          className="px-2 py-1 text-sm border border-primary-400 rounded bg-primary-50 dark:bg-primary-900 dark:text-white dark:border-neutral-600"
                         >
                           {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
                         </select>
-                        <span className="text-neutral-400 hidden sm:inline">-</span>
+                        <span className="text-neutral-400 dark:text-neutral-500 hidden sm:inline">-</span>
                         <select
                           value={modEnd}
                           onChange={(e) => setModEnd(e.target.value)}
-                          className="px-2 py-1 text-sm border border-primary-400 rounded bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                          className="px-2 py-1 text-sm border border-primary-400 rounded bg-primary-50 dark:bg-primary-900 dark:text-white dark:border-neutral-600"
                         >
                           {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
                         </select>
@@ -307,7 +307,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                     <span className="text-sm text-neutral-700 dark:text-neutral-300 tabular-nums">
                       {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
                       {shift.original_start_time && (
-                        <span className="text-xs text-neutral-400 ml-2">
+                        <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-2">
                           (元: {shift.original_start_time.slice(0, 5)}-{shift.original_end_time?.slice(0, 5)})
                         </span>
                       )}

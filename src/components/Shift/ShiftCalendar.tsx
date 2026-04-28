@@ -227,8 +227,8 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
         {/* Status Legend (L2-04) */}
         <div className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 flex-wrap border-r border-neutral-200 dark:border-neutral-600 pr-4 mr-2">
           <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-warning-400" /> 申請中</span>
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success-500" /> 承認済</span>
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-danger-500" /> 却下</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success-500 dark:bg-success-400" /> 承認済</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-danger-500 dark:bg-danger-400" /> 却下</span>
           <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-info-500" /> 修正</span>
           <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-neutral-400" /> 取消</span>
         </div>

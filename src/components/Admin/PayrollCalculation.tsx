@@ -630,7 +630,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
         <div className="overflow-x-auto">
           {(!hasData && !isFinalized) ? (
             <EmptyState 
-              icon={<Calculator className="w-12 h-12 text-neutral-400" />} 
+              icon={<Calculator className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />} 
               title={`${selectedYear}年${selectedMonth}月のデータはありません`} 
               description={`${payrollMode === 'shift' ? 'シフト' : '勤怠'}データが該当月にありません`} 
             />

@@ -239,7 +239,7 @@ export function PreferenceActionRow({
                   onToggleSelect?.(preference.id);
                 }}
                 aria-label={`${memberName ?? '不明'} の希望を選択`}
-                className="mt-1 w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-primary-600 focus:ring-primary-500 dark:bg-neutral-800 cursor-pointer"
+                className="mt-1 w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-primary-600 dark:text-primary-400 focus:ring-primary-500 dark:bg-neutral-800 cursor-pointer"
               />
             )}
             <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
@@ -397,7 +397,7 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleApprove(); }}
-                className="h-auto px-3 py-1 text-xs rounded text-white bg-success-600 hover:bg-success-700 disabled:opacity-50"
+                className="h-auto px-3 py-1 text-xs rounded text-white bg-success-600 dark:bg-success-500 hover:bg-success-700 disabled:opacity-50"
               >
                 {state.loading ? '処理中...' : '承認する'}
               </button>
@@ -417,7 +417,7 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleReject(); }}
-                className="h-auto px-3 py-1 text-xs rounded text-white bg-danger-600 hover:bg-danger-700 disabled:opacity-50"
+                className="h-auto px-3 py-1 text-xs rounded text-white bg-danger-600 dark:bg-danger-500 hover:bg-danger-700 disabled:opacity-50"
               >
                 {state.loading ? '処理中...' : '却下する'}
               </button>
@@ -437,7 +437,7 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleApprove(true); }}
-                className="h-auto px-3 py-1 text-xs rounded text-white bg-success-600 hover:bg-success-700 disabled:opacity-50"
+                className="h-auto px-3 py-1 text-xs rounded text-white bg-success-600 dark:bg-success-500 hover:bg-success-700 disabled:opacity-50"
               >
                 {state.loading ? '処理中...' : 'この時刻で承認する'}
               </button>
@@ -461,7 +461,7 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleRevertConfirm(); }}
-                className="px-2 py-1 text-xs rounded bg-warning-600 text-white hover:bg-warning-700"
+                className="px-2 py-1 text-xs rounded bg-warning-600 dark:bg-warning-500 text-white hover:bg-warning-700"
               >
                 {state.loading ? '処理中...' : '未対応に戻す'}
               </button>

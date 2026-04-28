@@ -302,7 +302,7 @@ export function ShiftPreferenceCalendar({
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
+          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
           aria-label="前月"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -322,7 +322,7 @@ export function ShiftPreferenceCalendar({
         <button
           type="button"
           onClick={() => navigate(1)}
-          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
+          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
           aria-label="次月"
         >
           <ChevronRight className="w-5 h-5" />
@@ -433,7 +433,7 @@ export function ShiftPreferenceCalendar({
                   {format(d, 'd')}
                 </span>
                 {isAdminView && pendingCount > 0 && (
-                  <span className="bg-warning-500 text-white rounded-full w-4 h-4 inline-flex items-center justify-center text-[9px] font-semibold tabular-nums leading-none">
+                  <span className="bg-warning-500 dark:bg-warning-400 text-white rounded-full w-4 h-4 inline-flex items-center justify-center text-[9px] font-semibold tabular-nums leading-none">
                     {pendingCount}
                   </span>
                 )}

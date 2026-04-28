@@ -203,7 +203,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   if (myRole !== 'owner' && myRole !== 'manager') {
     return (
       <div className="bg-warning-50 border border-warning-200 rounded-lg p-4 text-center dark:bg-warning-900/20 dark:border-warning-800">
-        <p className="text-warning-700">この機能を使用する権限がありません</p>
+        <p className="text-warning-700 dark:text-warning-300">この機能を使用する権限がありません</p>
       </div>
     );
   }
@@ -228,7 +228,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
         {/* カード型レイアウト（モバイル対応） */}
         <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
           {members.length === 0 ? (
-            <EmptyState icon={<Users className="w-12 h-12 text-neutral-400" />} title="メンバーがいません" description="招待コードをメンバーに共有してください" />
+            <EmptyState icon={<Users className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />} title="メンバーがいません" description="招待コードをメンバーに共有してください" />
           ) : (
             members.map((member) => {
               const badge = roleBadge[member.role] || roleBadge.staff;
@@ -245,7 +245,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{member.display_name}</p>
-                        <p className="text-xs text-neutral-400">{new Date(member.created_at).toLocaleDateString('ja-JP')} 参加</p>
+                        <p className="text-xs text-neutral-400 dark:text-neutral-500">{new Date(member.created_at).toLocaleDateString('ja-JP')} 参加</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -272,7 +272,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       {member.role !== 'owner' && (
                         <button
                           onClick={() => setDeletingId(member.id)}
-                          className="p-2 text-neutral-400 hover:text-danger-500 motion-safe:transition min-h-[44px] min-w-[44px]"
+                          className="p-2 text-neutral-400 dark:text-neutral-500 hover:text-danger-500 motion-safe:transition min-h-[44px] min-w-[44px]"
                           title="メンバーを削除"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -324,7 +324,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           onClick={() => handlePayTypeChange(member, 'hourly')}
                           className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors ${
                             (member.pay_type ?? 'hourly') === 'hourly'
-                              ? 'bg-primary-600 text-white'
+                              ? 'bg-primary-600 dark:bg-primary-500 text-white'
                               : 'bg-white dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-600'
                           }`}
                         >
@@ -334,7 +334,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           onClick={() => handlePayTypeChange(member, 'monthly')}
                           className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors ${
                             member.pay_type === 'monthly'
-                              ? 'bg-primary-600 text-white'
+                              ? 'bg-primary-600 dark:bg-primary-500 text-white'
                               : 'bg-white dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-600'
                           }`}
                         >
@@ -384,7 +384,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
                                 rate > 0
                                   ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-                                  : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
+                                  : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100'
                               }`}
                             >
                               {rate > 0 ? (
@@ -396,7 +396,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                                 }
                                 return (<>未設定</>);
                               })()}
-                              <Pencil className="w-3.5 h-3.5 text-neutral-400" />
+                              <Pencil className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
                             </button>
                           )}
                         </div>
@@ -439,7 +439,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
                                 (member.monthly_salary ?? 0) > 0
                                   ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-                                  : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
+                                  : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100'
                               }`}
                             >
                               {(member.monthly_salary ?? 0) > 0 ? (
@@ -447,7 +447,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               ) : (
                                 <>未設定</>
                               )}
-                              <Pencil className="w-3.5 h-3.5 text-neutral-400" />
+                              <Pencil className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
                             </button>
                           )}
                         </div>
@@ -491,7 +491,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
                               (member.paid_leave_days ?? 0) > 0
                                 ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-                                : 'text-orange-600 border-orange-200 bg-orange-50 hover:bg-orange-100'
+                                : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100'
                             }`}
                           >
                             {(member.paid_leave_days ?? 0) > 0 ? (
@@ -499,7 +499,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             ) : (
                               <>未設定</>
                             )}
-                            <Pencil className="w-3.5 h-3.5 text-neutral-400" />
+                            <Pencil className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
                           </button>
                         )}
                       </div>
@@ -511,7 +511,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             type="checkbox"
                             checked={member.night_shift_enabled ?? false}
                             onChange={() => handleNightShiftToggle(member)}
-                            className="h-4 w-4 text-primary-600 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500 cursor-pointer"
+                            className="h-4 w-4 text-primary-600 dark:text-primary-400 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500 cursor-pointer"
                           />
                           <span className="text-xs text-neutral-600 dark:text-neutral-400">深夜給 <span className="font-medium">1.25x</span></span>
                         </label>

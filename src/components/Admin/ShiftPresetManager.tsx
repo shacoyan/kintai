@@ -177,7 +177,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
           <PageSkeleton />
         ) : presets.length === 0 ? (
           <EmptyState
-            icon={<CalendarClock className="w-12 h-12 text-neutral-400" />}
+            icon={<CalendarClock className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
             title="プリセットが未登録です"
             description="よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます"
           />

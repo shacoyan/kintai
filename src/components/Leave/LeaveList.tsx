@@ -83,7 +83,7 @@ export function LeaveList({ leaves, memberNames, storeNames, canManageTenant, on
         {leaves.length === 0 ? (
           <div className="px-6 py-12">
             <EmptyState
-              icon={<CalendarOff className="w-12 h-12 text-neutral-400" />}
+              icon={<CalendarOff className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
               title="休暇申請はありません"
               description="「休暇申請」ボタンから新規申請できます"
             />

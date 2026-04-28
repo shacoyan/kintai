@@ -155,21 +155,21 @@ export function DashboardPage() {
   return (
     <div className="max-w-md mx-auto space-y-4 md:space-y-6">
       <header className="flex items-end justify-between gap-3">
-        <h1 className="text-xl md:text-2xl font-semibold text-neutral-900">{format(today, 'M月d日')}</h1>
-        <p className="text-sm text-neutral-500">{format(today, 'EEEE', { locale: ja })}</p>
+        <h1 className="text-xl md:text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{format(today, 'M月d日')}</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">{format(today, 'EEEE', { locale: ja })}</p>
       </header>
 
       {dashboardError && <ErrorBanner message={dashboardError} />}
 
       {carryOverRecord && (
-        <Card padding="md" className="border-l-4 border-danger-500">
+        <Card padding="md" className="border-l-4 border-danger-500 dark:border-danger-400">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-danger-600 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 text-danger-600 dark:text-danger-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <Badge tone="danger" withDot>未完了</Badge>
               </div>
-              <p className="text-sm text-neutral-600">
+              <p className="text-sm text-neutral-600 dark:text-neutral-300">
                 {carryOverRecord.date} に出勤({formatTime(carryOverRecord.clock_in)}) したまま退勤打刻がされていません
               </p>
               <div className="mt-3">
@@ -185,7 +185,7 @@ export function DashboardPage() {
           <Card padding="md">
             <div className="flex flex-col items-center gap-2 text-center">
               <Badge tone="warning" withDot>店舗未選択</Badge>
-              <p className="text-sm text-warning-800">打刻するには上部のセレクタから店舗を選択してください。</p>
+              <p className="text-sm text-warning-800 dark:text-warning-300">打刻するには上部のセレクタから店舗を選択してください。</p>
             </div>
           </Card>
         ) : (
@@ -210,7 +210,7 @@ export function DashboardPage() {
 
       {todayRecords.length === 0 ? (
         <EmptyState
-          icon={<Clock className="w-12 h-12 text-neutral-400" />}
+          icon={<Clock className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
           title="まだ本日の打刻はありません"
           description="出勤ボタンを押して開始しましょう"
         />
@@ -221,16 +221,16 @@ export function DashboardPage() {
             <Card.Body>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="text-center">
-                  <p className="text-xs text-neutral-500 mb-1">最初の出勤</p>
-                  <p className="text-2xl font-semibold text-neutral-900 tabular-nums">{formatTime(firstClockIn)}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">最初の出勤</p>
+                  <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{formatTime(firstClockIn)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-neutral-500 mb-1">最後の退勤</p>
-                  <p className="text-2xl font-semibold text-neutral-900 tabular-nums">{lastClockOut ? formatTime(lastClockOut) : (activeRecord ? '勤務中' : '-')}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">最後の退勤</p>
+                  <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{lastClockOut ? formatTime(lastClockOut) : (activeRecord ? '勤務中' : '-')}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-neutral-500 mb-1">労働時間</p>
-                  <p className="text-2xl font-semibold text-neutral-900 tabular-nums">{formatDuration(totalWorkMinutes)}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">労働時間</p>
+                  <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{formatDuration(totalWorkMinutes)}</p>
                 </div>
               </div>
             </Card.Body>
@@ -267,10 +267,10 @@ export function DashboardPage() {
               <div className="space-y-1.5">
                 {upcomingShifts.map((shift) => (
                   <div key={shift.id} className="flex items-center justify-between text-sm">
-                    <span className="text-neutral-600 font-medium">
+                    <span className="text-neutral-600 dark:text-neutral-300 font-medium">
                       {format(new Date(shift.date), 'M/d(E)', { locale: ja })}
                     </span>
-                    <span className="text-neutral-800">
+                    <span className="text-neutral-800 dark:text-neutral-200">
                       {shift.start_time.slice(0, 5)} 〜 {shift.end_time.slice(0, 5)}
                     </span>
                     {shift.status === 'approved' ? (

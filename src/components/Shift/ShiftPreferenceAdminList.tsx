@@ -157,7 +157,7 @@ export function ShiftPreferenceAdminList({
             <button 
               onClick={handleBulkApproveConfirm} 
               disabled={processing} 
-              className="px-3 py-1.5 text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 disabled:opacity-50 motion-safe:transition flex items-center"
+              className="px-3 py-1.5 text-xs font-medium text-white bg-success-700 dark:bg-success-300 rounded-md hover:bg-success-800 disabled:opacity-50 motion-safe:transition flex items-center"
             >
               {processing && <Loader2 className="w-4 h-4 motion-safe:animate-spin mr-1" />}
               {selectedIds.size > 0 ? `選択 ${selectedIds.size}件 承認する` : `pending ${pendingCount}件 全て承認する`}
@@ -174,7 +174,7 @@ export function ShiftPreferenceAdminList({
             <button 
               onClick={handleBulkRejectConfirm} 
               disabled={processing} 
-              className="px-3 py-1.5 text-xs font-medium text-white bg-danger-700 rounded-md hover:bg-danger-800 disabled:opacity-50 motion-safe:transition flex items-center"
+              className="px-3 py-1.5 text-xs font-medium text-white bg-danger-700 dark:bg-danger-300 rounded-md hover:bg-danger-800 disabled:opacity-50 motion-safe:transition flex items-center"
             >
               {processing && <Loader2 className="w-4 h-4 motion-safe:animate-spin mr-1" />}
               {selectedIds.size > 0 ? `選択 ${selectedIds.size}件 却下する` : `pending ${pendingCount}件 全て却下する`}
@@ -205,7 +205,7 @@ export function ShiftPreferenceAdminList({
             {selectedIds.size > 0 && (
               <button 
                 onClick={() => setSelectedIds(new Set())} 
-                className="text-xs text-neutral-500 hover:underline"
+                className="text-xs text-neutral-500 dark:text-neutral-400 hover:underline"
               >
                 選択解除
               </button>

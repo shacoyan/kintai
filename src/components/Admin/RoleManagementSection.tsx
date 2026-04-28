@@ -208,7 +208,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
       >
         <div className="space-y-4 p-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">役職名 <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">役職名 <span className="text-red-500 dark:text-red-400">*</span></label>
             <Input placeholder="例: マネージャー" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>

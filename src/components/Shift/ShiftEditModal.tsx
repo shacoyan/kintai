@@ -67,7 +67,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
               onClick={() => handleAction(() => onApprove(shift.id))}
               disabled={processing}
               variant="primary"
-              className="bg-success-600 hover:bg-success-700"
+              className="bg-success-600 dark:bg-success-500 hover:bg-success-700"
             >
               承認
             </Button>

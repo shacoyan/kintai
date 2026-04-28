@@ -135,7 +135,7 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
                 checked={expiresInDays === opt.value}
                 onChange={() => setExpiresInDays(opt.value)}
                 disabled={submitting}
-                className="mr-1.5 text-primary-600 focus:ring-primary-500"
+                className="mr-1.5 text-primary-600 dark:text-primary-400 focus:ring-primary-500"
               />
               {opt.label}
             </label>
@@ -161,7 +161,7 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
                 checked={maxUses === opt.value}
                 onChange={() => setMaxUses(opt.value)}
                 disabled={submitting}
-                className="mr-1.5 text-primary-600 focus:ring-primary-500"
+                className="mr-1.5 text-primary-600 dark:text-primary-400 focus:ring-primary-500"
               />
               {opt.label}
             </label>
@@ -180,7 +180,7 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
           type="button"
           onClick={handleRegenerate}
           disabled={submitting}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed"
+          className="px-4 py-2 text-sm font-medium text-white bg-primary-600 dark:bg-primary-500 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed"
         >
           {submitting ? '再発行中...' : '招待コードを再発行'}
         </button>

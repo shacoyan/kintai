@@ -40,8 +40,8 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
       <Card className="border-rose-300">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <AlertTriangle className="w-6 h-6 text-rose-700" />
-            <h3 className="text-rose-700 font-semibold text-lg">
+            <AlertTriangle className="w-6 h-6 text-rose-700 dark:text-rose-300" />
+            <h3 className="text-rose-700 dark:text-rose-300 font-semibold text-lg">
               テナントを削除する
             </h3>
           </div>
@@ -58,7 +58,7 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
 
           <Button
             variant="danger"
-            className="bg-rose-600 text-white hover:bg-rose-700"
+            className="bg-rose-600 dark:bg-rose-500 text-white hover:bg-rose-700"
             disabled={!isOwner}
             onClick={() => setIsOpen(true)}
           >
@@ -77,14 +77,14 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
         title="テナント削除の確認"
       >
         <div className="p-4 space-y-4">
-          <div className="bg-rose-50 border border-rose-200 rounded-lg p-4">
+          <div className="bg-rose-50 dark:bg-rose-900 border border-rose-200 dark:border-rose-800 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-rose-600 mt-0.5 shrink-0" />
+              <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm text-rose-800 font-medium mb-1">
+                <p className="text-sm text-rose-800 dark:text-rose-300 font-medium mb-1">
                   警告: この操作は取り消せません
                 </p>
-                <p className="text-sm text-rose-700">
+                <p className="text-sm text-rose-700 dark:text-rose-300">
                   テナント名 「{currentTenant?.name}」 を入力して確認してください。
                 </p>
               </div>
@@ -113,7 +113,7 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
             </Button>
             <Button
               variant="danger"
-              className="bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50"
+              className="bg-rose-600 dark:bg-rose-500 text-white hover:bg-rose-700 disabled:opacity-50"
               disabled={confirmText !== currentTenant?.name || submitting}
               onClick={handleDelete}
             >

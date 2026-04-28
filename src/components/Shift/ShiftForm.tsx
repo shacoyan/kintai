@@ -66,7 +66,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
               key={p.id}
               type="button"
               onClick={() => { setStartTime(p.start_time.slice(0, 5)); setEndTime(p.end_time.slice(0, 5)); }}
-              className="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200 rounded-full hover:bg-primary-100 motion-safe:transition"
+              className="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-primary-50 dark:bg-primary-900 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 rounded-full hover:bg-primary-100 motion-safe:transition"
             >
               <Clock className="w-3.5 h-3.5 mr-1" />
               {p.name} ({p.start_time.slice(0, 5)}-{p.end_time.slice(0, 5)})

@@ -141,14 +141,14 @@ export function ShiftPreferenceForm({
         シフト希望は、希望日と時刻を選んで登録してください。締切前なら何度でも変更できます。
       </div>
 
-      <p className="text-sm font-semibold text-neutral-700 tabular-nums">{date}</p>
+      <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 tabular-nums">{date}</p>
 
       {error && <ErrorBanner message={error} />}
 
       {lockedByDeadline && (
         <div
           role="alert"
-          className="rounded-md border border-danger-200 bg-danger-50 dark:bg-danger-900/30 px-3 py-2 text-xs text-danger-800 dark:text-danger-200"
+          className="rounded-md border border-danger-200 dark:border-danger-800 bg-danger-50 dark:bg-danger-900/30 px-3 py-2 text-xs text-danger-800 dark:text-danger-200"
         >
           提出締切を過ぎています。新規登録・更新には管理者の代理入力が必要です。
         </div>
@@ -165,7 +165,7 @@ export function ShiftPreferenceForm({
 
       {/* 希望タイプ選択 */}
       <div>
-        <span className="block text-label text-neutral-700 mb-2">希望タイプ</span>
+        <span className="block text-label text-neutral-700 dark:text-neutral-300 mb-2">希望タイプ</span>
         <div role="group" aria-label="希望タイプ" className="grid grid-cols-3 gap-2">
           {PREFERENCE_THEME_LIST.map((t) => {
             const isSelected = preferenceType === t.type;
@@ -213,7 +213,7 @@ export function ShiftPreferenceForm({
       {/* プリセット */}
       {showTimeFields && presets && presets.length > 0 && (
         <div>
-          <span className="block text-label text-neutral-700 mb-2">プリセット</span>
+          <span className="block text-label text-neutral-700 dark:text-neutral-300 mb-2">プリセット</span>
           <div className="flex flex-wrap gap-2">
             {presets.map((p) => (
               <Button
@@ -288,7 +288,7 @@ export function ShiftPreferenceForm({
           {existingPreference ? '上書きする' : '登録する'}
         </Button>
         {lockedByDeadline && (
-          <p className="text-xs text-neutral-500 text-center">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 text-center">
             締切後のため送信できません
           </p>
         )}

@@ -134,7 +134,7 @@ export function StoreSelector() {
       >
         <Store className="w-4 h-4 text-neutral-500 dark:text-neutral-400 shrink-0" />
         <span className="truncate">{currentStore?.name || '店舗を選択'}</span>
-        <ChevronDown className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+        <ChevronDown className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500 shrink-0" />
         {currentStore && getRoleBadge(currentStore.id)}
       </button>
 

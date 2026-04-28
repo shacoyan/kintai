@@ -23,7 +23,7 @@ function NavItem({
       className={`flex items-center gap-3 px-3 h-10 rounded-lg text-sm motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
         active
           ? 'bg-primary-50 text-primary-700'
-          : 'text-neutral-700 hover:bg-neutral-100'
+          : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100'
       }`}
     >
       <Icon size={18} aria-hidden="true" />
@@ -34,7 +34,7 @@ function NavItem({
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <p className="px-3 py-2 text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+    <p className="px-3 py-2 text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
       {label}
     </p>
   );
@@ -66,7 +66,7 @@ export function Sidebar() {
         )}
       </div>
 
-      <div className="border-t border-neutral-200 my-1" />
+      <div className="border-t border-neutral-200 dark:border-neutral-700 my-1" />
 
       <SectionLabel label="メイン" />
       <NavItem to="/" icon={Clock} label="打刻" />
@@ -82,18 +82,18 @@ export function Sidebar() {
 
       <div className="flex-1" />
 
-      <div className="border-t border-neutral-200 my-1" />
+      <div className="border-t border-neutral-200 dark:border-neutral-700 my-1" />
 
       <div className="flex flex-col gap-2">
         <NavItem to="/tenant" icon={ArrowLeftRight} label="ワークスペースを切替" />
         <LeaveTenantButton />
       </div>
 
-      <div className="border-t border-neutral-200 my-1" />
+      <div className="border-t border-neutral-200 dark:border-neutral-700 my-1" />
 
       <div className="px-1 py-2 flex flex-col gap-2">
         {user?.email && (
-          <span className="text-xs text-neutral-500 truncate" title={user.email}>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400 truncate" title={user.email}>
             {user.email}
           </span>
         )}
@@ -102,7 +102,7 @@ export function Sidebar() {
           onClick={() => {
             void signOut();
           }}
-          className="flex items-center gap-2 px-3 h-10 rounded-lg text-sm text-neutral-700 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          className="flex items-center gap-2 px-3 h-10 rounded-lg text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
         >
           <LogOut size={16} aria-hidden="true" />
           ログアウト

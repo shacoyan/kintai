@@ -124,7 +124,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
               <h2 id={titleId} className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{title}</h2>
               <button
                 onClick={onClose}
-                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 p-1"
+                className="text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 p-1"
                 aria-label="閉じる"
               >
                 ✕

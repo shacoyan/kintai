@@ -319,7 +319,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           <button
             onClick={handleLoad}
             disabled={loading}
-            className="w-full md:w-auto bg-primary-600 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition"
+            className="w-full md:w-auto bg-primary-600 dark:bg-primary-500 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition"
           >
             {loading ? '読込中...' : '表示'}
           </button>
@@ -336,7 +336,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
             残業（8h超）
           </span>
           <span className="flex items-center gap-1">
-            <AlertTriangle className="w-4 h-4 text-danger-500" aria-hidden="true" />
+            <AlertTriangle className="w-4 h-4 text-danger-500 dark:text-danger-400" aria-hidden="true" />
             シフトあり・勤怠なし
           </span>
           <span className="flex items-center gap-1">
@@ -425,7 +425,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                             <span className={textColor}>{fmtMinutes(workMin)}</span>
                           );
                         } else if (hasShift) {
-                          cellContent = <AlertTriangle className="w-4 h-4 text-danger-500 mx-auto" aria-label="シフトあり・勤怠なし" />;
+                          cellContent = <AlertTriangle className="w-4 h-4 text-danger-500 dark:text-danger-400 mx-auto" aria-label="シフトあり・勤怠なし" />;
                           cellBg = 'bg-rose-50 dark:bg-rose-900/20';
                         }
 
@@ -438,7 +438,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                               border-r border-neutral-200 dark:border-neutral-600 p-1 text-center cursor-pointer
                               motion-safe:transition-all select-none
                               ${cellBg}
-                              ${isSelected ? 'ring-2 ring-inset ring-primary-500' : 'hover:ring-1 hover:ring-inset hover:ring-primary-300'}
+                              ${isSelected ? 'ring-2 ring-inset ring-primary-500 dark:ring-primary-400' : 'hover:ring-1 hover:ring-inset hover:ring-primary-300'}
                             `}
                             style={{ minWidth: '48px', width: '48px', height: '44px' }}
                           >
@@ -464,7 +464,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
       {loaded && members.length === 0 && (
         <EmptyState
-          icon={<Users className="w-12 h-12 text-neutral-400" />}
+          icon={<Users className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
           title="メンバーが登録されていません"
           description="メンバー管理タブからメンバーを追加してください"
         />
@@ -488,7 +488,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
               <button
                 onClick={handleSave}
                 disabled={saving || (!edit.clock_in && !selectedCell.record)}
-                className="bg-primary-600 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition"
+                className="bg-primary-600 dark:bg-primary-500 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition"
               >
                 {saving ? '保存中...' : selectedCell.record ? '更新' : '登録'}
               </button>
@@ -564,7 +564,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                       <span>〜</span>
                       <span>{b.end_time ? format(parseISO(b.end_time), 'HH:mm') : '打刻中'}</span>
                       {b.start_time && b.end_time && (
-                        <span className="text-neutral-400">
+                        <span className="text-neutral-400 dark:text-neutral-500">
                           ({fmtMinutes(differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time)))})
                         </span>
                       )}

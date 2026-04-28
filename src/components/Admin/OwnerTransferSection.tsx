@@ -73,7 +73,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
         type="button"
         onClick={handleTransfer}
         disabled={submitting}
-        className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:opacity-50"
+        className="px-4 py-2 text-sm font-medium text-white bg-red-600 dark:bg-red-500 rounded-md hover:bg-red-700 disabled:opacity-50"
       >
         {submitting ? '処理中...' : '移譲を実行'}
       </button>
@@ -118,7 +118,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
               <button
                 type="submit"
                 disabled={!selectedUserId}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 dark:bg-primary-500 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed"
               >
                 権限を移譲する
               </button>

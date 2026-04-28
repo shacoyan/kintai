@@ -8,11 +8,11 @@ function LoadingSpinner() {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm">
       <div className="flex flex-col items-center gap-3">
         <div
-          className="h-10 w-10 motion-safe:animate-spin rounded-full border-4 border-neutral-200 border-t-primary-600"
+          className="h-10 w-10 motion-safe:animate-spin rounded-full border-4 border-neutral-200 dark:border-neutral-700 border-t-primary-600"
           role="status"
           aria-label="読み込み中"
         />
-        <span className="text-sm text-neutral-600">読み込み中...</span>
+        <span className="text-sm text-neutral-600 dark:text-neutral-300">読み込み中...</span>
       </div>
     </div>
   );
@@ -36,7 +36,7 @@ function HeroSection() {
 
       <div className="relative z-10 p-10 xl:p-14">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-md bg-white flex items-center justify-center">
+          <div className="w-9 h-9 rounded-md bg-white dark:bg-neutral-900 flex items-center justify-center">
             <BrandMark size="md" color="#2F4585" />
           </div>
           <span className="text-[15px] font-semibold tracking-wide">kintai</span>
@@ -85,28 +85,28 @@ export const LoginPage = function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen grid-cols-1 lg:grid-cols-[52%_48%] bg-neutral-50">
+    <main className="grid min-h-screen grid-cols-1 lg:grid-cols-[52%_48%] bg-neutral-50 dark:bg-neutral-800">
       <HeroSection />
 
       <section className="flex flex-col items-center justify-center px-6 py-12 lg:px-12">
         <div className="w-full max-w-[400px]">
           <div className="lg:hidden mb-10 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-primary-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-primary-600 dark:bg-primary-500 flex items-center justify-center">
               <BrandMark size="sm" color="#ffffff" />
             </div>
-            <span className="text-[15px] font-semibold text-neutral-900">kintai</span>
+            <span className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">kintai</span>
           </div>
 
-          <h1 className="text-[26px] lg:text-[28px] font-bold text-neutral-900 leading-tight mb-2">
+          <h1 className="text-[26px] lg:text-[28px] font-bold text-neutral-900 dark:text-neutral-100 leading-tight mb-2">
             ログイン
           </h1>
-          <p className="text-sm text-neutral-500 mb-8">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-8">
             登録済みのメールアドレスでサインインしてください。
           </p>
 
           <LoginForm />
 
-          <div className="mt-12 pt-6 border-t border-neutral-200 flex items-center justify-between text-[11px] text-neutral-500">
+          <div className="mt-12 pt-6 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
             <div className="flex items-center gap-1.5">
               <svg
                 width="14"
