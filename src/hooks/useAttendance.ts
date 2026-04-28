@@ -112,7 +112,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
   const cleanupChannel = useCallback(() => {
     const ch = channelRef.current;
     if (ch) {
-      supabase.removeChannel(ch);
+      try { supabase.removeChannel(ch); } catch (e) { console.warn('[useAttendance] removeChannel failed:', e); }
       channelRef.current = null;
     }
   }, []);
@@ -124,36 +124,51 @@ export function useAttendance(tenantId: string, storeId: string | null) {
     }
     cleanupChannel(); // 念のため新規作成前に必ず破棄
 
-    const channel = supabase
-      .channel(`attendance:${tenantId}:${storeId}:${today}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'attendance_records',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => {
-          fetchTodayRecords();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'breaks',
-        },
-        () => {
-          // TODO: breaks テーブルには tenant_id がないため Supabase Realtime フィルタで絞れない
-          // attendance_record_id で不要な fetch を減らす改善余地あり
-          fetchTodayRecords();
-        }
-      )
-      .subscribe();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(`attendance:${tenantId}:${storeId}:${today}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'attendance_records',
+            filter: `tenant_id=eq.${tenantId}`,
+          },
+          () => {
+            fetchTodayRecords();
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'breaks',
+          },
+          () => {
+            // TODO: breaks テーブルには tenant_id がないため Supabase Realtime フィルタで絞れない
+            // attendance_record_id で不要な fetch を減らす改善余地あり
+            fetchTodayRecords();
+          }
+        )
+        .subscribe((status, err) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
+            console.warn('[useAttendance] subscribe status:', status, err);
+          }
+        });
+      channelRef.current = channel;
+    } catch (e) {
+      console.warn('[useAttendance] channel setup failed:', e);
+      setError(e instanceof Error ? e.message : String(e));
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch (re) { console.warn('[useAttendance] removeChannel after fail:', re); }
+      }
+      channelRef.current = null;
+      return;
+    }
 
-    channelRef.current = channel;
     return () => {
       cleanupChannel();
     };

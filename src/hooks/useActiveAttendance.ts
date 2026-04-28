@@ -67,7 +67,11 @@ export function useActiveAttendance(tenantId: string, storeId: string | null) {
   const cleanupChannel = useCallback(() => {
     const ch = channelRef.current;
     if (ch) {
-      supabase.removeChannel(ch);
+      try {
+        supabase.removeChannel(ch);
+      } catch (e) {
+        console.warn('[useActiveAttendance] removeChannel failed:', e);
+      }
       channelRef.current = null;
     }
   }, []);
@@ -83,30 +87,48 @@ export function useActiveAttendance(tenantId: string, storeId: string | null) {
 
     cleanupChannel(); // Ensure any previous channel is cleaned up before creating a new one
 
-    const channel = supabase
-      .channel(`active-attendance:${tenantId}:${storeId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'attendance_records',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => fetchActive()
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'breaks',
-        },
-        () => fetchActive()
-      )
-      .subscribe();
-
-    channelRef.current = channel;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(`active-attendance:${tenantId}:${storeId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'attendance_records',
+            filter: `tenant_id=eq.${tenantId}`,
+          },
+          () => fetchActive()
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'breaks',
+          },
+          () => fetchActive()
+        )
+        .subscribe((status, err) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
+            console.warn('[useActiveAttendance] subscribe status:', status, err);
+          }
+        });
+      channelRef.current = channel;
+    } catch (e) {
+      console.warn('[useActiveAttendance] channel setup failed:', e);
+      setError(e instanceof Error ? e.message : String(e));
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch (re) {
+          console.warn('[useActiveAttendance] removeChannel after fail:', re);
+        }
+      }
+      channelRef.current = null;
+      return;
+    }
 
     return () => {
       cleanupChannel();

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { CorrectionRequest } from '../types';
@@ -20,6 +20,7 @@ export function useCorrection(tenantId: string) {
   const [requests, setRequests] = useState<CorrectionRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const fetchRequests = useCallback(async () => {
     setError(null);
@@ -296,23 +297,48 @@ export function useCorrection(tenantId: string) {
   // Realtime 購読: tenant 内の correction_requests を監視し、変更があれば自動再取得
   useEffect(() => {
     if (!tenantId) return;
-    const channel = supabase
-      .channel(`correction_requests:${tenantId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'correction_requests',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => {
-          void fetchRequests();
-        }
-      )
-      .subscribe();
+
+    // 冪等 cleanup
+    if (channelRef.current) {
+      try { supabase.removeChannel(channelRef.current); } catch (e) { console.warn('[useCorrection] removeChannel failed:', e); }
+      channelRef.current = null;
+    }
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(`correction_requests:${tenantId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'correction_requests',
+            filter: `tenant_id=eq.${tenantId}`,
+          },
+          () => { void fetchRequests(); }
+        )
+        .subscribe((status, err) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
+            console.warn('[useCorrection] subscribe status:', status, err);
+          }
+        });
+      channelRef.current = channel;
+    } catch (e) {
+      console.warn('[useCorrection] channel setup failed:', e);
+      setError(e instanceof Error ? e.message : String(e));
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch (re) { console.warn('[useCorrection] removeChannel after fail:', re); }
+      }
+      channelRef.current = null;
+      return;
+    }
+
     return () => {
-      void supabase.removeChannel(channel);
+      if (channelRef.current) {
+        try { supabase.removeChannel(channelRef.current); } catch (e) { console.warn('[useCorrection] removeChannel failed:', e); }
+        channelRef.current = null;
+      }
     };
   }, [tenantId, fetchRequests]);
 
