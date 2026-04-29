@@ -39,16 +39,24 @@
 ```
 
 ### 3.2 ペア対応表（推奨マッピング）
-| Light | Dark |
-|---|---|
-| `bg-white` | `dark:bg-neutral-900` |
-| `bg-neutral-50` | `dark:bg-neutral-800` |
-| `bg-neutral-100` | `dark:bg-neutral-800` |
-| `text-neutral-900` | `dark:text-neutral-100` |
-| `text-neutral-700` | `dark:text-neutral-200` |
-| `text-neutral-500` | `dark:text-neutral-400` |
-| `border-neutral-200` | `dark:border-neutral-700` |
-| `border-neutral-300` | `dark:border-neutral-600` |
+| Light | Dark | 用途 |
+|---|---|---|
+| `bg-white` | `dark:bg-neutral-900` | 画面背景 |
+| `bg-neutral-50` | `dark:bg-neutral-800` | サブ背景 |
+| `bg-neutral-100` | `dark:bg-neutral-800` | サブ背景 (代替) |
+| `text-neutral-900` | `dark:text-neutral-100` | 見出し / 本文最強調 |
+| `text-neutral-700` | `dark:text-neutral-200` | 本文 |
+| `text-neutral-500` | `dark:text-neutral-300` | 補助テキスト (AA pass) |
+| `text-neutral-400` | (dark では使用禁止) | アイコン専用 (light のみ) |
+| `border-neutral-200` | `dark:border-neutral-700` | 区切り罫線 |
+| `border-neutral-300` | `dark:border-neutral-600` | フォーム境界 |
+
+> **2026-04-30 L28 — palette redesign**:
+> neutral 中域を 2 段ぶん暗くスライド (hue 40° 固定 / L* のみ再分配)。
+> `dark:text-neutral-400` (旧 #A9A498) は dark bg 上 3.05:1 で AA 違反のため撤去、
+> `dark:text-neutral-300` (#B8B2A1, 6.83:1) を補助テキストの dark ペアに昇格。
+> 旧トークン値 (#8A8579 等) を直書きしていた箇所は無し（全て Tailwind class 経由）。
+> src 配下の `dark:text-neutral-400` → `dark:text-neutral-300` 一括置換 (51 ファイル / 約 201 hits) は Engineer B/C により別途実施。
 
 ### 3.3 例外
 - `text-white` / `bg-black` のような絶対色はペア不要

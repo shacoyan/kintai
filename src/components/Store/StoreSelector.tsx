@@ -132,7 +132,7 @@ export function StoreSelector() {
         title={currentStore?.name || '店舗を選択'}
         className="flex items-center gap-2 max-w-[160px] min-h-9 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-medium border border-neutral-300 dark:border-neutral-700 rounded-md px-3 py-1 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 motion-safe:transition-colors"
       >
-        <Store className="w-4 h-4 text-neutral-500 dark:text-neutral-400 shrink-0" />
+        <Store className="w-4 h-4 text-neutral-500 dark:text-neutral-300 shrink-0" />
         <span className="truncate">{currentStore?.name || '店舗を選択'}</span>
         <ChevronDown className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500 shrink-0" />
         {currentStore && getRoleBadge(currentStore.id)}

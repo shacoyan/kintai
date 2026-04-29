@@ -123,7 +123,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                     {formatHM(record.clock_in) || '--:--'} - {formatHM(record.clock_out) || '--:--'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
+                <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-300 tabular-nums">
                   <span>休憩 {breakMins > 0 ? formatMinutes(breakMins) : '--'}</span>
                   <span>労働 {formatMinutes(record.total_work_minutes) || '--'}</span>
                 </div>

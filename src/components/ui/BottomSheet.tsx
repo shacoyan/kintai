@@ -131,7 +131,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
               </button>
             </div>
             {description && (
-              <p id={descId} className="text-sm text-neutral-500 dark:text-neutral-400 mt-1 px-4 pb-3">
+              <p id={descId} className="text-sm text-neutral-500 dark:text-neutral-300 mt-1 px-4 pb-3">
                 {description}
               </p>
             )}

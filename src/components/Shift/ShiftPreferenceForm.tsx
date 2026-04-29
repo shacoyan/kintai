@@ -136,7 +136,7 @@ export function ShiftPreferenceForm({
       <div
         id="shift-pref-form-help"
         role="note"
-        className="text-sm text-neutral-600 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-900 p-3 rounded-md"
+        className="text-sm text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-900 p-3 rounded-md"
       >
         シフト希望は、希望日と時刻を選んで登録してください。締切前なら何度でも変更できます。
       </div>
@@ -188,7 +188,7 @@ export function ShiftPreferenceForm({
               >
                 <Icon className="w-5 h-5" aria-hidden="true" />
                 <span className="text-xs font-semibold">{t.label}</span>
-                <span id={`pref-type-${t.type}-desc`} className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 block">{t.description}</span>
+                <span id={`pref-type-${t.type}-desc`} className="text-xs text-neutral-500 dark:text-neutral-300 mt-1 block">{t.description}</span>
               </button>
             );
           })}
@@ -288,7 +288,7 @@ export function ShiftPreferenceForm({
           {existingPreference ? '上書きする' : '登録する'}
         </Button>
         {lockedByDeadline && (
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 text-center">
+          <p className="text-xs text-neutral-500 dark:text-neutral-300 text-center">
             締切後のため送信できません
           </p>
         )}

@@ -121,7 +121,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
         <div>
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">シフト承認</h2>
           {pendingShifts.length > 0 && (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">{pendingShifts.length}件の承認待ち</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-300 mt-0.5">{pendingShifts.length}件の承認待ち</p>
           )}
         </div>
         {pendingShifts.length > 0 && (
@@ -164,7 +164,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             className={`flex-1 px-4 py-2 text-sm font-medium text-center motion-safe:transition-colors focus:outline-none ${
               statusFilter === 'pending'
                 ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
-                : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+                : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-200'
             }`}
           >
             申請中 ({pendingShifts.length})
@@ -175,7 +175,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             className={`flex-1 px-4 py-2 text-sm font-medium text-center motion-safe:transition-colors focus:outline-none ${
               statusFilter === 'approved'
                 ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
-                : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+                : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-200'
             }`}
           >
             承認済 ({approvedShifts.length})
@@ -186,7 +186,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             className={`flex-1 px-4 py-2 text-sm font-medium text-center motion-safe:transition-colors focus:outline-none ${
               statusFilter === 'all'
                 ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
-                : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+                : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-200'
             }`}
           >
             すべて ({allShifts.length})
@@ -263,7 +263,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                         {storeMap.get(shift.store_id) ?? '不明店舗'}
                       </span>
                     )}
-                    <span className="text-xs text-neutral-500 dark:text-neutral-400 ml-auto sm:ml-2">{shift.date}</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-300 ml-auto sm:ml-2">{shift.date}</span>
                   </div>
                 </div>
                 
@@ -484,7 +484,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                 </div>
 
                 {shift.note && (
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{shift.note}</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-1">{shift.note}</p>
                 )}
               </div>
             );

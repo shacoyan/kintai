@@ -156,7 +156,7 @@ export function DashboardPage() {
     <div className="max-w-md mx-auto space-y-4 md:space-y-6">
       <header className="flex items-end justify-between gap-3">
         <h1 className="text-xl md:text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{format(today, 'M月d日')}</h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">{format(today, 'EEEE', { locale: ja })}</p>
+        <p className="text-sm text-neutral-500 dark:text-neutral-300">{format(today, 'EEEE', { locale: ja })}</p>
       </header>
 
       {dashboardError && <ErrorBanner message={dashboardError} />}
@@ -221,15 +221,15 @@ export function DashboardPage() {
             <Card.Body>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="text-center">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">最初の出勤</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-300 mb-1">最初の出勤</p>
                   <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{formatTime(firstClockIn)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">最後の退勤</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-300 mb-1">最後の退勤</p>
                   <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{lastClockOut ? formatTime(lastClockOut) : (activeRecord ? '勤務中' : '-')}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">労働時間</p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-300 mb-1">労働時間</p>
                   <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{formatDuration(totalWorkMinutes)}</p>
                 </div>
               </div>

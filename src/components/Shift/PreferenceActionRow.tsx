@@ -148,7 +148,7 @@ export function PreferenceActionRow({
           <span className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass}`} />
           <span className={`flex-shrink-0 w-2 h-2 rounded-sm ${memberDotClass ?? 'bg-neutral-300'}`} aria-hidden="true" />
           <span className="font-medium">{abbreviation}</span>
-          <span className="text-neutral-600 dark:text-neutral-400">不可</span>
+          <span className="text-neutral-600 dark:text-neutral-300">不可</span>
         </div>
       );
     }
@@ -159,11 +159,11 @@ export function PreferenceActionRow({
           <span className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass}`} />
           <span className={`flex-shrink-0 w-2 h-2 rounded-sm ${memberDotClass ?? 'bg-neutral-300'}`} aria-hidden="true" />
           <span className="font-medium truncate">{abbreviation}</span>
-          <span className="text-neutral-600 dark:text-neutral-400 flex-shrink-0">
+          <span className="text-neutral-600 dark:text-neutral-300 flex-shrink-0">
             {theme.label}
           </span>
           {timeLabel && (
-            <span className="text-neutral-500 dark:text-neutral-400 tabular-nums flex-shrink-0">
+            <span className="text-neutral-500 dark:text-neutral-300 tabular-nums flex-shrink-0">
               {timeLabel}
             </span>
           )}
@@ -171,7 +171,7 @@ export function PreferenceActionRow({
         
         {isPending && canManage && showInlineActions && (
           <div className="flex items-center justify-end gap-1 mt-0.5">
-            {state.loading && <Loader2 className="w-3 h-3 motion-safe:animate-spin text-neutral-500 dark:text-neutral-400" />}
+            {state.loading && <Loader2 className="w-3 h-3 motion-safe:animate-spin text-neutral-500 dark:text-neutral-300" />}
             
             {!state.loading && (
               <>
@@ -250,7 +250,7 @@ export function PreferenceActionRow({
                 {storeName}
               </span>
             )}
-            <span className="text-xs text-neutral-500 dark:text-neutral-400">{preference.date}</span>
+            <span className="text-xs text-neutral-500 dark:text-neutral-300">{preference.date}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className={`text-base leading-none font-bold ${theme.iconColorClass}`}>
@@ -260,13 +260,13 @@ export function PreferenceActionRow({
               {theme.label}
             </span>
             {preference.preference_type !== 'unavailable' && preference.start_time && preference.end_time && (
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">
+              <span className="text-xs text-neutral-500 dark:text-neutral-300">
                 {preference.start_time.slice(0, 5)} 〜 {preference.end_time.slice(0, 5)}
               </span>
             )}
           </div>
           {preference.note && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">{preference.note}</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">{preference.note}</p>
           )}
         </div>
 

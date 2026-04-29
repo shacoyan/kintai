@@ -288,7 +288,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
       {/* 月選択ヘッダー */}
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4">
         <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4">月次勤怠カレンダー</h3>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">対象店舗: {currentStore?.name ?? '全店舗'}</p>
+        <p className="text-sm text-neutral-500 dark:text-neutral-300 mb-4">対象店舗: {currentStore?.name ?? '全店舗'}</p>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
           <div className="grid grid-cols-2 gap-3 md:contents">
             <div>
@@ -326,7 +326,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
         </div>
 
         {/* 凡例 */}
-        <div className="mt-3 flex flex-wrap gap-3 text-[11px] md:text-xs text-neutral-600 dark:text-neutral-400">
+        <div className="mt-3 flex flex-wrap gap-3 text-[11px] md:text-xs text-neutral-600 dark:text-neutral-300">
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700" />
             出勤（〜8h）
@@ -522,7 +522,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
               <button
                 onClick={() => setSelectedCell(null)}
-                className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 motion-safe:transition"
+                className="text-sm text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200 motion-safe:transition"
               >
                 閉じる
               </button>
@@ -558,7 +558,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                 <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">休憩</p>
                 <div className="space-y-1">
                   {selectedCell.record.breaks.map((b, idx) => (
-                    <div key={b.id} className="text-sm text-neutral-600 dark:text-neutral-400 flex gap-2 tabular-nums">
+                    <div key={b.id} className="text-sm text-neutral-600 dark:text-neutral-300 flex gap-2 tabular-nums">
                       <span>#{idx + 1}</span>
                       <span>{b.start_time ? format(parseISO(b.start_time), 'HH:mm') : '—'}</span>
                       <span>〜</span>
@@ -570,7 +570,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                       )}
                     </div>
                   ))}
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 tabular-nums">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-300 tabular-nums">
                     合計休憩: {fmtMinutes(calcBreakMinutes(selectedCell.record))}
                   </p>
                 </div>

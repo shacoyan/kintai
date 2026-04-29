@@ -407,7 +407,7 @@ export function ShiftPage() {
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm motion-safe:transition ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
-                  : 'border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  : 'border-transparent text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
               }`}
             >
               {tab.label}
@@ -427,7 +427,7 @@ export function ShiftPage() {
           <header className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-lg md:text-xl font-semibold text-neutral-900 dark:text-neutral-100">シフト</h2>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-300 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
             </div>
             {canManageTenant && pendingShifts.length > 0 && (
               <Badge tone="warning" withDot>{pendingShifts.length} 件 承認待ち</Badge>
@@ -437,7 +437,7 @@ export function ShiftPage() {
           {shiftLoading && (
             <div className="flex items-center justify-center gap-2 py-4" role="status" aria-live="polite">
               <Spinner size="md" label="読み込み中" />
-              <span className="text-sm text-neutral-600 dark:text-neutral-400">読み込み中…</span>
+              <span className="text-sm text-neutral-600 dark:text-neutral-300">読み込み中…</span>
             </div>
           )}
 
@@ -480,7 +480,7 @@ export function ShiftPage() {
                   className="w-full text-left p-3 bg-neutral-50 dark:bg-neutral-800 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
                 >
                   <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{memberNames.get(s.user_id) ?? '不明'}</div>
-                  <div className="text-xs text-neutral-600 dark:text-neutral-400">
+                  <div className="text-xs text-neutral-600 dark:text-neutral-300">
                     {s.start_time?.slice(0,5) ?? '--:--'}〜{s.end_time?.slice(0,5) ?? '--:--'} / {s.status}
                   </div>
                 </button>
@@ -520,7 +520,7 @@ export function ShiftPage() {
           {prefLoading && (
             <div className="flex items-center justify-center gap-2 py-4" role="status" aria-live="polite">
               <Spinner size="md" label="読み込み中" />
-              <span className="text-sm text-neutral-600 dark:text-neutral-400">読み込み中…</span>
+              <span className="text-sm text-neutral-600 dark:text-neutral-300">読み込み中…</span>
             </div>
           )}
 
@@ -590,7 +590,7 @@ export function ShiftPage() {
 
                 {canManageTenant && (
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 tracking-wider">カレンダー表示:</span>
+                    <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-300 tracking-wider">カレンダー表示:</span>
                     <button
                       type="button"
                       onClick={() => setShowAllMembersPrefs(false)}
@@ -654,19 +654,19 @@ export function ShiftPage() {
                           <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
                             {preferenceSummary.preferred}
                           </p>
-                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">希望日</p>
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">希望日</p>
                         </div>
                         <div className="border-x border-neutral-100 dark:border-neutral-700">
                           <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
                             {preferenceSummary.available}
                           </p>
-                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">出勤可</p>
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">出勤可</p>
                         </div>
                         <div>
                           <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
                             {preferenceSummary.unavailable}
                           </p>
-                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">出勤不可</p>
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">出勤不可</p>
                         </div>
                       </Card.Body>
                     </Card>
@@ -697,7 +697,7 @@ export function ShiftPage() {
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{theme.label}</p>
                                   {p.start_time && p.end_time && (
-                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
+                                    <p className="text-xs text-neutral-500 dark:text-neutral-300 tabular-nums">
                                       {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
                                     </p>
                                   )}
@@ -882,13 +882,13 @@ export function ShiftPage() {
                               {theme.label}
                             </span>
                             {pref.start_time && pref.end_time && (
-                              <span className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums">
+                              <span className="text-xs text-neutral-500 dark:text-neutral-300 tabular-nums">
                                 {pref.start_time.slice(0, 5)} - {pref.end_time.slice(0, 5)}
                               </span>
                             )}
                           </div>
                           {pref.note && (
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{pref.note}</p>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-300">{pref.note}</p>
                           )}
                         </Card.Body>
                       </Card>
@@ -905,7 +905,7 @@ export function ShiftPage() {
           {leaveLoading && (
             <div className="flex items-center justify-center gap-2 py-4" role="status" aria-live="polite">
               <Spinner size="md" label="読み込み中" />
-              <span className="text-sm text-neutral-600 dark:text-neutral-400">読み込み中…</span>
+              <span className="text-sm text-neutral-600 dark:text-neutral-300">読み込み中…</span>
             </div>
           )}
 

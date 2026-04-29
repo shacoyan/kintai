@@ -37,7 +37,7 @@ const STATUS_COLORS: Record<string, string> = {
   approved: 'bg-success-100 border-success-300 text-success-800 dark:bg-success-900/30 dark:border-success-700 dark:text-success-300',
   rejected: 'bg-danger-100 border-danger-300 text-danger-800 dark:bg-danger-900/30 dark:border-danger-700 dark:text-danger-300',
   modified: 'bg-primary-100 border-primary-300 text-primary-800 dark:bg-primary-900/30 dark:border-primary-700 dark:text-primary-300',
-  cancelled: 'bg-neutral-100 border-neutral-300 text-neutral-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-400',
+  cancelled: 'bg-neutral-100 border-neutral-300 text-neutral-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300',
 };
 
 const STATUS_DOT: Record<string, string> = {
@@ -184,7 +184,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <button onClick={() => navigate(-1)} aria-label="前月" className="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition">
-            <ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+            <ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
           <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 min-w-[120px] text-center">
             {viewMode === 'month'
@@ -193,7 +193,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
             }
           </span>
           <button onClick={() => navigate(1)} aria-label="次月" className="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition">
-            <ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
+            <ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
           <button
             onClick={() => setBaseDate(new Date())}
@@ -243,7 +243,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                 return (
                   <div key={uid} className="flex items-center gap-1">
                     <div className={`w-2.5 h-2.5 rounded-full ${bgClass.replace('100', '400')}`} />
-                    <span className="text-neutral-600 dark:text-neutral-400">{memberNames.get(uid) || '不明'}</span>
+                    <span className="text-neutral-600 dark:text-neutral-300">{memberNames.get(uid) || '不明'}</span>
                   </div>
                 );
               });
@@ -261,7 +261,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
           Object.entries({ pending: '申請中', approved: '承認済', rejected: '却下', modified: '修正', cancelled: '取消' }).map(([key, label]) => (
             <div key={key} className="flex items-center gap-1">
               <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[key]}`} />
-              <span className="text-neutral-600 dark:text-neutral-400">{label}</span>
+              <span className="text-neutral-600 dark:text-neutral-300">{label}</span>
             </div>
           ))
         )}
@@ -282,7 +282,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
         <div className="grid grid-cols-7 bg-neutral-50 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700">
           {weekDays.map((d, i) => (
             <div key={i} className={`text-center py-2 text-xs font-medium ${
-              i === 5 ? 'text-primary-600 dark:text-primary-400' : i === 6 ? 'text-danger-600 dark:text-danger-400' : 'text-neutral-500 dark:text-neutral-400'
+              i === 5 ? 'text-primary-600 dark:text-primary-400' : i === 6 ? 'text-danger-600 dark:text-danger-400' : 'text-neutral-500 dark:text-neutral-300'
             }`}>
               {d}
             </div>
@@ -368,7 +368,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                       type="button"
                       onClick={(e) => { e.stopPropagation(); onDateClick(dateStr); }}
                       aria-label={`${dateStr} の全シフトを表示`}
-                      className="text-[10px] text-neutral-500 dark:text-neutral-400 hover:underline focus:outline-none"
+                      className="text-[10px] text-neutral-500 dark:text-neutral-300 hover:underline focus:outline-none"
                     >
                       +{dayShifts.length - 3}件
                     </button>
@@ -385,7 +385,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                       />
                     ))}
                     {dayLeaves.length > 4 && (
-                      <span className="text-[8px] text-neutral-500 dark:text-neutral-400 leading-none">
+                      <span className="text-[8px] text-neutral-500 dark:text-neutral-300 leading-none">
                         +{dayLeaves.length - 4}
                       </span>
                     )}

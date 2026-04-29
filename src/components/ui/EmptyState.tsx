@@ -71,7 +71,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         data-testid={dataTestId}
       >
         {renderedIcon}
-        <h3 className={`${sizeClasses.title} text-neutral-600 dark:text-neutral-400 mb-1`}>{title}</h3>
+        <h3 className={`${sizeClasses.title} text-neutral-600 dark:text-neutral-300 mb-1`}>{title}</h3>
         {description && (
           <p className={`${sizeClasses.desc} text-neutral-400 dark:text-neutral-500 max-w-xs`}>{description}</p>
         )}

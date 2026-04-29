@@ -28,7 +28,7 @@ export function ActiveMembersCard({ tenantId, storeId, memberNames }: ActiveMemb
       </div>
 
       {loading && active.length === 0 ? (
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">読み込み中…</p>
+        <p className="text-sm text-neutral-500 dark:text-neutral-300">読み込み中…</p>
       ) : active.length === 0 ? (
         <EmptyState
           title="現在出勤中のメンバーはいません"
@@ -50,7 +50,7 @@ export function ActiveMembersCard({ tenantId, storeId, memberNames }: ActiveMemb
                   </Badge>
                 )}
               </div>
-              <span className="text-xs text-neutral-500 dark:text-neutral-400 tabular-nums flex-shrink-0">
+              <span className="text-xs text-neutral-500 dark:text-neutral-300 tabular-nums flex-shrink-0">
                 {format(parseISO(row.clockIn), 'HH:mm')}〜
               </span>
             </li>

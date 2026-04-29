@@ -30,7 +30,7 @@ export function LaborCostSummary({ estimates, targetMonth }: LaborCostSummaryPro
     <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
         <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">人件費サマリー</h2>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+        <p className="text-sm text-neutral-500 dark:text-neutral-300 mt-0.5">
           {targetMonth
             ? `${format(targetMonth, 'yyyy年M月')} の見込み人件費（承認済 + 申請中）`
             : '承認済・申請中シフトの見込み人件費'}
@@ -41,10 +41,10 @@ export function LaborCostSummary({ estimates, targetMonth }: LaborCostSummaryPro
         <table className="min-w-[480px] w-full divide-y divide-neutral-200 dark:divide-neutral-700">
           <thead className="bg-neutral-50 dark:bg-neutral-700">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 min-w-[120px] whitespace-nowrap">名前</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 whitespace-nowrap">給与形態</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 whitespace-nowrap">シフト時間</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-400 whitespace-nowrap">見込み額</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 min-w-[120px] whitespace-nowrap">名前</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">給与形態</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">シフト時間</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">見込み額</th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700 tabular-nums">

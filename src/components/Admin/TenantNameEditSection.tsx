@@ -28,7 +28,7 @@ export const TenantNameEditSection: React.FC<TenantNameEditSectionProps> = ({
         <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-2">
           テナント表示名編集
         </h3>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-neutral-500 dark:text-neutral-300">
           オーナーのみ実行可能です
         </p>
       </div>
@@ -70,7 +70,7 @@ export const TenantNameEditSection: React.FC<TenantNameEditSectionProps> = ({
             className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 dark:bg-neutral-700 dark:text-neutral-100 text-sm"
             placeholder="テナント名を入力"
           />
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-300">
             {trimmed.length} / 50 文字
           </p>
         </div>

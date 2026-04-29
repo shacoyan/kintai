@@ -30,7 +30,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
       <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">ワークスペースを選択</h1>
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">参加するワークスペースを選んでください</p>
+          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">参加するワークスペースを選んでください</p>
         </div>
 
         {tenants.length > 0 ? (
@@ -43,7 +43,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
               >
                 <div className="min-w-0">
                   <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100 truncate">{tenant.name}</p>
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400 truncate">{tenant.display_name}</p>
+                  <p className="text-sm text-neutral-500 dark:text-neutral-300 truncate">{tenant.display_name}</p>
                 </div>
                 <span className={`ml-4 px-3 py-1 text-xs font-medium rounded-full ${roleColors[tenant.role] || roleColors.staff}`}>
                   {roleLabels[tenant.role] || roleLabels.staff}

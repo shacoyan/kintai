@@ -126,7 +126,7 @@ export function ShiftMismatchAlert({
 
                         <p className="text-sm text-neutral-700 dark:text-neutral-300 mb-1.5">{m.message}</p>
 
-                        <div className="text-xs text-neutral-500 dark:text-neutral-400 space-y-0.5">
+                        <div className="text-xs text-neutral-500 dark:text-neutral-300 space-y-0.5">
                           <p>シフト: {m.shiftStart} 〜 {m.shiftEnd}</p>
                           {(m.actualStart || m.actualEnd) && (
                             <p>

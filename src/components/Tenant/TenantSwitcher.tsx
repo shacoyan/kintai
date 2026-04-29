@@ -179,7 +179,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
         aria-expanded={isOpen}
         aria-label={`ワークスペース切替: 現在 ${currentTenant.name}`}
       >
-        <Building2 size={16} className="shrink-0 text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+        <Building2 size={16} className="shrink-0 text-neutral-500 dark:text-neutral-300" aria-hidden="true" />
         <span className="truncate">{currentTenant.name}</span>
         <ChevronDown
           size={14}
@@ -195,7 +195,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
           aria-orientation="vertical"
           aria-label="ワークスペース一覧"
         >
-          <div className="px-3 py-2 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+          <div className="px-3 py-2 text-xs font-semibold text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">
             ワークスペース
           </div>
 
@@ -234,7 +234,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
                 <div className="flex-1 min-w-0">
                   <div className="truncate font-medium">{tenant.name}</div>
                   {tenant.display_name && (
-                    <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                    <div className="text-xs text-neutral-500 dark:text-neutral-300 truncate mt-0.5">
                       {tenant.display_name}
                     </div>
                   )}

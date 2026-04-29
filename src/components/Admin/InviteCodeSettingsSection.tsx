@@ -62,7 +62,7 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
         <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-2">
           招待コード設定
         </h3>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="text-sm text-neutral-500 dark:text-neutral-300">
           オーナーのみ実行可能です
         </p>
       </div>
@@ -103,7 +103,7 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
           <span className="ml-2 font-medium text-neutral-900 dark:text-neutral-100">
             {remainingUses == null ? '無制限' : `${remainingUses} 回`}
             {codeMax != null && (
-              <span className="ml-1 text-xs text-neutral-500 dark:text-neutral-400">
+              <span className="ml-1 text-xs text-neutral-500 dark:text-neutral-300">
                 ({codeUsed} / {codeMax})
               </span>
             )}
@@ -186,7 +186,7 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
         </button>
       </div>
 
-      <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
+      <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-300 leading-relaxed">
         再発行すると以前のコードは無効になります。設定した期限・回数は新コードに適用され、使用回数カウントは 0 にリセットされます。
       </p>
     </div>

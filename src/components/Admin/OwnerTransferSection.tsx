@@ -26,7 +26,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
     return (
       <div className="bg-white dark:bg-neutral-900 rounded-lg shadow p-4">
         <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">オーナー権限の移譲</h3>
-        <p className="text-neutral-500 dark:text-neutral-400 text-sm">オーナーのみ実行可能です</p>
+        <p className="text-neutral-500 dark:text-neutral-300 text-sm">オーナーのみ実行可能です</p>
       </div>
     );
   }
@@ -86,10 +86,10 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
         <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">オーナー権限の移譲</h3>
         
         {loading ? (
-          <div className="text-sm text-neutral-500 dark:text-neutral-400 motion-safe:animate-pulse">読み込み中...</div>
+          <div className="text-sm text-neutral-500 dark:text-neutral-300 motion-safe:animate-pulse">読み込み中...</div>
         ) : managerCandidates.length === 0 ? (
           <div className="text-center py-6">
-            <p className="text-neutral-500 dark:text-neutral-400 text-sm">先にスタッフを店長 (manager) に昇格させてください</p>
+            <p className="text-neutral-500 dark:text-neutral-300 text-sm">先にスタッフを店長 (manager) に昇格させてください</p>
           </div>
         ) : (
           <form onSubmit={handleOpenConfirm} className="space-y-4">

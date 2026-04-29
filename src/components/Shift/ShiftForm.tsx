@@ -77,7 +77,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
 
       {selectableStores.length >= 1 && (
         <div>
-          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">店舗</label>
+          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">店舗</label>
           <select
             value={storeId ?? ''}
             onChange={(e) => setStoreId(e.target.value || null)}
@@ -92,7 +92,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">開始時刻</label>
+          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">開始時刻</label>
           <select
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
@@ -104,7 +104,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">終了時刻</label>
+          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">終了時刻</label>
           <select
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
@@ -118,7 +118,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">メモ（任意）</label>
+        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">メモ（任意）</label>
         <input
           type="text"
           value={note}

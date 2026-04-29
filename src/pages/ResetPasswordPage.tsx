@@ -74,7 +74,7 @@ export const ResetPasswordPage = () => {
           <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
             パスワード再設定
           </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 m-0">
+          <p className="text-sm text-neutral-500 dark:text-neutral-300 m-0">
             新しいパスワードを入力してください
           </p>
         </div>
@@ -98,7 +98,7 @@ export const ResetPasswordPage = () => {
             <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
               パスワードを更新しました
             </p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="text-sm text-neutral-500 dark:text-neutral-300">
               ログイン画面に戻ります。
             </p>
           </div>

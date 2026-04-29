@@ -129,7 +129,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
           {/* PC Table */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs text-neutral-500 dark:text-neutral-400 uppercase border-b">
+              <thead className="text-xs text-neutral-500 dark:text-neutral-300 uppercase border-b">
                 <tr>
                   <th className="px-4 py-3">名前</th>
                   <th className="px-4 py-3">デフォ時給</th>
@@ -152,10 +152,10 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
                     </td>
                     <td className="px-4 py-3">{role.sort_order ?? 0}</td>
                     <td className="px-4 py-3 flex gap-2">
-                      <button onClick={() => openEditForm(role)} className="text-neutral-500 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400" aria-label={`役職『${role.name}』を編集`}>
+                      <button onClick={() => openEditForm(role)} className="text-neutral-500 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400" aria-label={`役職『${role.name}』を編集`}>
                         <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => openDeleteConfirm(role)} className="text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400" aria-label={`役職『${role.name}』を削除`}>
+                      <button onClick={() => openDeleteConfirm(role)} className="text-neutral-500 dark:text-neutral-300 hover:text-red-600 dark:hover:text-red-400" aria-label={`役職『${role.name}』を削除`}>
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
@@ -184,11 +184,11 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
                   </div>
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                  <dt className="text-neutral-500 dark:text-neutral-400">デフォ時給</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-300">デフォ時給</dt>
                   <dd className="text-neutral-900 dark:text-neutral-100">{formatCurrency(role.default_hourly_rate)}</dd>
-                  <dt className="text-neutral-500 dark:text-neutral-400">デフォ月給</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-300">デフォ月給</dt>
                   <dd className="text-neutral-900 dark:text-neutral-100">{formatCurrency(role.default_monthly_salary)}</dd>
-                  <dt className="text-neutral-500 dark:text-neutral-400">並び順</dt>
+                  <dt className="text-neutral-500 dark:text-neutral-300">並び順</dt>
                   <dd className="text-neutral-900 dark:text-neutral-100">{role.sort_order ?? 0}</dd>
                 </dl>
               </div>

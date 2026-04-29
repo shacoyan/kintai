@@ -47,7 +47,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   pending: { label: '申請中', className: 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300' },
   approved: { label: '承認済', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
   rejected: { label: '却下', className: 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300' },
-  cancelled: { label: '取消', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400' },
+  cancelled: { label: '取消', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700 dark:text-neutral-300' },
 };
 
 export function LeaveList({ leaves, memberNames, storeNames, canManageTenant, onApprove, onReject, onCancel, onRefresh }: LeaveListProps) {
@@ -119,12 +119,12 @@ export function LeaveList({ leaves, memberNames, storeNames, canManageTenant, on
                         {memberNames.get(leave.user_id) || '不明'}
                       </span>
                     )}
-                    <span className="text-xs text-neutral-500 dark:text-neutral-400">{leave.date}</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-300">{leave.date}</span>
                   </div>
 
                   {/* 3段目 */}
                   {leave.reason && (
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{leave.reason}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-300">{leave.reason}</p>
                   )}
 
                   {leave.status === 'rejected' && leave.review_note && (
@@ -188,11 +188,11 @@ export function LeaveList({ leaves, memberNames, storeNames, canManageTenant, on
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-neutral-500 dark:text-neutral-400">{leave.date}</span>
+                    <span className="text-xs text-neutral-500 dark:text-neutral-300">{leave.date}</span>
                   </div>
 
                   {leave.reason && (
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">{leave.reason}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-300 mb-1">{leave.reason}</p>
                   )}
 
                   {leave.status === 'rejected' && leave.review_note && (

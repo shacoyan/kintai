@@ -221,8 +221,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">メンバー管理</h2>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">各メンバーの時給・深夜給を設定できます</p>
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">対象: {currentStore ? currentStore.name : '全店舗'}</p>
+          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">各メンバーの時給・深夜給を設定できます</p>
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-300">対象: {currentStore ? currentStore.name : '全店舗'}</p>
         </div>
 
         {/* カード型レイアウト（モバイル対応） */}
@@ -303,7 +303,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                   <div className="space-y-2 md:ml-12">
                     {/* 役職セレクト */}
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400 w-14">役職</span>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-300 w-14">役職</span>
                       <select
                         value={member.role_id ?? ''}
                         onChange={(e) => handleRoleIdChange(member, e.target.value)}
@@ -318,7 +318,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     </div>
                     {/* 給与タイプ切替 */}
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400 w-14">給与形態</span>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-300 w-14">給与形態</span>
                       <div className="flex rounded-md overflow-hidden border border-neutral-300 dark:border-neutral-600">
                         <button
                           onClick={() => handlePayTypeChange(member, 'hourly')}
@@ -347,10 +347,10 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       {/* 時給/月給入力 */}
                       {(member.pay_type ?? 'hourly') === 'hourly' ? (
                         <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400 w-14">時給</span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-300 w-14">時給</span>
                           {(isEditing && !isMobile) ? (
                             <div className="hidden md:flex items-center gap-1.5">
-                              <span className="text-sm text-neutral-500 dark:text-neutral-400">¥</span>
+                              <span className="text-sm text-neutral-500 dark:text-neutral-300">¥</span>
                               <input
                                 type="number"
                                 value={editRate}
@@ -392,7 +392,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               ) : (() => {
                                 const inheritedRate = member.role_id ? (rolesMap.get(member.role_id)?.default_hourly_rate ?? null) : null;
                                 if (inheritedRate != null && inheritedRate > 0) {
-                                  return (<span className="text-[11px] text-neutral-500 dark:text-neutral-400">役職時給 ¥{inheritedRate.toLocaleString()} (継承)</span>);
+                                  return (<span className="text-[11px] text-neutral-500 dark:text-neutral-300">役職時給 ¥{inheritedRate.toLocaleString()} (継承)</span>);
                                 }
                                 return (<>未設定</>);
                               })()}
@@ -402,10 +402,10 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400 w-14">月給</span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-300 w-14">月給</span>
                           {(editingMonthlySalaryId === member.id && !isMobile) ? (
                             <div className="hidden md:flex items-center gap-1.5">
-                              <span className="text-sm text-neutral-500 dark:text-neutral-400">¥</span>
+                              <span className="text-sm text-neutral-500 dark:text-neutral-300">¥</span>
                               <input
                                 type="number"
                                 value={editMonthlySalary}
@@ -455,7 +455,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
 
                       {/* 有給付与日数 */}
                       <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400 w-10">有給</span>
+                        <span className="text-xs text-neutral-500 dark:text-neutral-300 w-10">有給</span>
                         {(editingPaidLeaveDaysId === member.id && !isMobile) ? (
                           <div className="hidden md:flex items-center gap-1.5">
                             <input
@@ -513,7 +513,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             onChange={() => handleNightShiftToggle(member)}
                             className="h-4 w-4 text-primary-600 dark:text-primary-400 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer"
                           />
-                          <span className="text-xs text-neutral-600 dark:text-neutral-400">深夜給 <span className="font-medium">1.25x</span></span>
+                          <span className="text-xs text-neutral-600 dark:text-neutral-300">深夜給 <span className="font-medium">1.25x</span></span>
                         </label>
                       </div>
                     </div>
@@ -532,7 +532,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     }
                   >
                     <div className="px-4 py-2">
-                      <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-2">時給（円/時）</label>
+                      <label className="block text-xs text-neutral-500 dark:text-neutral-300 mb-2">時給（円/時）</label>
                       <input type="number" value={editRate} onChange={(e) => setEditRate(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="50" disabled={saving} />
                     </div>
                   </BottomSheet>
@@ -550,7 +550,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     }
                   >
                     <div className="px-4 py-2">
-                      <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-2">月給（円/月）</label>
+                      <label className="block text-xs text-neutral-500 dark:text-neutral-300 mb-2">月給（円/月）</label>
                       <input type="number" value={editMonthlySalary} onChange={(e) => setEditMonthlySalary(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="10000" disabled={saving} />
                     </div>
                   </BottomSheet>
@@ -568,7 +568,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     }
                   >
                     <div className="px-4 py-2">
-                      <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-2">有給日数（日）</label>
+                      <label className="block text-xs text-neutral-500 dark:text-neutral-300 mb-2">有給日数（日）</label>
                       <input type="number" value={editPaidLeaveDays} onChange={(e) => setEditPaidLeaveDays(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="0.5" disabled={saving} />
                     </div>
                   </BottomSheet>
@@ -579,7 +579,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
         </div>
 
         <div className="px-6 py-3 bg-neutral-50 dark:bg-neutral-700 border-t border-neutral-200 dark:border-neutral-700">
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">深夜給: 22:00〜翌5:00 の勤務時間に対して時給1.25倍で計算されます</p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-300">深夜給: 22:00〜翌5:00 の勤務時間に対して時給1.25倍で計算されます</p>
         </div>
       </div>
     </Card>

@@ -123,7 +123,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
             {notification.title}
           </p>
           {notification.body && (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5 line-clamp-2">
+            <p className="text-sm text-neutral-500 dark:text-neutral-300 mt-0.5 line-clamp-2">
               {notification.body}
             </p>
           )}
@@ -141,7 +141,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        className="relative p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800 motion-safe:transition-colors"
+        className="relative p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 motion-safe:transition-colors"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={`通知 ${unreadCount}件未読`}
         aria-haspopup="menu"

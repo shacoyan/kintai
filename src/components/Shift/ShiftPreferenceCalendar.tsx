@@ -61,7 +61,7 @@ function CalendarLegend({
             <ChevronDown className="w-4 h-4" aria-hidden="true" />
           </summary>
           <div className="mt-2 space-y-2">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-400">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
               {isAdminView && memberNames ? (
                 <>
                   {memberEntries.slice(0, 5).map(([uid, tone]) => (
@@ -119,7 +119,7 @@ function CalendarLegend({
               )}
             </div>
             {showStatusLegend && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-300">
                 {STATUS_LEGEND.map((s) => (
                   <div key={s.key} className="inline-flex items-center gap-1.5">
                     <span
@@ -137,7 +137,7 @@ function CalendarLegend({
 
       {/* PC: 常時展開 */}
       <div className="hidden md:block px-1 space-y-1">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-400">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
           {isAdminView && memberNames ? (
             <>
               {memberEntries.slice(0, 5).map(([uid, tone]) => (
@@ -195,7 +195,7 @@ function CalendarLegend({
           )}
         </div>
         {showStatusLegend && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-300">
             {STATUS_LEGEND.map((s) => (
               <div key={s.key} className="inline-flex items-center gap-1.5">
                 <span
@@ -302,7 +302,7 @@ export function ShiftPreferenceCalendar({
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
+          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
           aria-label="前月"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -322,7 +322,7 @@ export function ShiftPreferenceCalendar({
         <button
           type="button"
           onClick={() => navigate(1)}
-          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
+          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
           aria-label="次月"
         >
           <ChevronRight className="w-5 h-5" />
@@ -359,7 +359,7 @@ export function ShiftPreferenceCalendar({
                 ? 'text-info-500'
                 : i === 6
                 ? 'text-danger-500'
-                : 'text-neutral-500 dark:text-neutral-400')
+                : 'text-neutral-500 dark:text-neutral-300')
             }
           >
             {d}

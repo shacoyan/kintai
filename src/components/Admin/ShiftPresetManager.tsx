@@ -115,7 +115,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
     <Card padding="none">
       <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
         <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">シフトプリセット</h2>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます</p>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます</p>
       </div>
 
       <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">

@@ -134,7 +134,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
       </div>
 
       {activeRecord?.clock_in && (
-        <div className="flex gap-6 text-sm text-neutral-500 dark:text-neutral-400">
+        <div className="flex gap-6 text-sm text-neutral-500 dark:text-neutral-300">
           <span>出勤: {formatTime(activeRecord.clock_in)}</span>
           {activeRecord.clock_out && <span>退勤: {formatTime(activeRecord.clock_out)}</span>}
         </div>
@@ -148,7 +148,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
               const isCrossDay = record.date !== todayStr;
               return (
                 <div key={record.id} className={`min-h-[44px] flex items-center justify-between text-sm rounded px-3 py-1.5 ${isCrossDay ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-neutral-50 dark:bg-neutral-800'}`}>
-                  <span className="text-neutral-500 dark:text-neutral-400">
+                  <span className="text-neutral-500 dark:text-neutral-300">
                     {isCrossDay ? `${record.date}〜` : `${index + 1}回目`}
                   </span>
                   <div className="flex gap-3">

@@ -182,7 +182,7 @@ export function CorrectionForm({
         {!isDelete && (
           <>
             {existingClockIn && (
-              <div className="text-sm text-neutral-600 dark:text-neutral-400">
+              <div className="text-sm text-neutral-600 dark:text-neutral-300">
                 現在の打刻: {toTimeValue(existingClockIn)} - {toTimeValue(existingClockOut)}
               </div>
             )}

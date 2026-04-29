@@ -103,7 +103,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                 ? 'text-info-500 dark:text-info-400'
                 : i === 6
                 ? 'text-danger-500 dark:text-danger-400'
-                : 'text-neutral-500 dark:text-neutral-400'
+                : 'text-neutral-500 dark:text-neutral-300'
             }`}
           >
             {day}
@@ -168,7 +168,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                           }`}
                         />
                         {workMins > 0 && (
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400 leading-none">
+                          <span className="text-xs text-neutral-500 dark:text-neutral-300 leading-none">
                             {formatWorkHours(workMins)}
                           </span>
                         )}
@@ -190,7 +190,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                     {record?.clock_in && <p>出勤: {format(parseISO(record.clock_in), 'HH:mm')}</p>}
                     {record?.clock_out && <p>退勤: {format(parseISO(record.clock_out), 'HH:mm')}</p>}
                     {record && workMins > 0 && <p>勤務時間: {formatWorkHours(workMins)}</p>}
-                    {!record && <p className="text-neutral-500 dark:text-neutral-400">記録なし</p>}
+                    {!record && <p className="text-neutral-500 dark:text-neutral-300">記録なし</p>}
                     {onRequestCorrection && (
                       <div className="pt-1">
                         <button onClick={(e) => { e.stopPropagation(); onRequestCorrection?.(dateKey, record ?? undefined); }}
@@ -206,7 +206,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
           })}
         </div>
 
-        <div className="px-4 py-2 border-t border-neutral-100 dark:border-neutral-700 flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
+        <div className="px-4 py-2 border-t border-neutral-100 dark:border-neutral-700 flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-300">
           {legends.map((legend) => (
             <div key={legend.label} className="flex items-center gap-1">
               <span className={`w-2 h-2 rounded-full ${legend.color}`} />
@@ -386,7 +386,7 @@ export function HistoryPage() {
       
       <Card padding="md">
         <div className="flex items-center justify-between gap-2">
-          <Button variant="tertiary" size="md" iconLeft={<ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handlePrevMonth} aria-label="前月"><></></Button>
+          <Button variant="tertiary" size="md" iconLeft={<ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />} onClick={handlePrevMonth} aria-label="前月"><></></Button>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
               {format(currentDate, 'yyyy年M月', { locale: ja })}
@@ -398,7 +398,7 @@ export function HistoryPage() {
             )}
             <button onClick={handleDownloadCsv} className="px-3 py-1.5 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">CSV ダウンロード</button>
           </div>
-          <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
+          <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
         </div>
 
         <div className="flex justify-center mt-2">
@@ -408,7 +408,7 @@ export function HistoryPage() {
               className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors ${
                 viewMode === 'list'
                   ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+                  : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200'
               } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400`}
             >
               リスト
@@ -418,7 +418,7 @@ export function HistoryPage() {
               className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors ${
                 viewMode === 'calendar'
                   ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+                  : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200'
               } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400`}
             >
               カレンダー
@@ -428,7 +428,7 @@ export function HistoryPage() {
 
         {canSwitchUser && currentStore != null && (
           <div className="flex items-center gap-2 pt-2 justify-center">
-            <label className="text-sm text-neutral-500 dark:text-neutral-400">対象メンバー:</label>
+            <label className="text-sm text-neutral-500 dark:text-neutral-300">対象メンバー:</label>
             <select value={effectiveUserId ?? ''} onChange={(e) => setSelectedUserId(e.target.value || null)}
               className="px-2 py-1 text-sm border rounded bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100">
               {myUserId && <option value={myUserId}>自分</option>}
@@ -472,7 +472,7 @@ export function HistoryPage() {
           ) : (
             <Card padding="none">
               <Card.Header>
-                <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-400">日別勤怠記録</h3>
+                <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-300">日別勤怠記録</h3>
               </Card.Header>
               <DailyList
                 records={monthlyRecords}

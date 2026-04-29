@@ -31,7 +31,7 @@ const STATUS_LABEL: Record<string, { text: string; className: string }> = {
   approved: { text: '承認済', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
   rejected: { text: '却下', className: 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300' },
   modified: { text: '修正済', className: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300' },
-  cancelled: { text: '取消', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700/30 dark:text-neutral-400' },
+  cancelled: { text: '取消', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700/30 dark:text-neutral-300' },
 };
 
 export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, onDelete, onApprove, onReject, onClose, onRefresh, selectableStores, storeName, canManageStore }: ShiftEditModalProps) {
@@ -98,7 +98,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
             </Button>
           )}
           {canManageTenant && !canManageStore && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">この店舗の管理権限がありません</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-300">この店舗の管理権限がありません</p>
           )}
           <Button
             onClick={onClose}
@@ -176,21 +176,21 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
       {mode === 'view' && (
         <div className="space-y-4">
           {storeName && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">店舗: <span className="font-medium text-neutral-700 dark:text-neutral-300">{storeName}</span></p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-300">店舗: <span className="font-medium text-neutral-700 dark:text-neutral-300">{storeName}</span></p>
           )}
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">開始</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-300">開始</p>
               <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{shift.start_time.slice(0, 5)}</p>
             </div>
             <span className="text-neutral-400 dark:text-neutral-500">→</span>
             <div className="flex-1">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">終了</p>
+              <p className="text-xs text-neutral-500 dark:text-neutral-300">終了</p>
               <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{shift.end_time.slice(0, 5)}</p>
             </div>
           </div>
           {shift.note && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">メモ: {shift.note}</p>
+            <p className="text-xs text-neutral-500 dark:text-neutral-300">メモ: {shift.note}</p>
           )}
         </div>
       )}

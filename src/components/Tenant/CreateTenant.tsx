@@ -67,11 +67,11 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
               <CheckCircle2 className="h-6 w-6 text-success-600 dark:text-success-400" />
             </div>
             <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">ワークスペースを作成しました</h2>
-            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">以下の招待コードをチームメンバーに共有してください</p>
+            <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">以下の招待コードをチームメンバーに共有してください</p>
           </div>
 
           <div className="mt-6 bg-neutral-50 dark:bg-neutral-900 p-4 rounded-lg border border-neutral-200 dark:border-neutral-700">
-            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2">招待コード</p>
+            <p className="text-xs font-medium text-neutral-500 dark:text-neutral-300 mb-2">招待コード</p>
             <div className="flex items-center gap-3">
               <p className="text-3xl font-mono font-bold tracking-widest text-neutral-900 dark:text-neutral-100 flex-1 text-center">
                 {createdTenant.invite_code}

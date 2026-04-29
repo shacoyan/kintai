@@ -10,4 +10,4 @@ test-results/
 e2e/.auth/*.json
 
 # L26 視覚回帰スクリーンショット（Reviewer / Tech Lead がローカル目視確認）
-tmp/l26-screenshots/
+tmp/

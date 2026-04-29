@@ -171,7 +171,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{member.display_name}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-300">
                     {member.role === 'owner' ? 'オーナー' : member.role === 'manager' ? '店長' : 'スタッフ'}
                   </p>
                 </div>
@@ -197,7 +197,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                     className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium motion-safe:transition disabled:opacity-50 disabled:cursor-not-allowed ${
                       is_manager
                         ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300'
-                        : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400'
+                        : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
                     }`}
                     title={isOwner ? (is_manager ? '店長権限を外す' : '店長に任命') : 'オーナーのみ操作可能'}
                   >
@@ -227,7 +227,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
         <Card padding="none">
           <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">店舗一覧</h2>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">店舗を選択するとメンバー管理ができます</p>
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">店舗を選択するとメンバー管理ができます</p>
           </div>
 
           {/* 作成フォーム */}
@@ -332,7 +332,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
               <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                 {selectedStore ? `${selectedStore.name} のメンバー` : 'メンバー管理'}
               </h2>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">
                 {selectedStore
                   ? 'チェックを入れるとこの店舗に所属します'
                   : '左の一覧から店舗を選択してください'}

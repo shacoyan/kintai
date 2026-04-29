@@ -76,9 +76,9 @@ export const PREFERENCE_THEME: Record<ShiftPreferenceType, PreferenceTheme> = {
     Icon: Ban,
     cellClass:
       'bg-neutral-50 ring-1 ring-neutral-300 text-neutral-700 dark:bg-neutral-900/30 dark:ring-neutral-700 dark:text-neutral-200',
-    countTextClass: 'text-neutral-600 dark:text-neutral-400',
+    countTextClass: 'text-neutral-600 dark:text-neutral-300',
     dotClass: 'bg-neutral-500 dark:bg-neutral-400',
-    iconColorClass: 'text-neutral-500 dark:text-neutral-400',
+    iconColorClass: 'text-neutral-500 dark:text-neutral-300',
     iconBoxClass:
       'bg-neutral-50 text-neutral-700 dark:bg-neutral-900/40 dark:text-neutral-300',
     cardBorderBgClass:

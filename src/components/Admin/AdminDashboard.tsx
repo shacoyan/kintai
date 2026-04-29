@@ -361,7 +361,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                     {unsubmittedMembers.length}名
                   </span>
                 </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+                <p className="text-xs text-neutral-500 dark:text-neutral-300 mb-3">
                   対象月（{format(unsubmittedTargetMonth, 'yyyy年M月')}）に希望提出がないメンバー一覧です。
                 </p>
                 <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
@@ -392,7 +392,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                       <QrCode className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">招待コード（メンバーに共有してください）</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-300 mb-1">招待コード（メンバーに共有してください）</p>
                       <p className="text-xl sm:text-2xl font-mono font-bold tracking-wide break-all text-neutral-900 dark:text-neutral-100">
                         {currentTenant.invite_code}
                       </p>
@@ -496,7 +496,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
                     <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">シフト希望締切</h2>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
                       対象月（{format(startOfMonth(new Date()), 'yyyy年M月')}）の希望提出締切日時を設定します。
                     </p>
                   </div>
@@ -516,7 +516,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
                     <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">給与締め日</h2>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
                       毎月の給与計算における締め日（1〜31、31 は月末扱い）
                     </p>
                   </div>
@@ -562,10 +562,10 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">シフト不一致アラート</h2>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
                     対象: {currentStore?.name ?? '全店舗'}
                   </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
                     今月の承認済みシフトと実績の差異を表示します（猶予15分）
                   </p>
                 </div>
@@ -611,7 +611,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               className={`whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm motion-safe:transition ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-400 dark:hover:text-neutral-200'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-300 dark:hover:text-neutral-200'
               }`}
               style={{ scrollSnapAlign: 'start' }}
             >
@@ -669,7 +669,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                         className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between motion-safe:transition-colors ${
                           isActive
                             ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 font-semibold border-l-2 border-primary-600 dark:border-primary-400 rounded-l-none'
-                            : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-400 dark:hover:bg-neutral-800/60'
+                            : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800/60'
                         }`}
                       >
                         <span className="flex items-center gap-2">

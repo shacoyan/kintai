@@ -109,7 +109,7 @@ export function TopBar({
           aria-label={`テーマ切替（現在: ${THEME_CURRENT_LABELS[theme as ThemeValue]} / クリックで ${THEME_CURRENT_LABELS[nextTheme]}）`}
           title={`現在: ${THEME_CURRENT_LABELS[theme as ThemeValue]} → クリックで ${THEME_CURRENT_LABELS[nextTheme]}`}
           onClick={() => setTheme(nextTheme)}
-          className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
         >
           <ThemeIcon size={18} aria-hidden="true" />
         </button>
@@ -120,7 +120,7 @@ export function TopBar({
             ref={triggerRef}
             type="button"
             aria-label="ユーザーメニュー"
-            className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+            className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}

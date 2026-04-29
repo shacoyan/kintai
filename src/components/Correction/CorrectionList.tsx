@@ -82,7 +82,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                 className={`px-4 py-2 text-sm font-medium whitespace-nowrap motion-safe:transition-colors ${
                   filterKey === tab.key
                     ? 'border-b-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
-                    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
+                    : 'text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-300'
                 }`}
               >
                 {tab.label}
@@ -110,7 +110,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
               className={`px-4 py-2 text-sm font-medium whitespace-nowrap motion-safe:transition-colors ${
                 filterKey === tab.key
                   ? 'border-b-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
-                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
+                  : 'text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-300'
               }`}
             >
               {tab.label}
@@ -139,11 +139,11 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                   <Badge tone={statusTone}>{statusCfg.label}</Badge>
                 </div>
               </div>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="text-xs text-neutral-500 dark:text-neutral-300">
                 {memberNames?.get(request.user_id)}
               </div>
               {requestType !== 'delete' && (
-                <div className="flex gap-4 text-sm text-neutral-600 dark:text-neutral-400 tabular-nums">
+                <div className="flex gap-4 text-sm text-neutral-600 dark:text-neutral-300 tabular-nums">
                   <span>出勤: {formatTime(request.requested_clock_in)}</span>
                   <span>退勤: {formatTime(request.requested_clock_out)}</span>
                 </div>
@@ -181,16 +181,16 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
         <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-700">
           <thead className="bg-neutral-50 dark:bg-neutral-700">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">日付</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">申請者</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">種類</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">申請出勤</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">申請退勤</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">理由</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">ステータス</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">店舗</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">日付</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">申請者</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">種類</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">申請出勤</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">申請退勤</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">理由</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">ステータス</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">店舗</th>
               {(onReview || onRevert) && (
-                <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">操作</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">操作</th>
               )}
             </tr>
           </thead>

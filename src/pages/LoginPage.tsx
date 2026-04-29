@@ -100,13 +100,13 @@ export const LoginPage = function LoginPage() {
           <h1 className="text-[26px] lg:text-[28px] font-bold text-neutral-900 dark:text-neutral-100 leading-tight mb-2">
             ログイン
           </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-8">
+          <p className="text-sm text-neutral-500 dark:text-neutral-300 mb-8">
             登録済みのメールアドレスでサインインしてください。
           </p>
 
           <LoginForm />
 
-          <div className="mt-12 pt-6 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400">
+          <div className="mt-12 pt-6 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-300">
             <div className="flex items-center gap-1.5">
               <svg
                 width="14"

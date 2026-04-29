@@ -70,7 +70,7 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
             {processing ? '処理中...' : '休憩終了'}
           </button>
           {activeBreak?.start_time && (
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">休憩開始: {formatTime(activeBreak.start_time)}</p>
+            <p className="text-sm text-neutral-500 dark:text-neutral-300">休憩開始: {formatTime(activeBreak.start_time)}</p>
           )}
         </>
       )}
@@ -81,7 +81,7 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
           <div className="space-y-1">
             {activeRecord.breaks.filter(b => b.end_time !== null).map((brk, index) => (
               <div key={brk.id} className="flex items-center justify-between text-xs bg-neutral-50 dark:bg-neutral-700 rounded px-2 py-1">
-                <span className="text-neutral-500 dark:text-neutral-400">休憩{index + 1}</span>
+                <span className="text-neutral-500 dark:text-neutral-300">休憩{index + 1}</span>
                 <div className="flex gap-2">
                   <span className="text-neutral-700 dark:text-neutral-300">{formatTime(brk.start_time)}</span>
                   <span className="text-neutral-400 dark:text-neutral-500">〜</span>

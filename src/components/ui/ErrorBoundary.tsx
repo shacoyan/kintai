@@ -78,7 +78,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             </Button>
           </div>
           {isDev && (
-            <details className="mt-6 text-left text-xs text-neutral-500 dark:text-neutral-400">
+            <details className="mt-6 text-left text-xs text-neutral-500 dark:text-neutral-300">
               <summary className="cursor-pointer">エラー詳細 (dev)</summary>
               <pre className="mt-2 p-2 bg-neutral-100 dark:bg-neutral-800 rounded overflow-auto whitespace-pre-wrap break-words">
                 {error.message}

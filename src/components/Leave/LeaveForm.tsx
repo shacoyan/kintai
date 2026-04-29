@@ -156,7 +156,7 @@ export function LeaveForm({ onSubmit, onCancel, remainingPaidLeave }: LeaveFormP
             />
           </div>
           {rangeDays > 0 && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-neutral-500 dark:text-neutral-300">
               {startDate} 〜 {endDate}（{rangeDays}日間）
             </p>
           )}
@@ -177,7 +177,7 @@ export function LeaveForm({ onSubmit, onCancel, remainingPaidLeave }: LeaveFormP
         </select>
       </div>
 
-      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+      <p className="text-xs text-neutral-500 dark:text-neutral-300">
         現在の有給残: {remainingPaidLeave} 日
       </p>
 

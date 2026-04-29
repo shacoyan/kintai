@@ -34,7 +34,7 @@ function NavItem({
 
 function SectionLabel({ label }: { label: string }) {
   return (
-    <p className="px-3 py-2 text-[11px] font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+    <p className="px-3 py-2 text-[11px] font-semibold text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">
       {label}
     </p>
   );
@@ -93,7 +93,7 @@ export function Sidebar() {
 
       <div className="px-1 py-2 flex flex-col gap-2">
         {user?.email && (
-          <span className="text-xs text-neutral-500 dark:text-neutral-400 truncate" title={user.email}>
+          <span className="text-xs text-neutral-500 dark:text-neutral-300 truncate" title={user.email}>
             {user.email}
           </span>
         )}
