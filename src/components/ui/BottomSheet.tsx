@@ -1,4 +1,9 @@
 import React, { useEffect, useRef, useId } from 'react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { useDialogStack } from '../../hooks/useDialogStack';
+import { inertOutside } from '../../lib/inertOutside';
 
 interface BottomSheetProps {
   isOpen: boolean;
@@ -11,74 +16,19 @@ interface BottomSheetProps {
 
 export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, description, footer, children }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
-  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
   const reactId = useId();
   const titleId = title ? `bottomsheet-title-${reactId}` : undefined;
   const descId = description ? `bottomsheet-desc-${reactId}` : undefined;
 
-  // Close on Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [isOpen, onClose]);
+  const { isTop } = useDialogStack(isOpen);
 
-  // Save previously focused element and restore on close
-  useEffect(() => {
-    if (isOpen) {
-      previouslyFocusedRef.current = document.activeElement as HTMLElement;
-    } else {
-      if (previouslyFocusedRef.current) {
-        previouslyFocusedRef.current.focus();
-        previouslyFocusedRef.current = null;
-      }
-    }
-  }, [isOpen]);
+  useEscapeKey(onClose, { active: isOpen, isTop });
+  useFocusTrap(sheetRef, { active: isOpen, isTop });
+  useBodyScrollLock(isOpen);
 
-  // Trap focus inside the sheet
   useEffect(() => {
     if (!isOpen || !sheetRef.current) return;
-    const focusable = sheetRef.current.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    if (focusable.length > 0) focusable[0].focus();
-  }, [isOpen]);
-
-  // Tab trapping
-  useEffect(() => {
-    if (!isOpen || !sheetRef.current) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-      const focusables = sheetRef.current!.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement;
-      if (e.shiftKey && active === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [isOpen]);
-
-  // Prevent body scroll when open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
+    return inertOutside(sheetRef.current);
   }, [isOpen]);
 
   if (!isOpen) return null;
