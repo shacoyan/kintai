@@ -4,6 +4,7 @@ import { ja } from 'date-fns/locale';
 import { TrendingUp } from 'lucide-react';
 import { AttendanceRecord, CorrectionRequest } from '../../types';
 import { EmptyState } from '../ui/EmptyState';
+import { messages } from '../../lib/messages';
 
 interface DailyListProps {
   records: AttendanceRecord[];
@@ -70,8 +71,8 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
     return (
       <EmptyState
         icon={<TrendingUp className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
-        title="勤怠記録がありません"
-        description="出勤すると、ここに記録が表示されます"
+        title={messages.empty.attendanceDay.title}
+        description={messages.empty.attendanceDay.description}
       />
     );
   }

@@ -12,6 +12,7 @@ import { Store as StoreIcon } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 import { useTenant } from '../../hooks/useTenant';
 import { Card, Button, Badge } from '../ui';
+import { messages } from '../../lib/messages';
 
 interface StoreManagementProps {
   tenantId: string;
@@ -67,7 +68,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
     try {
       await createStore(newStoreName.trim());
       setNewStoreName('');
-      showToast('店舗を作成しました', 'success');
+      showToast(messages.toast.created('店舗'), 'success');
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
     } finally {
@@ -82,7 +83,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
       if (selectedStore?.id === confirmDeleteStore.id) {
         setSelectedStore(null);
       }
-      showToast('店舗を削除しました', 'success');
+      showToast(messages.toast.deleted('店舗'), 'success');
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
     } finally {
@@ -104,7 +105,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
         setSelectedStore((prev) => prev ? { ...prev, name: editingName.trim() } : null);
       }
       setEditingStoreId(null);
-      showToast('店舗名を更新しました', 'success');
+      showToast(messages.toast.updated('店舗名'), 'success');
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
     } finally {
@@ -121,10 +122,10 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
     try {
       if (isMemberAssigned(memberId)) {
         await removeStoreMember(selectedStore.id, memberId);
-        showToast('メンバーを外しました', 'success');
+        showToast(messages.toast.memberRemoved, 'success');
       } else {
         await addStoreMember(selectedStore.id, memberId);
-        showToast('メンバーを追加しました', 'success');
+        showToast(messages.toast.memberAdded, 'success');
       }
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
@@ -138,7 +139,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
     setTogglingManagerId(memberId);
     try {
       await setStoreMemberManager(selectedStore.id, memberId, nextValue);
-      showToast(nextValue ? '店長に任命しました' : '店長権限を外しました', 'success');
+      showToast(nextValue ? messages.toast.storeManagerAssigned : messages.toast.storeManagerUnassigned, 'success');
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
     } finally {
@@ -260,7 +261,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
             {loading && stores.length === 0 ? (
               <PageSkeleton />
             ) : stores.length === 0 ? (
-              <EmptyState title="店舗が未登録です" description="上のフォームから店舗を追加してください" />
+              <EmptyState title={messages.empty.store.title} description={messages.empty.store.description} />
             ) : (
               stores.map((store) => (
                 <div

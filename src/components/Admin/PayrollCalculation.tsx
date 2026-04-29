@@ -12,6 +12,7 @@ import { EmptyState, ErrorBanner, PageSkeleton, Button, Card, Select, Badge, Sta
 import { usePayrollRun } from '../../hooks/usePayrollRun';
 import { useTenant, usePayrollCloseDay } from '../../hooks/useTenant';
 import { PayrollSlipPrintView } from './PayrollSlipPrintView';
+import { messages } from '../../lib/messages';
 
 interface PayrollCalculationProps {
   tenantId: string;
@@ -434,7 +435,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   const storeLabel = currentStore?.name ?? '全店舗';
 
   const handleFinalize = async () => {
-    if (!window.confirm(`${selectedYear}年${selectedMonth}月の給与を確定しますか？`)) return;
+    if (!window.confirm(messages.confirm.finalizePayroll(selectedYear, selectedMonth))) return;
     
     await finalizeRun({
       targetMonth: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`,
@@ -457,7 +458,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   };
 
   const handleUnfinalize = async () => {
-    if (!window.confirm(`${selectedYear}年${selectedMonth}月の確定を取り消しますか？`)) return;
+    if (!window.confirm(messages.confirm.unfinalizePayroll(selectedYear, selectedMonth))) return;
     await deleteRun(run!.id);
     fetchRun(`${selectedYear}-${String(selectedMonth).padStart(2, "0")}`, payrollMode);
   };

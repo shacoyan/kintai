@@ -15,6 +15,7 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Trash2, Pencil, Users } from 'lucide-react';
+import { messages } from '../../lib/messages';
 
 interface MemberManagementProps {
   tenantId: string;
@@ -69,7 +70,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const handleRoleIdChange = async (member: TenantMember, roleId: string) => {
     try {
       await updateRoleId(member.id, roleId === '' ? null : roleId);
-      showToast('役職を更新しました', 'success');
+      showToast(messages.toast.updated('役職'), 'success');
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
     }
@@ -90,7 +91,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     try {
       await updateHourlyRate(memberId, rate);
       setEditingId(null);
-      showToast('時給を保存しました', 'success');
+      showToast(messages.toast.saved('時給'), 'success');
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
     } finally {
@@ -131,7 +132,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     try {
       await updateMonthlySalary(memberId, salary);
       setEditingMonthlySalaryId(null);
-      showToast('月給を保存しました', 'success');
+      showToast(messages.toast.saved('月給'), 'success');
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
     } finally {
@@ -159,7 +160,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     try {
       await updatePaidLeaveDays(memberId, days);
       setEditingPaidLeaveDaysId(null);
-      showToast('有給日数を保存しました', 'success');
+      showToast(messages.toast.saved('有給日数'), 'success');
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
     } finally {
@@ -195,7 +196,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const handleDelete = async (memberId: string) => {
     try {
       await deleteMember(memberId);
-      showToast('メンバーを削除しました', 'success');
+      showToast(messages.toast.memberRemoved, 'success');
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
     }
@@ -230,7 +231,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
         {/* カード型レイアウト（モバイル対応） */}
         <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
           {members.length === 0 ? (
-            <EmptyState icon={<Users className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />} title="メンバーがいません" description="招待コードをメンバーに共有してください" />
+            <EmptyState icon={<Users className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />} title={messages.empty.member.title} description={messages.empty.member.description} />
           ) : (
             members.map((member) => {
               const badge = roleBadge[member.role] || roleBadge.staff;

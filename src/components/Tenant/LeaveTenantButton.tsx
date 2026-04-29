@@ -6,6 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
 import { Button, BottomSheet } from '../ui';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { messages } from '../../lib/messages';
 
 const LeaveTenantButton: React.FC = () => {
   const { isOwner, leaveTenant } = useTenant();
@@ -22,7 +23,7 @@ const LeaveTenantButton: React.FC = () => {
     try {
       await leaveTenant();
       setIsOpen(false);
-      showToast('ワークスペースから抜けました', 'success');
+      showToast(messages.toast.leftWorkspace, 'success');
       navigate('/tenant');
     } catch (err) {
       setErrorMsg(formatSupabaseError(err).message);

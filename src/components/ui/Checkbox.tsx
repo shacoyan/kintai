@@ -69,5 +69,5 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
     </p>
   ) : null;
 
-  return message ? <div className="inline-flex flex-col">{fieldset}{message}</div> : fieldset;
+  return <div className="flex flex-col w-full">{fieldset}{message}</div>;
 });

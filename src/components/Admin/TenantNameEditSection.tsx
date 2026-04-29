@@ -3,6 +3,7 @@ import { useTenant } from '../../contexts/TenantContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
 import { Heading } from '../ui/Heading';
+import { messages } from '../../lib/messages';
 
 interface TenantNameEditSectionProps {
   tenantId: string;
@@ -41,7 +42,7 @@ export const TenantNameEditSection: React.FC<TenantNameEditSectionProps> = ({
     setError(null);
     try {
       await updateTenantName(tenantId, trimmed);
-      showToast('保存しました', 'success');
+      showToast(messages.toast.saved(), 'success');
     } catch (err) {
       const msg = formatSupabaseError(err).message || '保存に失敗しました';
       setError(msg);

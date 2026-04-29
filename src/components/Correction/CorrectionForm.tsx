@@ -9,6 +9,7 @@ import { AlertTriangle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { messages } from '../../lib/messages';
 
 interface CorrectionFormProps {
   isOpen: boolean;
@@ -100,7 +101,7 @@ export function CorrectionForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reason.trim()) {
-      setError('理由を入力してください');
+      setError(messages.validation.required('理由'));
       return;
     }
 
@@ -111,7 +112,7 @@ export function CorrectionForm({
 
     if (!isDelete && existingClockIn) {
       if (toTimeValue(existingClockIn) === requestedClockIn && toTimeValue(existingClockOut) === requestedClockOut) {
-        setError('変更がありません。出勤または退勤時刻を修正してください');
+        setError(messages.validation.timeNoChange);
         return;
       }
     }

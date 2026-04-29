@@ -1,6 +1,7 @@
 import { Calendar, Coffee, TrendingUp } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
 import { Heading } from '../ui';
+import { messages } from '../../lib/messages';
 
 interface MonthlySummaryProps {
   summary: {
@@ -16,8 +17,8 @@ export function MonthlySummary({ summary }: MonthlySummaryProps) {
     return (
       <EmptyState
         icon={<Calendar className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
-        title="今月はまだ打刻記録がありません"
-        description="出勤すると、ここに月次サマリーが表示されます"
+        title={messages.empty.attendanceMonth.title}
+        description={messages.empty.attendanceMonth.description}
       />
     );
   }

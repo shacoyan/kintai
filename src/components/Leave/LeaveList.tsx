@@ -6,6 +6,7 @@ import { Heading } from '../ui/Heading';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Button } from '../ui/Button';
 import { formatSupabaseError } from '../../lib/errors';
+import { messages } from '../../lib/messages';
 
 interface LeaveListProps {
   leaves: LeaveRequest[];
@@ -85,8 +86,8 @@ export function LeaveList({ leaves, memberNames, storeNames, canManageTenant, on
           <div className="px-6 py-12">
             <EmptyState
               icon={<CalendarOff className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
-              title="休暇申請はありません"
-              description="「休暇申請」ボタンから新規申請できます"
+              title={messages.empty.leave.title}
+              description={messages.empty.leave.description}
             />
           </div>
         ) : (

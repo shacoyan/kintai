@@ -4,6 +4,7 @@ import { Ban, AlertTriangle, Clock, UserX } from 'lucide-react';
 import type { ShiftMismatch } from '../../utils/shiftMismatch';
 import { Card, Badge, Button, EmptyState, Heading } from '../ui';
 import type { BadgeTone } from '../ui';
+import { messages } from '../../lib/messages';
 
 interface ShiftMismatchAlertProps {
   mismatches: ShiftMismatch[];
@@ -74,8 +75,8 @@ export function ShiftMismatchAlert({
   if (mismatches.length === 0) {
     return (
       <EmptyState
-        title="シフト不一致はありません"
-        description="今月のシフトと実績は一致しています"
+        title={messages.empty.shiftMismatch.title}
+        description={messages.empty.shiftMismatch.description}
       />
     );
   }

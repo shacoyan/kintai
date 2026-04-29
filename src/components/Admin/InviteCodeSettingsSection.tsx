@@ -3,6 +3,7 @@ import { useTenant } from '../../contexts/TenantContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
 import { Heading } from '../ui/Heading';
+import { messages } from '../../lib/messages';
 
 interface InviteCodeSettingsSectionProps {
   tenantId: string;
@@ -75,7 +76,7 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
     setError(null);
     try {
       await regenerateInviteCode(tenantId, { expiresInDays, maxUses });
-      showToast('招待コードを再発行しました', 'success');
+      showToast(messages.toast.inviteCodeReissued, 'success');
     } catch (err) {
       const msg = formatSupabaseError(err).message || '再発行に失敗しました';
       setError(msg);

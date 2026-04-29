@@ -9,6 +9,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
 import { Trash2, Pencil, Plus } from 'lucide-react';
 import type { TenantRole } from '../../types';
+import { messages } from '../../lib/messages';
 
 export function RoleManagementSection({ tenantId }: { tenantId: string }) {
   const { roles, loading, error, fetchRoles, createRole, updateRole, deleteRole } = useTenantRoles(tenantId);
@@ -52,7 +53,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      showToast('役職名を入力してください', 'error');
+      showToast(messages.validation.required('役職名'), 'error');
       return;
     }
 
@@ -75,10 +76,10 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
     try {
       if (editingRole) {
         await updateRole(editingRole.id, payload);
-        showToast('役職を更新しました', 'success');
+        showToast(messages.toast.updated('役職'), 'success');
       } else {
         await createRole(payload);
-        showToast('役職を追加しました', 'success');
+        showToast(messages.toast.created('役職'), 'success');
       }
       setIsFormOpen(false);
     } catch (e: unknown) {
@@ -96,7 +97,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
     if (!deletingRole) return;
     try {
       await deleteRole(deletingRole.id);
-      showToast('役職を削除しました', 'success');
+      showToast(messages.toast.deleted('役職'), 'success');
       setIsDeleteOpen(false);
     } catch (e: unknown) {
       const f = formatSupabaseError(e);
@@ -123,7 +124,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
       {roles.length === 0 && loading ? (
         <PageSkeleton />
       ) : roles.length === 0 ? (
-        <EmptyState title="役職がまだありません" description="「役職を追加」から最初の役職を登録してください" />
+        <EmptyState title={messages.empty.role.title} description={messages.empty.role.description} />
       ) : (
         <>
           {/* PC Table */}

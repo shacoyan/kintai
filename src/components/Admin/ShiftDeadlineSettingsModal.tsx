@@ -3,6 +3,7 @@ import { BottomSheet, Button, ErrorBanner, Input } from '../ui';
 import { useShiftSubmissionDeadline } from '../../hooks/useShiftSubmissionDeadline';
 import { formatSupabaseError } from '../../lib/errors';
 import { format, startOfMonth } from 'date-fns';
+import { messages } from '../../lib/messages';
 
 export interface ShiftDeadlineSettingsModalProps {
   open: boolean;
@@ -94,7 +95,7 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
   };
 
   const handleClear = async () => {
-    if (!window.confirm('シフト提出期限を削除しますか？')) return;
+    if (!window.confirm(messages.confirm.deleteShiftDeadline)) return;
 
     setSubmitting(true);
     setSubmitError(null);

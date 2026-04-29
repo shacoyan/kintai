@@ -10,6 +10,7 @@ import { BreakButton } from '../components/Attendance/BreakButton';
 import { AlertTriangle, Clock, Activity, CalendarDays, FileClock } from 'lucide-react';
 import { Card, StatCard, Badge, Button, DashboardSkeleton, ListRowSkeleton, EmptyState, Heading } from '../components/ui';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { messages } from '../lib/messages';
 import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
@@ -159,7 +160,7 @@ export function DashboardPage() {
         <p className="text-sm text-neutral-500 dark:text-neutral-300">{format(today, 'EEEE', { locale: ja })}</p>
       </header>
 
-      {dashboardError && <ErrorBanner message={dashboardError} />}
+      {dashboardError && <ErrorBanner message={messages.error.withRetry(dashboardError)} />}
 
       {carryOverRecord && (
         <Card padding="md" className="border-l-4 border-danger-500 dark:border-danger-400">
@@ -211,8 +212,8 @@ export function DashboardPage() {
       {todayRecords.length === 0 ? (
         <EmptyState
           icon={<Clock className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
-          title="まだ本日の打刻はありません"
-          description="出勤ボタンを押して開始しましょう"
+          title={messages.empty.attendanceDay.title}
+          description="出勤ボタンを押して、今日の最初の打刻を始めましょう。"
         />
       ) : (
         <>

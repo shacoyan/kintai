@@ -5,6 +5,7 @@ import type { ShiftPreference, ShiftPreferenceType, ShiftPreset, Store } from '.
 import { formatSupabaseError } from '../../lib/errors';
 import { PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
 import { Button, Select, Textarea, ErrorBanner } from '../ui';
+import { messages } from '../../lib/messages';
 
 interface ShiftPreferenceFormProps {
   date: string;
@@ -82,7 +83,7 @@ export function ShiftPreferenceForm({
     e.preventDefault();
     setError(null);
     if (lockedByDeadline) {
-      setError('提出締切を過ぎています。管理者にお問い合わせください。');
+      setError(messages.validation.deadlinePassed);
       return;
     }
     if (showTimeFields) {
@@ -95,7 +96,7 @@ export function ShiftPreferenceForm({
       setFieldErrors({});
     }
     if (!storeId) {
-      setError('店舗を選択してください');
+      setError(messages.validation.selectRequired('店舗'));
       return;
     }
     setSubmitting(true);

@@ -7,6 +7,7 @@ import { Heading } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { formatSupabaseError } from '../../lib/errors';
+import { messages } from '../../lib/messages';
 
 interface OwnerTransferSectionProps {
   tenantId: string;
@@ -46,7 +47,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
     setSubmitting(true);
     try {
       await transferOwnership(selectedUserId);
-      showToast('権限を移譲しました', 'success');
+      showToast(messages.toast.ownershipTransferred, 'success');
       setIsConfirmOpen(false);
       setSelectedUserId('');
     } catch (e: unknown) {

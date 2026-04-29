@@ -7,6 +7,7 @@ import { Heading } from '../ui/Heading';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { messages } from '../../lib/messages';
 
 interface ShiftFormProps {
   date: string;
@@ -37,11 +38,11 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (startTime === endTime) {
-      setError('開始と終了時刻が同じです');
+      setError(messages.validation.timeIdentical);
       return;
     }
     if (!storeId) {
-      setError('店舗を選択してください');
+      setError(messages.validation.selectRequired('店舗'));
       return;
     }
     setSubmitting(true);

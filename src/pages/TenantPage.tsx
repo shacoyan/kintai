@@ -6,6 +6,7 @@ import CreateTenant from '../components/Tenant/CreateTenant';
 import JoinTenant from '../components/Tenant/JoinTenant';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { PageLoader } from '../components/ui';
+import { messages } from '../lib/messages';
 import type { Tenant, TenantWithRole } from '../types';
 
 type PageState = 'select' | 'create' | 'join';
@@ -50,7 +51,7 @@ const TenantPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
         <div className="w-full max-w-md space-y-4">
-          <ErrorBanner message={error} onRetry={() => fetchTenants()} />
+          <ErrorBanner message={messages.error.withRetry(error)} onRetry={() => fetchTenants()} />
         </div>
       </div>
     );

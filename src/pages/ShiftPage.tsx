@@ -4,6 +4,7 @@ import { ja } from 'date-fns/locale';
 import { Clock, History, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Button, Card, Badge, BottomSheet, ShiftSkeleton, EmptyState, Heading } from '../components/ui';
+import { messages } from '../lib/messages';
 import { getPreferenceTheme } from '../lib/preferenceTheme';
 import { Spinner } from '../components/ui/Spinner';
 import type { BadgeTone } from '../components/ui';
@@ -487,7 +488,7 @@ export function ShiftPage() {
               {shifts.filter(s => s.date === selectedShiftDate).length === 0 && (
                 <EmptyState
                   size="sm"
-                  title="この日にシフトはありません"
+                  title={messages.empty.shiftDay.title}
                 />
               )}
             </div>
@@ -742,7 +743,7 @@ export function ShiftPage() {
                         <li>
                           <EmptyState
                             size="sm"
-                            title="この日の希望はありません"
+                            title={messages.empty.shiftPreferenceDay.title}
                           />
                         </li>
                       )}
@@ -853,7 +854,7 @@ export function ShiftPage() {
                     <Card padding="md">
                       <EmptyState
                         size="sm"
-                        title="履歴はありません"
+                        title={messages.empty.history.title}
                       />
                     </Card>
                   )}

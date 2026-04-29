@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { Heading } from '../components/ui';
 import { formatSupabaseError } from '../lib/errors';
+import { messages } from '../lib/messages';
 
 export const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -56,13 +57,13 @@ export const ResetPasswordPage = () => {
       });
 
       if (updateError) {
-        setError(formatSupabaseError(updateError).message || 'パスワードの更新に失敗しました。');
+        setError(formatSupabaseError(updateError).message || messages.error.saveFailed);
         return;
       }
 
       setSuccess(true);
     } catch {
-      setError('予期しないエラーが発生しました。もう一度お試しください。');
+      setError(messages.error.unexpected);
     } finally {
       setLoading(false);
     }

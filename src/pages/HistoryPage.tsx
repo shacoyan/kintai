@@ -27,6 +27,7 @@ import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CalendarX } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton, HistorySkeleton, Heading } from '../components/ui';
+import { messages } from '../lib/messages';
 
 // safelist: bg-info-500, bg-info-400, bg-success-500, bg-success-400, bg-danger-500, bg-danger-400, text-info-500, text-info-400, text-danger-500, text-danger-400
 
@@ -347,7 +348,7 @@ export function HistoryPage() {
     setCorrectionModal({ isOpen: false, date: '', mode: 'correction' });
     fetchRecords(year, month);
     if (submitted) {
-      showToast(correctionModal.mode === 'delete' ? '削除依頼を送信しました' : '修正申請を送信しました', 'success');
+      showToast(correctionModal.mode === 'delete' ? messages.toast.correctionDeleted : messages.toast.correctionRequested, 'success');
     }
   }
 
@@ -466,8 +467,8 @@ export function HistoryPage() {
           showEmpty ? (
             <EmptyState
               icon={<CalendarX className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
-              title="今月の勤怠データがまだありません"
-              description="打刻するとここに記録が表示されます。"
+              title={messages.empty.historyMonth.title}
+              description="ダッシュボードから打刻すると、ここに記録が表示されます。"
             />
           ) : (
             <Card padding="none">
@@ -496,7 +497,7 @@ export function HistoryPage() {
             {showEmpty && (
               <EmptyState
                 size="sm"
-                title="今月の打刻データがまだありません"
+                title={messages.empty.historyMonth.title}
               />
             )}
           </>

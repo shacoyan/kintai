@@ -6,6 +6,7 @@ import { useTenant } from '../../contexts/TenantContext';
 import { useNotification } from '../../hooks/useNotification';
 import { BottomSheet, EmptyState, Heading } from '../ui';
 import type { NotificationItem } from '../../types';
+import { messages } from '../../lib/messages';
 
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
@@ -181,7 +182,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
           <div>
             {notifications.length === 0 ? (
               <div className="px-4 py-4">
-                <EmptyState title="新しい通知はありません" />
+                <EmptyState title={messages.empty.notification.title} />
               </div>
             ) : (
               <div className="divide-y divide-neutral-50 dark:divide-neutral-800">
@@ -212,7 +213,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
         <div className="py-2">
           {notifications.length === 0 ? (
             <div className="px-4 py-4">
-              <EmptyState title="新しい通知はありません" />
+              <EmptyState title={messages.empty.notification.title} />
             </div>
           ) : (
             <div className="divide-y divide-neutral-100 dark:divide-neutral-800">

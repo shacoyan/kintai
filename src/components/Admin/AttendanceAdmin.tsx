@@ -12,6 +12,7 @@ import { Heading } from '../ui/Heading';
 import { EmptyState } from '../ui/EmptyState';
 import { Button } from '../ui/Button';
 import { useStoreContext } from '../../contexts/StoreContext';
+import { messages } from '../../lib/messages';
 
 interface AttendanceAdminProps {
   tenantId: string;
@@ -209,15 +210,15 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           ...(edit.clock_out ? { clock_out: new Date(edit.clock_out).toISOString() } : {}),
           ...(totalWorkMinutes !== undefined ? { total_work_minutes: totalWorkMinutes } : {}),
         });
-        showToast('勤怠記録を更新しました', 'success');
+        showToast(messages.toast.updated('勤怠記録'), 'success');
       } else {
         if (!edit.clock_in) {
-          showToast('出勤時刻を入力してください', 'error');
+          showToast(messages.validation.required('出勤時刻'), 'error');
           setSaving(false);
           return;
         }
         if (!currentStore?.id) {
-          showToast('店舗を選択してください', 'error');
+          showToast(messages.validation.selectRequired('店舗'), 'error');
           setSaving(false);
           return;
         }
@@ -242,7 +243,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
             total_work_minutes: totalWorkMinutes,
           });
         if (insertError) throw new Error(insertError.message);
-        showToast('勤怠記録を登録しました', 'success');
+        showToast(messages.toast.created('勤怠記録'), 'success');
       }
       await Promise.all([
         fetchAllAttendance(selectedYear, selectedMonth, currentStore?.id ?? null),
@@ -262,7 +263,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
     setSaving(true);
     try {
       await deleteAttendance(selectedCell.record.id);
-      showToast('勤怠記録を削除しました', 'success');
+      showToast(messages.toast.deleted('勤怠記録'), 'success');
       await Promise.all([
         fetchAllAttendance(selectedYear, selectedMonth, currentStore?.id ?? null),
         fetchShifts(selectedYear, selectedMonth),

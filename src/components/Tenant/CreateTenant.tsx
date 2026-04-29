@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { Heading } from '../ui';
 import { Input } from '../ui/Input';
 import { formatSupabaseError } from '../../lib/errors';
+import { messages } from '../../lib/messages';
 
 interface CreateTenantProps {
   onCreate: (tenant: Tenant) => void;
@@ -26,11 +27,11 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
     setError(null);
 
     if (!name.trim()) {
-      setError('ワークスペース名を入力してください');
+      setError(messages.validation.required('ワークスペース名'));
       return;
     }
     if (!displayName.trim()) {
-      setError('表示名を入力してください');
+      setError(messages.validation.required('表示名'));
       return;
     }
 

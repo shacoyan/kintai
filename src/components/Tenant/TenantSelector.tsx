@@ -5,6 +5,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { Button } from '../ui/Button';
 import { Heading } from '../ui';
 import type { TenantWithRole } from '../../types';
+import { messages } from '../../lib/messages';
 
 interface TenantSelectorProps {
   tenants: TenantWithRole[];
@@ -55,8 +56,8 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
         ) : (
           <EmptyState
             icon={<Building2 className="w-12 h-12 text-neutral-400" />}
-            title="参加中のワークスペースがありません"
-            description="新しく作成するか、招待コードで既存のワークスペースに参加してください"
+            title={messages.empty.tenant.title}
+            description={messages.empty.tenant.description}
           />
         )}
 

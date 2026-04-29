@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { Heading } from '../ui';
 import { Input } from '../ui/Input';
 import { formatSupabaseError } from '../../lib/errors';
+import { messages } from '../../lib/messages';
 
 interface JoinTenantProps {
   onJoin: (tenant: Tenant) => void;
@@ -23,15 +24,15 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
     setError(null);
 
     if (!inviteCode.trim()) {
-      setError('招待コードを入力してください');
+      setError(messages.validation.required('招待コード'));
       return;
     }
     if (inviteCode.trim().length !== 6) {
-      setError('招待コードは6文字です');
+      setError(messages.validation.inviteCodeLength);
       return;
     }
     if (!displayName.trim()) {
-      setError('表示名を入力してください');
+      setError(messages.validation.required('表示名'));
       return;
     }
 

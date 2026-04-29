@@ -4,6 +4,7 @@ import { formatSupabaseError } from '../../lib/errors';
 import { EmptyState, Heading } from '../ui';
 import { ActionMenu, type ActionMenuItem } from '../ui/ActionMenu';
 import { Spinner } from '../ui/Spinner';
+import { messages } from '../../lib/messages';
 
 interface ShiftAdminPanelProps {
   shifts: Shift[];
@@ -217,7 +218,8 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
         {displayedShifts.length === 0 ? (
           <EmptyState
             size="md"
-            title="シフト申請はありません"
+            title={messages.empty.shiftRequest.title}
+            description={messages.empty.shiftRequest.description}
           />
         ) : (
           visibleShifts.map((shift) => {

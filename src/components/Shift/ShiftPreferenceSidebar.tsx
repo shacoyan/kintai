@@ -8,6 +8,7 @@ import { ShiftPreferenceForm } from './ShiftPreferenceForm';
 import { PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
 
 import type { ShiftPreference, ShiftPreset, Store, ShiftPreferenceType } from '../../types';
+import { messages } from '../../lib/messages';
 
 export interface ShiftPreferenceSidebarProps {
   mode: 'self' | 'admin';
@@ -151,7 +152,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
             ) : dateFilteredPreferences.length === 0 ? (
               <EmptyState
                 size="sm"
-                title="この日の希望はありません"
+                title={messages.empty.shiftPreferenceDay.title}
               />
             ) : (
               <ul className="space-y-2">

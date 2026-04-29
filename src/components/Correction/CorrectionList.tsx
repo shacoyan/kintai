@@ -4,6 +4,7 @@ import { FileEdit } from 'lucide-react';
 import { CorrectionRequest } from '../../types';
 import { Badge, Button, EmptyState } from '../ui';
 import type { BadgeTone } from '../ui';
+import { messages } from '../../lib/messages';
 
 type FilterKey = 'all' | 'pending' | 'approved' | 'rejected' | 'correction' | 'delete';
 
@@ -92,8 +93,8 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
         )}
         <EmptyState
           icon={<FileEdit className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
-          title="修正申請はありません"
-          description="履歴画面から打刻の修正を申請できます"
+          title={messages.empty.correction.title}
+          description={messages.empty.correction.description}
         />
       </>
     );
@@ -167,7 +168,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                       <Button variant="danger" size="sm" className="flex-1" onClick={() => setConfirming({ id: request.id, action: 'reject' })}>却下</Button>
                     </div>
                   ) : request.status !== 'pending' && onRevert ? (
-                    <Button variant="tertiary" size="sm" className="flex-1" onClick={() => { if (window.confirm('この修正申請の承認を巻き戻しますか？\n勤怠レコードに加えた修正は元に戻されます。')) onRevert(request.id); }}>巻き戻す</Button>
+                    <Button variant="tertiary" size="sm" className="flex-1" onClick={() => { if (window.confirm(messages.confirm.revertCorrection)) onRevert(request.id); }}>巻き戻す</Button>
                   ) : null}
                 </div>
               )}
@@ -243,7 +244,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                           <Button variant="danger" size="sm" onClick={() => setConfirming({ id: request.id, action: 'reject' })}>却下</Button>
                         </div>
                       ) : request.status !== 'pending' && onRevert ? (
-                        <Button variant="tertiary" size="sm" onClick={() => { if (window.confirm('この修正申請の承認を巻き戻しますか？\n勤怠レコードに加えた修正は元に戻されます。')) onRevert(request.id); }}>巻き戻す</Button>
+                        <Button variant="tertiary" size="sm" onClick={() => { if (window.confirm(messages.confirm.revertCorrection)) onRevert(request.id); }}>巻き戻す</Button>
                       ) : (
                         <span className="text-xs text-neutral-400 dark:text-neutral-500">-</span>
                       )}
