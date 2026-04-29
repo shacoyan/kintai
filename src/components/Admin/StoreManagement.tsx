@@ -162,7 +162,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
             return (
               <label
                 key={member.id}
-                className="flex items-center gap-3 px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer motion-safe:transition-colors"
+                className="flex items-center gap-3 px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer motion-safe:transition-colors duration-120 ease-out-expo"
               >
                 <input
                   type="checkbox"
@@ -196,7 +196,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                       handleToggleStoreManager(member.id, !is_manager);
                     }}
                     disabled={!isOwner || togglingManagerId === member.id}
-                    className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium motion-safe:transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium motion-safe:transition-colors duration-120 ease-out-expo disabled:opacity-50 disabled:cursor-not-allowed ${
                       is_manager
                         ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300'
                         : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
@@ -265,7 +265,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
               stores.map((store) => (
                 <div
                   key={store.id}
-                  className={`px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700 motion-safe:transition-colors ${
+                  className={`px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo ${
                     selectedStore?.id === store.id ? 'bg-primary-50 dark:bg-primary-900/30 border-l-4 border-primary-500 dark:border-primary-400' : ''
                   }`}
                   onClick={() => setSelectedStore(store)}

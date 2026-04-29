@@ -107,7 +107,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
         key={notification.id}
         type="button"
         role="menuitem"
-        className="w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 flex items-start gap-2 motion-safe:transition-colors"
+        className="w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 flex items-start gap-2 motion-safe:transition-colors duration-120 ease-out-expo"
         onClick={() => handleNotificationClick(notification)}
       >
         {isUnread ? (
@@ -141,7 +141,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        className="relative p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 motion-safe:transition-colors"
+        className="relative p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 motion-safe:transition-colors duration-120 ease-out-expo"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={`通知 ${unreadCount}件未読`}
         aria-haspopup="menu"

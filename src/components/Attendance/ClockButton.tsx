@@ -128,7 +128,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           disabled={config.disabled || processing}
           aria-label={config.label}
           aria-pressed={status !== 'not_started'}
-          className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg motion-safe:transition-all duration-300 select-none ${flashGreen ? 'bg-success-400 scale-105' : config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
+          className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg motion-safe:transition-colors duration-180 ease-out-expo select-none ${flashGreen ? 'bg-success-400 scale-105' : config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-[0.98]'}`}
         >
           {processing && <Spinner size="sm" inline className="mr-2" />}{config.label}
         </button>

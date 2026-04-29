@@ -390,7 +390,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                 {members.map((member) => {
                   const { workDays, totalMin } = getMemberSummary(member.user_id);
                   return (
-                    <tr key={member.user_id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 motion-safe:transition-colors">
+                    <tr key={member.user_id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 motion-safe:transition-colors duration-120 ease-out-expo">
                       <td
                         className="sticky left-0 z-10 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-600 px-3 py-2 font-medium text-neutral-800 dark:text-neutral-200 whitespace-nowrap"
                         style={{ minWidth: '100px' }}
@@ -437,7 +437,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                             aria-selected={isSelected}
                             className={`
                               border-r border-neutral-200 dark:border-neutral-600 p-1 text-center cursor-pointer
-                              motion-safe:transition-all select-none
+                              motion-safe:transition-colors duration-120 ease-out-expo select-none
                               ${cellBg}
                               ${isSelected ? 'ring-2 ring-inset ring-primary-500 dark:ring-primary-400' : 'hover:ring-1 hover:ring-inset hover:ring-primary-300 dark:hover:ring-primary-700'}
                             `}
@@ -489,7 +489,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
               <button
                 onClick={handleSave}
                 disabled={saving || (!edit.clock_in && !selectedCell.record)}
-                className="bg-primary-600 dark:bg-primary-500 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 dark:hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition"
+                className="bg-primary-600 dark:bg-primary-500 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 dark:hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition-colors duration-120 ease-out-expo"
               >
                 {saving ? '保存中...' : selectedCell.record ? '更新' : '登録'}
               </button>
@@ -506,7 +506,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                     </Button>
                     <button
                       onClick={() => setConfirmDelete(false)}
-                      className="bg-neutral-200 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-200 px-4 py-2 rounded-md text-sm hover:bg-neutral-300 dark:hover:bg-neutral-500 motion-safe:transition"
+                      className="bg-neutral-200 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-200 px-4 py-2 rounded-md text-sm hover:bg-neutral-300 dark:hover:bg-neutral-500 motion-safe:transition-colors duration-120 ease-out-expo"
                     >
                       キャンセル
                     </button>
@@ -523,7 +523,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
               <button
                 onClick={() => setSelectedCell(null)}
-                className="text-sm text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200 motion-safe:transition"
+                className="text-sm text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200 motion-safe:transition-colors duration-120 ease-out-expo"
               >
                 閉じる
               </button>

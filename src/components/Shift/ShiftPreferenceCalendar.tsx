@@ -391,8 +391,8 @@ export function ShiftPreferenceCalendar({
           const pendingCount = dayPrefs.filter(p => p.status === 'pending').length;
 
           const baseCell = isAdminView
-            ? 'min-h-[88px] lg:min-h-[120px] rounded-lg flex flex-col items-stretch gap-0.5 text-[11px] motion-safe:transition-colors duration-120 focus-ring select-none cursor-pointer relative'
-            : 'min-h-[64px] md:min-h-[72px] rounded-lg flex flex-col items-center justify-center gap-0.5 text-[11px] motion-safe:transition-colors duration-120 focus-ring select-none cursor-pointer';
+            ? 'min-h-[88px] lg:min-h-[120px] rounded-lg flex flex-col items-stretch gap-0.5 text-[11px] motion-safe:transition-colors duration-120 ease-out-expo focus-ring select-none cursor-pointer relative'
+            : 'min-h-[64px] md:min-h-[72px] rounded-lg flex flex-col items-center justify-center gap-0.5 text-[11px] motion-safe:transition-colors duration-120 ease-out-expo focus-ring select-none cursor-pointer';
 
           let stateCell: string;
           if (!isCurrentMonth) {

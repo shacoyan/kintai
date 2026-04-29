@@ -157,14 +157,14 @@ export function ShiftPreferenceAdminList({
             <button 
               onClick={handleBulkApproveConfirm} 
               disabled={processing} 
-              className="px-3 py-2 text-xs font-medium text-white bg-success-700 dark:bg-success-300 rounded-md hover:bg-success-800 dark:hover:bg-success-200 disabled:opacity-50 motion-safe:transition flex items-center"
+              className="px-3 py-2 text-xs font-medium text-white bg-success-700 dark:bg-success-300 rounded-md hover:bg-success-800 dark:hover:bg-success-200 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo flex items-center"
             >
               {processing && <Spinner size="sm" inline className="mr-1" />}
               {selectedIds.size > 0 ? `選択 ${selectedIds.size}件 承認する` : `pending ${pendingCount}件 全て承認する`}
             </button>
             <button 
               onClick={() => setBulkConfirming(null)} 
-              className="px-3 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
+              className="px-3 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
             >
               戻す
             </button>
@@ -174,14 +174,14 @@ export function ShiftPreferenceAdminList({
             <button 
               onClick={handleBulkRejectConfirm} 
               disabled={processing} 
-              className="px-3 py-2 text-xs font-medium text-white bg-danger-700 dark:bg-danger-300 rounded-md hover:bg-danger-800 dark:hover:bg-danger-200 disabled:opacity-50 motion-safe:transition flex items-center"
+              className="px-3 py-2 text-xs font-medium text-white bg-danger-700 dark:bg-danger-300 rounded-md hover:bg-danger-800 dark:hover:bg-danger-200 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo flex items-center"
             >
               {processing && <Spinner size="sm" inline className="mr-1" />}
               {selectedIds.size > 0 ? `選択 ${selectedIds.size}件 却下する` : `pending ${pendingCount}件 全て却下する`}
             </button>
             <button 
               onClick={() => setBulkConfirming(null)} 
-              className="px-3 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
+              className="px-3 py-2 text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
             >
               戻す
             </button>
@@ -191,14 +191,14 @@ export function ShiftPreferenceAdminList({
             <button 
               onClick={() => setBulkConfirming('approve')} 
               disabled={!canBulk} 
-              className="px-3 py-2 text-xs font-medium text-success-800 dark:text-success-300 bg-success-50 dark:bg-success-900/30 rounded-md hover:bg-success-100 dark:hover:bg-success-900/50 disabled:opacity-50 motion-safe:transition"
+              className="px-3 py-2 text-xs font-medium text-success-800 dark:text-success-300 bg-success-50 dark:bg-success-900/30 rounded-md hover:bg-success-100 dark:hover:bg-success-900/50 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
             >
               一括承認
             </button>
             <button 
               onClick={() => setBulkConfirming('reject')} 
               disabled={!canBulk} 
-              className="px-3 py-2 text-xs font-medium text-danger-800 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded-md hover:bg-danger-100 dark:hover:bg-danger-900/50 disabled:opacity-50 motion-safe:transition"
+              className="px-3 py-2 text-xs font-medium text-danger-800 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded-md hover:bg-danger-100 dark:hover:bg-danger-900/50 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
             >
               一括却下
             </button>
@@ -268,7 +268,7 @@ export function ShiftPreferenceAdminList({
             <button
               onClick={() => setStatusFilter('pending')}
               aria-pressed={statusFilter === 'pending'}
-              className={`px-3 py-2 text-xs motion-safe:transition-colors ${
+              className={`px-3 py-2 text-xs motion-safe:transition-colors duration-120 ease-out-expo ${
                 statusFilter === 'pending'
                   ? 'border-b-2 border-primary-600 text-primary-600 font-semibold dark:border-primary-400 dark:text-primary-400'
                   : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-200'
@@ -279,7 +279,7 @@ export function ShiftPreferenceAdminList({
             <button
               onClick={() => setStatusFilter('all')}
               aria-pressed={statusFilter === 'all'}
-              className={`px-3 py-2 text-xs motion-safe:transition-colors ${
+              className={`px-3 py-2 text-xs motion-safe:transition-colors duration-120 ease-out-expo ${
                 statusFilter === 'all'
                   ? 'border-b-2 border-primary-600 text-primary-600 font-semibold dark:border-primary-400 dark:text-primary-400'
                   : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-200'
@@ -326,7 +326,7 @@ export function ShiftPreferenceAdminList({
       {overflow > 0 && (
         <button 
           onClick={() => setVisibleCount(c => c + PAGE_SIZE)} 
-          className="w-full px-6 py-3 text-sm font-medium text-primary-600 dark:text-primary-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 motion-safe:transition border-t border-neutral-200 dark:border-neutral-700 rounded-md"
+          className="w-full px-6 py-3 text-sm font-medium text-primary-600 dark:text-primary-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 motion-safe:transition-colors duration-120 ease-out-expo border-t border-neutral-200 dark:border-neutral-700 rounded-md"
         >
           もっと見る (+{Math.min(overflow, PAGE_SIZE)} / 残り {overflow}件)
         </button>

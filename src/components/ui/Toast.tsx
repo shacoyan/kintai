@@ -159,7 +159,7 @@ export function Toast(props: ToastProps): JSX.Element {
         type="button"
         aria-label="閉じる"
         onClick={() => onDismiss(id)}
-        className="-mr-1 -mt-1 shrink-0 rounded p-1 text-white/70 motion-safe:transition-colors duration-120 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/40"
+        className="-mr-1 -mt-1 shrink-0 rounded p-1 text-white/70 motion-safe:transition-colors duration-120 ease-out-expo hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/40"
       >
         <X size={14} aria-hidden="true" />
       </button>

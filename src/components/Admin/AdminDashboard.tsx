@@ -403,7 +403,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleCopyCode}
-                      className="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 motion-safe:transition-colors dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 inline-flex items-center space-x-2"
+                      className="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 motion-safe:transition-colors duration-120 ease-out-expo dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 inline-flex items-center space-x-2"
                     >
                       {copied ? (
                         <>
@@ -602,7 +602,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               ref={(el) => { tabRefs.current[idx] = el; }}
               onKeyDown={(e) => onTabKeyDown(e, idx)}
               onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm motion-safe:transition ${
+              className={`whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm motion-safe:transition-colors duration-120 ease-out-expo ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
                   : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-300 dark:hover:text-neutral-200'
@@ -660,7 +660,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                         onKeyDown={(e) => onTabKeyDown(e, tabIdx)}
                         onClick={() => setActiveTab(tab.id)}
                         aria-current={isActive ? 'page' : undefined}
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between motion-safe:transition-colors ${
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between motion-safe:transition-colors duration-120 ease-out-expo ${
                           isActive
                             ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 font-semibold border-l-2 border-primary-600 dark:border-primary-400 rounded-l-none'
                             : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800/60'

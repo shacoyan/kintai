@@ -238,7 +238,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
                     <li key={p.id} className="border-b last:border-b-0">
                       <button
                         type="button"
-                        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 motion-safe:transition-colors"
+                        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 motion-safe:transition-colors duration-120 ease-out-expo"
                         onClick={() => handleTimedPreferenceClick(p.date)}
                       >
                         <span className="text-sm font-medium">

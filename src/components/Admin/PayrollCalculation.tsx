@@ -504,7 +504,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
           <div className="flex w-full md:inline-flex md:w-auto gap-1 bg-neutral-100 dark:bg-neutral-800 rounded-md p-1">
             <button
               onClick={() => { setPayrollMode('actual'); setCalculated(false); }}
-              className={`flex-1 md:flex-initial px-3 py-2 text-xs font-medium rounded-md motion-safe:transition-colors duration-120 ${
+              className={`flex-1 md:flex-initial px-3 py-2 text-xs font-medium rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
                 payrollMode === 'actual'
                   ? 'bg-white text-primary-700 shadow-sm dark:bg-neutral-700 dark:text-primary-300'
                   : 'text-neutral-600 hover:bg-white/60 dark:text-neutral-300 dark:hover:bg-neutral-700/60'
@@ -514,7 +514,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
             </button>
             <button
               onClick={() => { setPayrollMode('shift'); setCalculated(false); }}
-              className={`flex-1 md:flex-initial px-3 py-2 text-xs font-medium rounded-md motion-safe:transition-colors duration-120 ${
+              className={`flex-1 md:flex-initial px-3 py-2 text-xs font-medium rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
                 payrollMode === 'shift'
                   ? 'bg-white text-primary-700 shadow-sm dark:bg-neutral-700 dark:text-primary-300'
                   : 'text-neutral-600 hover:bg-white/60 dark:text-neutral-300 dark:hover:bg-neutral-700/60'

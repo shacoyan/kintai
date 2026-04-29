@@ -180,7 +180,7 @@ export function ShiftPreferenceForm({
                 onClick={() => setPreferenceType(t.type)}
                 className={
                   'flex flex-col items-center justify-center gap-1 h-16 rounded-lg ' +
-                  'motion-safe:transition-colors duration-120 focus-ring ' +
+                  'motion-safe:transition-colors duration-120 ease-out-expo focus-ring ' +
                   (isSelected
                     ? `${t.cellClass} ring-2`
                     : 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800')

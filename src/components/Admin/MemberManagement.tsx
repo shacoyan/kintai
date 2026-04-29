@@ -237,7 +237,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
               const rate = member.hourly_rate ?? 0;
 
               return (
-                <div key={member.id} className="px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-700 motion-safe:transition-colors">
+                <div key={member.id} className="px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo">
                   {/* 上段: 名前・ロール・参加日 */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -260,7 +260,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           aria-label={`${member.display_name} の店長権限`}
                           onClick={() => handleRoleToggle(member)}
                           disabled={togglingRoleId === member.id}
-                          className={`px-2 py-0.5 text-xs font-medium rounded motion-safe:transition min-h-[44px] ${
+                          className={`px-2 py-0.5 text-xs font-medium rounded motion-safe:transition-colors duration-120 ease-out-expo min-h-[44px] ${
                             member.role === 'manager'
                               ? 'text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600'
                               : 'text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-900/30 hover:bg-success-100 dark:hover:bg-success-900/50'
@@ -273,7 +273,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       {member.role !== 'owner' && (
                         <button
                           onClick={() => setDeletingId(member.id)}
-                          className="p-2 text-neutral-400 dark:text-neutral-500 hover:text-danger-500 dark:hover:text-danger-400 motion-safe:transition min-h-[44px] min-w-[44px]"
+                          className="p-2 text-neutral-400 dark:text-neutral-500 hover:text-danger-500 dark:hover:text-danger-400 motion-safe:transition-colors duration-120 ease-out-expo min-h-[44px] min-w-[44px]"
                           title="メンバーを削除"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -323,7 +323,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       <div className="flex rounded-md overflow-hidden border border-neutral-300 dark:border-neutral-600">
                         <button
                           onClick={() => handlePayTypeChange(member, 'hourly')}
-                          className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors ${
+                          className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-120 ease-out-expo ${
                             (member.pay_type ?? 'hourly') === 'hourly'
                               ? 'bg-primary-600 dark:bg-primary-500 text-white'
                               : 'bg-white dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-600'
@@ -333,7 +333,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         </button>
                         <button
                           onClick={() => handlePayTypeChange(member, 'monthly')}
-                          className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors ${
+                          className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-120 ease-out-expo ${
                             member.pay_type === 'monthly'
                               ? 'bg-primary-600 dark:bg-primary-500 text-white'
                               : 'bg-white dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-600'
@@ -382,7 +382,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           ) : (
                             <button
                               onClick={() => handleStartEdit(member)}
-                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
+                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-120 ease-out-expo ${
                                 rate > 0
                                   ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
                                   : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'
@@ -437,7 +437,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           ) : (
                             <button
                               onClick={() => handleStartEditMonthlySalary(member)}
-                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
+                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-120 ease-out-expo ${
                                 (member.monthly_salary ?? 0) > 0
                                   ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
                                   : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'
@@ -489,7 +489,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         ) : (
                           <button
                             onClick={() => handleStartEditPaidLeaveDays(member)}
-                            className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
+                            className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-120 ease-out-expo ${
                               (member.paid_leave_days ?? 0) > 0
                                 ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
                                 : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'

@@ -183,7 +183,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} aria-label="前月" className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition">
+          <button onClick={() => navigate(-1)} aria-label="前月" className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo">
             <ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
           <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 min-w-[120px] text-center">
@@ -192,12 +192,12 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
               : `${format(dates[0], 'M/d')} - ${format(dates[dates.length - 1], 'M/d')}`
             }
           </span>
-          <button onClick={() => navigate(1)} aria-label="次月" className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition">
+          <button onClick={() => navigate(1)} aria-label="次月" className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo">
             <ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
           <button
             onClick={() => setBaseDate(new Date())}
-            className="px-2 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition"
+            className="px-2 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors duration-120 ease-out-expo"
           >
             今日
           </button>
@@ -210,7 +210,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
               onClick={() => setViewMode(mode)}
               role="tab"
               aria-selected={viewMode === mode}
-              className={`px-2.5 py-1 text-xs font-medium motion-safe:transition-colors ${
+              className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-120 ease-out-expo ${
                 viewMode === mode
                   ? 'bg-primary-600 text-white'
                   : 'bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
@@ -318,7 +318,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     onDateClick(dateStr);
                   }
                 }}
-                className={`relative min-h-[70px] sm:min-h-[80px] border-b border-r border-neutral-100 dark:border-neutral-700 p-1 cursor-pointer motion-safe:transition ${
+                className={`relative min-h-[70px] sm:min-h-[80px] border-b border-r border-neutral-100 dark:border-neutral-700 p-1 cursor-pointer motion-safe:transition-colors duration-120 ease-out-expo ${
                   !isCurrentMonth ? 'bg-neutral-50 dark:bg-neutral-700/50 opacity-50' : ''
                 } ${
                   isCurrentMonth && dayOfWeek === 6 ? 'bg-sky-50/40 dark:bg-sky-900/10' : ''
@@ -351,7 +351,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                             onShiftClick?.(s);
                           }
                         }}
-                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border truncate cursor-pointer hover:opacity-80 motion-safe:transition ${colorClass}`}
+                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-120 ease-out-expo ${colorClass}`}
                       >
                         {memberNames ? (
                           <span title={memberNames.get(s.user_id) ?? ''}>

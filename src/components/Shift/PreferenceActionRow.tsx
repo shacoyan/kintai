@@ -179,7 +179,7 @@ export function PreferenceActionRow({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleApprove(); }}
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-success-700 bg-success-50 hover:bg-success-100 dark:text-success-300 dark:bg-success-900 dark:hover:bg-success-800 motion-safe:transition"
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-success-700 bg-success-50 hover:bg-success-100 dark:text-success-300 dark:bg-success-900 dark:hover:bg-success-800 motion-safe:transition-colors duration-120 ease-out-expo"
                   aria-label="承認"
                 >
                   <Check className="w-3.5 h-3.5" />
@@ -187,7 +187,7 @@ export function PreferenceActionRow({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleReject(); }}
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:hover:bg-danger-800 motion-safe:transition"
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:hover:bg-danger-800 motion-safe:transition-colors duration-120 ease-out-expo"
                   aria-label="却下"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -220,7 +220,7 @@ export function PreferenceActionRow({
 
   return (
     <div
-      className={`rounded-lg border p-3 space-y-2 motion-safe:transition ${
+      className={`rounded-lg border p-3 space-y-2 motion-safe:transition-colors duration-120 ease-out-expo ${
         isPending
           ? 'border-warning-200 bg-warning-50 dark:border-warning-700 dark:bg-warning-950'
           : isApproved

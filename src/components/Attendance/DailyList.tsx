@@ -100,7 +100,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                   <span className="text-xs text-neutral-400 dark:text-neutral-500 tabular-nums">記録なし</span>
                   {onRequestCorrection && (
                     <button onClick={() => onRequestCorrection(dateStr)}
-                      className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
+                      className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
                       修正申請
                     </button>
                   )}
@@ -130,13 +130,13 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                 <div className="flex gap-2">
                   {onRequestCorrection && (
                     <button onClick={() => onRequestCorrection(dateStr, record)}
-                      className="flex-1 px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
+                      className="flex-1 px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
                       修正申請
                     </button>
                   )}
                   {onRequestDeletion && (
                     <button onClick={() => onRequestDeletion(dateStr, record)}
-                      className="flex-1 px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
+                      className="flex-1 px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
                       削除依頼
                     </button>
                   )}
@@ -188,7 +188,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                       {onRequestCorrection && (
                         <button
                           onClick={() => onRequestCorrection(dateStr)}
-                          className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                          className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                         >
                           修正申請
                         </button>
@@ -227,7 +227,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                       {onRequestCorrection && (
                         <button
                           onClick={() => onRequestCorrection(dateStr, record)}
-                          className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                          className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                         >
                           修正申請
                         </button>
@@ -235,7 +235,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                       {onRequestDeletion && (
                         <button
                           onClick={() => onRequestDeletion(dateStr, record)}
-                          className="px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                          className="px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                         >
                           削除依頼
                         </button>

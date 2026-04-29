@@ -131,7 +131,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                     setSelectedDate(isSelected ? null : dateKey);
                   }}
                   disabled={isFuture && isCurrentMonth}
-                  className={`relative w-full min-h-[56px] p-1 text-left border-b border-r border-neutral-100 dark:border-neutral-700 motion-safe:transition-colors ${
+                  className={`relative w-full min-h-[56px] p-1 text-left border-b border-r border-neutral-100 dark:border-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo ${
                     !isCurrentMonth
                       ? 'bg-neutral-50 dark:bg-neutral-900/30 cursor-default'
                       : isFuture
@@ -374,7 +374,7 @@ export function HistoryPage() {
   }
 
   return (
-    <div className={`max-w-2xl mx-auto space-y-6 motion-safe:transition-opacity duration-200${isRefetching ? ' opacity-60 pointer-events-none' : ''}`}>
+    <div className={`max-w-2xl mx-auto space-y-6 motion-safe:transition-opacity duration-180 ease-out-expo${isRefetching ? ' opacity-60 pointer-events-none' : ''}`}>
       {currentStore == null && (
         <Card padding="md">
           <div className="flex items-center justify-center gap-2 text-sm">
@@ -405,7 +405,7 @@ export function HistoryPage() {
           <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-700 rounded-md">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors ${
+              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
                 viewMode === 'list'
                   ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
                   : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200'
@@ -415,7 +415,7 @@ export function HistoryPage() {
             </button>
             <button
               onClick={() => setViewMode('calendar')}
-              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors ${
+              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
                 viewMode === 'calendar'
                   ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
                   : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200'

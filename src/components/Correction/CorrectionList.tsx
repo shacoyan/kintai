@@ -79,7 +79,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
               <button
                 key={tab.key}
                 onClick={() => setFilterKey(tab.key)}
-                className={`px-4 py-2 text-sm font-medium whitespace-nowrap motion-safe:transition-colors ${
+                className={`px-4 py-2 text-sm font-medium whitespace-nowrap motion-safe:transition-colors duration-120 ease-out-expo ${
                   filterKey === tab.key
                     ? 'border-b-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
                     : 'text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-300'
@@ -107,7 +107,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
             <button
               key={tab.key}
               onClick={() => setFilterKey(tab.key)}
-              className={`px-4 py-2 text-sm font-medium whitespace-nowrap motion-safe:transition-colors ${
+              className={`px-4 py-2 text-sm font-medium whitespace-nowrap motion-safe:transition-colors duration-120 ease-out-expo ${
                 filterKey === tab.key
                   ? 'border-b-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
                   : 'text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-300'
@@ -204,7 +204,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
               const storeId = request.store_id ?? (request as any).attendance_records?.store_id ?? null;
               const storeName = storeId ? storeNames?.get(storeId) : null;
               return (
-                <tr key={request.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 motion-safe:transition-colors">
+                <tr key={request.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 motion-safe:transition-colors duration-120 ease-out-expo">
                   <td className="px-4 py-3 text-sm text-neutral-900 dark:text-neutral-100 whitespace-nowrap">{request.date}</td>
                   <td className="px-4 py-3 text-sm text-neutral-900 dark:text-neutral-100 whitespace-nowrap">
                     {memberNames?.get(request.user_id) ?? '-'}

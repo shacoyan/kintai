@@ -95,7 +95,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
 
   const renderedItems = items.map((item) => {
     const tone = item.tone || 'default';
-    const baseClasses = 'w-full text-left px-3 py-2 text-sm min-h-[44px] flex items-center gap-2 motion-safe:transition-colors';
+    const baseClasses = 'w-full text-left px-3 py-2 text-sm min-h-[44px] flex items-center gap-2 motion-safe:transition-colors duration-120 ease-out-expo';
     const toneClass = item.disabled
       ? 'text-neutral-700 dark:text-neutral-200 opacity-50 cursor-not-allowed'
       : toneStyles[tone];

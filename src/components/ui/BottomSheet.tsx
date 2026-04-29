@@ -52,7 +52,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
     <div className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 motion-safe:transition-opacity"
+        className="absolute inset-0 bg-black/50 motion-safe:transition-opacity duration-180 ease-out-expo"
         onClick={onClose}
         aria-hidden="true"
       />
