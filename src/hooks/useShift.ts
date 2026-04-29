@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { Shift, TenantMember, NotificationType } from '../types';
 import { getNightMinutesForShift } from '../utils/nightShift';
-import { formatSupabaseError } from '../lib/errors';
+import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 
 interface LaborCostEstimate {
   userId: string;
@@ -42,7 +42,8 @@ export function useShift(tenantId: string, storeId: string | null) {
   const [myShifts, setMyShifts] = useState<Shift[]>([]);
   const [allShifts, setAllShifts] = useState<Shift[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
+  const clearError = useCallback(() => setError(null), []);
 
   const getMyShifts = useCallback(async (startDate: string, endDate: string) => {
     if (storeId === null) {
@@ -67,7 +68,7 @@ export function useShift(tenantId: string, storeId: string | null) {
       if (e) throw e;
       setMyShifts((data as Shift[]) || []);
     } catch (err: unknown) {
-      setError(formatSupabaseError(err).message);
+      setError(formatSupabaseError(err));
     } finally {
       setLoading(false);
     }
@@ -93,7 +94,7 @@ export function useShift(tenantId: string, storeId: string | null) {
       if (e) throw e;
       setAllShifts((data as Shift[]) || []);
     } catch (err: unknown) {
-      setError(formatSupabaseError(err).message);
+      setError(formatSupabaseError(err));
     } finally {
       setLoading(false);
     }
@@ -287,6 +288,7 @@ export function useShift(tenantId: string, storeId: string | null) {
     allShifts,
     loading,
     error,
+    clearError,
     getMyShifts,
     getAllShifts,
     submitShift,

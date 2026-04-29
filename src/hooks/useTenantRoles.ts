@@ -1,12 +1,17 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { formatSupabaseError } from '../lib/errors';
+import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 import type { TenantRole } from '../types';
 
 export function useTenantRoles(tenantId: string) {
   const [roles, setRoles] = useState<TenantRole[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
+  const clearError = useCallback(() => {
+    setError(null);
+    setFriendlyError(null);
+  }, []);
 
   const fetchRoles = useCallback(async () => {
     setLoading(true);
@@ -23,7 +28,9 @@ export function useTenantRoles(tenantId: string) {
       }
       setRoles((data ?? []) as TenantRole[]);
     } catch (err: unknown) {
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
     } finally {
       setLoading(false);
     }
@@ -57,7 +64,9 @@ export function useTenantRoles(tenantId: string) {
       await fetchRoles();
       return data as TenantRole;
     } catch (err: unknown) {
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     }
   }, [tenantId, fetchRoles]);
@@ -83,7 +92,9 @@ export function useTenantRoles(tenantId: string) {
 
       await fetchRoles();
     } catch (err: unknown) {
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     }
   }, [tenantId, fetchRoles]);
@@ -103,7 +114,9 @@ export function useTenantRoles(tenantId: string) {
 
       await fetchRoles();
     } catch (err: unknown) {
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     }
   }, [tenantId, fetchRoles]);
@@ -112,6 +125,8 @@ export function useTenantRoles(tenantId: string) {
     roles,
     loading,
     error,
+    friendlyError,
+    clearError,
     fetchRoles,
     createRole,
     updateRole,

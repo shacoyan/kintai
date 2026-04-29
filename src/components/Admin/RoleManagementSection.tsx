@@ -6,6 +6,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { PageSkeleton } from '../ui/Skeleton';
 import { useToast } from '../../contexts/ToastContext';
+import { formatSupabaseError } from '../../lib/errors';
 import { Trash2, Pencil, Plus } from 'lucide-react';
 import type { TenantRole } from '../../types';
 
@@ -81,7 +82,8 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
       }
       setIsFormOpen(false);
     } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : '保存に失敗しました', 'error');
+      const f = formatSupabaseError(e);
+      showToast(f.message, 'error');
     }
   };
 
@@ -97,7 +99,8 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
       showToast('役職を削除しました', 'success');
       setIsDeleteOpen(false);
     } catch (e: unknown) {
-      showToast(e instanceof Error ? e.message : '削除に失敗しました', 'error');
+      const f = formatSupabaseError(e);
+      showToast(f.message, 'error');
     }
   };
 

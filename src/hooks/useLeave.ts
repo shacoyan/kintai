@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { formatSupabaseError } from '../lib/errors';
+import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 import type { LeaveRequest, LeaveType } from '../types';
 import type { NotificationType } from '../types';
 
@@ -33,7 +33,8 @@ export function useLeave(tenantId: string) {
   const [myLeaves, setMyLeaves] = useState<LeaveRequest[]>([]);
   const [allLeaves, setAllLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
+  const clearError = useCallback(() => setError(null), []);
 
   const getMyLeaves = useCallback(async (startDate: string, endDate: string) => {
     setLoading(true);
@@ -52,7 +53,7 @@ export function useLeave(tenantId: string) {
       if (e) throw e;
       setMyLeaves((data as LeaveRequest[]) || []);
     } catch (err: unknown) {
-      setError(formatSupabaseError(err).message);
+      setError(formatSupabaseError(err));
     } finally {
       setLoading(false);
     }
@@ -72,7 +73,7 @@ export function useLeave(tenantId: string) {
       if (e) throw e;
       setAllLeaves((data as LeaveRequest[]) || []);
     } catch (err: unknown) {
-      setError(formatSupabaseError(err).message);
+      setError(formatSupabaseError(err));
     } finally {
       setLoading(false);
     }
@@ -242,6 +243,7 @@ export function useLeave(tenantId: string) {
     allLeaves,
     loading,
     error,
+    clearError,
     getMyLeaves,
     getAllLeaves,
     submitLeave,

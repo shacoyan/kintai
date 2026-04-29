@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { startOfMonth, format, subMonths, setDate, startOfDay, addHours, addMinutes } from 'date-fns';
 import { useTenant } from './useTenant';
 import { useStoreContext } from '../contexts/StoreContext';
-import { formatSupabaseError } from '../lib/errors';
+import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 
 // AC-4: 権限判定は RLS (tenant_members.role IN ('owner','manager')) と一致させる。
 // store_members.is_manager には依存しない（hook と RLS の乖離を防ぐため）。
@@ -12,7 +12,8 @@ import { formatSupabaseError } from '../lib/errors';
 export interface UseShiftSubmissionDeadlineResult {
   deadline: Date | null;
   loading: boolean;
-  error: Error | null;
+  error: FriendlyError | null;
+  clearError: () => void;
   canEdit: boolean;
   setDeadline: (deadlineAt: Date) => Promise<void>;
   clearDeadline: () => Promise<void>;
@@ -31,7 +32,8 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
 
   const [deadline, setDeadlineState] = useState<Date | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
+  const clearError = useCallback(() => setError(null), []);
 
   const canEdit = isOwner || myRole === 'manager';
 
@@ -64,9 +66,10 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
 
         setDeadlineState(data?.deadline_at ? new Date(data.deadline_at) : null);
       } catch (e) {
-        logger.error('useShiftSubmissionDeadline fetchDeadline error:', formatSupabaseError(e));
+        const fmtFetch = formatSupabaseError(e);
+        logger.error('useShiftSubmissionDeadline fetchDeadline error:', fmtFetch);
         if (isMounted) {
-          setError(new Error(formatSupabaseError(e).message));
+          setError(fmtFetch);
         }
       } finally {
         if (isMounted) {
@@ -109,10 +112,10 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
 
       setDeadlineState(deadlineAt);
     } catch (e) {
-      logger.error('useShiftSubmissionDeadline setDeadline error:', formatSupabaseError(e));
-      const err = new Error(formatSupabaseError(e).message);
-      setError(err);
-      throw err;
+      const fmt = formatSupabaseError(e);
+      logger.error('useShiftSubmissionDeadline setDeadline error:', fmt);
+      setError(fmt);
+      throw new Error(fmt.message);
     } finally {
       setLoading(false);
     }
@@ -142,10 +145,10 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
 
       setDeadlineState(null);
     } catch (e) {
-      logger.error('useShiftSubmissionDeadline clearDeadline error:', formatSupabaseError(e));
-      const err = new Error(formatSupabaseError(e).message);
-      setError(err);
-      throw err;
+      const fmt = formatSupabaseError(e);
+      logger.error('useShiftSubmissionDeadline clearDeadline error:', fmt);
+      setError(fmt);
+      throw new Error(fmt.message);
     } finally {
       setLoading(false);
     }
@@ -194,6 +197,7 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
     deadline: loading ? null : deadline,
     loading,
     error,
+    clearError,
     canEdit: loading ? false : canEdit,
     setDeadline,
     clearDeadline,

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { BottomSheet, Button, ErrorBanner, Input } from '../ui';
 import { useShiftSubmissionDeadline } from '../../hooks/useShiftSubmissionDeadline';
+import { formatSupabaseError } from '../../lib/errors';
 import { format, startOfMonth } from 'date-fns';
 
 export interface ShiftDeadlineSettingsModalProps {
@@ -47,8 +48,8 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
       await applyDefaultDeadline();
       onClose();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'デフォルト締切の適用に失敗しました。';
-      setSubmitError(msg);
+      const f = formatSupabaseError(e);
+      setSubmitError(f.message);
     } finally {
       setSubmitting(false);
     }
@@ -85,8 +86,8 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
       await setDeadline(combinedDate);
       onClose();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : '保存に失敗しました。';
-      setSubmitError(msg);
+      const f = formatSupabaseError(e);
+      setSubmitError(f.message);
     } finally {
       setSubmitting(false);
     }
@@ -101,8 +102,8 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
       await clearDeadline();
       onClose();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : '削除に失敗しました。';
-      setSubmitError(msg);
+      const f = formatSupabaseError(e);
+      setSubmitError(f.message);
     } finally {
       setSubmitting(false);
     }

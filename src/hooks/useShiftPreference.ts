@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
-import { formatSupabaseError } from '../lib/errors';
+import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 import type { ShiftPreference, ShiftPreferenceType } from '../types';
 import type { NotificationType } from '../types';
 
@@ -34,7 +34,8 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
   const [myPreferences, setMyPreferences] = useState<ShiftPreference[]>([]);
   const [allPreferences, setAllPreferences] = useState<ShiftPreference[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
+  const clearError = useCallback(() => setError(null), []);
 
   // 自分のシフト希望を期間で取得
   const fetchMyPreferences = useCallback(async (startDate: string, endDate: string) => {
@@ -60,7 +61,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
       setMyPreferences((data as ShiftPreference[]) || []);
     } catch (err) {
       const formatted = formatSupabaseError(err);
-      setError(formatted.message);
+      setError(formatted);
       logger.error('fetchMyPreferences error:', formatted);
     } finally {
       setLoading(false);
@@ -88,7 +89,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
       setAllPreferences((data as ShiftPreference[]) || []);
     } catch (err) {
       const formatted = formatSupabaseError(err);
-      setError(formatted.message);
+      setError(formatted);
       logger.error('fetchAllPreferences error:', formatted);
     } finally {
       setLoading(false);
@@ -104,6 +105,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     note?: string,
     storeIdOverride?: string,
   ) => {
+    setError(null);
     const effectiveStoreId = storeIdOverride ?? storeId;
     if (effectiveStoreId === null) throw new Error('店舗が選択されていません');
     const { data: { user } } = await supabase.auth.getUser();
@@ -124,7 +126,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
       if (error) throw error;
     } catch (err) {
       const formatted = formatSupabaseError(err);
-      setError(formatted.message);
+      setError(formatted);
       logger.error('submitPreference error:', formatted);
       throw err;
     }
@@ -132,6 +134,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
 
   // シフト希望を削除
   const deletePreference = useCallback(async (preferenceId: string) => {
+    setError(null);
     try {
       const { error } = await supabase
         .from('shift_preferences')
@@ -140,7 +143,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
       if (error) throw error;
     } catch (err) {
       const formatted = formatSupabaseError(err);
-      setError(formatted.message);
+      setError(formatted);
       logger.error('deletePreference error:', formatted);
       throw err;
     }
@@ -152,6 +155,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     overrideStartTime?: string,
     overrideEndTime?: string,
   ) => {
+    setError(null);
     try {
       // 希望レコードを取得
       const { data: pref, error: fetchError } = await supabase
@@ -201,7 +205,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
       });
     } catch (err) {
       const formatted = formatSupabaseError(err);
-      setError(formatted.message);
+      setError(formatted);
       logger.error('approvePreference error:', formatted);
       throw err;
     }
@@ -209,6 +213,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
 
   // 店長: 希望を却下
   const rejectPreference = useCallback(async (preferenceId: string) => {
+    setError(null);
     try {
       const { data: pref, error: fetchError } = await supabase
         .from('shift_preferences')
@@ -232,7 +237,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
       });
     } catch (err) {
       const formatted = formatSupabaseError(err);
-      setError(formatted.message);
+      setError(formatted);
       logger.error('rejectPreference error:', formatted);
       throw err;
     }
@@ -240,6 +245,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
 
   // 承認・却下済みの希望を保留に戻す
   const revertPreference = useCallback(async (preferenceId: string) => {
+    setError(null);
     try {
       // 希望レコードを取得
       const { data: pref, error: fetchError } = await supabase
@@ -285,14 +291,14 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
       });
     } catch (err) {
       const formatted = formatSupabaseError(err);
-      setError(formatted.message);
+      setError(formatted);
       logger.error('revertPreference error:', formatted);
       throw err;
     }
   }, []);
 
   return {
-    myPreferences, allPreferences, loading, error,
+    myPreferences, allPreferences, loading, error, clearError,
     fetchMyPreferences, fetchAllPreferences,
     submitPreference, deletePreference,
     approvePreference, rejectPreference,

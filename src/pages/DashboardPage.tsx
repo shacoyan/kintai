@@ -38,7 +38,7 @@ export function DashboardPage() {
 
   const { myLeaves, getMyLeaves, getRemainingPaidLeave, error: leaveError } = useLeave(tenantId);
 
-  const dashboardError = attendanceError ?? shiftError ?? leaveError;
+  const dashboardError = (attendanceError ?? shiftError ?? leaveError)?.message ?? null;
 
   // 勤務中の労働時間をリアルタイム更新するためのタイマー
   const [now, setNow] = useState(() => new Date());

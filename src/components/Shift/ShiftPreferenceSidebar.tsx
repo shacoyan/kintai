@@ -105,7 +105,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
   };
 
   return (
-    <aside className="w-[360px] sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4">
+    <aside aria-label="シフト希望サイドバー" className="w-[360px] sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4">
       {mode === 'admin' && (
         <>
           <Card padding="sm">

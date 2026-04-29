@@ -199,10 +199,8 @@ export function BulkApplyPresetModal({
   };
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose}>
+    <BottomSheet isOpen={isOpen} onClose={onClose} title="プリセット一括適用">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <h2 style={{ margin: 0 }}>プリセット一括適用</h2>
-
         <div>
           <label style={{ display: 'block', marginBottom: '4px' }}>プリセット</label>
           <Select

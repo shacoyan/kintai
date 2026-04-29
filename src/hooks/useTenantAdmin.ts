@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { formatSupabaseError } from '../lib/errors';
+import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 import type { TenantMember, AttendanceRecord } from '../types';
 
 export function useTenantAdmin(tenantId: string) {
@@ -12,6 +12,11 @@ export function useTenantAdmin(tenantId: string) {
   const startLoading = () => setLoadingCount(c => c + 1);
   const stopLoading = () => setLoadingCount(c => Math.max(0, c - 1));
   const [error, setError] = useState<string | null>(null);
+  const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
+  const clearError = useCallback(() => {
+    setError(null);
+    setFriendlyError(null);
+  }, []);
 
   const fetchMembers = useCallback(async (storeId?: string | null) => {
     startLoading();
@@ -24,7 +29,9 @@ export function useTenantAdmin(tenantId: string) {
           .eq('store_id', storeId);
 
         if (storeMembersError) {
-          setError(formatSupabaseError(storeMembersError).message);
+          const f = formatSupabaseError(storeMembersError);
+          setError(f.message);
+          setFriendlyError(f);
           return;
         }
 
@@ -42,7 +49,9 @@ export function useTenantAdmin(tenantId: string) {
           .order('created_at', { ascending: true });
 
         if (e) {
-          setError(formatSupabaseError(e).message);
+          const f = formatSupabaseError(e);
+          setError(f.message);
+          setFriendlyError(f);
         } else {
           setMembers((data as TenantMember[]) || []);
         }
@@ -53,7 +62,9 @@ export function useTenantAdmin(tenantId: string) {
           .eq('tenant_id', tenantId)
           .order('created_at', { ascending: true });
         if (e) {
-          setError(formatSupabaseError(e).message);
+          const f = formatSupabaseError(e);
+          setError(f.message);
+          setFriendlyError(f);
         } else {
           setMembers((data as TenantMember[]) || []);
         }
@@ -97,7 +108,9 @@ export function useTenantAdmin(tenantId: string) {
       const { data, error: e } = await query.order('date', { ascending: true });
       
       if (e) {
-        setError(formatSupabaseError(e).message);
+        const f = formatSupabaseError(e);
+        setError(f.message);
+        setFriendlyError(f);
       } else {
         setAllAttendance((data as AttendanceRecord[]) || []);
       }
@@ -120,7 +133,9 @@ export function useTenantAdmin(tenantId: string) {
         .order('date', { ascending: true })
         .order('clock_in', { ascending: true });
       if (e) {
-        setError(formatSupabaseError(e).message);
+        const f = formatSupabaseError(e);
+        setError(f.message);
+        setFriendlyError(f);
       } else {
         setMemberAttendance((data as AttendanceRecord[]) || []);
       }
@@ -240,6 +255,8 @@ export function useTenantAdmin(tenantId: string) {
     memberAttendance,
     loading,
     error,
+    friendlyError,
+    clearError,
     fetchMembers,
     updateHourlyRate,
     fetchAllAttendance,

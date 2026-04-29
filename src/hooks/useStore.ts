@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
-import { formatSupabaseError } from '../lib/errors';
+import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 import type { Store, StoreMember } from '../types';
 
 export function useStore(tenantId: string) {
@@ -9,6 +9,11 @@ export function useStore(tenantId: string) {
   const [storeMembers, setStoreMembers] = useState<StoreMember[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
+  const clearError = useCallback(() => {
+    setError(null);
+    setFriendlyError(null);
+  }, []);
 
   const fetchStores = useCallback(async () => {
     setLoading(true);
@@ -22,7 +27,9 @@ export function useStore(tenantId: string) {
       setStores((data as Store[]) || []);
     } catch (err) {
       logger.error('fetchStores error:', formatSupabaseError(err));
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     } finally {
       setLoading(false);
@@ -41,7 +48,9 @@ export function useStore(tenantId: string) {
       return data as Store;
     } catch (err) {
       logger.error('createStore error:', formatSupabaseError(err));
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     }
   }, [tenantId, fetchStores]);
@@ -56,7 +65,9 @@ export function useStore(tenantId: string) {
       await fetchStores();
     } catch (err) {
       logger.error('updateStore error:', formatSupabaseError(err));
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     }
   }, [fetchStores]);
@@ -71,7 +82,9 @@ export function useStore(tenantId: string) {
       await fetchStores();
     } catch (err) {
       logger.error('deleteStore error:', formatSupabaseError(err));
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     }
   }, [fetchStores]);
@@ -86,7 +99,9 @@ export function useStore(tenantId: string) {
       setStoreMembers((data as StoreMember[]) || []);
     } catch (err) {
       logger.error('fetchStoreMembers error:', formatSupabaseError(err));
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     }
   }, []);
@@ -100,7 +115,9 @@ export function useStore(tenantId: string) {
       await fetchStoreMembers(storeId);
     } catch (err) {
       logger.error('addStoreMember error:', formatSupabaseError(err));
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     }
   }, [fetchStoreMembers]);
@@ -116,7 +133,9 @@ export function useStore(tenantId: string) {
       await fetchStoreMembers(storeId);
     } catch (err) {
       logger.error('removeStoreMember error:', formatSupabaseError(err));
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     }
   }, [fetchStoreMembers]);
@@ -132,7 +151,9 @@ export function useStore(tenantId: string) {
       await fetchStoreMembers(storeId);
     } catch (err) {
       logger.error('setMemberPrimary error:', formatSupabaseError(err));
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     }
   }, [fetchStoreMembers]);
@@ -162,13 +183,15 @@ export function useStore(tenantId: string) {
       await fetchStoreMembers(storeId);
     } catch (err) {
       logger.error('setStoreMemberManager error:', formatSupabaseError(err));
-      setError(formatSupabaseError(err).message);
+      const f = formatSupabaseError(err);
+      setError(f.message);
+      setFriendlyError(f);
       throw err;
     }
   }, [fetchStoreMembers]);
 
   return {
-    stores, storeMembers, loading, error,
+    stores, storeMembers, loading, error, friendlyError, clearError,
     fetchStores, createStore, updateStore, deleteStore,
     fetchStoreMembers, addStoreMember, removeStoreMember, setMemberPrimary, setStoreMemberManager,
   };

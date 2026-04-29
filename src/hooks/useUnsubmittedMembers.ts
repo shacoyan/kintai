@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { logger } from '../lib/logger';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 import { supabase } from '../lib/supabase';
-import { formatSupabaseError } from '../lib/errors';
+import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 
 export type UnsubmittedMember = {
   user_id: string;
@@ -30,6 +30,8 @@ export type UseUnsubmittedMembersReturn = {
   unsubmitted: UnsubmittedMember[];
   loading: boolean;
   error: Error | null;
+  friendlyError: FriendlyError | null;
+  clearError: () => void;
   refetch: () => Promise<void>;
 };
 
@@ -45,6 +47,11 @@ export function useUnsubmittedMembers(
   const [unsubmitted, setUnsubmitted] = useState<UnsubmittedMember[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
+  const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
+  const clearError = useCallback(() => {
+    setError(null);
+    setFriendlyError(null);
+  }, []);
 
   const monthKey = useMemo(
     () => format(startOfMonth(targetMonth), 'yyyy-MM-dd'),
@@ -143,8 +150,10 @@ export function useUnsubmittedMembers(
 
       setUnsubmitted(result);
     } catch (err) {
-      logger.error('useUnsubmittedMembers fetchData error:', formatSupabaseError(err));
-      setError(new Error(formatSupabaseError(err).message));
+      const f = formatSupabaseError(err);
+      logger.error('useUnsubmittedMembers fetchData error:', f);
+      setError(new Error(f.message));
+      setFriendlyError(f);
       setUnsubmitted([]);
     } finally {
       setLoading(false);
@@ -161,6 +170,8 @@ export function useUnsubmittedMembers(
     unsubmitted,
     loading,
     error,
+    friendlyError,
+    clearError,
     refetch: fetchData,
   };
 }

@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { BottomSheet } from '../ui/BottomSheet';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { formatSupabaseError } from '../../lib/errors';
 import { AlertTriangle } from 'lucide-react';
 
 type TenantDeleteSectionProps = {
@@ -28,8 +29,9 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
       await deleteTenant();
       setIsOpen(false);
       navigate('/tenant');
-    } catch (e: any) {
-      setError(e.message || 'テナントの削除に失敗しました。');
+    } catch (e: unknown) {
+      const f = formatSupabaseError(e);
+      setError(f.message);
     } finally {
       setSubmitting(false);
     }

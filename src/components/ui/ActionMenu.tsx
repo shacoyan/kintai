@@ -95,7 +95,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
 
   const renderedItems = items.map((item) => {
     const tone = item.tone || 'default';
-    const baseClasses = 'w-full text-left px-3 py-2 text-sm min-h-[44px] flex items-center gap-2 transition-colors';
+    const baseClasses = 'w-full text-left px-3 py-2 text-sm min-h-[44px] flex items-center gap-2 motion-safe:transition-colors';
     const toneClass = item.disabled
       ? 'text-neutral-700 dark:text-neutral-200 opacity-50 cursor-not-allowed'
       : toneStyles[tone];
@@ -141,6 +141,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
             ref={menuRef}
             id={menuId}
             role="menu"
+            aria-orientation="vertical"
             className={`absolute ${popoverAlignClass} mt-1 z-20 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg min-w-[160px] py-1`}
           >
             {renderedItems}
@@ -154,7 +155,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
           onClose={handleClose}
           title={bottomSheetTitle}
         >
-          <div role="menu" className="flex flex-col">
+          <div role="menu" aria-orientation="vertical" className="flex flex-col">
             {renderedItems}
           </div>
         </BottomSheet>

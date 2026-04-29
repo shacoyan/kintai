@@ -46,8 +46,8 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
       showToast('権限を移譲しました', 'success');
       setIsConfirmOpen(false);
       setSelectedUserId('');
-    } catch (err) {
-      showToast(formatSupabaseError(err).message, 'error');
+    } catch (e: unknown) {
+      showToast(formatSupabaseError(e).message, 'error');
     } finally {
       setSubmitting(false);
     }

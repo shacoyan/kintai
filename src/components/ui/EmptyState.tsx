@@ -88,7 +88,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     container: 'bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800',
     text: 'text-primary-800 dark:text-primary-300',
     action: 'bg-primary-100 dark:bg-primary-800/40 text-primary-700 dark:text-primary-200 hover:bg-primary-200 dark:hover:bg-primary-800/60',
-    actionClass: 'flex-shrink-0 inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+    actionClass: 'flex-shrink-0 inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium motion-safe:transition-colors',
     actionIconWrap: 'ml-1.5',
   } : {
     container: 'bg-warning-50 dark:bg-warning-900/20 border border-warning-200 dark:border-warning-800',

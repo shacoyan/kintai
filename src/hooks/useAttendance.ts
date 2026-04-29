@@ -4,13 +4,14 @@ import { supabase } from '../lib/supabase';
 import { AttendanceRecord, Break } from '../types';
 import { format, differenceInMinutes, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
-import { formatSupabaseError } from '../lib/errors';
+import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 
 export function useAttendance(tenantId: string, storeId: string | null) {
   const [todayRecords, setTodayRecords] = useState<AttendanceRecord[]>([]);
   const [monthlyRecords, setMonthlyRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
+  const clearError = useCallback(() => setError(null), []);
   const busyRef = useRef(false);
   const [today, setToday] = useState(() => formatInTimeZone(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd'));
 
@@ -101,7 +102,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
       setTodayRecords((data as AttendanceRecord[]) || []);
     } catch (err: unknown) {
       logger.error('Fetch today records error:', formatSupabaseError(err));
-      setError(formatSupabaseError(err).message);
+      setError(formatSupabaseError(err));
     } finally {
       setLoading(false);
     }
@@ -161,7 +162,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
       channelRef.current = channel;
     } catch (e) {
       console.warn('[useAttendance] channel setup failed:', e);
-      setError(e instanceof Error ? e.message : String(e));
+      setError(formatSupabaseError(e));
       if (channel) {
         try { supabase.removeChannel(channel); } catch (re) { console.warn('[useAttendance] removeChannel after fail:', re); }
       }
@@ -201,7 +202,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
       });
       if (error) {
         logger.error('Clock in error:', formatSupabaseError(error));
-        setError(formatSupabaseError(error).message);
+        setError(formatSupabaseError(error));
         throw error;
       }
       await fetchTodayRecords();
@@ -226,7 +227,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
           .eq('id', activeBreak.id);
         if (breakError) {
           logger.error('Auto break end error:', formatSupabaseError(breakError));
-          setError(formatSupabaseError(breakError).message);
+          setError(formatSupabaseError(breakError));
           throw breakError;
         }
       }
@@ -258,7 +259,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         .eq('id', activeRecord.id);
       if (error) {
         logger.error('Clock out error:', formatSupabaseError(error));
-        setError(formatSupabaseError(error).message);
+        setError(formatSupabaseError(error));
         throw error;
       }
       await fetchTodayRecords();
@@ -279,7 +280,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
       });
       if (error) {
         logger.error('Break start error:', formatSupabaseError(error));
-        setError(formatSupabaseError(error).message);
+        setError(formatSupabaseError(error));
         throw error;
       }
       await fetchTodayRecords();
@@ -304,7 +305,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         .limit(1);
       if (fetchError) {
         logger.error('Find active break error:', formatSupabaseError(fetchError));
-        setError(formatSupabaseError(fetchError).message);
+        setError(formatSupabaseError(fetchError));
         throw fetchError;
       }
       if (!data || data.length === 0) return;
@@ -315,7 +316,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         .eq('id', data[0].id);
       if (error) {
         logger.error('Break end error:', formatSupabaseError(error));
-        setError(formatSupabaseError(error).message);
+        setError(formatSupabaseError(error));
         throw error;
       }
       await fetchTodayRecords();
@@ -349,7 +350,7 @@ export function useAttendance(tenantId: string, storeId: string | null) {
         .order('clock_in', { ascending: true });
       if (error) {
         logger.error('Fetch records error:', formatSupabaseError(error));
-        setError(formatSupabaseError(error).message);
+        setError(formatSupabaseError(error));
         return;
       }
       setMonthlyRecords((data as AttendanceRecord[]) || []);
@@ -372,5 +373,6 @@ export function useAttendance(tenantId: string, storeId: string | null) {
     monthlySummary,
     loading,
     error,
+    clearError,
   };
 }
