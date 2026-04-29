@@ -4,6 +4,9 @@ import type { ShiftPreset, Store } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
 import { Button } from '../ui/Button';
 import { Heading } from '../ui/Heading';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { ErrorBanner } from '../ui/ErrorBanner';
 
 interface ShiftFormProps {
   date: string;
@@ -57,7 +60,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
       <Heading level={4}>{date} のシフト申請</Heading>
 
       {error && (
-        <div className="p-2 bg-danger-50 dark:bg-danger-900/30 border border-danger-200 dark:border-danger-800 rounded text-sm text-danger-600 dark:text-danger-400">{error}</div>
+        <ErrorBanner message={error} />
       )}
 
       {presets && presets.length > 0 && (
@@ -77,57 +80,27 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
       )}
 
       {selectableStores.length >= 1 && (
-        <div>
-          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">店舗</label>
-          <select
-            value={storeId ?? ''}
-            onChange={(e) => setStoreId(e.target.value || null)}
-            className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white"
-          >
-            {selectableStores.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-        </div>
+        <Select label="店舗" value={storeId ?? ''} onChange={(e) => setStoreId(e.target.value || null)}>
+          {selectableStores.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </Select>
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">開始時刻</label>
-          <select
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white"
-          >
-            {TIME_OPTIONS.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">終了時刻</label>
-          <select
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white"
-          >
-            {TIME_OPTIONS.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
+        <Select label="開始時刻" value={startTime} onChange={(e) => setStartTime(e.target.value)}>
+          {TIME_OPTIONS.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </Select>
+        <Select label="終了時刻" value={endTime} onChange={(e) => setEndTime(e.target.value)}>
+          {TIME_OPTIONS.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </Select>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">メモ（任意）</label>
-        <input
-          type="text"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-          placeholder="備考があれば入力"
-        />
-      </div>
+      <Input label="メモ（任意）" placeholder="備考があれば入力" value={note} onChange={(e) => setNote(e.target.value)} />
 
       <div className="flex gap-2">
         <Button

@@ -5,6 +5,8 @@ import { ErrorBanner } from '../ui/ErrorBanner';
 import { Heading } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { RadioGroup, Radio } from '../ui/Radio';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
 import { formatSupabaseError } from '../../lib/errors';
 
 interface LeaveFormProps {
@@ -124,38 +126,29 @@ export function LeaveForm({ onSubmit, onCancel, remainingPaidLeave }: LeaveFormP
       </div>
 
       {mode === 'single' ? (
-        <div>
-          <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">日付</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            aria-label="休暇申請日"
-            className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:placeholder-neutral-400"
-          />
-        </div>
+        <Input
+          type="date"
+          label="日付"
+          required
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
       ) : (
         <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">開始日</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              aria-label="休暇開始日"
-              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:placeholder-neutral-400"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">終了日</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              aria-label="休暇終了日"
-              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:placeholder-neutral-400"
-            />
-          </div>
+          <Input
+            type="date"
+            label="開始日"
+            required
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+          <Input
+            type="date"
+            label="終了日"
+            required
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
           {rangeDays > 0 && (
             <p className="text-xs text-neutral-500 dark:text-neutral-300">
               {startDate} 〜 {endDate}（{rangeDays}日間）
@@ -164,35 +157,27 @@ export function LeaveForm({ onSubmit, onCancel, remainingPaidLeave }: LeaveFormP
         </div>
       )}
 
-      <div>
-        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">種類</label>
-        <select
-          value={leaveType}
-          onChange={(e) => setLeaveType(e.target.value as LeaveType)}
-          aria-label="休暇種類"
-          className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
-        >
-          {LEAVE_TYPE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-      </div>
+      <Select
+        label="種類"
+        required
+        value={leaveType}
+        onChange={(e) => setLeaveType(e.target.value as LeaveType)}
+      >
+        {LEAVE_TYPE_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </Select>
 
       <p className="text-xs text-neutral-500 dark:text-neutral-300">
         現在の有給残: {remainingPaidLeave} 日
       </p>
 
-      <div>
-        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">理由（任意）</label>
-        <input
-          type="text"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          aria-label="休暇理由（任意）"
-          className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 placeholder-neutral-400 dark:placeholder-neutral-500"
-          placeholder="理由があれば入力"
-        />
-      </div>
+      <Input
+        label="理由（任意）"
+        placeholder="理由があれば入力"
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+      />
 
       <div className="flex gap-2">
         <Button

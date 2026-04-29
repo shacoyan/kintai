@@ -1,9 +1,9 @@
-// FILE: components/Tenant/JoinTenant.tsx
 import React, { useState } from 'react';
 import type { Tenant } from '../../types';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Button } from '../ui/Button';
 import { Heading } from '../ui';
+import { Input } from '../ui/Input';
 import { formatSupabaseError } from '../../lib/errors';
 
 interface JoinTenantProps {
@@ -62,36 +62,9 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label htmlFor="inviteCode" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              招待コード <span className="text-danger-500 dark:text-danger-400">*</span>
-            </label>
-            <input
-              id="inviteCode"
-              type="text"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-              maxLength={6}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg shadow-sm font-mono text-lg tracking-widest text-center uppercase bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400"
-              placeholder="ABC123"
-              disabled={loading}
-            />
-          </div>
+          <Input label="招待コード" required maxLength={6} value={inviteCode} onChange={(e)=>setInviteCode(e.target.value.toUpperCase())} placeholder="ABC123" disabled={loading} className="font-mono text-lg tracking-widest text-center uppercase" hint="6 桁の英数字" id="inviteCode" />
 
-          <div>
-            <label htmlFor="displayName" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              表示名 <span className="text-danger-500 dark:text-danger-400">*</span>
-            </label>
-            <input
-              id="displayName"
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg shadow-sm bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400"
-              placeholder="例: 山田 太郎"
-              disabled={loading}
-            />
-          </div>
+          <Input label="表示名" required value={displayName} onChange={(e)=>setDisplayName(e.target.value)} placeholder="例: 山田 太郎" disabled={loading} id="displayName" />
 
           <div className="flex gap-3 pt-2">
             <Button

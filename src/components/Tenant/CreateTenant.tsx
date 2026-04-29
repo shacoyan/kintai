@@ -1,10 +1,10 @@
-// FILE: components/Tenant/CreateTenant.tsx
 import React, { useState } from 'react';
 import type { Tenant } from '../../types';
 import { CheckCircle2, Copy, Check } from 'lucide-react';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Button } from '../ui/Button';
 import { Heading } from '../ui';
+import { Input } from '../ui/Input';
 import { formatSupabaseError } from '../../lib/errors';
 
 interface CreateTenantProps {
@@ -112,35 +112,25 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              ワークスペース名 <span className="text-danger-500 dark:text-danger-400">*</span>
-            </label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 dark:bg-neutral-700 dark:text-neutral-100"
-              placeholder="例: 営業部"
-              disabled={loading}
-            />
-          </div>
+          <Input
+            label="ワークスペース名"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="例: 営業部"
+            disabled={loading}
+            id="name"
+          />
 
-          <div>
-            <label htmlFor="displayName" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              表示名 <span className="text-danger-500 dark:text-danger-400">*</span>
-            </label>
-            <input
-              id="displayName"
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 dark:bg-neutral-700 dark:text-neutral-100"
-              placeholder="例: 山田 太郎"
-              disabled={loading}
-            />
-          </div>
+          <Input
+            label="表示名"
+            required
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="例: 山田 太郎"
+            disabled={loading}
+            id="displayName"
+          />
 
           <div className="flex gap-3 pt-2">
             <Button

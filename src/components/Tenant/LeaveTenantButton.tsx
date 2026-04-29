@@ -5,6 +5,7 @@ import { useTenant } from '../../hooks/useTenant';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
 import { Button, BottomSheet } from '../ui';
+import { ErrorBanner } from '../ui/ErrorBanner';
 
 const LeaveTenantButton: React.FC = () => {
   const { isOwner, leaveTenant } = useTenant();
@@ -69,7 +70,7 @@ const LeaveTenantButton: React.FC = () => {
         }
       >
         {errorMsg && (
-          <p className="text-red-500 text-sm">{errorMsg}</p>
+          <ErrorBanner message={errorMsg} />
         )}
       </BottomSheet>
     </>

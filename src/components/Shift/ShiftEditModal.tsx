@@ -3,6 +3,7 @@ import type { Shift, Store } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/Button';
+import { Select, ErrorBanner } from '../ui';
 
 interface ShiftEditModalProps {
   shift: Shift;
@@ -170,8 +171,8 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
       </div>
 
       {error && (
-        <div className="p-2 bg-danger-50 border border-danger-200 dark:bg-danger-900/30 dark:border-danger-700 rounded text-sm text-danger-600 dark:text-danger-300 mb-3">
-          {error}
+        <div className="mb-3">
+          <ErrorBanner message={error} />
         </div>
       )}
 
@@ -199,40 +200,33 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
 
       {mode === 'edit' && (
         <>
-        {selectableStores.length >= 1 && (
-          <div className="mb-3">
-            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">店舗</label>
-            <select
-              value={editStoreId ?? ''}
-              onChange={(e) => setEditStoreId(e.target.value || null)}
-              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
-            >
-              {selectableStores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">開始時刻</label>
-            <select
+          {selectableStores.length >= 1 && (
+            <div className="mb-3">
+              <Select
+                label="店舗"
+                value={editStoreId ?? ''}
+                onChange={(e) => setEditStoreId(e.target.value || null)}
+              >
+                {selectableStores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </Select>
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="開始時刻"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
             >
               {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">終了時刻</label>
-            <select
+            </Select>
+            <Select
+              label="終了時刻"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
             >
               {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            </Select>
           </div>
-        </div>
         </>
       )}
 

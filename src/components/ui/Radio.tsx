@@ -64,9 +64,9 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
         {...rest}
       />
       <span className="block">
-        <span className="block text-body text-neutral-900">{label}</span>
+        <span className="block text-body text-neutral-900 dark:text-neutral-100">{label}</span>
         {description ? (
-          <span className="block text-body-sm text-neutral-500 mt-0.5">{description}</span>
+          <span className="block text-body-sm text-neutral-500 dark:text-neutral-300 mt-0.5">{description}</span>
         ) : null}
       </span>
     </label>
@@ -107,7 +107,7 @@ export function RadioGroup({
   return (
     <div className={cn('w-full', className)}>
       {label ? (
-        <span id={labelId} className="block text-label text-neutral-700 mb-2">
+        <span id={labelId} className="block text-label text-neutral-700 mb-2 dark:text-neutral-300">
           {label}
         </span>
       ) : null}
@@ -128,13 +128,13 @@ export function RadioGroup({
         <p
           id={errId}
           role="alert"
-          className="mt-1.5 text-body-sm text-danger-500 flex items-start gap-1"
+          className="mt-1.5 text-body-sm text-danger-500 dark:text-danger-400 flex items-start gap-1"
         >
           <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </p>
       ) : hint ? (
-        <p id={hintId} className="mt-1.5 text-body-sm text-neutral-500">
+        <p id={hintId} className="mt-1.5 text-body-sm text-neutral-500 dark:text-neutral-300">
           {hint}
         </p>
       ) : null}

@@ -171,7 +171,7 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
       </fieldset>
 
       {error && (
-        <div className="mb-3 text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded px-3 py-2">
+        <div className="mb-3 text-sm text-danger-700 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 border border-danger-200 dark:border-danger-800 rounded px-3 py-2">
           {error}
         </div>
       )}

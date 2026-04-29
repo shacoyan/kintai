@@ -155,7 +155,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
                       <button onClick={() => openEditForm(role)} className="text-neutral-500 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400" aria-label={`役職『${role.name}』を編集`}>
                         <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => openDeleteConfirm(role)} className="text-neutral-500 dark:text-neutral-300 hover:text-red-600 dark:hover:text-red-400" aria-label={`役職『${role.name}』を削除`}>
+                      <button onClick={() => openDeleteConfirm(role)} className="text-neutral-500 dark:text-neutral-300 hover:text-danger-600 dark:hover:text-danger-400" aria-label={`役職『${role.name}』を削除`}>
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </td>
@@ -178,7 +178,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
                     <button onClick={() => openEditForm(role)} className="p-1 text-neutral-400 dark:text-neutral-500 hover:text-blue-600 dark:hover:text-blue-400" aria-label={`役職『${role.name}』を編集`}>
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => openDeleteConfirm(role)} className="p-1 text-neutral-400 dark:text-neutral-500 hover:text-red-600 dark:hover:text-red-400" aria-label={`役職『${role.name}』を削除`}>
+                    <button onClick={() => openDeleteConfirm(role)} className="p-1 text-neutral-400 dark:text-neutral-500 hover:text-danger-600 dark:hover:text-danger-400" aria-label={`役職『${role.name}』を削除`}>
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -211,7 +211,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
       >
         <div className="space-y-4 p-4">
           <div>
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">役職名 <span className="text-red-500 dark:text-red-400">*</span></label>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">役職名 <span className="text-danger-500 dark:text-danger-400">*</span></label>
             <Input placeholder="例: マネージャー" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div>

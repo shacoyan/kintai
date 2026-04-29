@@ -65,7 +65,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         <label htmlFor={inputId} className="block text-label text-neutral-700 mb-2 dark:text-neutral-300">
           {label}
           {required ? (
-            <span aria-hidden="true" className="text-danger-500 ml-0.5">
+            <span aria-hidden="true" className="text-danger-500 dark:text-danger-400 ml-0.5">
               *
             </span>
           ) : null}
@@ -105,13 +105,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         <p
           id={errId}
           role="alert"
-          className="mt-1.5 text-body-sm text-danger-500 flex items-start gap-1"
+          className="mt-1.5 text-body-sm text-danger-500 dark:text-danger-400 flex items-start gap-1"
         >
           <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </p>
       ) : hint ? (
-        <p id={hintId} className="mt-1.5 text-body-sm text-neutral-500">
+        <p id={hintId} className="mt-1.5 text-body-sm text-neutral-500 dark:text-neutral-300">
           {hint}
         </p>
       ) : null}

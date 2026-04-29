@@ -13,6 +13,7 @@ import { formatSupabaseError } from '../../lib/errors';
 import { PageSkeleton } from '../ui/Skeleton';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
 import { Trash2, Pencil, Users } from 'lucide-react';
 
 interface MemberManagementProps {
@@ -534,7 +535,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                   >
                     <div className="px-4 py-2">
                       <label className="block text-xs text-neutral-500 dark:text-neutral-300 mb-2">時給（円/時）</label>
-                      <input type="number" value={editRate} onChange={(e) => setEditRate(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="50" disabled={saving} />
+                      <Input type="number" aria-label="時給 (円)" value={editRate} onChange={(e) => setEditRate(e.target.value)} autoFocus min="0" step="50" disabled={saving} />
                     </div>
                   </BottomSheet>
 
@@ -552,7 +553,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                   >
                     <div className="px-4 py-2">
                       <label className="block text-xs text-neutral-500 dark:text-neutral-300 mb-2">月給（円/月）</label>
-                      <input type="number" value={editMonthlySalary} onChange={(e) => setEditMonthlySalary(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="10000" disabled={saving} />
+                      <Input type="number" aria-label="月給 (円)" value={editMonthlySalary} onChange={(e) => setEditMonthlySalary(e.target.value)} autoFocus min="0" step="10000" disabled={saving} />
                     </div>
                   </BottomSheet>
 
@@ -570,7 +571,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                   >
                     <div className="px-4 py-2">
                       <label className="block text-xs text-neutral-500 dark:text-neutral-300 mb-2">有給日数（日）</label>
-                      <input type="number" value={editPaidLeaveDays} onChange={(e) => setEditPaidLeaveDays(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="0.5" disabled={saving} />
+                      <Input type="number" aria-label="有給日数" value={editPaidLeaveDays} onChange={(e) => setEditPaidLeaveDays(e.target.value)} autoFocus min="0" step="0.5" disabled={saving} />
                     </div>
                   </BottomSheet>
                 </div>

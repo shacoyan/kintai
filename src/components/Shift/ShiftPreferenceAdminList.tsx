@@ -230,7 +230,7 @@ export function ShiftPreferenceAdminList({
         value={sortKey} 
         onChange={(e) => setSortKey(e.target.value as SortKey)} 
         aria-label="並び順" 
-        className="text-xs border border-neutral-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 rounded px-2 py-1"
+        className="text-xs border border-neutral-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 rounded px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 dark:focus-visible:ring-offset-neutral-900"
       >
         <option value="date_asc">日付↑</option>
         <option value="date_desc">日付↓</option>
