@@ -67,7 +67,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
               onClick={() => handleAction(() => onApprove(shift.id))}
               disabled={processing}
               variant="primary"
-              className="bg-success-600 dark:bg-success-500 hover:bg-success-700"
+              className="bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400"
             >
               承認
             </Button>
@@ -215,7 +215,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
             <select
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
             >
               {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -225,7 +225,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
             <select
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
+              className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
             >
               {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>

@@ -130,7 +130,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
               <button
                 onClick={() => { handleAction(() => onBulkApprove(pendingShifts.map(s => s.id))); setBulkConfirming(false); }}
                 disabled={processing}
-                className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 disabled:opacity-50 motion-safe:transition flex items-center"
+                className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 dark:hover:bg-success-600 disabled:opacity-50 motion-safe:transition flex items-center"
               >
                 {processing && <Loader2 className="w-4 h-4 motion-safe:animate-spin mr-1" />}
                 <span>{pendingShifts.length}件 承認する</span>
@@ -146,7 +146,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             <button
               onClick={() => setBulkConfirming(true)}
               disabled={processing}
-              className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 disabled:opacity-50 motion-safe:transition flex items-center"
+              className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition flex items-center"
             >
               {processing && <Loader2 className="w-4 h-4 motion-safe:animate-spin mr-1" />}
               <span>一括承認</span>
@@ -291,7 +291,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                         <button
                           onClick={() => handleModifySubmit(shift.id)}
                           disabled={processing}
-                          className="px-2 py-1 min-h-[44px] text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 disabled:opacity-50 motion-safe:transition"
+                          className="px-2 py-1 min-h-[44px] text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 dark:hover:bg-primary-500 disabled:opacity-50 motion-safe:transition"
                         >
                           確定
                         </button>
@@ -321,7 +321,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onReject(shift.id)); setConfirmingId(null); }}
                             disabled={processing}
-                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 dark:hover:bg-danger-500 disabled:opacity-50 motion-safe:transition"
                           >
                             却下する
                           </button>
@@ -337,7 +337,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onApprove(shift.id)); setConfirmingId(null); }}
                             disabled={processing}
-                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition"
                           >
                             承認する
                           </button>
@@ -353,7 +353,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => setConfirmingId({ id: shift.id, action: 'approve' })}
                             disabled={processing}
-                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition"
                           >
                             承認
                           </button>
@@ -370,7 +370,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onDelete(shift.id)); setDeletingId(null); }}
                             disabled={processing}
-                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 dark:hover:bg-danger-500 disabled:opacity-50 motion-safe:transition"
                           >
                             削除する
                           </button>
@@ -403,7 +403,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onDelete(shift.id)); setDeletingId(null); }}
                             disabled={processing}
-                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 dark:hover:bg-danger-500 disabled:opacity-50 motion-safe:transition"
                           >
                             削除する
                           </button>
@@ -419,7 +419,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onApprove(shift.id)); setConfirmingId(null); }}
                             disabled={processing}
-                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition"
                           >
                             復活承認する
                           </button>
@@ -435,7 +435,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => setConfirmingId({ id: shift.id, action: 'restore' })}
                             disabled={processing}
-                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition"
                           >
                             復活承認
                           </button>
@@ -452,7 +452,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                           <button
                             onClick={() => { handleAction(() => onDelete(shift.id)); setDeletingId(null); }}
                             disabled={processing}
-                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 disabled:opacity-50 motion-safe:transition"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 dark:hover:bg-danger-500 disabled:opacity-50 motion-safe:transition"
                           >
                             削除する
                           </button>

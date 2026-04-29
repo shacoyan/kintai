@@ -94,11 +94,11 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
     switch (status) {
       case 'not_started':
         if (todayRecords.some((r) => r.date === todayStr)) {
-          return { label: '再出勤', bg: 'bg-success-500 hover:bg-success-600', disabled: false };
+          return { label: '再出勤', bg: 'bg-success-500 hover:bg-success-600 dark:hover:bg-success-500', disabled: false };
         }
-        return { label: '出勤', bg: 'bg-success-500 hover:bg-success-600', disabled: false };
+        return { label: '出勤', bg: 'bg-success-500 hover:bg-success-600 dark:hover:bg-success-500', disabled: false };
       case 'working':
-        return { label: isCarryOver ? '退勤（日跨ぎ）' : '退勤', bg: 'bg-danger-500 hover:bg-danger-600', disabled: false };
+        return { label: isCarryOver ? '退勤（日跨ぎ）' : '退勤', bg: 'bg-danger-500 hover:bg-danger-600 dark:hover:bg-danger-500', disabled: false };
       case 'on_break':
         return { label: '休憩中...', bg: 'bg-warning-400', disabled: true };
     }

@@ -58,7 +58,7 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
 
           <Button
             variant="danger"
-            className="bg-rose-600 dark:bg-rose-500 text-white hover:bg-rose-700"
+            className="bg-rose-600 dark:bg-rose-500 text-white hover:bg-rose-700 dark:hover:bg-rose-400"
             disabled={!isOwner}
             onClick={() => setIsOpen(true)}
           >
@@ -113,7 +113,7 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
             </Button>
             <Button
               variant="danger"
-              className="bg-rose-600 dark:bg-rose-500 text-white hover:bg-rose-700 disabled:opacity-50"
+              className="bg-rose-600 dark:bg-rose-500 text-white hover:bg-rose-700 dark:hover:bg-rose-400 disabled:opacity-50"
               disabled={confirmText !== currentTenant?.name || submitting}
               onClick={handleDelete}
             >

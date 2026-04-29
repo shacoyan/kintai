@@ -26,11 +26,11 @@ const FIELD_BASE =
   'dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:disabled:bg-neutral-900';
 
 const FIELD_NORMAL =
-  'border-neutral-300 focus-visible:border-primary-500 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 ' +
+  'border-neutral-300 focus-visible:border-primary-500 dark:focus-visible:border-primary-400 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 ' +
   'dark:border-neutral-600 dark:focus-visible:ring-offset-neutral-900';
 
 const FIELD_ERROR =
-  'border-danger-500 focus-visible:border-danger-500 focus-visible:ring-danger-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 ' +
+  'border-danger-500 focus-visible:border-danger-500 dark:focus-visible:border-danger-400 focus-visible:ring-danger-500 dark:focus-visible:ring-danger-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 ' +
   'dark:focus-visible:ring-offset-neutral-900';
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(

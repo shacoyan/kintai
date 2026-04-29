@@ -58,7 +58,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
         disabled={disabled}
         className={cn(
           'h-4 w-4 mt-1 border-neutral-300 text-primary-600',
-          'focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50',
+          'focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 dark:focus-visible:ring-offset-neutral-900',
           className,
         )}
         {...rest}

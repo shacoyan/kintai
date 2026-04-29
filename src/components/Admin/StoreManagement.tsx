@@ -167,7 +167,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                   checked={assigned}
                   disabled={toggling}
                   onChange={() => handleToggleMember(member.id)}
-                  className="h-4 w-4 text-primary-600 dark:text-primary-400 rounded border-neutral-300 dark:border-neutral-600 focus:ring-primary-500 cursor-pointer disabled:opacity-50"
+                  className="h-4 w-4 text-primary-600 dark:text-primary-400 rounded border-neutral-300 dark:border-neutral-600 focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer disabled:opacity-50"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{member.display_name}</p>
@@ -238,7 +238,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                 value={newStoreName}
                 onChange={(e) => setNewStoreName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateStore()}
-                className="flex-1 px-3 py-2 text-sm border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                className="flex-1 px-3 py-2 text-sm border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                 placeholder="店舗名を入力"
               />
               <Button
@@ -278,7 +278,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                           if (e.key === 'Escape') setEditingStoreId(null);
                         }}
                         autoFocus
-                        className="flex-1 px-2 py-1 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                        className="flex-1 px-2 py-1 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                       />
                       <div className="flex items-center gap-2">
                         <Button

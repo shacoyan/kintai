@@ -272,7 +272,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       {member.role !== 'owner' && (
                         <button
                           onClick={() => setDeletingId(member.id)}
-                          className="p-2 text-neutral-400 dark:text-neutral-500 hover:text-danger-500 motion-safe:transition min-h-[44px] min-w-[44px]"
+                          className="p-2 text-neutral-400 dark:text-neutral-500 hover:text-danger-500 dark:hover:text-danger-400 motion-safe:transition min-h-[44px] min-w-[44px]"
                           title="メンバーを削除"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -356,7 +356,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                                 value={editRate}
                                 onChange={(e) => setEditRate(e.target.value)}
                                 onKeyDown={(e) => handleKeyDown(e, member.id)}
-                                className="w-24 px-2 py-1.5 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                                className="w-24 px-2 py-1.5 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                                 autoFocus
                                 disabled={saving}
                                 min="0"
@@ -383,8 +383,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               onClick={() => handleStartEdit(member)}
                               className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
                                 rate > 0
-                                  ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-                                  : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100'
+                                  ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
+                                  : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'
                               }`}
                             >
                               {rate > 0 ? (
@@ -411,7 +411,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                                 value={editMonthlySalary}
                                 onChange={(e) => setEditMonthlySalary(e.target.value)}
                                 onKeyDown={(e) => handleMonthlySalaryKeyDown(e, member.id)}
-                                className="w-28 px-2 py-1.5 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                                className="w-28 px-2 py-1.5 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                                 autoFocus
                                 disabled={saving}
                                 min="0"
@@ -438,8 +438,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               onClick={() => handleStartEditMonthlySalary(member)}
                               className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
                                 (member.monthly_salary ?? 0) > 0
-                                  ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-                                  : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100'
+                                  ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
+                                  : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'
                               }`}
                             >
                               {(member.monthly_salary ?? 0) > 0 ? (
@@ -463,7 +463,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               value={editPaidLeaveDays}
                               onChange={(e) => setEditPaidLeaveDays(e.target.value)}
                               onKeyDown={(e) => handlePaidLeaveDaysKeyDown(e, member.id)}
-                              className="w-20 px-2 py-1.5 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                              className="w-20 px-2 py-1.5 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                               autoFocus
                               disabled={saving}
                               min="0"
@@ -490,8 +490,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             onClick={() => handleStartEditPaidLeaveDays(member)}
                             className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
                               (member.paid_leave_days ?? 0) > 0
-                                ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-                                : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100'
+                                ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
+                                : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'
                             }`}
                           >
                             {(member.paid_leave_days ?? 0) > 0 ? (
@@ -511,7 +511,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             type="checkbox"
                             checked={member.night_shift_enabled ?? false}
                             onChange={() => handleNightShiftToggle(member)}
-                            className="h-4 w-4 text-primary-600 dark:text-primary-400 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500 cursor-pointer"
+                            className="h-4 w-4 text-primary-600 dark:text-primary-400 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer"
                           />
                           <span className="text-xs text-neutral-600 dark:text-neutral-400">深夜給 <span className="font-medium">1.25x</span></span>
                         </label>
@@ -533,7 +533,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                   >
                     <div className="px-4 py-2">
                       <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-2">時給（円/時）</label>
-                      <input type="number" value={editRate} onChange={(e) => setEditRate(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="50" disabled={saving} />
+                      <input type="number" value={editRate} onChange={(e) => setEditRate(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="50" disabled={saving} />
                     </div>
                   </BottomSheet>
 
@@ -551,7 +551,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                   >
                     <div className="px-4 py-2">
                       <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-2">月給（円/月）</label>
-                      <input type="number" value={editMonthlySalary} onChange={(e) => setEditMonthlySalary(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="10000" disabled={saving} />
+                      <input type="number" value={editMonthlySalary} onChange={(e) => setEditMonthlySalary(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="10000" disabled={saving} />
                     </div>
                   </BottomSheet>
 
@@ -569,7 +569,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                   >
                     <div className="px-4 py-2">
                       <label className="block text-xs text-neutral-500 dark:text-neutral-400 mb-2">有給日数（日）</label>
-                      <input type="number" value={editPaidLeaveDays} onChange={(e) => setEditPaidLeaveDays(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="0.5" disabled={saving} />
+                      <input type="number" value={editPaidLeaveDays} onChange={(e) => setEditPaidLeaveDays(e.target.value)} className="w-full px-3 py-3 text-base border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white" autoFocus min="0" step="0.5" disabled={saving} />
                     </div>
                   </BottomSheet>
                 </div>

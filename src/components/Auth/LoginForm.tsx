@@ -145,7 +145,7 @@ export const LoginForm = function LoginForm() {
             setError(null);
             setResetSuccess(false);
           }}
-          className="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded"
+          className="text-sm font-medium text-primary-600 hover:text-primary-700 dark:hover:text-primary-300 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400 rounded"
         >
           ログインに戻る
         </button>
@@ -186,7 +186,7 @@ export const LoginForm = function LoginForm() {
             type="button"
             aria-label={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
             onClick={() => setShowPassword((v) => !v)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 motion-safe:transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 motion-safe:transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
           >
             {showPassword ? (
               <EyeOff size={16} aria-hidden="true" />
@@ -203,7 +203,7 @@ export const LoginForm = function LoginForm() {
           <button
             type="button"
             onClick={() => setShowResetForm(true)}
-            className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
+            className="text-xs font-medium text-primary-600 hover:text-primary-700 dark:hover:text-primary-300 hover:underline"
           >
             パスワードをお忘れですか？
           </button>
@@ -252,7 +252,7 @@ export const LoginForm = function LoginForm() {
             setIsLogin((v) => !v);
             setError(null);
           }}
-          className="ml-1 font-semibold text-primary-600 hover:text-primary-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 rounded"
+          className="ml-1 font-semibold text-primary-600 hover:text-primary-700 dark:hover:text-primary-300 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400 rounded"
         >
           {isLogin ? '新規登録' : 'ログイン'}
         </button>

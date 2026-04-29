@@ -66,7 +66,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
               key={p.id}
               type="button"
               onClick={() => { setStartTime(p.start_time.slice(0, 5)); setEndTime(p.end_time.slice(0, 5)); }}
-              className="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-primary-50 dark:bg-primary-900 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 rounded-full hover:bg-primary-100 motion-safe:transition"
+              className="inline-flex items-center px-3 py-1.5 text-xs font-medium bg-primary-50 dark:bg-primary-900 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 motion-safe:transition"
             >
               <Clock className="w-3.5 h-3.5 mr-1" />
               {p.name} ({p.start_time.slice(0, 5)}-{p.end_time.slice(0, 5)})
@@ -81,7 +81,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
           <select
             value={storeId ?? ''}
             onChange={(e) => setStoreId(e.target.value || null)}
-            className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white"
           >
             {selectableStores.map((s) => (
               <option key={s.id} value={s.id}>{s.name}</option>
@@ -96,7 +96,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
           <select
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white"
           >
             {TIME_OPTIONS.map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -108,7 +108,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
           <select
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white"
           >
             {TIME_OPTIONS.map((t) => (
               <option key={t} value={t}>{t}</option>
@@ -123,7 +123,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="block w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400"
           placeholder="備考があれば入力"
         />
       </div>

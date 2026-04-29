@@ -296,7 +296,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                className="border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
               >
                 {yearOptions.map((y) => (
                   <option key={y} value={y}>{y}年</option>
@@ -308,7 +308,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                className="border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
               >
                 {monthOptions.map((m) => (
                   <option key={m} value={m}>{m}月</option>
@@ -319,7 +319,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           <button
             onClick={handleLoad}
             disabled={loading}
-            className="w-full md:w-auto bg-primary-600 dark:bg-primary-500 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition"
+            className="w-full md:w-auto bg-primary-600 dark:bg-primary-500 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 dark:hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition"
           >
             {loading ? '読込中...' : '表示'}
           </button>
@@ -438,7 +438,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                               border-r border-neutral-200 dark:border-neutral-600 p-1 text-center cursor-pointer
                               motion-safe:transition-all select-none
                               ${cellBg}
-                              ${isSelected ? 'ring-2 ring-inset ring-primary-500 dark:ring-primary-400' : 'hover:ring-1 hover:ring-inset hover:ring-primary-300'}
+                              ${isSelected ? 'ring-2 ring-inset ring-primary-500 dark:ring-primary-400' : 'hover:ring-1 hover:ring-inset hover:ring-primary-300 dark:hover:ring-primary-700'}
                             `}
                             style={{ minWidth: '48px', width: '48px', height: '44px' }}
                           >
@@ -488,7 +488,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
               <button
                 onClick={handleSave}
                 disabled={saving || (!edit.clock_in && !selectedCell.record)}
-                className="bg-primary-600 dark:bg-primary-500 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition"
+                className="bg-primary-600 dark:bg-primary-500 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 dark:hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition"
               >
                 {saving ? '保存中...' : selectedCell.record ? '更新' : '登録'}
               </button>
@@ -539,7 +539,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                   type="datetime-local"
                   value={edit.clock_in}
                   onChange={(e) => setEdit((prev) => ({ ...prev, clock_in: e.target.value }))}
-                  className="w-full border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                  className="w-full border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                 />
               </div>
               <div>
@@ -548,7 +548,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                   type="datetime-local"
                   value={edit.clock_out}
                   onChange={(e) => setEdit((prev) => ({ ...prev, clock_out: e.target.value }))}
-                  className="w-full border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                  className="w-full border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                 />
               </div>
             </div>

@@ -53,7 +53,7 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
           disabled={processing}
           aria-label="休憩開始"
           aria-pressed={false}
-          className="bg-neutral-600 hover:bg-neutral-700 dark:bg-neutral-500 text-white font-bold py-3 px-8 rounded-lg motion-safe:transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+          className="bg-neutral-600 hover:bg-neutral-700 dark:bg-neutral-500 dark:hover:bg-neutral-400 text-white font-bold py-3 px-8 rounded-lg motion-safe:transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
         >
           {processing ? '処理中...' : '休憩開始'}
         </button>
@@ -65,7 +65,7 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
             disabled={processing}
             aria-label="休憩終了"
             aria-pressed={true}
-            className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 text-white font-bold py-3 px-8 rounded-lg motion-safe:transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+            className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white font-bold py-3 px-8 rounded-lg motion-safe:transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             {processing ? '処理中...' : '休憩終了'}
           </button>

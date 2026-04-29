@@ -477,7 +477,7 @@ export function ShiftPage() {
                 <button 
                   key={s.id} 
                   onClick={() => { setSelectedShift(s); setSelectedShiftDate(null); }}
-                  className="w-full text-left p-3 bg-neutral-50 dark:bg-neutral-800 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                  className="w-full text-left p-3 bg-neutral-50 dark:bg-neutral-800 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
                 >
                   <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{memberNames.get(s.user_id) ?? '不明'}</div>
                   <div className="text-xs text-neutral-600 dark:text-neutral-400">
@@ -920,7 +920,7 @@ export function ShiftPage() {
               ) : (
                 <button
                   onClick={() => setShowLeaveForm(true)}
-                  className="w-full px-4 py-3 text-sm font-medium text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 motion-safe:transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                  className="w-full px-4 py-3 text-sm font-medium text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 motion-safe:transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
                 >
                   + 休暇申請
                 </button>

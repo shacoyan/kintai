@@ -139,7 +139,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                       : isSelected
                       ? 'bg-primary-50 dark:bg-primary-900/20'
                       : 'hover:bg-neutral-50 dark:hover:bg-neutral-700/50'
-                  } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
+                  } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400`}
                 >
                   <span
                     className={`text-xs font-medium block mb-0.5 ${
@@ -194,7 +194,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                     {onRequestCorrection && (
                       <div className="pt-1">
                         <button onClick={(e) => { e.stopPropagation(); onRequestCorrection?.(dateKey, record ?? undefined); }}
-                          className="text-xs text-primary-700 dark:text-primary-300 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
+                          className="text-xs text-primary-700 dark:text-primary-300 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400">
                           この日を修正申請する
                         </button>
                       </div>
@@ -409,7 +409,7 @@ export function HistoryPage() {
                 viewMode === 'list'
                   ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
-              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400`}
             >
               リスト
             </button>
@@ -419,7 +419,7 @@ export function HistoryPage() {
                 viewMode === 'calendar'
                   ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
-              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400`}
             >
               カレンダー
             </button>
