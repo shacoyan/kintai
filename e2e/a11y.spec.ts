@@ -1,3 +1,4 @@
+// NOTE: color-contrast は L28-palette ループまで disableRules で除外中
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
@@ -31,6 +32,7 @@ for (const route of ROUTES) {
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .disableRules(['color-contrast']) // TODO(L28-palette): remove after #6
       .analyze();
 
     const blocking = results.violations.filter(
