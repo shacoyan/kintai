@@ -6,6 +6,7 @@ import type { TenantMember } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { BottomSheet } from '../ui/BottomSheet';
+import { Heading } from '../ui/Heading';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { formatSupabaseError } from '../../lib/errors';
@@ -220,7 +221,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     <Card padding="none">
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
-          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">メンバー管理</h2>
+          <Heading level={2}>メンバー管理</Heading>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">各メンバーの時給・深夜給を設定できます</p>
           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-300">対象: {currentStore ? currentStore.name : '全店舗'}</p>
         </div>

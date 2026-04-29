@@ -2,6 +2,7 @@ import * as React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Card } from './Card';
 import { Button } from './Button';
+import { Heading } from './Heading';
 
 export interface ErrorBoundaryFallbackProps {
   error: Error;
@@ -63,9 +64,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger-100 dark:bg-danger-900/30 mb-4">
             <AlertTriangle className="h-6 w-6 text-danger-600 dark:text-danger-400" aria-hidden="true" />
           </div>
-          <h2 className="text-heading-3 text-neutral-900 dark:text-neutral-100 mb-2">
+          <Heading level={3} as="h2" className="mb-2">
             予期しないエラーが発生しました
-          </h2>
+          </Heading>
           <p className="text-body-sm text-neutral-600 dark:text-neutral-300 mb-6">
             ページを再読込してください。問題が続く場合はサポートに連絡してください。
           </p>

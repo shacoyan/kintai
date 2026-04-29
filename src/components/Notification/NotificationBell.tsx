@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../contexts/TenantContext';
 import { useNotification } from '../../hooks/useNotification';
-import { BottomSheet, EmptyState } from '../ui';
+import { BottomSheet, EmptyState, Heading } from '../ui';
 import type { NotificationItem } from '../../types';
 
 function formatRelativeTime(dateString: string): string {
@@ -164,9 +164,9 @@ function NotificationBellInner({ userId }: { userId: string }) {
           className="absolute right-0 top-full mt-2 w-80 max-h-[480px] rounded-md bg-white shadow-lg border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-800 py-2 z-50 overflow-y-auto"
         >
           <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 mb-1">
-            <h3 className="font-semibold text-sm text-neutral-900 dark:text-neutral-100">
+            <Heading level={4}>
               通知
-            </h3>
+            </Heading>
             {unreadCount > 0 && (
               <button
                 type="button"

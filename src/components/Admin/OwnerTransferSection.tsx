@@ -3,6 +3,7 @@ import { useTenant } from '../../contexts/TenantContext';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useToast } from '../../contexts/ToastContext';
 import { BottomSheet } from '../ui/BottomSheet';
+import { Heading } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { formatSupabaseError } from '../../lib/errors';
@@ -27,7 +28,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
   if (!isOwner) {
     return (
       <div className="bg-white dark:bg-neutral-900 rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">オーナー権限の移譲</h3>
+        <Heading level={2} as="h3" className="mb-4">オーナー権限の移譲</Heading>
         <p className="text-neutral-500 dark:text-neutral-300 text-sm">オーナーのみ実行可能です</p>
       </div>
     );
@@ -78,7 +79,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
   return (
     <>
       <div className="bg-white dark:bg-neutral-900 rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">オーナー権限の移譲</h3>
+        <Heading level={2} as="h3" className="mb-4">オーナー権限の移譲</Heading>
         
         {loading ? (
           <div className="text-sm text-neutral-500 dark:text-neutral-300"><Spinner size="sm" inline showLabel label="読み込み中" /></div>

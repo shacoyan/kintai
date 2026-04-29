@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { LeaveRequest, LeaveType } from '../../types';
 import { CalendarOff } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
+import { Heading } from '../ui/Heading';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Button } from '../ui/Button';
 import { formatSupabaseError } from '../../lib/errors';
@@ -70,7 +71,7 @@ export function LeaveList({ leaves, memberNames, storeNames, canManageTenant, on
   return (
     <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">休暇申請一覧</h2>
+        <Heading level={2}>休暇申請一覧</Heading>
       </div>
 
       {error && (

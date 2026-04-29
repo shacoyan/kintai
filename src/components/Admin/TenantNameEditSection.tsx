@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
+import { Heading } from '../ui/Heading';
 
 interface TenantNameEditSectionProps {
   tenantId: string;
@@ -25,9 +26,9 @@ export const TenantNameEditSection: React.FC<TenantNameEditSectionProps> = ({
   if (!isOwner) {
     return (
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4 border border-neutral-100 dark:border-neutral-700">
-        <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-2">
+        <Heading level={2} as="h3" className="mb-2">
           テナント表示名編集
-        </h3>
+        </Heading>
         <p className="text-sm text-neutral-500 dark:text-neutral-300">
           オーナーのみ実行可能です
         </p>
@@ -52,9 +53,9 @@ export const TenantNameEditSection: React.FC<TenantNameEditSectionProps> = ({
 
   return (
     <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4 border border-neutral-100 dark:border-neutral-700">
-      <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">
+      <Heading level={2} as="h3" className="mb-4">
         テナント表示名編集
-      </h3>
+      </Heading>
 
       <div className="space-y-3">
         <div>

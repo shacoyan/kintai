@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTenantRoles } from '../../hooks/useTenantRoles';
-import { Card, Button, Input } from '../ui';
+import { Card, Button, Input, Heading } from '../ui';
 import { BottomSheet } from '../ui/BottomSheet';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
@@ -111,7 +111,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
   return (
     <Card padding="md">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">役職管理</h3>
+        <Heading level={2} as="h3">役職管理</Heading>
         <Button variant="primary" size="sm" onClick={openCreateForm} className="flex items-center gap-1">
           <Plus className="w-4 h-4" />
           役職を追加
@@ -172,7 +172,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
                     {role.color && <span className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: role.color }} />}
-                    <h4 className="text-base font-bold text-neutral-900 dark:text-neutral-100">{role.name}</h4>
+                    <Heading level={3} as="h4">{role.name}</Heading>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => openEditForm(role)} className="p-1 text-neutral-400 dark:text-neutral-500 hover:text-blue-600 dark:hover:text-blue-400" aria-label={`役職『${role.name}』を編集`}>

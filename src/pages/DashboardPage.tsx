@@ -8,7 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 import { ClockButton } from '../components/Attendance/ClockButton';
 import { BreakButton } from '../components/Attendance/BreakButton';
 import { AlertTriangle, Clock, Activity, CalendarDays, FileClock } from 'lucide-react';
-import { Card, StatCard, Badge, Button, DashboardSkeleton, ListRowSkeleton, EmptyState } from '../components/ui';
+import { Card, StatCard, Badge, Button, DashboardSkeleton, ListRowSkeleton, EmptyState, Heading } from '../components/ui';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -155,7 +155,7 @@ export function DashboardPage() {
   return (
     <div className="max-w-md mx-auto space-y-4 md:space-y-6">
       <header className="flex items-end justify-between gap-3">
-        <h1 className="text-xl md:text-2xl font-semibold text-neutral-900 dark:text-neutral-100">{format(today, 'M月d日')}</h1>
+        <Heading level={1}>{format(today, 'M月d日')}</Heading>
         <p className="text-sm text-neutral-500 dark:text-neutral-300">{format(today, 'EEEE', { locale: ja })}</p>
       </header>
 

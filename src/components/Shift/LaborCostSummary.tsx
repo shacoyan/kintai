@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { Heading } from '../ui/Heading';
 
 interface LaborCostEstimate {
   userId: string;
@@ -29,7 +30,7 @@ export function LaborCostSummary({ estimates, targetMonth }: LaborCostSummaryPro
   return (
     <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">人件費サマリー</h2>
+        <Heading level={2}>人件費サマリー</Heading>
         <p className="text-sm text-neutral-500 dark:text-neutral-300 mt-0.5">
           {targetMonth
             ? `${format(targetMonth, 'yyyy年M月')} の見込み人件費（承認済 + 申請中）`

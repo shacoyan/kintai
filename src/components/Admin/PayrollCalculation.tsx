@@ -8,7 +8,7 @@ import { useTenantRoles } from '../../hooks/useTenantRoles';
 import { generatePayrollCsv, downloadCsv } from '../../utils/csvExport';
 import { getNightMinutesInRange, getNightMinutesForShift } from '../../utils/nightShift';
 import { Download, Calculator, Lock, Printer } from 'lucide-react';
-import { EmptyState, ErrorBanner, PageSkeleton, Button, Card, Select, Badge, StatCard } from '../ui';
+import { EmptyState, ErrorBanner, PageSkeleton, Button, Card, Select, Badge, StatCard, Heading } from '../ui';
 import { usePayrollRun } from '../../hooks/usePayrollRun';
 import { useTenant, usePayrollCloseDay } from '../../hooks/useTenant';
 import { PayrollSlipPrintView } from './PayrollSlipPrintView';
@@ -467,7 +467,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
       <Card.Header>
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">給与計算</h2>
+            <Heading level={2}>給与計算</Heading>
             <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">月次の勤怠データから給与を計算します</p>
           </div>
           <div className="text-sm text-neutral-600 dark:text-neutral-300">

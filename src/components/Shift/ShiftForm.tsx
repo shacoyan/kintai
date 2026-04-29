@@ -3,6 +3,7 @@ import { Clock } from 'lucide-react';
 import type { ShiftPreset, Store } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
 import { Button } from '../ui/Button';
+import { Heading } from '../ui/Heading';
 
 interface ShiftFormProps {
   date: string;
@@ -53,7 +54,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
 
   return (
     <form onSubmit={handleSubmit} className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{date} のシフト申請</h3>
+      <Heading level={4}>{date} のシフト申請</Heading>
 
       {error && (
         <div className="p-2 bg-danger-50 dark:bg-danger-900/30 border border-danger-200 dark:border-danger-800 rounded text-sm text-danger-600 dark:text-danger-400">{error}</div>

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { Heading } from '../components/ui';
 import { formatSupabaseError } from '../lib/errors';
 
 export const ResetPasswordPage = () => {
@@ -71,9 +72,9 @@ export const ResetPasswordPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
       <div className="bg-neutral-0 dark:bg-neutral-800 rounded-xl shadow-lg p-8 sm:p-10 max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
+          <Heading level={1} className="mb-2">
             パスワード再設定
-          </h1>
+          </Heading>
           <p className="text-sm text-neutral-500 dark:text-neutral-300 m-0">
             新しいパスワードを入力してください
           </p>

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
+import { Heading } from '../ui/Heading';
 
 interface InviteCodeSettingsSectionProps {
   tenantId: string;
@@ -59,9 +60,9 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
   if (!isOwner) {
     return (
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4 border border-neutral-100 dark:border-neutral-700">
-        <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-2">
+        <Heading level={2} as="h3" className="mb-2">
           招待コード設定
-        </h3>
+        </Heading>
         <p className="text-sm text-neutral-500 dark:text-neutral-300">
           オーナーのみ実行可能です
         </p>
@@ -86,9 +87,9 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
 
   return (
     <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4 border border-neutral-100 dark:border-neutral-700">
-      <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">
+      <Heading level={2} as="h3" className="mb-4">
         招待コード設定
-      </h3>
+      </Heading>
 
       {/* 現在の状態 */}
       <div className="mb-5 p-3 rounded-md bg-neutral-50 dark:bg-neutral-900/40 border border-neutral-200 dark:border-neutral-700 space-y-1">

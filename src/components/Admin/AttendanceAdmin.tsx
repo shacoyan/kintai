@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { formatSupabaseError } from '../../lib/errors';
 import { AlertTriangle, Users } from 'lucide-react';
 import { BottomSheet } from '../ui/BottomSheet';
+import { Heading } from '../ui/Heading';
 import { EmptyState } from '../ui/EmptyState';
 import { Button } from '../ui/Button';
 import { useStoreContext } from '../../contexts/StoreContext';
@@ -287,7 +288,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
     <div className="space-y-6">
       {/* 月選択ヘッダー */}
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-200 mb-4">月次勤怠カレンダー</h3>
+        <Heading level={2} as="h3" className="mb-4">月次勤怠カレンダー</Heading>
         <p className="text-sm text-neutral-500 dark:text-neutral-300 mb-4">対象店舗: {currentStore?.name ?? '全店舗'}</p>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
           <div className="grid grid-cols-2 gap-3 md:contents">

@@ -1,5 +1,6 @@
 import { Calendar, Coffee, TrendingUp } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
+import { Heading } from '../ui';
 
 interface MonthlySummaryProps {
   summary: {
@@ -37,9 +38,9 @@ export function MonthlySummary({ summary }: MonthlySummaryProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+        <Heading level={1} as="h2">
           今月労働時間
-        </h2>
+        </Heading>
         <p className="text-3xl sm:text-4xl tabular-nums font-bold text-neutral-800 dark:text-neutral-200 mt-2">
           {formatMinutes(summary.totalWorkMinutes)}
         </p>

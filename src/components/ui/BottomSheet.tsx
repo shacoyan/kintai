@@ -71,7 +71,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
         {title && (
           <div className="border-b border-neutral-200 dark:border-neutral-700">
             <div className="flex items-center justify-between px-4 py-3">
-              <h2 id={titleId} className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">{title}</h2>
+              <h2 id={titleId} className="text-heading-2 text-neutral-900 dark:text-neutral-50">{title}</h2>
               <button
                 onClick={onClose}
                 className="text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 p-1"

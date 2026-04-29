@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { useTenant } from '../hooks/useTenant';
 import { AdminDashboard } from '../components/Admin/AdminDashboard';
-import { AdminSkeleton } from '../components/ui';
+import { AdminSkeleton, Heading } from '../components/ui';
 
 export function AdminPage() {
   const [currentMonth] = useState(() => new Date());
@@ -27,9 +27,9 @@ export function AdminPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <header className="mb-6">
-        <h1 className="text-xl md:text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+        <Heading level={1}>
           店舗ダッシュボード
-        </h1>
+        </Heading>
         <p className="text-sm text-neutral-500 tabular-nums mt-1">{format(currentMonth, 'yyyy年M月', { locale: ja })}</p>
       </header>
       <AdminDashboard tenantId={tenantId} />

@@ -4,6 +4,7 @@ import type { Tenant } from '../../types';
 import { CheckCircle2, Copy, Check } from 'lucide-react';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { Button } from '../ui/Button';
+import { Heading } from '../ui';
 import { formatSupabaseError } from '../../lib/errors';
 
 interface CreateTenantProps {
@@ -66,7 +67,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-success-100 dark:bg-success-900/30 mb-4">
               <CheckCircle2 className="h-6 w-6 text-success-600 dark:text-success-400" />
             </div>
-            <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">ワークスペースを作成しました</h2>
+            <Heading level={2}>ワークスペースを作成しました</Heading>
             <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">以下の招待コードをチームメンバーに共有してください</p>
           </div>
 
@@ -102,7 +103,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
       <div className="w-full max-w-md bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-md border border-neutral-100 dark:border-neutral-700">
-        <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">新しいワークスペースを作成</h2>
+        <Heading level={2} className="mb-6">新しいワークスペースを作成</Heading>
 
         {displayError && (
           <div className="mb-4">

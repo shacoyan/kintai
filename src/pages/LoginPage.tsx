@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { LoginForm } from '../components/Auth/LoginForm';
-import { BrandMark, PageLoader } from '../components/ui';
+import { BrandMark, PageLoader, Heading } from '../components/ui';
 
 function HeroSection() {
   return (
@@ -82,9 +82,9 @@ export const LoginPage = function LoginPage() {
             <span className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">kintai</span>
           </div>
 
-          <h1 className="text-[26px] lg:text-[28px] font-bold text-neutral-900 dark:text-neutral-100 leading-tight mb-2">
+          <Heading level={1} className="leading-tight mb-2">
             ログイン
-          </h1>
+          </Heading>
           <p className="text-sm text-neutral-500 dark:text-neutral-300 mb-8">
             登録済みのメールアドレスでサインインしてください。
           </p>

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { format, differenceInDays, eachDayOfInterval, parseISO } from 'date-fns';
 import type { LeaveType } from '../../types';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { Heading } from '../ui/Heading';
 import { Button } from '../ui/Button';
 import { RadioGroup, Radio } from '../ui/Radio';
 import { formatSupabaseError } from '../../lib/errors';
@@ -103,7 +104,7 @@ export function LeaveForm({ onSubmit, onCancel, remainingPaidLeave }: LeaveFormP
 
   return (
     <form onSubmit={handleSubmit} className="bg-white dark:bg-neutral-800 rounded-lg shadow dark:shadow-neutral-900/30 border border-transparent dark:border-neutral-700 p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">休暇申請</h3>
+      <Heading level={4}>休暇申請</Heading>
 
       {(error || validationError) && (
         <ErrorBanner message={error || validationError || ''} />

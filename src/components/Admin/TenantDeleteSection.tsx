@@ -43,7 +43,7 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <AlertTriangle className="w-6 h-6 text-rose-700 dark:text-rose-300" />
-            <h3 className="text-rose-700 dark:text-rose-300 font-semibold text-lg">
+            <h3 className="text-heading-2 text-rose-700 dark:text-rose-300">
               テナントを削除する
             </h3>
           </div>

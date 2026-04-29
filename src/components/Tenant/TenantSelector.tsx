@@ -3,6 +3,7 @@ import React from 'react';
 import { Building2, UserPlus } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
 import { Button } from '../ui/Button';
+import { Heading } from '../ui';
 import type { TenantWithRole } from '../../types';
 
 interface TenantSelectorProps {
@@ -29,7 +30,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
     <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
       <div className="w-full max-w-lg space-y-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">ワークスペースを選択</h1>
+          <Heading level={1}>ワークスペースを選択</Heading>
           <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">参加するワークスペースを選んでください</p>
         </div>
 

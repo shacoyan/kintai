@@ -5,6 +5,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
 import type { Store } from '../../types';
 import { BottomSheet } from '../ui/BottomSheet';
+import { Heading } from '../ui/Heading';
 import { EmptyState } from '../ui/EmptyState';
 import { PageSkeleton } from '../ui/Skeleton';
 import { Store as StoreIcon } from 'lucide-react';
@@ -227,7 +228,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
         {/* 左側: 店舗一覧 + 作成フォーム */}
         <Card padding="none">
           <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">店舗一覧</h2>
+            <Heading level={2}>店舗一覧</Heading>
             <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">店舗を選択するとメンバー管理ができます</p>
           </div>
 
@@ -331,9 +332,9 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
         <div className="hidden lg:block">
           <Card padding="none">
             <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
-              <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+              <Heading level={2}>
                 {selectedStore ? `${selectedStore.name} のメンバー` : 'メンバー管理'}
-              </h2>
+              </Heading>
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">
                 {selectedStore
                   ? 'チェックを入れるとこの店舗に所属します'

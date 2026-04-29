@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { Shift, TenantMember } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
-import { EmptyState } from '../ui';
+import { EmptyState, Heading } from '../ui';
 import { ActionMenu, type ActionMenuItem } from '../ui/ActionMenu';
 import { Spinner } from '../ui/Spinner';
 
@@ -119,7 +119,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
     <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">シフト承認</h2>
+          <Heading level={2}>シフト承認</Heading>
           {pendingShifts.length > 0 && (
             <p className="text-sm text-neutral-500 dark:text-neutral-300 mt-0.5">{pendingShifts.length}件の承認待ち</p>
           )}

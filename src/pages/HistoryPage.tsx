@@ -26,7 +26,7 @@ import {
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, CalendarX } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton, HistorySkeleton } from '../components/ui';
+import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton, HistorySkeleton, Heading } from '../components/ui';
 
 // safelist: bg-info-500, bg-info-400, bg-success-500, bg-success-400, bg-danger-500, bg-danger-400, text-info-500, text-info-400, text-danger-500, text-danger-400
 
@@ -388,9 +388,9 @@ export function HistoryPage() {
         <div className="flex items-center justify-between gap-2">
           <Button variant="tertiary" size="md" iconLeft={<ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />} onClick={handlePrevMonth} aria-label="前月"><></></Button>
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+            <Heading level={2}>
               {format(currentDate, 'yyyy年M月', { locale: ja })}
-            </h2>
+            </Heading>
             {!isCurrentMonthShown && (
               <Button variant="tertiary" size="sm" onClick={() => setCurrentDate(new Date())}>
                 今月へ
@@ -472,7 +472,7 @@ export function HistoryPage() {
           ) : (
             <Card padding="none">
               <Card.Header>
-                <h3 className="text-sm font-semibold text-neutral-500 dark:text-neutral-300">日別勤怠記録</h3>
+                <h3 className="text-label text-neutral-500 dark:text-neutral-300">日別勤怠記録</h3>
               </Card.Header>
               <DailyList
                 records={monthlyRecords}

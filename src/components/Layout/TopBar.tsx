@@ -86,7 +86,7 @@ export function TopBar({
     <div className="flex items-center w-full gap-4 flex-wrap">
       <TenantSwitcher />
       {title && (
-        <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+        <h1 className="text-heading-2 text-neutral-900 dark:text-neutral-50 truncate">
           {title}
         </h1>
       )}

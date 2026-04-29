@@ -2,7 +2,7 @@ import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Ban, AlertTriangle, Clock, UserX } from 'lucide-react';
 import type { ShiftMismatch } from '../../utils/shiftMismatch';
-import { Card, Badge, Button, EmptyState } from '../ui';
+import { Card, Badge, Button, EmptyState, Heading } from '../ui';
 import type { BadgeTone } from '../ui';
 
 interface ShiftMismatchAlertProps {
@@ -105,7 +105,7 @@ export function ShiftMismatchAlert({
         return (
           <Card key={date} padding="none">
             <div className="px-5 py-3 border-b border-neutral-200 dark:border-neutral-700 flex items-center gap-3">
-              <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{dateLabel}</h3>
+              <Heading level={4} as="h3" className="text-neutral-700 dark:text-neutral-200">{dateLabel}</Heading>
               <Badge tone="neutral">{items.length}件</Badge>
             </div>
 

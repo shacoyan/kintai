@@ -45,7 +45,7 @@ import {
   RefreshCw,
   Settings,
 } from 'lucide-react';
-import { StatCard, Card, PageSkeleton, ErrorBanner, Button } from '../ui';
+import { StatCard, Card, PageSkeleton, ErrorBanner, Button, Heading } from '../ui';
 import type { Shift, AttendanceRecord } from '../../types';
 
 interface AdminDashboardProps {
@@ -353,9 +353,9 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <UserX className="w-5 h-5 text-warning-600" aria-hidden="true" />
-                    <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                    <Heading level={3} as="h2">
                       シフト希望 未提出メンバー
-                    </h2>
+                    </Heading>
                   </div>
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
                     {unsubmittedMembers.length}名
@@ -441,7 +441,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
           <div className="space-y-6">
             <Card padding="none">
               <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">修正申請（承認待ち）</h2>
+                <Heading level={2}>修正申請（承認待ち）</Heading>
                 {pendingRequests.length > 0 && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
                     {pendingRequests.length}件
@@ -461,7 +461,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
             {processedRequests.length > 0 && (
               <Card padding="none">
                 <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
-                  <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">修正申請履歴</h2>
+                  <Heading level={2}>修正申請履歴</Heading>
                 </div>
                 <CorrectionList requests={processedRequests} storeNames={storeNames} />
               </Card>
@@ -495,7 +495,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <Card padding="md">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
-                    <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">シフト希望締切</h2>
+                    <Heading level={3} as="h2">シフト希望締切</Heading>
                     <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
                       対象月（{format(startOfMonth(new Date()), 'yyyy年M月')}）の希望提出締切日時を設定します。
                     </p>
@@ -515,7 +515,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <Card padding="md">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
-                    <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">給与締め日</h2>
+                    <Heading level={3} as="h2">給与締め日</Heading>
                     <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
                       毎月の給与計算における締め日（1〜31、31 は月末扱い）
                     </p>
@@ -561,7 +561,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
             <Card padding="md">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">シフト不一致アラート</h2>
+                  <Heading level={2}>シフト不一致アラート</Heading>
                   <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
                     対象: {currentStore?.name ?? '全店舗'}
                   </p>

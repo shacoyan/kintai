@@ -52,9 +52,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   const sizeClasses = isNeutral
     ? {
-        sm: { container: 'py-6', icon: 'w-8 h-8', title: 'text-sm font-medium', desc: 'text-xs' },
-        md: { container: 'py-12', icon: 'w-12 h-12', title: 'text-lg font-medium', desc: 'text-sm' },
-        lg: { container: 'py-20', icon: 'w-16 h-16', title: 'text-xl font-semibold', desc: 'text-base' },
+        sm: { container: 'py-6', icon: 'w-8 h-8', title: 'text-body-sm font-medium', desc: 'text-xs' },
+        md: { container: 'py-12', icon: 'w-12 h-12', title: 'text-heading-3', desc: 'text-body-sm' },
+        lg: { container: 'py-20', icon: 'w-16 h-16', title: 'text-heading-2', desc: 'text-body' },
       }[size]
     : { container: '', icon: '', title: '', desc: '' };
 
@@ -107,7 +107,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <div className="flex items-center gap-2">
         {icon && <span className="flex-shrink-0">{cloneIconWithAriaHidden(icon)}</span>}
         <div>
-          <h3 className={`font-medium ${toneStyles.text}`}>{title}</h3>
+          <h3 className={`text-heading-3 ${toneStyles.text}`}>{title}</h3>
           {description && (
             <p className={`text-sm ${toneStyles.text}`}>{description}</p>
           )}

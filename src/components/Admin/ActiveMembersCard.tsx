@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { Users, Coffee } from 'lucide-react';
-import { Card, Badge, EmptyState, Skeleton } from '../ui';
+import { Card, Badge, EmptyState, Skeleton, Heading } from '../ui';
 import { useActiveAttendance, type ActiveAttendance } from '../../hooks/useActiveAttendance';
 
 interface ActiveMembersCardProps {
@@ -17,7 +17,7 @@ export function ActiveMembersCard({ tenantId, storeId, memberNames }: ActiveMemb
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Users size={16} className="text-primary-600 dark:text-primary-400" />
-          <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">現在出勤中</h2>
+          <Heading level={3} as="h2">現在出勤中</Heading>
           <Badge tone="primary" withDot>{active.length}名</Badge>
         </div>
         {updatedAt && (

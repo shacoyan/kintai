@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { ShiftPreference } from '../../types';
 import { PreferenceActionRow } from './PreferenceActionRow';
-import { EmptyState } from '../ui';
+import { EmptyState, Heading } from '../ui';
 import { Spinner } from '../ui/Spinner';
 
 interface ShiftPreferenceAdminListProps {
@@ -244,7 +244,7 @@ export function ShiftPreferenceAdminList({
     <div className="space-y-3">
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+        <Heading level={4} className="flex items-center gap-2">
           {historyMode ? 'シフト希望の履歴' : 'シフト希望の承認'}
           {historyMode ? (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300">
@@ -257,7 +257,7 @@ export function ShiftPreferenceAdminList({
               </span>
             )
           )}
-        </h3>
+        </Heading>
         {historyMode && renderSortSelect('flex-shrink-0')}
       </div>
 

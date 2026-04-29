@@ -46,6 +46,9 @@ export type { SpinnerProps, SpinnerSize } from './Spinner';
 export { ActionMenu } from './ActionMenu';
 export type { ActionMenuItem, ActionMenuProps } from './ActionMenu';
 
+export { Heading } from './Heading';
+export type { HeadingProps, HeadingLevel } from './Heading';
+
 // 既存（Phase 1 では再 export のみ、内部は Phase 2 以降で差替）
 export { BottomSheet } from './BottomSheet';
 export { EmptyState } from './EmptyState';

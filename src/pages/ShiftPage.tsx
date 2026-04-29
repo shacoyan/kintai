@@ -3,7 +3,7 @@ import { format, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns'
 import { ja } from 'date-fns/locale';
 import { Clock, History, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { Button, Card, Badge, BottomSheet, ShiftSkeleton, EmptyState } from '../components/ui';
+import { Button, Card, Badge, BottomSheet, ShiftSkeleton, EmptyState, Heading } from '../components/ui';
 import { getPreferenceTheme } from '../lib/preferenceTheme';
 import { Spinner } from '../components/ui/Spinner';
 import type { BadgeTone } from '../components/ui';
@@ -426,7 +426,7 @@ export function ShiftPage() {
         <div className="space-y-6">
           <header className="flex items-end justify-between gap-3">
             <div>
-              <h2 className="text-lg md:text-xl font-semibold text-neutral-900 dark:text-neutral-100">シフト</h2>
+              <Heading level={2}>シフト</Heading>
               <p className="text-sm text-neutral-500 dark:text-neutral-300 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
             </div>
             {canManageTenant && pendingShifts.length > 0 && (
