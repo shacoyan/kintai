@@ -4,6 +4,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { AttendanceRecord } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
+import { Spinner } from '../ui/Spinner';
 
 interface ClockButtonProps {
   status: 'not_started' | 'working' | 'on_break';
@@ -129,7 +130,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           aria-pressed={status !== 'not_started'}
           className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg motion-safe:transition-all duration-300 select-none ${flashGreen ? 'bg-success-400 scale-105' : config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-95'}`}
         >
-          {processing ? '処理中...' : config.label}
+          {processing && <Spinner size="sm" inline className="mr-2" />}{config.label}
         </button>
       </div>
 

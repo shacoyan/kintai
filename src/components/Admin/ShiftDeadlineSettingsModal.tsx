@@ -113,7 +113,7 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
     <div className="flex justify-between gap-2">
       <div>
         {deadline && (
-          <Button variant="danger" onClick={handleClear} disabled={!canEdit || submitting}>
+          <Button variant="danger" onClick={handleClear} loading={submitting} disabled={!canEdit}>
             削除
           </Button>
         )}

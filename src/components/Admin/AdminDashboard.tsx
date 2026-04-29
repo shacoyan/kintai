@@ -569,13 +569,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                     今月の承認済みシフトと実績の差異を表示します（猶予15分）
                   </p>
                 </div>
-                <button
-                  onClick={fetchMismatchData}
-                  disabled={mismatchLoading}
-                  className="px-3 py-1.5 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 motion-safe:transition-colors dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 disabled:opacity-50"
-                >
-                  {mismatchLoading ? '読み込み中...' : '再読込'}
-                </button>
+                <Button onClick={fetchMismatchData} loading={mismatchLoading} variant="secondary" size="sm">再読込</Button>
               </div>
             </Card>
             {mismatchLoading ? (

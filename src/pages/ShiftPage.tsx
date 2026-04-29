@@ -435,9 +435,8 @@ export function ShiftPage() {
           </header>
 
           {shiftLoading && (
-            <div className="flex items-center justify-center gap-2 py-4" role="status" aria-live="polite">
-              <Spinner size="md" label="読み込み中" />
-              <span className="text-sm text-neutral-600 dark:text-neutral-300">読み込み中…</span>
+            <div className="flex items-center justify-center py-6">
+              <Spinner size="md" label="読み込み中" showLabel />
             </div>
           )}
 
@@ -518,9 +517,8 @@ export function ShiftPage() {
       {activeTab === 'preference' && (
         <div className="flex flex-col gap-4 pb-24">
           {prefLoading && (
-            <div className="flex items-center justify-center gap-2 py-4" role="status" aria-live="polite">
-              <Spinner size="md" label="読み込み中" />
-              <span className="text-sm text-neutral-600 dark:text-neutral-300">読み込み中…</span>
+            <div className="flex items-center justify-center py-6">
+              <Spinner size="md" label="読み込み中" showLabel />
             </div>
           )}
 
@@ -903,9 +901,8 @@ export function ShiftPage() {
       {activeTab === 'leave' && (
         <div className="space-y-6">
           {leaveLoading && (
-            <div className="flex items-center justify-center gap-2 py-4" role="status" aria-live="polite">
-              <Spinner size="md" label="読み込み中" />
-              <span className="text-sm text-neutral-600 dark:text-neutral-300">読み込み中…</span>
+            <div className="flex items-center justify-center py-6">
+              <Spinner size="md" label="読み込み中" showLabel />
             </div>
           )}
 

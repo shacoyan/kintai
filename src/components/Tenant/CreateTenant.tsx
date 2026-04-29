@@ -155,9 +155,9 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
               type="submit"
               variant="primary"
               className="flex-1"
-              disabled={loading}
+              loading={loading}
             >
-              {loading ? '作成中...' : '作成する'}
+              作成する
             </Button>
           </div>
         </form>

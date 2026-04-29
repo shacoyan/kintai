@@ -161,11 +161,11 @@ export function CorrectionForm({
           <Button
             type="submit"
             form="correction-form"
-            disabled={submitting}
+            loading={submitting}
             variant={isDelete ? 'danger' : 'primary'}
             className="flex-1"
           >
-            {submitting ? '送信中...' : isDelete ? '削除依頼する' : '申請する'}
+            {isDelete ? '削除依頼する' : '申請する'}
           </Button>
         </div>
       }

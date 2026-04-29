@@ -8,6 +8,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { EmptyState } from '../ui/EmptyState';
 import { PageSkeleton } from '../ui/Skeleton';
 import { Store as StoreIcon } from 'lucide-react';
+import { Spinner } from '../ui/Spinner';
 import { useTenant } from '../../hooks/useTenant';
 import { Card, Button, Badge } from '../ui';
 
@@ -176,7 +177,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                   </p>
                 </div>
                 {toggling && (
-                  <div className="motion-safe:animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 dark:border-primary-400 flex-shrink-0"></div>
+                  <Spinner size="sm" inline className="text-primary-600 dark:text-primary-400 flex-shrink-0" />
                 )}
                 {!toggling && assigned && (
                   <Badge tone="primary">
@@ -245,9 +246,10 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                 variant="primary"
                 size="sm"
                 onClick={handleCreateStore}
-                disabled={creating || !newStoreName.trim()}
+                loading={creating}
+                disabled={!newStoreName.trim()}
               >
-                {creating ? '作成中...' : '追加'}
+                追加
               </Button>
             </div>
           </div>

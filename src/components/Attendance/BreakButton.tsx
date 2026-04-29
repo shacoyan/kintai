@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns';
 import { AttendanceRecord, Break } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
+import { Spinner } from '../ui/Spinner';
 
 interface BreakButtonProps {
   status: 'not_started' | 'working' | 'on_break';
@@ -55,7 +56,7 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
           aria-pressed={false}
           className="bg-neutral-600 hover:bg-neutral-700 dark:bg-neutral-500 dark:hover:bg-neutral-400 text-white font-bold py-3 px-8 rounded-lg motion-safe:transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
         >
-          {processing ? '処理中...' : '休憩開始'}
+          {processing && <Spinner size="sm" inline className="mr-2" />}休憩開始
         </button>
       )}
       {status === 'on_break' && (
@@ -67,7 +68,7 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
             aria-pressed={true}
             className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white font-bold py-3 px-8 rounded-lg motion-safe:transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
-            {processing ? '処理中...' : '休憩終了'}
+            {processing && <Spinner size="sm" inline className="mr-2" />}休憩終了
           </button>
           {activeBreak?.start_time && (
             <p className="text-sm text-neutral-500 dark:text-neutral-300">休憩開始: {formatTime(activeBreak.start_time)}</p>

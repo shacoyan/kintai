@@ -132,10 +132,11 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
         <Button
           type="submit"
           disabled={submitting}
+          loading={submitting}
           variant="primary"
           className="flex-1"
         >
-          {submitting ? '送信中...' : '申請'}
+          申請
         </Button>
         <Button
           type="button"

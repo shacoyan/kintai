@@ -106,9 +106,9 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
               type="submit"
               variant="primary"
               className="flex-1"
-              disabled={loading}
+              loading={loading}
             >
-              {loading ? '参加中...' : '参加する'}
+              参加する
             </Button>
           </div>
         </form>

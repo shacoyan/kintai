@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Check, X, Loader2, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
+import { Check, X, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 import type { ShiftPreference } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
 import { getPreferenceTheme } from '../../lib/preferenceTheme';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { abbreviateName } from '../../utils/displayNameAbbrev';
+import { Spinner } from '../ui/Spinner';
 
 export interface PreferenceActionRowProps {
   preference: ShiftPreference;
@@ -171,7 +172,7 @@ export function PreferenceActionRow({
         
         {isPending && canManage && showInlineActions && (
           <div className="flex items-center justify-end gap-1 mt-0.5">
-            {state.loading && <Loader2 className="w-3 h-3 motion-safe:animate-spin text-neutral-500 dark:text-neutral-300" />}
+            {state.loading && <Spinner size="sm" inline className="text-neutral-500 dark:text-neutral-300" />}
             
             {!state.loading && (
               <>
@@ -340,12 +341,12 @@ export function PreferenceActionRow({
             <>
               <Button
                 type="button"
-                disabled={state.loading}
+                loading={state.loading}
                 onClick={(e) => { e.stopPropagation(); setConfirming('approve'); }}
                 variant="primary"
                 className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
               >
-                {state.loading ? '処理中...' : '承認'}
+                承認
               </Button>
               <Button
                 type="button"
@@ -358,12 +359,12 @@ export function PreferenceActionRow({
               </Button>
               <Button
                 type="button"
-                disabled={state.loading}
+                loading={state.loading}
                 onClick={(e) => { e.stopPropagation(); setConfirming('reject'); }}
                 variant="danger"
                 className="h-auto px-3 py-1 text-xs text-danger-700 bg-danger-50 border border-danger-200 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:border-danger-700 dark:hover:bg-danger-800"
               >
-                {state.loading ? '処理中...' : '却下'}
+                却下
               </Button>
             </>
           )}
@@ -372,12 +373,12 @@ export function PreferenceActionRow({
             <>
               <Button
                 type="button"
-                disabled={state.loading}
+                loading={state.loading}
                 onClick={(e) => { e.stopPropagation(); setConfirming('approveWithTime'); }}
                 variant="primary"
                 className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
               >
-                {state.loading ? '処理中...' : '時間指定で承認'}
+                時間指定で承認
               </Button>
               <Button
                 type="button"
@@ -399,7 +400,7 @@ export function PreferenceActionRow({
                 onClick={(e) => { e.stopPropagation(); handleApprove(); }}
                 className="h-auto px-3 py-1 text-xs rounded text-white bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400 disabled:opacity-50"
               >
-                {state.loading ? '処理中...' : '承認する'}
+                {state.loading && <Spinner size="sm" inline className="mr-1" />}承認する
               </button>
               <button
                 type="button"
@@ -419,7 +420,7 @@ export function PreferenceActionRow({
                 onClick={(e) => { e.stopPropagation(); handleReject(); }}
                 className="h-auto px-3 py-1 text-xs rounded text-white bg-danger-600 dark:bg-danger-500 hover:bg-danger-700 dark:hover:bg-danger-400 disabled:opacity-50"
               >
-                {state.loading ? '処理中...' : '却下する'}
+                {state.loading && <Spinner size="sm" inline className="mr-1" />}却下する
               </button>
               <button
                 type="button"
@@ -439,7 +440,7 @@ export function PreferenceActionRow({
                 onClick={(e) => { e.stopPropagation(); handleApprove(true); }}
                 className="h-auto px-3 py-1 text-xs rounded text-white bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400 disabled:opacity-50"
               >
-                {state.loading ? '処理中...' : 'この時刻で承認する'}
+                {state.loading && <Spinner size="sm" inline className="mr-1" />}この時刻で承認する
               </button>
               <button
                 type="button"
@@ -463,7 +464,7 @@ export function PreferenceActionRow({
                 onClick={(e) => { e.stopPropagation(); handleRevertConfirm(); }}
                 className="px-2 py-1 text-xs rounded bg-warning-600 dark:bg-warning-500 text-white hover:bg-warning-700 dark:hover:bg-warning-400"
               >
-                {state.loading ? '処理中...' : '未対応に戻す'}
+                {state.loading && <Spinner size="sm" inline className="mr-1" />}未対応に戻す
               </button>
               <button
                 type="button"

@@ -198,9 +198,10 @@ export function LeaveForm({ onSubmit, onCancel, remainingPaidLeave }: LeaveFormP
           type="submit"
           disabled={isDisabled}
           variant="primary"
+          loading={submitting}
           className="flex-1"
         >
-          {submitting ? '送信中...' : '申請'}
+          申請
         </Button>
         <Button
           type="button"

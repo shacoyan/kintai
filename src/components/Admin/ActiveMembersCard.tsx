@@ -1,6 +1,6 @@
 import { format, parseISO } from 'date-fns';
 import { Users, Coffee } from 'lucide-react';
-import { Card, Badge, EmptyState } from '../ui';
+import { Card, Badge, EmptyState, Skeleton } from '../ui';
 import { useActiveAttendance, type ActiveAttendance } from '../../hooks/useActiveAttendance';
 
 interface ActiveMembersCardProps {
@@ -28,7 +28,7 @@ export function ActiveMembersCard({ tenantId, storeId, memberNames }: ActiveMemb
       </div>
 
       {loading && active.length === 0 ? (
-        <p className="text-sm text-neutral-500 dark:text-neutral-300">読み込み中…</p>
+        <Skeleton variant="text" count={3} />
       ) : active.length === 0 ? (
         <EmptyState
           title="現在出勤中のメンバーはいません"

@@ -116,9 +116,10 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
           <Button
             onClick={() => handleAction(() => onModify(shift.id, startTime, endTime, editStoreId ?? undefined))}
             disabled={processing}
+            loading={processing}
             variant="primary"
           >
-            {processing ? '処理中...' : '修正を確定'}
+            修正を確定
           </Button>
           <Button
             onClick={() => setMode('view')}
@@ -136,9 +137,10 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
           <Button
             onClick={() => handleAction(() => onDelete(shift.id))}
             disabled={processing}
+            loading={processing}
             variant="danger"
           >
-            {processing ? '処理中...' : '削除する'}
+            削除する
           </Button>
           <Button
             onClick={() => setMode('view')}

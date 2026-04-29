@@ -3,6 +3,8 @@ import { useTenant } from '../../contexts/TenantContext';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useToast } from '../../contexts/ToastContext';
 import { BottomSheet } from '../ui/BottomSheet';
+import { Button } from '../ui/Button';
+import { Spinner } from '../ui/Spinner';
 import { formatSupabaseError } from '../../lib/errors';
 
 interface OwnerTransferSectionProps {
@@ -69,14 +71,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
       >
         キャンセル
       </button>
-      <button
-        type="button"
-        onClick={handleTransfer}
-        disabled={submitting}
-        className="px-4 py-2 text-sm font-medium text-white bg-red-600 dark:bg-red-500 rounded-md hover:bg-red-700 dark:hover:bg-red-500 disabled:opacity-50"
-      >
-        {submitting ? '処理中...' : '移譲を実行'}
-      </button>
+      <Button variant="danger" onClick={handleTransfer} loading={submitting}>移譲を実行</Button>
     </div>
   );
 
@@ -86,7 +81,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
         <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-4">オーナー権限の移譲</h3>
         
         {loading ? (
-          <div className="text-sm text-neutral-500 dark:text-neutral-300 motion-safe:animate-pulse">読み込み中...</div>
+          <div className="text-sm text-neutral-500 dark:text-neutral-300"><Spinner size="sm" inline showLabel label="読み込み中" /></div>
         ) : managerCandidates.length === 0 ? (
           <div className="text-center py-6">
             <p className="text-neutral-500 dark:text-neutral-300 text-sm">先にスタッフを店長 (manager) に昇格させてください</p>

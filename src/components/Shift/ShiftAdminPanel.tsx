@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { Shift, TenantMember } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
-import { Loader2 } from 'lucide-react';
 import { EmptyState } from '../ui';
 import { ActionMenu, type ActionMenuItem } from '../ui/ActionMenu';
+import { Spinner } from '../ui/Spinner';
 
 interface ShiftAdminPanelProps {
   shifts: Shift[];
@@ -132,7 +132,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                 disabled={processing}
                 className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 dark:hover:bg-success-600 disabled:opacity-50 motion-safe:transition flex items-center"
               >
-                {processing && <Loader2 className="w-4 h-4 motion-safe:animate-spin mr-1" />}
+                {processing && <Spinner size="sm" inline className="mr-1" />}
                 <span>{pendingShifts.length}件 承認する</span>
               </button>
               <button
@@ -148,7 +148,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
               disabled={processing}
               className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition flex items-center"
             >
-              {processing && <Loader2 className="w-4 h-4 motion-safe:animate-spin mr-1" />}
+              {processing && <Spinner size="sm" inline className="mr-1" />}
               <span>一括承認</span>
               <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-success-500 rounded-full tabular-nums">{pendingShifts.length}</span>
             </button>
