@@ -253,7 +253,7 @@ export function PreferenceActionRow({
             )}
             <span className="text-xs text-neutral-500 dark:text-neutral-300">{preference.date}</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <span className={`text-base leading-none font-bold ${theme.iconColorClass}`}>
               <Ic className="w-4 h-4" />
             </span>
@@ -305,7 +305,7 @@ export function PreferenceActionRow({
             <select
               value={state.editStart}
               onChange={(e) => setState((prev) => ({ ...prev, editStart: e.target.value }))}
-              className="block w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white dark:bg-neutral-700 dark:text-neutral-100"
+              className="block w-full px-2 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white dark:bg-neutral-700 dark:text-neutral-100"
             >
               {TIME_OPTIONS.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -319,7 +319,7 @@ export function PreferenceActionRow({
             <select
               value={state.editEnd}
               onChange={(e) => setState((prev) => ({ ...prev, editEnd: e.target.value }))}
-              className="block w-full px-2 py-1.5 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white dark:bg-neutral-700 dark:text-neutral-100"
+              className="block w-full px-2 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white dark:bg-neutral-700 dark:text-neutral-100"
             >
               {TIME_OPTIONS.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -336,7 +336,7 @@ export function PreferenceActionRow({
       )}
 
       {isPending && canManage && !isUnavailable && (
-        <div className="flex flex-wrap gap-1.5 pt-1">
+        <div className="flex flex-wrap gap-2 pt-1">
           {confirming === null && !state.showTimeEditor && (
             <>
               <Button
@@ -455,7 +455,7 @@ export function PreferenceActionRow({
       )}
 
       {(isApproved || isRejected) && canManage && onRevert && (
-        <div className="pt-1 flex items-center gap-1.5">
+        <div className="pt-1 flex items-center gap-2">
           {confirming === 'revert' ? (
             <>
               <button

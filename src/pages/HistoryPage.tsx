@@ -396,7 +396,7 @@ export function HistoryPage() {
                 今月へ
               </Button>
             )}
-            <button onClick={handleDownloadCsv} className="px-3 py-1.5 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">CSV ダウンロード</button>
+            <button onClick={handleDownloadCsv} className="px-3 py-2 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">CSV ダウンロード</button>
           </div>
           <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
         </div>

@@ -183,7 +183,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} aria-label="前月" className="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition">
+          <button onClick={() => navigate(-1)} aria-label="前月" className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition">
             <ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
           <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 min-w-[120px] text-center">
@@ -192,7 +192,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
               : `${format(dates[0], 'M/d')} - ${format(dates[dates.length - 1], 'M/d')}`
             }
           </span>
-          <button onClick={() => navigate(1)} aria-label="次月" className="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition">
+          <button onClick={() => navigate(1)} aria-label="次月" className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition">
             <ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
           </button>
           <button
@@ -223,7 +223,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
       </div>
 
       {/* Compact Legend */}
-      <div className="flex items-center flex-wrap gap-x-4 gap-y-1 px-1 py-1.5 bg-neutral-50 dark:bg-neutral-800 rounded-md text-xs">
+      <div className="flex items-center flex-wrap gap-x-4 gap-y-2 px-1 py-2 bg-neutral-50 dark:bg-neutral-800 rounded-md text-xs">
         {/* Status Legend (L2-04) */}
         <div className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 flex-wrap border-r border-neutral-200 dark:border-neutral-600 pr-4 mr-2">
           <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-warning-400" /> 申請中</span>

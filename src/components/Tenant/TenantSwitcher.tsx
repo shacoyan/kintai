@@ -174,7 +174,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
         type="button"
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
-        className={`inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 motion-safe:transition-colors ${widthClass}`}
+        className={`inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 motion-safe:transition-colors ${widthClass}`}
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={`ワークスペース切替: 現在 ${currentTenant.name}`}

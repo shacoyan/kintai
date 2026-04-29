@@ -350,14 +350,14 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
                           <span className="text-xs text-neutral-500 dark:text-neutral-300 w-14">時給</span>
                           {(isEditing && !isMobile) ? (
-                            <div className="hidden md:flex items-center gap-1.5">
+                            <div className="hidden md:flex items-center gap-2">
                               <span className="text-sm text-neutral-500 dark:text-neutral-300">¥</span>
                               <input
                                 type="number"
                                 value={editRate}
                                 onChange={(e) => setEditRate(e.target.value)}
                                 onKeyDown={(e) => handleKeyDown(e, member.id)}
-                                className="w-24 px-2 py-1.5 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                                className="w-24 px-2 py-2 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                                 autoFocus
                                 disabled={saving}
                                 min="0"
@@ -382,7 +382,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           ) : (
                             <button
                               onClick={() => handleStartEdit(member)}
-                              className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
+                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
                                 rate > 0
                                   ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
                                   : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'
@@ -405,14 +405,14 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
                           <span className="text-xs text-neutral-500 dark:text-neutral-300 w-14">月給</span>
                           {(editingMonthlySalaryId === member.id && !isMobile) ? (
-                            <div className="hidden md:flex items-center gap-1.5">
+                            <div className="hidden md:flex items-center gap-2">
                               <span className="text-sm text-neutral-500 dark:text-neutral-300">¥</span>
                               <input
                                 type="number"
                                 value={editMonthlySalary}
                                 onChange={(e) => setEditMonthlySalary(e.target.value)}
                                 onKeyDown={(e) => handleMonthlySalaryKeyDown(e, member.id)}
-                                className="w-28 px-2 py-1.5 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                                className="w-28 px-2 py-2 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                                 autoFocus
                                 disabled={saving}
                                 min="0"
@@ -437,7 +437,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           ) : (
                             <button
                               onClick={() => handleStartEditMonthlySalary(member)}
-                              className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
+                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
                                 (member.monthly_salary ?? 0) > 0
                                   ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
                                   : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'
@@ -458,13 +458,13 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
                         <span className="text-xs text-neutral-500 dark:text-neutral-300 w-10">有給</span>
                         {(editingPaidLeaveDaysId === member.id && !isMobile) ? (
-                          <div className="hidden md:flex items-center gap-1.5">
+                          <div className="hidden md:flex items-center gap-2">
                             <input
                               type="number"
                               value={editPaidLeaveDays}
                               onChange={(e) => setEditPaidLeaveDays(e.target.value)}
                               onKeyDown={(e) => handlePaidLeaveDaysKeyDown(e, member.id)}
-                              className="w-20 px-2 py-1.5 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                              className="w-20 px-2 py-2 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                               autoFocus
                               disabled={saving}
                               min="0"
@@ -489,7 +489,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         ) : (
                           <button
                             onClick={() => handleStartEditPaidLeaveDays(member)}
-                            className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
+                            className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors ${
                               (member.paid_leave_days ?? 0) > 0
                                 ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
                                 : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'
@@ -506,8 +506,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       </div>
 
                       {/* 深夜給 */}
-                      <div className="flex items-center gap-1.5 md:ml-auto justify-between md:justify-start w-full md:w-auto">
-                        <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                      <div className="flex items-center gap-2 md:ml-auto justify-between md:justify-start w-full md:w-auto">
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
                           <input
                             type="checkbox"
                             checked={member.night_shift_enabled ?? false}

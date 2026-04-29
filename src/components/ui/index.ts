@@ -54,3 +54,8 @@ export { BottomSheet } from './BottomSheet';
 export { EmptyState } from './EmptyState';
 export { ErrorBanner } from './ErrorBanner';
 export { Skeleton, CardSkeleton, TableSkeleton, PageSkeleton, ListRowSkeleton, DashboardSkeleton, HistorySkeleton, ShiftSkeleton, AdminSkeleton } from './Skeleton';
+
+export { Section } from './Section';
+export type { SectionProps } from './Section';
+export { Stack } from './Stack';
+export type { StackProps } from './Stack';

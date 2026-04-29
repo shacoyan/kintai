@@ -92,7 +92,7 @@ export const LoginPage = function LoginPage() {
           <LoginForm />
 
           <div className="mt-12 pt-6 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-300">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <svg
                 width="14"
                 height="14"

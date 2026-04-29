@@ -14,7 +14,7 @@ export type CardSlotProps = React.HTMLAttributes<HTMLDivElement>;
 const paddingMap: Record<CardPadding, string> = {
   none: 'p-0',
   sm: 'p-4',
-  md: 'p-5 md:p-6',
+  md: 'p-4 md:p-6',
   lg: 'p-6 md:p-8',
 };
 
@@ -66,7 +66,7 @@ function CardBody(props: CardSlotProps): JSX.Element {
 function CardFooter(props: CardSlotProps): JSX.Element {
   const { className, children, ...rest } = props;
   const padding = React.useContext(CardPaddingContext);
-  const horizontalPadding = padding === 'none' ? 'px-5 md:px-6' : '';
+  const horizontalPadding = padding === 'none' ? 'px-4 md:px-6' : '';
   return (
     <footer
       className={cn(

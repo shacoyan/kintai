@@ -404,7 +404,7 @@ export function ShiftPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm motion-safe:transition ${
+              className={`whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm motion-safe:transition ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
                   : 'border-transparent text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
@@ -528,7 +528,7 @@ export function ShiftPage() {
               type="button"
               onClick={() => setPreferenceView('current')}
               aria-pressed={preferenceView === 'current'}
-              className={`inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 focus-ring ${
+              className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 focus-ring ${
                 preferenceView === 'current'
                   ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
                   : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
@@ -541,7 +541,7 @@ export function ShiftPage() {
               type="button"
               onClick={() => setPreferenceView('history')}
               aria-pressed={preferenceView === 'history'}
-              className={`inline-flex items-center gap-1.5 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 focus-ring ${
+              className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 focus-ring ${
                 preferenceView === 'history'
                   ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
                   : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'

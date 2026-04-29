@@ -65,7 +65,7 @@ function CalendarLegend({
               {isAdminView && memberNames ? (
                 <>
                   {memberEntries.slice(0, 5).map(([uid, tone]) => (
-                    <div key={uid} className="inline-flex items-center gap-1.5">
+                    <div key={uid} className="inline-flex items-center gap-2">
                       <span
                         className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
                         aria-hidden="true"
@@ -87,7 +87,7 @@ function CalendarLegend({
                       )}
                       {showAllMembers &&
                         memberEntries.slice(5).map(([uid, tone]) => (
-                          <div key={uid} className="inline-flex items-center gap-1.5">
+                          <div key={uid} className="inline-flex items-center gap-2">
                             <span
                               className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
                               aria-hidden="true"
@@ -110,7 +110,7 @@ function CalendarLegend({
                 </>
               ) : (
                 PREFERENCE_THEME_LIST.map((theme) => (
-                  <div key={theme.type} className="inline-flex items-center gap-1.5">
+                  <div key={theme.type} className="inline-flex items-center gap-2">
                     <theme.Icon className="w-3.5 h-3.5" aria-hidden="true" />
                     <span className={'w-2 h-2 rounded-full ' + theme.dotClass} aria-hidden="true" />
                     <span>{theme.label}</span>
@@ -121,7 +121,7 @@ function CalendarLegend({
             {showStatusLegend && (
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-300">
                 {STATUS_LEGEND.map((s) => (
-                  <div key={s.key} className="inline-flex items-center gap-1.5">
+                  <div key={s.key} className="inline-flex items-center gap-2">
                     <span
                       className={'inline-block w-2 h-2 rounded-full ' + s.dot}
                       aria-hidden="true"
@@ -141,7 +141,7 @@ function CalendarLegend({
           {isAdminView && memberNames ? (
             <>
               {memberEntries.slice(0, 5).map(([uid, tone]) => (
-                <div key={uid} className="inline-flex items-center gap-1.5">
+                <div key={uid} className="inline-flex items-center gap-2">
                   <span
                     className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
                     aria-hidden="true"
@@ -163,7 +163,7 @@ function CalendarLegend({
                   )}
                   {showAllMembers &&
                     memberEntries.slice(5).map(([uid, tone]) => (
-                      <div key={uid} className="inline-flex items-center gap-1.5">
+                      <div key={uid} className="inline-flex items-center gap-2">
                         <span
                           className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
                           aria-hidden="true"
@@ -186,7 +186,7 @@ function CalendarLegend({
             </>
           ) : (
             PREFERENCE_THEME_LIST.map((theme) => (
-              <div key={theme.type} className="inline-flex items-center gap-1.5">
+              <div key={theme.type} className="inline-flex items-center gap-2">
                 <theme.Icon className="w-3.5 h-3.5" aria-hidden="true" />
                 <span className={'w-2 h-2 rounded-full ' + theme.dotClass} aria-hidden="true" />
                 <span>{theme.label}</span>
@@ -197,7 +197,7 @@ function CalendarLegend({
         {showStatusLegend && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-300">
             {STATUS_LEGEND.map((s) => (
-              <div key={s.key} className="inline-flex items-center gap-1.5">
+              <div key={s.key} className="inline-flex items-center gap-2">
                 <span
                   className={'inline-block w-2 h-2 rounded-full ' + s.dot}
                   aria-hidden="true"
@@ -349,7 +349,7 @@ export function ShiftPreferenceCalendar({
       )}
 
       {/* 曜日ヘッダ */}
-      <div className="grid grid-cols-7 gap-1 md:gap-1.5 px-0.5">
+      <div className="grid grid-cols-7 gap-1 md:gap-2 px-0.5">
         {weekDays.map((d, i) => (
           <div
             key={d}
@@ -369,7 +369,7 @@ export function ShiftPreferenceCalendar({
 
       {/* 日マス */}
       <div 
-        className="grid grid-cols-7 gap-1 md:gap-1.5" 
+        className="grid grid-cols-7 gap-1 md:gap-2" 
         role="grid" 
         aria-label="シフト希望カレンダー"
         style={isAdminView ? { gridAutoRows: 'minmax(88px, auto)' } : { gridAutoRows: '1fr' }}

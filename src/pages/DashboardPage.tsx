@@ -153,7 +153,7 @@ export function DashboardPage() {
   const pendingLeaveCount = myLeaves.filter(l => l.status === 'pending').length;
 
   return (
-    <div className="max-w-md mx-auto space-y-4 md:space-y-6">
+    <div className="max-w-md mx-auto space-y-6">
       <header className="flex items-end justify-between gap-3">
         <Heading level={1}>{format(today, 'M月d日')}</Heading>
         <p className="text-sm text-neutral-500 dark:text-neutral-300">{format(today, 'EEEE', { locale: ja })}</p>
@@ -257,14 +257,14 @@ export function DashboardPage() {
         <Card.Header>今週のシフト</Card.Header>
         <Card.Body>
           {shiftLoading ? (
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {Array.from({ length: 7 }).map((_, i) => (
                 <ListRowSkeleton key={i} />
               ))}
             </div>
           ) : (
             upcomingShifts.length > 0 && (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 {upcomingShifts.map((shift) => (
                   <div key={shift.id} className="flex items-center justify-between text-sm">
                     <span className="text-neutral-600 dark:text-neutral-300 font-medium">

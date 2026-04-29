@@ -126,18 +126,18 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
         </div>
         {pendingShifts.length > 0 && (
           bulkConfirming ? (
-            <div className="flex gap-1.5">
+            <div className="flex gap-2">
               <button
                 onClick={() => { handleAction(() => onBulkApprove(pendingShifts.map(s => s.id))); setBulkConfirming(false); }}
                 disabled={processing}
-                className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 dark:hover:bg-success-600 disabled:opacity-50 motion-safe:transition flex items-center"
+                className="px-3 py-2 min-h-[44px] text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 dark:hover:bg-success-600 disabled:opacity-50 motion-safe:transition flex items-center"
               >
                 {processing && <Spinner size="sm" inline className="mr-1" />}
                 <span>{pendingShifts.length}件 承認する</span>
               </button>
               <button
                 onClick={() => setBulkConfirming(false)}
-                className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
+                className="px-3 py-2 min-h-[44px] text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition"
               >
                 戻す
               </button>
@@ -146,7 +146,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             <button
               onClick={() => setBulkConfirming(true)}
               disabled={processing}
-              className="px-3 py-1.5 min-h-[44px] text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition flex items-center"
+              className="px-3 py-2 min-h-[44px] text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition flex items-center"
             >
               {processing && <Spinner size="sm" inline className="mr-1" />}
               <span>一括承認</span>
@@ -315,7 +315,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                   )}
 
                   {!isModifying && canManageRow && shift.status === 'pending' && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       {confirmingId?.id === shift.id && confirmingId.action === 'reject' ? (
                         <>
                           <button
@@ -364,7 +364,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                   )}
 
                   {!isModifying && canManageRow && shift.status === 'approved' && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       {deletingId === shift.id ? (
                         <>
                           <button
@@ -397,7 +397,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                   )}
 
                   {!isModifying && canManageRow && shift.status === 'rejected' && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       {deletingId === shift.id ? (
                         <>
                           <button
@@ -446,7 +446,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                   )}
 
                   {!isModifying && canManageRow && shift.status === 'modified' && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
                       {deletingId === shift.id ? (
                         <>
                           <button
