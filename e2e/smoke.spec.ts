@@ -18,8 +18,8 @@ test.describe('kintai smoke', () => {
   test('ログイン画面が表示される', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('heading', { name: /ログイン/i })).toBeVisible();
-    await expect(page.getByLabel(/メール/i)).toBeVisible();
-    await expect(page.getByLabel(/パスワード/i)).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'メールアドレス' })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'パスワード' })).toBeVisible();
   });
 
   test('light テーマ seed で html に dark class が付かない', async ({ page }) => {

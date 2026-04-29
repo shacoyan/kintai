@@ -1,4 +1,8 @@
+import dotenv from 'dotenv';
 import { defineConfig, devices } from '@playwright/test';
+
+// Playwright プロセスでローカル認証情報を読込（.env.local 固定、gitignore 済）
+dotenv.config({ path: '.env.local' });
 
 export default defineConfig({
   testDir: './e2e',

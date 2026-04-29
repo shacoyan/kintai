@@ -19,9 +19,9 @@ setup('authenticate', async ({ page }) => {
 
   // ログインページを開き、認証情報を入力して送信
   await page.goto('/login');
-  await page.getByLabel(/メール/i).fill(email!);
-  await page.getByLabel(/パスワード/i).fill(password!);
-  await page.getByRole('button', { name: /ログイン/i }).click();
+  await page.getByRole('textbox', { name: 'メールアドレス' }).fill(email!);
+  await page.getByRole('textbox', { name: 'パスワード' }).fill(password!);
+  await page.getByRole('button', { name: 'ログイン', exact: true }).click();
 
   // ログイン完了（URL が /login 以外へ遷移）を待機
   await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 10_000 });
