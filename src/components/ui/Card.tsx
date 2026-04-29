@@ -70,7 +70,7 @@ function CardFooter(props: CardSlotProps): JSX.Element {
   return (
     <footer
       className={cn(
-        'border-t border-neutral-100 pt-4 mt-4 flex items-center justify-end gap-2 dark:border-neutral-700',
+        'text-neutral-700 dark:text-neutral-300 border-t border-neutral-100 pt-4 mt-4 flex items-center justify-end gap-2 dark:border-neutral-700',
         horizontalPadding,
         className,
       )}

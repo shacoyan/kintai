@@ -6,11 +6,9 @@ import type { TenantRole } from '../types';
 export function useTenantRoles(tenantId: string) {
   const [roles, setRoles] = useState<TenantRole[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
   const clearError = useCallback(() => {
     setError(null);
-    setFriendlyError(null);
   }, []);
 
   const fetchRoles = useCallback(async () => {
@@ -29,8 +27,7 @@ export function useTenantRoles(tenantId: string) {
       setRoles((data ?? []) as TenantRole[]);
     } catch (err: unknown) {
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
     } finally {
       setLoading(false);
     }
@@ -65,8 +62,7 @@ export function useTenantRoles(tenantId: string) {
       return data as TenantRole;
     } catch (err: unknown) {
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     }
   }, [tenantId, fetchRoles]);
@@ -93,8 +89,7 @@ export function useTenantRoles(tenantId: string) {
       await fetchRoles();
     } catch (err: unknown) {
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     }
   }, [tenantId, fetchRoles]);
@@ -115,8 +110,7 @@ export function useTenantRoles(tenantId: string) {
       await fetchRoles();
     } catch (err: unknown) {
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     }
   }, [tenantId, fetchRoles]);
@@ -125,7 +119,6 @@ export function useTenantRoles(tenantId: string) {
     roles,
     loading,
     error,
-    friendlyError,
     clearError,
     fetchRoles,
     createRole,

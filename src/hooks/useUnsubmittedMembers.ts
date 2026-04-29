@@ -29,8 +29,7 @@ type ShiftPreferenceRow = {
 export type UseUnsubmittedMembersReturn = {
   unsubmitted: UnsubmittedMember[];
   loading: boolean;
-  error: Error | null;
-  friendlyError: FriendlyError | null;
+  error: FriendlyError | null;
   clearError: () => void;
   refetch: () => Promise<void>;
 };
@@ -46,11 +45,9 @@ export function useUnsubmittedMembers(
 ): UseUnsubmittedMembersReturn {
   const [unsubmitted, setUnsubmitted] = useState<UnsubmittedMember[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
   const clearError = useCallback(() => {
     setError(null);
-    setFriendlyError(null);
   }, []);
 
   const monthKey = useMemo(
@@ -152,8 +149,7 @@ export function useUnsubmittedMembers(
     } catch (err) {
       const f = formatSupabaseError(err);
       logger.error('useUnsubmittedMembers fetchData error:', f);
-      setError(new Error(f.message));
-      setFriendlyError(f);
+      setError(f);
       setUnsubmitted([]);
     } finally {
       setLoading(false);
@@ -170,7 +166,6 @@ export function useUnsubmittedMembers(
     unsubmitted,
     loading,
     error,
-    friendlyError,
     clearError,
     refetch: fetchData,
   };

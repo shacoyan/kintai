@@ -6,11 +6,9 @@ import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 export function useNotification(userId: string | null) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
   const clearError = useCallback(() => {
     setError(null);
-    setFriendlyError(null);
   }, []);
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -30,8 +28,7 @@ export function useNotification(userId: string | null) {
       setNotifications((data ?? []) as NotificationItem[]);
     } catch (err: unknown) {
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
     } finally {
       setLoading(false);
     }
@@ -52,8 +49,7 @@ export function useNotification(userId: string | null) {
       setNotifications((data ?? []) as NotificationItem[]);
     } catch (err: unknown) {
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
     } finally {
       setLoading(false);
     }
@@ -74,8 +70,7 @@ export function useNotification(userId: string | null) {
         );
       } catch (err: unknown) {
         const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       }
     },
     [userId]
@@ -97,8 +92,7 @@ export function useNotification(userId: string | null) {
       );
     } catch (err: unknown) {
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
     }
   }, [userId, notifications]);
 
@@ -144,7 +138,7 @@ export function useNotification(userId: string | null) {
       channelRef.current = channel;
     } catch (e) {
       console.warn('[useNotification] channel setup failed:', e);
-      setError(e instanceof Error ? e.message : String(e));
+      setError(formatSupabaseError(e));
       if (channel) {
         try { supabase.removeChannel(channel); } catch (re) { console.warn('[useNotification] removeChannel after fail:', re); }
       }
@@ -170,7 +164,6 @@ export function useNotification(userId: string | null) {
     unreadCount,
     loading,
     error,
-    friendlyError,
     clearError,
     fetchLatest,
     fetchAll,

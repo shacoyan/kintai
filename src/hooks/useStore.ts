@@ -8,11 +8,9 @@ export function useStore(tenantId: string) {
   const [stores, setStores] = useState<Store[]>([]);
   const [storeMembers, setStoreMembers] = useState<StoreMember[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
   const clearError = useCallback(() => {
     setError(null);
-    setFriendlyError(null);
   }, []);
 
   const fetchStores = useCallback(async () => {
@@ -28,8 +26,7 @@ export function useStore(tenantId: string) {
     } catch (err) {
       logger.error('fetchStores error:', formatSupabaseError(err));
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     } finally {
       setLoading(false);
@@ -49,8 +46,7 @@ export function useStore(tenantId: string) {
     } catch (err) {
       logger.error('createStore error:', formatSupabaseError(err));
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     }
   }, [tenantId, fetchStores]);
@@ -66,8 +62,7 @@ export function useStore(tenantId: string) {
     } catch (err) {
       logger.error('updateStore error:', formatSupabaseError(err));
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     }
   }, [fetchStores]);
@@ -83,8 +78,7 @@ export function useStore(tenantId: string) {
     } catch (err) {
       logger.error('deleteStore error:', formatSupabaseError(err));
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     }
   }, [fetchStores]);
@@ -100,8 +94,7 @@ export function useStore(tenantId: string) {
     } catch (err) {
       logger.error('fetchStoreMembers error:', formatSupabaseError(err));
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     }
   }, []);
@@ -116,8 +109,7 @@ export function useStore(tenantId: string) {
     } catch (err) {
       logger.error('addStoreMember error:', formatSupabaseError(err));
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     }
   }, [fetchStoreMembers]);
@@ -134,8 +126,7 @@ export function useStore(tenantId: string) {
     } catch (err) {
       logger.error('removeStoreMember error:', formatSupabaseError(err));
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     }
   }, [fetchStoreMembers]);
@@ -152,16 +143,13 @@ export function useStore(tenantId: string) {
     } catch (err) {
       logger.error('setMemberPrimary error:', formatSupabaseError(err));
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     }
   }, [fetchStoreMembers]);
 
   const setStoreMemberManager = useCallback(async (storeId: string, memberId: string, isManager: boolean) => {
     try {
-      // E-2 TOCTOU 解消: migration 022 で新設の 3 引数版 RPC を直接呼び出す
-      // （事前 select id は廃止。DB 側で store_id + member_id から行を解決＋ advisory_xact_lock）
       const { error: rpcError } = await supabase.rpc('set_store_member_manager', {
         p_store_id: storeId,
         p_member_id: memberId,
@@ -169,7 +157,6 @@ export function useStore(tenantId: string) {
       });
 
       if (rpcError) {
-        // E-3 includes() 判定: PostgREST がメッセージをラップしても拾えるよう部分一致に変更
         const msg = rpcError.message ?? '';
         if (msg.includes('Store member not found')) {
           throw new Error('店舗内権限の更新に失敗しました: 対象メンバーが見つかりません');
@@ -184,14 +171,13 @@ export function useStore(tenantId: string) {
     } catch (err) {
       logger.error('setStoreMemberManager error:', formatSupabaseError(err));
       const f = formatSupabaseError(err);
-      setError(f.message);
-      setFriendlyError(f);
+      setError(f);
       throw err;
     }
   }, [fetchStoreMembers]);
 
   return {
-    stores, storeMembers, loading, error, friendlyError, clearError,
+    stores, storeMembers, loading, error, clearError,
     fetchStores, createStore, updateStore, deleteStore,
     fetchStoreMembers, addStoreMember, removeStoreMember, setMemberPrimary, setStoreMemberManager,
   };

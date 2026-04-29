@@ -118,7 +118,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
         </Button>
       </div>
 
-      {error && <ErrorBanner message={error} />}
+      {error && <ErrorBanner message={error.message} />}
       
       {roles.length === 0 && loading ? (
         <PageSkeleton />

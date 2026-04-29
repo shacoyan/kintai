@@ -619,7 +619,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
       )}
 
       {error && (
-        <ErrorBanner message={error} onRetry={handleCalculate} />
+        <ErrorBanner message={error?.message ?? ''} onRetry={handleCalculate} />
       )}
 
       {isLoading && !calculated && !isFinalized ? (

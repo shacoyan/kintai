@@ -11,11 +11,9 @@ export function useTenantAdmin(tenantId: string) {
   const loading = loadingCount > 0;
   const startLoading = () => setLoadingCount(c => c + 1);
   const stopLoading = () => setLoadingCount(c => Math.max(0, c - 1));
-  const [error, setError] = useState<string | null>(null);
-  const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
+  const [error, setError] = useState<FriendlyError | null>(null);
   const clearError = useCallback(() => {
     setError(null);
-    setFriendlyError(null);
   }, []);
 
   const fetchMembers = useCallback(async (storeId?: string | null) => {
@@ -30,8 +28,7 @@ export function useTenantAdmin(tenantId: string) {
 
         if (storeMembersError) {
           const f = formatSupabaseError(storeMembersError);
-          setError(f.message);
-          setFriendlyError(f);
+          setError(f);
           return;
         }
 
@@ -50,8 +47,7 @@ export function useTenantAdmin(tenantId: string) {
 
         if (e) {
           const f = formatSupabaseError(e);
-          setError(f.message);
-          setFriendlyError(f);
+          setError(f);
         } else {
           setMembers((data as TenantMember[]) || []);
         }
@@ -63,8 +59,7 @@ export function useTenantAdmin(tenantId: string) {
           .order('created_at', { ascending: true });
         if (e) {
           const f = formatSupabaseError(e);
-          setError(f.message);
-          setFriendlyError(f);
+          setError(f);
         } else {
           setMembers((data as TenantMember[]) || []);
         }
@@ -109,8 +104,7 @@ export function useTenantAdmin(tenantId: string) {
       
       if (e) {
         const f = formatSupabaseError(e);
-        setError(f.message);
-        setFriendlyError(f);
+        setError(f);
       } else {
         setAllAttendance((data as AttendanceRecord[]) || []);
       }
@@ -134,8 +128,7 @@ export function useTenantAdmin(tenantId: string) {
         .order('clock_in', { ascending: true });
       if (e) {
         const f = formatSupabaseError(e);
-        setError(f.message);
-        setFriendlyError(f);
+        setError(f);
       } else {
         setMemberAttendance((data as AttendanceRecord[]) || []);
       }
@@ -255,7 +248,6 @@ export function useTenantAdmin(tenantId: string) {
     memberAttendance,
     loading,
     error,
-    friendlyError,
     clearError,
     fetchMembers,
     updateHourlyRate,

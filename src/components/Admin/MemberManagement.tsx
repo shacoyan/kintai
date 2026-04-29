@@ -213,7 +213,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   }
 
   if (error) {
-    return <ErrorBanner message={error} onRetry={fetchMembers} />;
+    return <ErrorBanner message={error?.message ?? ''} onRetry={fetchMembers} />;
   }
 
   return (

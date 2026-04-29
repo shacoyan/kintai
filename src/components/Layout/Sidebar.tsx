@@ -46,7 +46,7 @@ export function Sidebar() {
   const isManagerial = myRole === 'owner' || myRole === 'manager';
 
   return (
-    <div role="navigation" aria-label="メインナビゲーション" className="h-full flex flex-col p-4 gap-2">
+    <nav aria-label="メインナビゲーション" className="h-full flex flex-col p-4 gap-2">
       <div className="flex items-center justify-between h-12 px-1">
         <div className="flex items-center gap-2">
           <BrandMark size="md" color="currentColor" className="text-primary-700" />
@@ -108,6 +108,6 @@ export function Sidebar() {
           ログアウト
         </button>
       </div>
-    </div>
+    </nav>
   );
 }
