@@ -1,16 +1,18 @@
 /**
- * @fileoverview 勤怠アプリ ビジュアルリグレッション用スクリーンショット収集スペック。
- *               各画面×テーマごとにフルページ画像を `tmp/l26-screenshots/` へ保存する。
+ * @fileoverview 勤怠アプリ ビジュアルリグレッションテストスペック。
+ *               各画面×テーマごとにフルページ画像のスナップショットを検証する。
  *
- * 詳細: .company/engineering/docs/2026-04-29-kintai-loop26-techdesign.md §4.4.5
+ * 詳細: .company/engineering/docs/2026-04-30-kintai-loop29-techdesign.md §4.4.5
  *
  * 規則:
- * - expect(page).toHaveScreenshot() は使わない（baseline 不在で初回必ず fail する）
- * - 純粋な page.screenshot() でファイル保存のみ → Reviewer / Tech Lead が目視確認
- * - フォントロードを document.fonts.ready で待機（Noto Sans JP 遅延ロード対策）
- * - tmp/l26-screenshots/ は .gitignore 対象
+ * - baseline は `e2e/visual-regression.spec.ts-snapshots/` に commit する。
+ * - baseline の更新は `npm run e2e:visual:update` で一括実行する。
+ * - Playwright の `toHaveScreenshot` を用いて画像の差分を検出する。
+ * - 動的要素（ユーザー情報・時刻など）は locator ベースの mask で中間グレー (`#808080`) 塗りつぶしを行う。
+ * - フォントロードを document.fonts.ready で待機し（Noto Sans JP 遅延ロード対策）、
+ *   アニメーションは reducedMotion エミュレートと disabled 設定で完全に抑制する。
  */
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 /** キャプチャ対象のルート一覧 */
 const ROUTES: readonly { readonly path: string; readonly name: string }[] = [
@@ -33,13 +35,27 @@ for (const route of ROUTES) {
         localStorage.setItem('kintai_theme', t);
       }, theme);
 
+      // アニメーション停止を fonts.ready の前に設定
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+
       await page.goto(route.path);
       await page.waitForLoadState('networkidle');
       await page.evaluate(() => document.fonts.ready);
 
-      await page.screenshot({
-        path: `tmp/l26-screenshots/${route.name}-${theme}.png`,
+      // 動的要素のマスク locator 定義
+      const dynamicMask = [
+        page.locator('[title*="@"]'), // user.email (title 属性)
+        page.getByRole('time'), // <time> 要素全般
+        page.locator('text=/\\d{1,2}:\\d{2}(:\\d{2})?/'), // HH:MM
+        page.locator('text=/\\d{4}年\\d{1,2}月\\d{1,2}日/'), // 和暦日付
+        page.locator('[data-dynamic="true"]'), // 将来用フック
+      ];
+
+      await expect(page).toHaveScreenshot(`${route.name}-${theme}.png`, {
         fullPage: true,
+        animations: 'disabled',
+        mask: dynamicMask,
+        maskColor: '#808080',
       });
     });
   }

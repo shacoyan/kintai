@@ -11,7 +11,15 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   timeout: 30_000,
-  expect: { timeout: 5_000 },
+  expect: {
+    timeout: 5_000,
+    toHaveScreenshot: {
+      threshold: 0.2,
+      maxDiffPixels: 100,
+      animations: 'disabled',
+      caret: 'hide',
+    },
+  },
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:5173',

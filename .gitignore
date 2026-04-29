@@ -9,5 +9,8 @@ playwright-report/
 test-results/
 e2e/.auth/*.json
 
-# L26 視覚回帰スクリーンショット（Reviewer / Tech Lead がローカル目視確認）
+# 視覚回帰: tmp/ は ad-hoc 保存先として維持（L26 互換 / 手動撮影用）
 tmp/
+
+# 視覚回帰 baseline は commit 対象（L29 以降）。
+# e2e/visual-regression.spec.ts-snapshots/ は意図的に gitignore しない。
