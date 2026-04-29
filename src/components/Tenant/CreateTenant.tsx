@@ -113,7 +113,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              ワークスペース名 <span className="text-danger-500">*</span>
+              ワークスペース名 <span className="text-danger-500 dark:text-danger-400">*</span>
             </label>
             <input
               id="name"
@@ -128,7 +128,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
 
           <div>
             <label htmlFor="displayName" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              表示名 <span className="text-danger-500">*</span>
+              表示名 <span className="text-danger-500 dark:text-danger-400">*</span>
             </label>
             <input
               id="displayName"

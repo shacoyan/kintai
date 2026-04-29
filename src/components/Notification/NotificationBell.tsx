@@ -113,7 +113,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
         {isUnread ? (
           <span
             aria-hidden="true"
-            className="mt-1.5 flex-shrink-0 w-2 h-2 rounded-full bg-primary-500"
+            className="mt-1.5 flex-shrink-0 w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400"
           />
         ) : (
           <span aria-hidden="true" className="mt-1.5 flex-shrink-0 w-2 h-2" />
@@ -150,7 +150,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
       >
         <Bell size={18} />
         {badgeText && (
-          <span className="absolute top-0 right-0 bg-danger-500 text-white text-[10px] rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 font-medium leading-none">
+          <span className="absolute top-0 right-0 bg-danger-500 dark:bg-danger-400 text-white text-[10px] rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 font-medium leading-none">
             {badgeText}
           </span>
         )}
