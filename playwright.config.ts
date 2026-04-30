@@ -35,8 +35,9 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/user.json' },
       dependencies: ['setup'],
-      // anon 系 spec (storageState 無し) は除外。Loop 40 #4 で追加。
-      testIgnore: [/.*\.setup\.ts/, /.*\.anon\.spec\.ts/],
+      // anon 系 spec (storageState 無し) と smoke は除外。Loop 41 #3 で smoke 追加。
+      // smoke.spec.ts は認証不要の表示確認のため chromium-anon project でのみ実行。
+      testIgnore: [/.*\.setup\.ts/, /.*\.anon\.spec\.ts/, /smoke\.spec\.ts/],
     },
     {
       name: 'chromium-anon',

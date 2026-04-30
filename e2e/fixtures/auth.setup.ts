@@ -1,4 +1,4 @@
-import { test as setup } from '@playwright/test';
+import { test as setup, expect } from '@playwright/test';
 
 /**
  * 認証済みセッションをストレージ状態ファイルとして保存するセットアップ。
@@ -7,7 +7,6 @@ import { test as setup } from '@playwright/test';
  */
 
 const AUTH_FILE = 'e2e/.auth/user.json';
-const SUPABASE_TOKEN_KEY_PATTERN = /^sb-.+-auth-token$/;
 
 setup('authenticate', async ({ page }) => {
   const email = process.env.E2E_USER_EMAIL;
@@ -52,38 +51,52 @@ setup('authenticate', async ({ page }) => {
     throw new Error('Failed to set tenant: kintai_current_tenant is null');
   }
 
-  // TODO(loop-41+): src 側に dev/E2E 限定の window.__kintai_supabase export を入れて
-  // supabase.auth.getSession() 経由で取得するように移行する。
-  // 現状は Supabase JS の localStorage キー命名 (sb-<ref>-auth-token) に依存しており fragility が残る。
+  // Loop 41 — supabase 公式 API (window.__kintai_supabase.auth.getSession()) で session を取得し、
+  // localStorage キー命名への依存を解消する。dev/test 限定 export は src/lib/supabase.ts 参照。
 
-  // 2. storageState 保存直前の assertion: Supabase auth token の存在確認
-  const supabaseTokenKey = await page.evaluate((pattern: string) => {
-    const re = new RegExp(pattern);
-    const keys = Object.keys(localStorage);
-    return keys.find(k => re.test(k)) ?? null;
-  }, SUPABASE_TOKEN_KEY_PATTERN.source);
-  if (!supabaseTokenKey) {
-    throw new Error('[auth.setup] Supabase auth token not in localStorage');
+  // 2. session が取得できるまで poll (最大 5 秒)
+  await expect.poll(
+    async () =>
+      await page.evaluate(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const sb = (window as any).__kintai_supabase;
+        if (!sb) return null;
+        const { data } = await sb.auth.getSession();
+        return data.session?.access_token ?? null;
+      }),
+    {
+      message: '[auth.setup] Supabase session not available via window.__kintai_supabase',
+      timeout: 5_000,
+      intervals: [200, 500, 1000],
+    },
+  ).not.toBeNull();
+
+  // poll 後に最終的な access_token を取得
+  const finalAccessToken = await page.evaluate(async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = (window as any).__kintai_supabase;
+    if (!sb) return null;
+    const { data } = await sb.auth.getSession();
+    return data.session?.access_token ?? null;
+  });
+  if (!finalAccessToken) {
+    throw new Error('[auth.setup] Supabase session disappeared after poll');
   }
 
-  // 3. JWT exp チェック + console log
-  const tokenInfo = await page.evaluate((key) => {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    try {
-      const session = JSON.parse(raw);
-      const accessToken = session.access_token ?? session.currentSession?.access_token;
-      if (!accessToken) return null;
-      const payload = JSON.parse(atob(accessToken.split('.')[1]));
-      return { exp: payload.exp, expIso: new Date(payload.exp * 1000).toISOString() };
-    } catch { return null; }
-  }, supabaseTokenKey);
-  if (tokenInfo) {
-    const remainingSec = tokenInfo.exp - Math.floor(Date.now() / 1000);
-    console.log(`[auth.setup] JWT exp: ${tokenInfo.expIso} (remaining ${Math.floor(remainingSec/60)} min)`);
+  // 3. JWT exp チェック + console log (Buffer.from で Node 互換)
+  try {
+    const payload = JSON.parse(
+      Buffer.from(finalAccessToken.split('.')[1], 'base64').toString('utf-8'),
+    );
+    const exp: number = payload.exp;
+    const expIso = new Date(exp * 1000).toISOString();
+    const remainingSec = exp - Math.floor(Date.now() / 1000);
+    console.log(`[auth.setup] JWT exp: ${expIso} (remaining ${Math.floor(remainingSec / 60)} min)`);
     if (remainingSec < 30 * 60) {
-      console.warn(`[auth.setup] WARNING: JWT remaining < 30 min (${Math.floor(remainingSec/60)} min)`);
+      console.warn(`[auth.setup] WARNING: JWT remaining < 30 min (${Math.floor(remainingSec / 60)} min)`);
     }
+  } catch (e) {
+    console.warn('[auth.setup] failed to decode JWT:', e);
   }
 
   // ブラウザコンテキストのストレージ状態（Cookie や localStorage 等）を保存

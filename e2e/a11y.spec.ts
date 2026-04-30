@@ -9,12 +9,10 @@ import AxeBuilder from '@axe-core/playwright';
  * - WCAG 2.0/2.1 AA レベルの違反のうち critical / serious のみを fail とする
  * - moderate / minor は視覚確認バックログへ送付
  *
- * Loop 40 — color-contrast 一時除外 (Loop 41 持越し):
- * - 認証下 5 routes 化により color-contrast violation が 32 ノード以上検出された。
- *   設計書 §7-D fail 時方針 (4 件以上はスコープ越境) に従い disableRules で除外。
- * - Loop 41 で palette 再設計 (warning-50 + warning-500 / neutral-400 + neutral-500 等のペア)
- *   を行い、本フラグを解除する。
- * - 詳細: .company/engineering/docs/2026-04-30-kintai-loop40-techdesign.md §7-D 実装結果
+ * Loop 41 — color-contrast 解除済:
+ * - tailwind.config.js の warning/info/neutral palette を WCAG AA 4.5:1 達成値へ再設計し、
+ *   disableRules(['color-contrast']) を撤去。認証下 5 routes + anon /login で color-contrast 違反 0 件。
+ * - 詳細: .company/engineering/docs/2026-04-30-kintai-loop41-techdesign.md §2
  */
 
 const ROUTES = [
@@ -32,7 +30,6 @@ for (const route of ROUTES) {
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
-      .disableRules(['color-contrast'])
       .analyze();
 
     const blocking = results.violations.filter(

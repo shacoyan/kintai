@@ -88,7 +88,7 @@ export function StoreSelector() {
 
   if (stores.length === 0) {
     return (
-      <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+      <div className="flex items-center gap-2 text-xs text-warning-700 dark:text-warning-300">
         <AlertCircle className="w-4 h-4 shrink-0" />
         <div className="flex flex-col">
           <span>店舗が割り当てられていません</span>
@@ -100,7 +100,7 @@ export function StoreSelector() {
               店舗を作成してください →
             </a>
           ) : (
-            <span className="text-amber-500 dark:text-amber-300 mt-0.5">
+            <span className="text-warning-700 dark:text-warning-300 mt-0.5">
               オーナー or 店長に連絡してください
             </span>
           )}
