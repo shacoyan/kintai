@@ -26,6 +26,60 @@ setup('authenticate', async ({ page }) => {
   // ログイン完了（URL が /login 以外へ遷移）を待機
   await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 10_000 });
 
+  // Tenant selection 処理
+  const tenantName = process.env.E2E_TENANT_NAME ?? 'E2E Test';
+  if (tenantName === '') {
+    setup.skip(true, 'no tenant configured');
+  }
+
+  const currentUrl = page.url();
+  if (!currentUrl.includes('/tenant')) {
+    await page.goto('/tenant');
+  }
+
+  await page.getByRole('button', { name: new RegExp(tenantName) }).first().click();
+  await page.waitForURL((url) => !url.pathname.startsWith('/tenant'), { timeout: 10_000 });
+
+  // 1. tenant 選択完了の堅牢な待機
+  await page.waitForFunction(() =>
+    localStorage.getItem('kintai_current_tenant') !== null,
+    { timeout: 5000 }
+  );
+
+  const currentTenant = await page.evaluate(() => localStorage.getItem('kintai_current_tenant'));
+  if (currentTenant === null) {
+    throw new Error('Failed to set tenant: kintai_current_tenant is null');
+  }
+
+  // 2. storageState 保存直前の assertion: Supabase auth token の存在確認
+  const supabaseTokenKey = await page.evaluate(() => {
+    const keys = Object.keys(localStorage);
+    return keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token')) ?? null;
+  });
+  if (!supabaseTokenKey) {
+    throw new Error('[auth.setup] Supabase auth token not in localStorage');
+  }
+
+  // 3. JWT exp チェック + console log
+  const tokenInfo = await page.evaluate((key) => {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    try {
+      const session = JSON.parse(raw);
+      const accessToken = session.access_token ?? session.currentSession?.access_token;
+      if (!accessToken) return null;
+      const payload = JSON.parse(atob(accessToken.split('.')[1]));
+      return { exp: payload.exp, expIso: new Date(payload.exp * 1000).toISOString() };
+    } catch { return null; }
+  }, supabaseTokenKey);
+  if (tokenInfo) {
+    const remainingSec = tokenInfo.exp - Math.floor(Date.now() / 1000);
+    console.log(`[auth.setup] JWT exp: ${tokenInfo.expIso} (remaining ${Math.floor(remainingSec/60)} min)`);
+    if (remainingSec < 30 * 60) {
+      console.warn(`[auth.setup] WARNING: JWT remaining < 30 min (${Math.floor(remainingSec/60)} min)`);
+    }
+  }
+
   // ブラウザコンテキストのストレージ状態（Cookie や localStorage 等）を保存
   await page.context().storageState({ path: AUTH_FILE });
 });

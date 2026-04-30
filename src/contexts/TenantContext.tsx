@@ -36,7 +36,7 @@ interface TenantContextType {
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [tenants, setTenants] = useState<TenantWithRole[]>([]);
   const [currentTenant, setCurrentTenantState] = useState<Tenant | null>(() => {
@@ -386,6 +386,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [currentTenant, isOwner, setCurrentTenant, fetchTenants]);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       setTenants([]);
       setCurrentTenantState(null);
@@ -395,26 +396,52 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    fetchTenants().then(fetchedTenants => {
-      const saved = localStorage.getItem('kintai_current_tenant');
-      if (saved) {
+    fetchTenants()
+      .then(fetchedTenants => {
+        const saved = localStorage.getItem('kintai_current_tenant');
+        if (!saved) return;
+        let parsed: Tenant;
         try {
-          const parsed = JSON.parse(saved);
-          const found = fetchedTenants.find(t => t.id === parsed.id);
-          if (found) {
-            setCurrentTenantState(found);
-            fetchMembers(found.id);
-          } else {
-            localStorage.removeItem('kintai_current_tenant');
-            setCurrentTenantState(null);
-          }
+          parsed = JSON.parse(saved);
         } catch {
+          // JSON 破損のみ削除（真に復元不能）
+          localStorage.removeItem('kintai_current_tenant');
+          setCurrentTenantState(null);
+          return;
+        }
+        // fetch 結果が空 → RLS 反映遅延 / 一時的エラーの可能性が高いので保持
+        // （Loop 39 真因対応: 起動時の誤った redirect を防ぐ）
+        if (!fetchedTenants || fetchedTenants.length === 0) {
+          setCurrentTenantState(parsed);
+          fetchMembers(parsed.id);
+          return;
+        }
+        const found = fetchedTenants.find(t => t.id === parsed.id);
+        if (found) {
+          setCurrentTenantState(found);
+          fetchMembers(found.id);
+        } else {
+          // 他 tenant はあるが saved は含まれない = 真に削除されたテナント
           localStorage.removeItem('kintai_current_tenant');
           setCurrentTenantState(null);
         }
-      }
-    });
-  }, [user, fetchTenants, fetchMembers]);
+      })
+      .catch(err => {
+        // fetch 自体が失敗した場合は saved を保持（次回起動時に再試行）
+        console.warn('[TenantContext] fetchTenants failed, keeping saved tenant:', err);
+        const saved = localStorage.getItem('kintai_current_tenant');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved) as Tenant;
+            setCurrentTenantState(parsed);
+            fetchMembers(parsed.id);
+          } catch {
+            localStorage.removeItem('kintai_current_tenant');
+            setCurrentTenantState(null);
+          }
+        }
+      });
+  }, [user, authLoading, fetchTenants, fetchMembers]);
 
   useEffect(() => {
     if (currentTenant) {
