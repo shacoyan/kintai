@@ -153,7 +153,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
                     </td>
                     <td className="px-4 py-3">{role.sort_order ?? 0}</td>
                     <td className="px-4 py-3 flex gap-2">
-                      <button onClick={() => openEditForm(role)} className="text-neutral-500 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400" aria-label={`役職『${role.name}』を編集`}>
+                      <button onClick={() => openEditForm(role)} className="text-neutral-500 dark:text-neutral-300 hover:text-info-600 dark:hover:text-info-400" aria-label={`役職『${role.name}』を編集`}>
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => openDeleteConfirm(role)} className="text-neutral-500 dark:text-neutral-300 hover:text-danger-600 dark:hover:text-danger-400" aria-label={`役職『${role.name}』を削除`}>
@@ -176,7 +176,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
                     <Heading level={3} as="h4">{role.name}</Heading>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => openEditForm(role)} className="p-1 text-neutral-400 dark:text-neutral-500 hover:text-blue-600 dark:hover:text-blue-400" aria-label={`役職『${role.name}』を編集`}>
+                    <button onClick={() => openEditForm(role)} className="p-1 text-neutral-400 dark:text-neutral-500 hover:text-info-600 dark:hover:text-info-400" aria-label={`役職『${role.name}』を編集`}>
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button onClick={() => openDeleteConfirm(role)} className="p-1 text-neutral-400 dark:text-neutral-500 hover:text-danger-600 dark:hover:text-danger-400" aria-label={`役職『${role.name}』を削除`}>

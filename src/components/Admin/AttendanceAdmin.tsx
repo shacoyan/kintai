@@ -330,7 +330,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
         {/* 凡例 */}
         <div className="mt-3 flex flex-wrap gap-3 text-[11px] md:text-xs text-neutral-600 dark:text-neutral-300">
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700" />
+            <span className="inline-block w-3 h-3 rounded bg-success-50 dark:bg-success-900/30 border border-success-300 dark:border-success-700" />
             出勤（〜8h）
           </span>
           <span className="flex items-center gap-1">
@@ -369,7 +369,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                         key={day}
                         className={`sticky top-0 z-[5] border-b border-r border-neutral-200 dark:border-neutral-600 py-1 font-medium text-center whitespace-nowrap ${
                           weekend
-                            ? 'text-danger-500 dark:text-danger-400 bg-rose-50/50 dark:bg-rose-900/10'
+                            ? 'text-danger-500 dark:text-danger-400 bg-danger-50/50 dark:bg-danger-900/10'
                             : 'text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-700'
                         }`}
                         style={{ minWidth: '48px', width: '48px' }}
@@ -410,7 +410,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
                         let cellContent: React.ReactNode = null;
                         let cellBg = weekend
-                          ? 'bg-rose-50/50 dark:bg-rose-900/10'
+                          ? 'bg-danger-50/50 dark:bg-danger-900/10'
                           : 'bg-white dark:bg-neutral-800';
                         let textColor = '';
 
@@ -419,16 +419,16 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                           const isOvertime = workMin > OVERTIME_THRESHOLD_MINUTES;
                           cellBg = isOvertime
                             ? 'bg-info-50 dark:bg-info-900/30'
-                            : 'bg-emerald-50 dark:bg-emerald-900/30';
+                            : 'bg-success-50 dark:bg-success-900/30';
                           textColor = isOvertime
                             ? 'text-info-700 dark:text-info-300 font-semibold'
-                            : 'text-emerald-700 dark:text-emerald-300 font-semibold';
+                            : 'text-success-700 dark:text-success-300 font-semibold';
                           cellContent = (
                             <span className={textColor}>{fmtMinutes(workMin)}</span>
                           );
                         } else if (hasShift) {
                           cellContent = <AlertTriangle className="w-4 h-4 text-danger-500 dark:text-danger-400 mx-auto" aria-label="シフトあり・勤怠なし" />;
-                          cellBg = 'bg-rose-50 dark:bg-rose-900/20';
+                          cellBg = 'bg-danger-50 dark:bg-danger-900/20';
                         }
 
                         return (

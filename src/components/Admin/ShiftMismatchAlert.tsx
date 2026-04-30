@@ -53,7 +53,7 @@ function rowBgClass(type: ShiftMismatch['type']): string {
     case 'late':
       return 'bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800';
     case 'early_leave':
-      return 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800';
+      return 'bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800';
     default:
       return 'bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700';
   }

@@ -62,7 +62,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
     }
   }
   const pendingBadge = (count: number) => (
-    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300">
       修正申請中 {count}
     </span>
   );

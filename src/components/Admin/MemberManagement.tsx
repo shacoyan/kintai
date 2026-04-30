@@ -387,7 +387,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-120 ease-out-expo ${
                                 rate > 0
                                   ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-                                  : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'
+                                  : 'text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900 hover:bg-warning-100 dark:hover:bg-warning-800'
                               }`}
                             >
                               {rate > 0 ? (
@@ -442,7 +442,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-120 ease-out-expo ${
                                 (member.monthly_salary ?? 0) > 0
                                   ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-                                  : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'
+                                  : 'text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900 hover:bg-warning-100 dark:hover:bg-warning-800'
                               }`}
                             >
                               {(member.monthly_salary ?? 0) > 0 ? (
@@ -494,7 +494,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-120 ease-out-expo ${
                               (member.paid_leave_days ?? 0) > 0
                                 ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
-                                : 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800'
+                                : 'text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900 hover:bg-warning-100 dark:hover:bg-warning-800'
                             }`}
                           >
                             {(member.paid_leave_days ?? 0) > 0 ? (

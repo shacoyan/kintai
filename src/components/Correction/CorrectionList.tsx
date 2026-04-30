@@ -82,7 +82,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                 onClick={() => setFilterKey(tab.key)}
                 className={`px-4 py-2 text-sm font-medium whitespace-nowrap motion-safe:transition-colors duration-120 ease-out-expo ${
                   filterKey === tab.key
-                    ? 'border-b-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                    ? 'border-b-2 border-info-500 dark:border-info-400 text-info-600 dark:text-info-400'
                     : 'text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-300'
                 }`}
               >
@@ -110,7 +110,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
               onClick={() => setFilterKey(tab.key)}
               className={`px-4 py-2 text-sm font-medium whitespace-nowrap motion-safe:transition-colors duration-120 ease-out-expo ${
                 filterKey === tab.key
-                  ? 'border-b-2 border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400'
+                  ? 'border-b-2 border-info-500 dark:border-info-400 text-info-600 dark:text-info-400'
                   : 'text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-300'
               }`}
             >

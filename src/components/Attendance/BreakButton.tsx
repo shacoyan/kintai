@@ -66,7 +66,7 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
             disabled={processing}
             aria-label="休憩終了"
             aria-pressed={true}
-            className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-400 text-white font-bold py-3 px-8 rounded-lg motion-safe:transition-colors duration-180 ease-out-expo active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+            className="bg-warning-600 hover:bg-warning-700 dark:bg-warning-500 dark:hover:bg-warning-400 text-white font-bold py-3 px-8 rounded-lg motion-safe:transition-colors duration-180 ease-out-expo active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             {processing && <Spinner size="sm" inline className="mr-2" />}休憩終了
           </button>

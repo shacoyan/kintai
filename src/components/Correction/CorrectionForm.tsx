@@ -218,9 +218,9 @@ export function CorrectionForm({
         )}
 
         {isOvernight && (
-          <div role="alert" className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800">
-            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-            <p className="text-xs text-amber-700 dark:text-amber-300">退勤時刻が出勤より前のため、<strong>翌日として扱います</strong>（夜勤シフト）</p>
+          <div role="alert" className="flex items-start gap-2 p-3 rounded-lg bg-warning-50 dark:bg-warning-900/30 border border-warning-200 dark:border-warning-800">
+            <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-400 mt-0.5 shrink-0" />
+            <p className="text-xs text-warning-700 dark:text-warning-300">退勤時刻が出勤より前のため、<strong>翌日として扱います</strong>（夜勤シフト）</p>
           </div>
         )}
       </form>

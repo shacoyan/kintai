@@ -158,7 +158,7 @@ export function ShiftPreferenceForm({
       {existingPreference && (
         <div
           role="status"
-          className="rounded-md border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 text-xs text-amber-700 dark:text-amber-300"
+          className="rounded-md border border-warning-200 dark:border-warning-700 bg-warning-50 dark:bg-warning-900/30 px-3 py-2 text-xs text-warning-700 dark:text-warning-300"
         >
           この日付には既に希望が登録されています。送信すると上書きされます。
         </div>

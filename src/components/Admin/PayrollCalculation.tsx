@@ -612,7 +612,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
       </div>
 
       {isFinalized && (
-        <div className="px-6 py-3 border-b border-neutral-100 dark:border-neutral-700 bg-green-50 dark:bg-green-900/20">
+        <div className="px-6 py-3 border-b border-neutral-100 dark:border-neutral-700 bg-success-50 dark:bg-success-900/20">
           <Badge tone="success">
             確定済（{run.confirmedAt} 確定 / 確定者: {run.confirmedBy}）
           </Badge>
