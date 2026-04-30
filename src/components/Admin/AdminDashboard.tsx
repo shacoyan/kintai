@@ -640,11 +640,11 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
         {/* Sidebar */}
         <nav className="md:w-[200px] shrink-0">
           <Card padding="sm" className="sticky top-20 dark:bg-neutral-900">
-            <div className="space-y-1">
+            <div className="space-y-1" role="tablist" aria-orientation="vertical">
               {SECTIONS.map((section, sectionIndex) => (
-                <div key={section.label}>
-                  {sectionIndex > 0 && <div className="border-t border-neutral-100 dark:border-neutral-800 my-2" />}
-                  <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider px-3 pt-3 pb-1">{section.label}</div>
+                <div key={section.label} role="presentation">
+                  {sectionIndex > 0 && <div className="border-t border-neutral-100 dark:border-neutral-800 my-2" role="presentation" />}
+                  <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider px-3 pt-3 pb-1" role="presentation">{section.label}</div>
                   {tabs.filter(tab => (section.items as readonly string[]).includes(tab.id)).map((tab) => {
                     const tabIdx = tabs.findIndex(t => t.id === tab.id);
                     const isActive = activeTab === tab.id;

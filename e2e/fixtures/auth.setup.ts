@@ -7,6 +7,7 @@ import { test as setup } from '@playwright/test';
  */
 
 const AUTH_FILE = 'e2e/.auth/user.json';
+const SUPABASE_TOKEN_KEY_PATTERN = /^sb-.+-auth-token$/;
 
 setup('authenticate', async ({ page }) => {
   const email = process.env.E2E_USER_EMAIL;
@@ -51,11 +52,16 @@ setup('authenticate', async ({ page }) => {
     throw new Error('Failed to set tenant: kintai_current_tenant is null');
   }
 
+  // TODO(loop-41+): src 側に dev/E2E 限定の window.__kintai_supabase export を入れて
+  // supabase.auth.getSession() 経由で取得するように移行する。
+  // 現状は Supabase JS の localStorage キー命名 (sb-<ref>-auth-token) に依存しており fragility が残る。
+
   // 2. storageState 保存直前の assertion: Supabase auth token の存在確認
-  const supabaseTokenKey = await page.evaluate(() => {
+  const supabaseTokenKey = await page.evaluate((pattern: string) => {
+    const re = new RegExp(pattern);
     const keys = Object.keys(localStorage);
-    return keys.find(k => k.startsWith('sb-') && k.endsWith('-auth-token')) ?? null;
-  });
+    return keys.find(k => re.test(k)) ?? null;
+  }, SUPABASE_TOKEN_KEY_PATTERN.source);
   if (!supabaseTokenKey) {
     throw new Error('[auth.setup] Supabase auth token not in localStorage');
   }

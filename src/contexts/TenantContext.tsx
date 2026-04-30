@@ -385,8 +385,31 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentTenant, isOwner, setCurrentTenant, fetchTenants]);
 
+  const verifyTenantStillAccessible = async (tenantId: string): Promise<'ok' | 'gone' | 'transient'> => {
+    try {
+      const { error, status } = await supabase
+        .from('tenant_members')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId);
+
+      if (error) {
+        if (status === 403 || status === 404 || error.code === 'PGRST301') {
+          return 'gone';
+        }
+        return 'transient';
+      }
+
+      return 'ok';
+    } catch {
+      return 'transient';
+    }
+  };
+
   useEffect(() => {
+    let cancelled = false;
+
     if (authLoading) return;
+
     if (!user) {
       setTenants([]);
       setCurrentTenantState(null);
@@ -396,10 +419,14 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    fetchTenants()
-      .then(fetchedTenants => {
+    (async () => {
+      try {
+        const fetchedTenants = await fetchTenants();
+        if (cancelled) return;
+
         const saved = localStorage.getItem('kintai_current_tenant');
         if (!saved) return;
+
         let parsed: Tenant;
         try {
           parsed = JSON.parse(saved);
@@ -409,6 +436,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setCurrentTenantState(null);
           return;
         }
+
         // fetch 結果が空 → RLS 反映遅延 / 一時的エラーの可能性が高いので保持
         // （Loop 39 真因対応: 起動時の誤った redirect を防ぐ）
         if (!fetchedTenants || fetchedTenants.length === 0) {
@@ -416,18 +444,29 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           fetchMembers(parsed.id);
           return;
         }
+
         const found = fetchedTenants.find(t => t.id === parsed.id);
         if (found) {
           setCurrentTenantState(found);
           fetchMembers(found.id);
         } else {
-          // 他 tenant はあるが saved は含まれない = 真に削除されたテナント
-          localStorage.removeItem('kintai_current_tenant');
-          setCurrentTenantState(null);
+          // 他 tenant はあるが saved は含まれない → 2段階検証
+          const result = await verifyTenantStillAccessible(parsed.id);
+          if (cancelled) return;
+
+          if (result === 'gone') {
+            localStorage.removeItem('kintai_current_tenant');
+            setCurrentTenantState(null);
+          } else {
+            // 'transient' / 'ok' は保持
+            setCurrentTenantState(parsed);
+            fetchMembers(parsed.id);
+          }
         }
-      })
-      .catch(err => {
-        // fetch 自体が失敗した場合は saved を保持（次回起動時に再試行）
+      } catch (err) {
+        if (cancelled) return;
+
+        // fetch 自体が失敗 (将来 throw 化対応含む保険)。saved は UX 観点で一時 restore する。再 fetch トリガーは存在せず、user/authLoading 再評価時のみ再実行される。
         console.warn('[TenantContext] fetchTenants failed, keeping saved tenant:', err);
         const saved = localStorage.getItem('kintai_current_tenant');
         if (saved) {
@@ -440,7 +479,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             setCurrentTenantState(null);
           }
         }
-      });
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [user, authLoading, fetchTenants, fetchMembers]);
 
   useEffect(() => {

@@ -35,12 +35,14 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/user.json' },
       dependencies: ['setup'],
-      testIgnore: /.*\.setup\.ts/,
+      // anon 系 spec (storageState 無し) は除外。Loop 40 #4 で追加。
+      testIgnore: [/.*\.setup\.ts/, /.*\.anon\.spec\.ts/],
     },
     {
       name: 'chromium-anon',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: /smoke\.spec\.ts/,
+      // smoke + 任意の *.anon.spec.ts (例: visual-regression.anon.spec.ts) を対象。
+      testMatch: [/smoke\.spec\.ts/, /.*\.anon\.spec\.ts/],
     },
   ],
   webServer: {
