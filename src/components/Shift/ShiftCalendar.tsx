@@ -21,15 +21,15 @@ interface ShiftCalendarProps {
 
 const MEMBER_COLORS = [
   'bg-primary-100 border-primary-300 text-primary-800 dark:bg-primary-900/30 dark:border-primary-700 dark:text-primary-300',
-  'bg-emerald-100 border-emerald-300 text-emerald-800 dark:bg-emerald-900/30 dark:border-emerald-700 dark:text-emerald-300',
+  'bg-member-3-100 border-member-3-300 text-member-3-800 dark:bg-member-3-100/20 dark:border-member-3-300/40 dark:text-member-3-100',
   'bg-info-100 border-info-300 text-info-800 dark:bg-info-900/30 dark:border-info-700 dark:text-info-300',
-  'bg-orange-100 border-orange-300 text-orange-800 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-300',
-  'bg-rose-100 border-rose-300 text-rose-800 dark:bg-rose-900/30 dark:border-rose-700 dark:text-rose-300',
-  'bg-cyan-100 border-cyan-300 text-cyan-800 dark:bg-cyan-900/30 dark:border-cyan-700 dark:text-cyan-300',
-  'bg-amber-100 border-amber-300 text-amber-800 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-300',
-  'bg-lime-100 border-lime-300 text-lime-800 dark:bg-lime-900/30 dark:border-lime-700 dark:text-lime-300',
-  'bg-sky-100 border-sky-300 text-sky-800 dark:bg-sky-900/30 dark:border-sky-700 dark:text-sky-300',
-  'bg-teal-100 border-teal-300 text-teal-800 dark:bg-teal-900/30 dark:border-teal-700 dark:text-teal-300',
+  'bg-member-4-100 border-member-4-300 text-member-4-800 dark:bg-member-4-100/20 dark:border-member-4-300/40 dark:text-member-4-100',
+  'bg-member-6-100 border-member-6-300 text-member-6-800 dark:bg-member-6-100/20 dark:border-member-6-300/40 dark:text-member-6-100',
+  'bg-member-2-100 border-member-2-300 text-member-2-800 dark:bg-member-2-100/20 dark:border-member-2-300/40 dark:text-member-2-100',
+  'bg-member-1-100 border-member-1-300 text-member-1-800 dark:bg-member-1-100/20 dark:border-member-1-300/40 dark:text-member-1-100',
+  'bg-member-9-100 border-member-9-300 text-member-9-800 dark:bg-member-9-100/20 dark:border-member-9-300/40 dark:text-member-9-100',
+  'bg-member-5-100 border-member-5-300 text-member-5-800 dark:bg-member-5-100/20 dark:border-member-5-300/40 dark:text-member-5-100',
+  'bg-member-8-100 border-member-8-300 text-member-8-800 dark:bg-member-8-100/20 dark:border-member-8-300/40 dark:text-member-8-100',
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -50,13 +50,13 @@ const STATUS_DOT: Record<string, string> = {
 
 const LEAVE_TYPE_DOT: Record<string, string> = {
   paid: 'bg-success-500',
-  half_am: 'bg-teal-500',
-  half_pm: 'bg-cyan-500',
-  special: 'bg-amber-500',
-  maternity: 'bg-pink-500',
-  paternity: 'bg-indigo-500',
+  half_am: 'bg-leave-type-half-am-500',
+  half_pm: 'bg-leave-type-half-pm-500',
+  special: 'bg-leave-type-special-500',
+  maternity: 'bg-leave-type-maternity-500',
+  paternity: 'bg-leave-type-paternity-500',
   compassionate: 'bg-neutral-500',
-  comp_holiday: 'bg-violet-500',
+  comp_holiday: 'bg-leave-type-comp-holiday-500',
   absence: 'bg-neutral-400',
   other: 'bg-info-500',
 };
@@ -321,9 +321,9 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                 className={`relative min-h-[70px] sm:min-h-[80px] border-b border-r border-neutral-100 dark:border-neutral-700 p-1 cursor-pointer motion-safe:transition-colors duration-120 ease-out-expo ${
                   !isCurrentMonth ? 'bg-neutral-50 dark:bg-neutral-700/50 opacity-50' : ''
                 } ${
-                  isCurrentMonth && dayOfWeek === 6 ? 'bg-sky-50/40 dark:bg-sky-900/10' : ''
+                  isCurrentMonth && dayOfWeek === 6 ? 'bg-weekend-saturday-50 dark:bg-weekend-saturday-900/30' : ''
                 } ${
-                  isCurrentMonth && dayOfWeek === 0 ? 'bg-rose-50/40 dark:bg-rose-900/10' : ''
+                  isCurrentMonth && dayOfWeek === 0 ? 'bg-weekend-sunday-50 dark:bg-weekend-sunday-900/30' : ''
                 } ${
                   isCurrentMonth ? 'hover:bg-neutral-50 dark:hover:bg-neutral-700' : ''
                 }`}

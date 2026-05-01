@@ -34,13 +34,13 @@ const LEAVE_TYPE_LABEL: Record<LeaveType, string> = {
 
 const LEAVE_TYPE_COLOR: Record<LeaveType, string> = {
   paid:          'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300',
-  half_am:       'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
-  half_pm:       'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
-  special:       'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-  maternity:     'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300',
-  paternity:     'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  half_am:       'bg-leave-type-half-am-100 text-leave-type-half-am-800 dark:bg-leave-type-half-am-100/20 dark:text-leave-type-half-am-100',
+  half_pm:       'bg-leave-type-half-pm-100 text-leave-type-half-pm-800 dark:bg-leave-type-half-pm-100/20 dark:text-leave-type-half-pm-100',
+  special:       'bg-leave-type-special-100 text-leave-type-special-800 dark:bg-leave-type-special-100/20 dark:text-leave-type-special-100',
+  maternity:     'bg-leave-type-maternity-100 text-leave-type-maternity-800 dark:bg-leave-type-maternity-100/20 dark:text-leave-type-maternity-100',
+  paternity:     'bg-leave-type-paternity-100 text-leave-type-paternity-800 dark:bg-leave-type-paternity-100/20 dark:text-leave-type-paternity-100',
   compassionate: 'bg-neutral-200 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200',
-  comp_holiday:  'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300',
+  comp_holiday:  'bg-leave-type-comp-holiday-100 text-leave-type-comp-holiday-800 dark:bg-leave-type-comp-holiday-100/20 dark:text-leave-type-comp-holiday-100',
   absence:       'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200',
   other:         'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-300',
 };

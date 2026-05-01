@@ -1,4 +1,23 @@
+/**
+ * kintai i18n messages catalog
+ *
+ * Loop 43 で dot-notation キー前提に整理 (本格 i18next 移行は Loop 44+)。
+ * 各セクション (empty/toast/error/validation/confirm) はそのまま i18n namespace に対応する。
+ *
+ * 抽出規則:
+ *   `messages.empty.attendanceMonth.title` -> i18n key: `empty.attendanceMonth.title`
+ *   `messages.toast.saved(x)` -> i18n key: `toast.saved` (パラメータ {target})
+ *   `messages.error.withRetry(x)` -> i18n key: `error.withRetry` (パラメータ {cause})
+ *   `messages.validation.required(x)` -> i18n key: `validation.required` (パラメータ {label})
+ *   `messages.confirm.finalizePayroll(y, m)` -> i18n key: `confirm.finalizePayroll` (パラメータ {year},{month})
+ *
+ * Loop 44 で react-i18next の resources.ja.translation にこの構造のまま流し込む予定。
+ *
+ * @i18n-namespace common
+ */
+
 export const messages = {
+  /** @i18n-prefix empty */
   empty: {
     attendanceMonth: { title: '今月はまだ打刻記録がありません', description: '出勤ボタンから最初の打刻を始めましょう。' },
     attendanceDay: { title: 'この日の打刻記録はありません', description: '出勤すると、ここに記録が表示されます。' },
@@ -19,10 +38,15 @@ export const messages = {
     historyMonth: { title: '今月の勤怠履歴はまだありません' },
     history: { title: '勤怠履歴がまだありません' },
   },
+  /** @i18n-prefix toast */
   toast: {
+    /** @i18n-key toast.saved {target?} */
     saved: (target?: string): string => target ? `${target}を保存しました` : '保存しました',
+    /** @i18n-key toast.created {target} */
     created: (target: string): string => `${target}を追加しました`,
+    /** @i18n-key toast.updated {target} */
     updated: (target: string): string => `${target}を更新しました`,
+    /** @i18n-key toast.deleted {target} */
     deleted: (target: string): string => `${target}を削除しました`,
     leftWorkspace: 'ワークスペースから抜けました',
     inviteCodeReissued: '招待コードを再発行しました',
@@ -34,15 +58,20 @@ export const messages = {
     correctionRequested: '修正申請を送信しました',
     correctionDeleted: '削除依頼を送信しました',
   },
+  /** @i18n-prefix error */
   error: {
     fetchFailed: '読み込みに失敗しました。再試行するか時間をおいてお試しください。',
     saveFailed: '保存に失敗しました。入力内容を確認のうえ再度お試しください。',
     networkOffline: 'ネットワークに接続できません。電波状況を確認してください。',
     unexpected: '予期しないエラーが発生しました。時間をおいて再度お試しください。',
+    /** @i18n-key error.withRetry {cause} */
     withRetry: (cause: string): string => `${cause} 再試行ボタンを押してお試しください。`,
   },
+  /** @i18n-prefix validation */
   validation: {
+    /** @i18n-key validation.required {label} */
     required: (label: string): string => `${label}を入力してください。`,
+    /** @i18n-key validation.selectRequired {label} */
     selectRequired: (label: string): string => `${label}を選択してください。`,
     inviteCodeLength: '招待コードは6文字です。',
     timeNoChange: '変更がありません。出勤または退勤時刻を修正してください。',
@@ -50,9 +79,12 @@ export const messages = {
     deadlinePassed: '提出締切を過ぎています。管理者にお問い合わせください。',
     closingDayRange: '締め日は 1〜31 の範囲で指定してください。',
   },
+  /** @i18n-prefix confirm */
   confirm: {
     revertCorrection: 'この修正申請の承認を巻き戻しますか？\n勤怠レコードに加えた修正は元に戻されます。',
+    /** @i18n-key confirm.finalizePayroll {year},{month} */
     finalizePayroll: (year: number, month: number): string => `${year}年${month}月の給与を確定しますか？`,
+    /** @i18n-key confirm.unfinalizePayroll {year},{month} */
     unfinalizePayroll: (year: number, month: number): string => `${year}年${month}月の確定を取り消しますか？`,
     deleteShiftDeadline: 'シフト提出期限を削除しますか？',
   },
