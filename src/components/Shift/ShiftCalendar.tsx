@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Shift, LeaveRequest } from '../../types';
 import { abbreviateName } from '../../utils/displayNameAbbrev';
 import { EmptyState } from '../ui';
+import { isJapaneseHoliday, getJapaneseHolidayName } from '../../lib/holidays';
 
 type ViewMode = 'week' | '2week' | 'month';
 
@@ -298,6 +299,8 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
             const dayLeaves = leavesByDate.get(dateStr) || [];
             const isCurrentMonth = viewMode === 'month' ? d.getMonth() === baseDate.getMonth() : true;
             const dayOfWeek = d.getDay();
+            const isHoliday = isJapaneseHoliday(d);
+            const holidayName = isHoliday ? getJapaneseHolidayName(d) : null;
 
             const leaveTooltip = dayLeaves.map(l => {
               const typeLabel = LEAVE_TYPE_LABEL[l.leave_type] || 'その他';
@@ -310,7 +313,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                 key={dateStr}
                 role="button"
                 tabIndex={0}
-                aria-label={`${dateStr} の詳細`}
+                aria-label={`${dateStr} の詳細${holidayName ? ` (${holidayName})` : ''}`}
                 onClick={() => onDateClick(dateStr)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -321,15 +324,21 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                 className={`relative min-h-[70px] sm:min-h-[80px] border-b border-r border-neutral-100 dark:border-neutral-700 p-1 cursor-pointer motion-safe:transition-colors duration-120 ease-out-expo ${
                   !isCurrentMonth ? 'bg-neutral-50 dark:bg-neutral-700/50 opacity-50' : ''
                 } ${
-                  isCurrentMonth && dayOfWeek === 6 ? 'bg-weekend-saturday-50 dark:bg-weekend-saturday-900/30' : ''
+                  isCurrentMonth && isHoliday ? 'bg-weekend-holiday-50 dark:bg-weekend-holiday-900/30' : ''
                 } ${
-                  isCurrentMonth && dayOfWeek === 0 ? 'bg-weekend-sunday-50 dark:bg-weekend-sunday-900/30' : ''
+                  isCurrentMonth && !isHoliday && dayOfWeek === 6 ? 'bg-weekend-saturday-50 dark:bg-weekend-saturday-900/30' : ''
+                } ${
+                  isCurrentMonth && !isHoliday && dayOfWeek === 0 ? 'bg-weekend-sunday-50 dark:bg-weekend-sunday-900/30' : ''
                 } ${
                   isCurrentMonth ? 'hover:bg-neutral-50 dark:hover:bg-neutral-700' : ''
                 }`}
               >
                 <div className={`text-xs font-medium mb-0.5 ${
-                  isToday ? 'bg-primary-600 text-white w-5 h-5 rounded-full flex items-center justify-center' : 'text-neutral-700 dark:text-neutral-300'
+                  isToday
+                    ? 'bg-primary-600 text-white w-5 h-5 rounded-full flex items-center justify-center'
+                    : isHoliday && isCurrentMonth
+                      ? 'text-weekend-holiday-700 dark:text-weekend-holiday-100'
+                      : 'text-neutral-700 dark:text-neutral-300'
                 }`}>
                   {format(d, 'd')}
                 </div>
