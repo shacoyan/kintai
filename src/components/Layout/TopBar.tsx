@@ -1,12 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sun, Moon, Monitor, User, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Sun, Moon, Monitor, User, LogOut, ArrowLeftRight } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../hooks/useTenant';
+import { useStoreContext } from '../../contexts/StoreContext';
 import { Badge, Button } from '../ui';
 import { StoreSelector } from '../Store/StoreSelector';
 import { TenantSwitcher } from '../Tenant/TenantSwitcher';
 import { NotificationBell } from '../Notification/NotificationBell';
+import LeaveTenantButton from '../Tenant/LeaveTenantButton';
 
 export interface TopBarProps {
   title?: string;
@@ -45,6 +48,7 @@ export function TopBar({
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
   const { myRole } = useTenant();
+  const { currentStore } = useStoreContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -85,6 +89,15 @@ export function TopBar({
   return (
     <div className="flex items-center w-full gap-4 flex-wrap">
       <TenantSwitcher />
+      {currentStore?.name && (
+        <span
+          className="hidden md:inline-flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-300 max-w-[20ch] min-w-0"
+          data-testid="topbar-current-store"
+        >
+          <span aria-hidden="true" className="text-neutral-400 dark:text-neutral-500">/</span>
+          <span className="truncate" title={currentStore.name}>{currentStore.name}</span>
+        </span>
+      )}
       {title && (
         <h1 className="text-heading-2 text-neutral-900 dark:text-neutral-50 truncate">
           {title}
@@ -139,6 +152,20 @@ export function TopBar({
                   {user.email}
                 </div>
               )}
+              <div className="border-t border-neutral-200 dark:border-neutral-800 my-1" aria-hidden="true" />
+              <Link
+                to="/tenant"
+                role="menuitem"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
+              >
+                <ArrowLeftRight size={16} aria-hidden="true" />
+                ワークスペースを切替
+              </Link>
+              <div className="px-4 py-2" role="menuitem">
+                <LeaveTenantButton />
+              </div>
+              <div className="border-t border-neutral-200 dark:border-neutral-800 my-1" aria-hidden="true" />
               <div className="px-4 py-2" role="menuitem">
                 <Button
                   variant="tertiary"
@@ -156,4 +183,3 @@ export function TopBar({
     </div>
   );
 }
-
