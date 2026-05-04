@@ -240,7 +240,12 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                 type="text"
                 value={newStoreName}
                 onChange={(e) => setNewStoreName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleCreateStore()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (e.nativeEvent.isComposing) return;
+                    handleCreateStore();
+                  }
+                }}
                 className="flex-1 px-3 py-2 text-sm border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
                 placeholder="店舗名を入力"
               />
@@ -278,7 +283,10 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveEdit(store.id);
+                          if (e.key === 'Enter') {
+                            if (e.nativeEvent.isComposing) return;
+                            handleSaveEdit(store.id);
+                          }
                           if (e.key === 'Escape') setEditingStoreId(null);
                         }}
                         autoFocus
