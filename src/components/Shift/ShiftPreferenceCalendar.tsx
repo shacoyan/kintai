@@ -295,6 +295,20 @@ export function ShiftPreferenceCalendar({
     return [...userToneMap.entries()].filter(([uid]) => memberNames.has(uid));
   }, [isAdminView, memberNames, userToneMap]);
 
+  // SP 用: 当月かつ希望が 1 件以上ある日付のみ抽出（admin view 限定）
+  const dailyGroups = useMemo(() => {
+    if (!isAdminView) return [] as Array<{ date: Date; dateStr: string; prefs: ShiftPreference[] }>;
+    const groups: Array<{ date: Date; dateStr: string; prefs: ShiftPreference[] }> = [];
+    for (const d of dates) {
+      if (d.getMonth() !== baseDate.getMonth()) continue;
+      const dateStr = format(d, 'yyyy-MM-dd');
+      const prefs = preferencesByDate.get(dateStr);
+      if (!prefs || prefs.length === 0) continue;
+      groups.push({ date: d, dateStr, prefs });
+    }
+    return groups;
+  }, [isAdminView, dates, baseDate, preferencesByDate]);
+
   return (
     <div className="flex flex-col gap-3">
       {/* ナビゲーション */}
@@ -348,8 +362,13 @@ export function ShiftPreferenceCalendar({
         />
       )}
 
-      {/* 曜日ヘッダ */}
-      <div className="grid grid-cols-7 gap-1 md:gap-2 px-0.5">
+      {/* 曜日ヘッダ — admin は SP で隠す / self は従来どおり全画面サイズで表示 */}
+      <div
+        className={
+          (isAdminView ? 'hidden md:grid' : 'grid') +
+          ' grid-cols-7 gap-1 md:gap-2 px-0.5'
+        }
+      >
         {weekDays.map((d, i) => (
           <div
             key={d}
@@ -367,10 +386,13 @@ export function ShiftPreferenceCalendar({
         ))}
       </div>
 
-      {/* 日マス */}
-      <div 
-        className="grid grid-cols-7 gap-1 md:gap-2" 
-        role="grid" 
+      {/* 日マス — admin は SP で隠す / self は従来どおり */}
+      <div
+        className={
+          (isAdminView ? 'hidden md:grid' : 'grid') +
+          ' grid-cols-7 gap-1 md:gap-2'
+        }
+        role="grid"
         aria-label="シフト希望カレンダー"
         style={isAdminView ? { gridAutoRows: 'minmax(88px, auto)' } : { gridAutoRows: '1fr' }}
       >
@@ -392,7 +414,7 @@ export function ShiftPreferenceCalendar({
 
           const baseCell = isAdminView
             ? 'min-h-[88px] lg:min-h-[120px] rounded-lg flex flex-col items-stretch gap-0.5 text-[11px] motion-safe:transition-colors duration-120 ease-out-expo focus-ring select-none cursor-pointer relative'
-            : 'min-h-[64px] md:min-h-[72px] rounded-lg flex flex-col items-center justify-center gap-0.5 text-[11px] motion-safe:transition-colors duration-120 ease-out-expo focus-ring select-none cursor-pointer';
+            : 'min-h-[56px] md:min-h-[72px] rounded-lg flex flex-col items-center justify-center gap-0.5 text-[11px] motion-safe:transition-colors duration-120 ease-out-expo focus-ring select-none cursor-pointer';
 
           let stateCell: string;
           if (!isCurrentMonth) {
@@ -423,7 +445,7 @@ export function ShiftPreferenceCalendar({
 
           const cellChildren = (
             <>
-              <div className="flex items-center justify-between px-1 pt-1">
+              <div className="flex items-center justify-between px-0.5 pt-0.5 md:px-1 md:pt-1">
                 <span
                   className={
                     'text-xs font-semibold tabular-nums ' +
@@ -443,11 +465,11 @@ export function ShiftPreferenceCalendar({
               {!isAdminView && primaryPref && theme && (
                 <>
                   {hasTime && primaryPref.start_time && primaryPref.end_time ? (
-                    <span className="text-[9px] font-semibold tabular-nums leading-none">
+                    <span className="text-[10px] font-semibold tabular-nums leading-none">
                       {primaryPref.start_time.slice(0, 5)}
                     </span>
                   ) : (
-                    <theme.Icon className="w-3 h-3" aria-hidden="true" />
+                    <theme.Icon className="w-3.5 h-3.5" aria-hidden="true" />
                   )}
                 </>
               )}
@@ -527,6 +549,79 @@ export function ShiftPreferenceCalendar({
           );
         })}
       </div>
+
+      {/* SP admin: 日次グループ縦リスト（md 未満のみ） */}
+      {isAdminView && (
+        <div className="md:hidden flex flex-col gap-2">
+          {dailyGroups.length === 0 && !isCurrentMonthEmpty && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-300 text-center py-4">
+              この月の希望データがありません
+            </p>
+          )}
+          {dailyGroups.map(({ date, dateStr, prefs }) => {
+            const dayOfWeek = (date.getDay() + 6) % 7; // 月=0..日=6
+            const isToday = dateStr === today;
+            const pendingCount = prefs.filter((p) => p.status === 'pending').length;
+            const dayColor =
+              dayOfWeek === 6
+                ? 'text-danger-500'
+                : dayOfWeek === 5
+                ? 'text-info-500'
+                : 'text-neutral-700 dark:text-neutral-300';
+            return (
+              <div
+                key={dateStr}
+                className={
+                  'rounded-lg border bg-white dark:bg-neutral-900 ' +
+                  (isToday
+                    ? 'border-primary-500 ring-1 ring-primary-500'
+                    : 'border-neutral-200 dark:border-neutral-700')
+                }
+              >
+                <button
+                  type="button"
+                  onClick={() => onDateClick(dateStr)}
+                  className="w-full flex items-center justify-between px-3 py-2.5 border-b border-neutral-100 dark:border-neutral-700 focus-ring rounded-t-lg hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                  aria-label={`${format(date, 'M月d日 (E)', { locale: ja })} の希望一覧を開く`}
+                >
+                  <span className={'text-sm font-semibold tabular-nums ' + dayColor}>
+                    {format(date, 'M月d日 (E)', { locale: ja })}
+                  </span>
+                  <span className="inline-flex items-center gap-2">
+                    {pendingCount > 0 && (
+                      <span className="bg-warning-500 dark:bg-warning-400 text-white rounded-full px-1.5 h-4 inline-flex items-center text-[10px] font-semibold tabular-nums leading-none">
+                        未対応 {pendingCount}
+                      </span>
+                    )}
+                    <span className="text-[11px] text-neutral-500 dark:text-neutral-300 tabular-nums">
+                      {prefs.length}件
+                    </span>
+                  </span>
+                </button>
+                <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
+                  {prefs.map((p) => {
+                    const tone = userToneMap.get(p.user_id) ?? MEMBER_TONE_CLASSES[0];
+                    return (
+                      <li key={p.id} className="px-3 py-2">
+                        <PreferenceActionRow
+                          preference={p}
+                          memberName={memberNames?.get(p.user_id)}
+                          memberDotClass={tone.split(' ')[0]}
+                          onApprove={onApprovePreference ?? (async () => {})}
+                          onReject={onRejectPreference ?? (async () => {})}
+                          canManage={canManageStore?.(p.store_id) ?? false}
+                          variant="full"
+                          onMutated={onMutated}
+                        />
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

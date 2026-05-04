@@ -767,24 +767,6 @@ export function ShiftPage() {
                   </BottomSheet>
                 </div>
 
-                {canManageTenant && showAllMembersPrefs && (
-                  <div className="lg:hidden mt-2">
-                    <ShiftPreferenceAdminList
-                      preferences={preferencesForAdminList}
-                      memberNames={memberNames}
-                      onApprove={handleApprovePreference}
-                      onReject={handleRejectPreference}
-                      onBulkApprove={handleBulkApprovePreferences}
-                      onBulkReject={handleBulkRejectPreferences}
-                      onRevert={handleRevertPreference}
-                      onRefresh={fetchPreferenceRange}
-                      stores={adminListStores}
-                      historyMode={false}
-                      canManageStore={(sid) => sid ? isManagerOf(sid) : false}
-                    />
-                  </div>
-                )}
-
                 {/* sticky 追加ボタン（自分視点のみ） */}
                 {!(canManageTenant && showAllMembersPrefs) && (
                   <div className="lg:hidden sticky bottom-16 md:bottom-0 -mx-4 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-700 z-20">
