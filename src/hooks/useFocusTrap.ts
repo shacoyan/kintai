@@ -89,5 +89,8 @@ export function useFocusTrap<T extends HTMLElement = HTMLElement>(
         document.body.focus();
       }
     }
-  }, [active, ref, returnFocusTo, initialFocus, disableTabLoop, isTop]);
+    // isTop は isTopRef で参照しているため依存配列から除外
+    // (毎レンダー新参照→effect 再走→focus が初期要素に飛ぶバグ防止)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, ref, returnFocusTo, initialFocus, disableTabLoop]);
 }

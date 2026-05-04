@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 const stack: symbol[] = [];
 
@@ -27,12 +27,12 @@ export function useDialogStack(active: boolean): DialogStackHandle {
     }
   }, [active]);
 
-  const isTop = (): boolean => {
+  const isTop = useCallback((): boolean => {
     if (id.current === null) {
       return false;
     }
     return stack.length > 0 && stack[stack.length - 1] === id.current;
-  };
+  }, []);
 
   return { isTop };
 }
