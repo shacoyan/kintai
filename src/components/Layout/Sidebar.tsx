@@ -1,6 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Clock, List, Calendar, LayoutDashboard, LogOut, type LucideIcon } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
+import { Clock, List, Calendar, LayoutDashboard, type LucideIcon } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { Badge, BrandMark } from '../ui';
 
@@ -40,7 +39,6 @@ function SectionLabel({ label }: { label: string }) {
 }
 
 export function Sidebar() {
-  const { user, signOut } = useAuth();
   const { myRole } = useTenant();
   const isManagerial = myRole === 'owner' || myRole === 'manager';
 
@@ -80,26 +78,6 @@ export function Sidebar() {
       )}
 
       <div className="flex-1" />
-
-      <div className="border-t border-neutral-200 dark:border-neutral-700 my-1" />
-
-      <div className="px-1 py-2 flex flex-col gap-2">
-        {user?.email && (
-          <span className="text-xs text-neutral-500 dark:text-neutral-300 truncate" title={user.email}>
-            {user.email}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={() => {
-            void signOut();
-          }}
-          className="flex items-center gap-2 px-3 h-9 rounded-lg text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
-        >
-          <LogOut size={16} aria-hidden="true" />
-          ログアウト
-        </button>
-      </div>
     </nav>
   );
 }
