@@ -149,7 +149,9 @@ export function PreferenceActionRow({
           <span className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass}`} />
           <span className={`flex-shrink-0 w-2 h-2 rounded-sm ${memberDotClass ?? 'bg-neutral-300'}`} aria-hidden="true" />
           <span className="font-medium">{abbreviation}</span>
-          <span className="text-neutral-600 dark:text-neutral-300">不可</span>
+          <span className="text-neutral-600 dark:text-neutral-300">
+            {isApproved ? '不可（自動）' : '不可'}
+          </span>
         </div>
       );
     }
@@ -272,7 +274,10 @@ export function PreferenceActionRow({
         </div>
 
         <div className="flex-shrink-0">
-          {isApproved && (
+          {isApproved && isUnavailable && (
+            <Badge tone="neutral">出勤不可（自動承認）</Badge>
+          )}
+          {isApproved && !isUnavailable && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700 dark:bg-success-800 dark:text-success-200">
               <CheckCircle2 className="w-3 h-3" />承認済
             </span>

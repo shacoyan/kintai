@@ -122,6 +122,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
           end_time: endTime || null,
           note: note || null,
           store_id: effectiveStoreId,
+          status: preferenceType === 'unavailable' ? 'approved' : 'pending',
         }, { onConflict: 'tenant_id,user_id,date,store_id' });
       if (error) throw error;
     } catch (err) {
@@ -164,6 +165,12 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
         .eq('id', preferenceId)
         .single();
       if (fetchError || !pref) throw new Error(`希望の取得に失敗しました: ${fetchError?.message}`);
+
+      // 出勤不可は提出時に自動承認済（DB trigger + submitPreference の二重ガード）。
+      // 多重呼び出しレース対策として早期 return（no-op）。
+      if (pref.preference_type === 'unavailable' && pref.status === 'approved') {
+        return;
+      }
 
       const startTime = overrideStartTime ?? pref.start_time;
       const endTime = overrideEndTime ?? pref.end_time;

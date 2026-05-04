@@ -205,6 +205,7 @@ export type NotificationType =
   | 'preference_approved'
   | 'preference_rejected'
   | 'preference_reverted'
+  | 'preference_unavailable_submitted'
   | 'correction_approved'
   | 'correction_rejected'
   | 'leave_approved'
