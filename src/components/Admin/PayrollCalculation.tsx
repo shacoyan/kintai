@@ -478,10 +478,10 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
       </Card.Header>
 
       <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
-        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:flex-wrap xl:items-center xl:gap-3">
           {/* 年月セレクト */}
-          <div className="grid grid-cols-2 gap-2 md:contents">
-            <div className="w-full md:w-28">
+          <div className="grid grid-cols-2 gap-2 xl:contents">
+            <div className="w-full xl:w-28">
               <Select
                 label="年"
                 value={selectedYear}
@@ -490,7 +490,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                 {yearOpts.map((y) => <option key={y} value={y}>{y}年</option>)}
               </Select>
             </div>
-            <div className="w-full md:w-24">
+            <div className="w-full xl:w-24">
               <Select
                 label="月"
                 value={selectedMonth}
@@ -502,10 +502,10 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
           </div>
 
           {/* モード切り替えトグル（segmented control 階層） */}
-          <div className="flex w-full md:inline-flex md:w-auto gap-1 bg-neutral-100 dark:bg-neutral-800 rounded-md p-1">
+          <div className="flex w-full xl:inline-flex xl:w-auto gap-1 bg-neutral-100 dark:bg-neutral-800 rounded-md p-1">
             <button
               onClick={() => { setPayrollMode('actual'); setCalculated(false); }}
-              className={`flex-1 md:flex-initial px-3 py-2 text-xs font-medium rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
+              className={`flex-1 xl:flex-initial px-3 py-2 text-xs font-medium rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
                 payrollMode === 'actual'
                   ? 'bg-white text-primary-700 shadow-sm dark:bg-neutral-700 dark:text-primary-300'
                   : 'text-neutral-600 hover:bg-white/60 dark:text-neutral-300 dark:hover:bg-neutral-700/60'
@@ -515,7 +515,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
             </button>
             <button
               onClick={() => { setPayrollMode('shift'); setCalculated(false); }}
-              className={`flex-1 md:flex-initial px-3 py-2 text-xs font-medium rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
+              className={`flex-1 xl:flex-initial px-3 py-2 text-xs font-medium rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
                 payrollMode === 'shift'
                   ? 'bg-white text-primary-700 shadow-sm dark:bg-neutral-700 dark:text-primary-300'
                   : 'text-neutral-600 hover:bg-white/60 dark:text-neutral-300 dark:hover:bg-neutral-700/60'
@@ -533,7 +533,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
             iconLeft={<Calculator size={16} />}
             onClick={handleCalculate}
             disabled={isLoading || isFinalized}
-            className="w-full md:w-auto min-h-[44px]"
+            className="w-full xl:w-auto min-h-[44px]"
           >
             計算
           </Button>
@@ -546,7 +546,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
               iconLeft={<Lock size={16} />}
               onClick={handleFinalize}
               disabled={isLoading}
-              className="w-full md:w-auto min-h-[44px]"
+              className="w-full xl:w-auto min-h-[44px]"
             >
               この月を確定
             </Button>
@@ -559,7 +559,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
               loading={runLoading}
               onClick={handleUnfinalize}
               disabled={isLoading}
-              className="w-full md:w-auto min-h-[44px]"
+              className="w-full xl:w-auto min-h-[44px]"
             >
               確定を取消
             </Button>
@@ -583,7 +583,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                 }
                 downloadCsv(csv, filename);
               }}
-              className="w-full md:w-auto min-h-[44px]"
+              className="w-full xl:w-auto min-h-[44px]"
             >
               CSVダウンロード
             </Button>
@@ -596,7 +596,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
               size="md"
               iconLeft={<Printer size={16} />}
               onClick={() => window.print()}
-              className="w-full md:w-auto min-h-[44px]"
+              className="w-full xl:w-auto min-h-[44px]"
             >
               明細を印刷
             </Button>
