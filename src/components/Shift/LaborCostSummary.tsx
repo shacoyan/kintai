@@ -18,6 +18,7 @@ interface LaborCostSummaryProps {
 export function LaborCostSummary({ estimates, targetMonth }: LaborCostSummaryProps) {
   const totalCost = estimates.reduce((s, e) => s + e.estimatedCost, 0);
   const totalMinutes = estimates.reduce((s, e) => s + e.shiftMinutes, 0);
+  const totalNightMinutes = estimates.reduce((s, e) => s + e.nightMinutes, 0);
 
   const fmtTime = (min: number) => {
     const h = Math.floor(min / 60);
@@ -39,12 +40,14 @@ export function LaborCostSummary({ estimates, targetMonth }: LaborCostSummaryPro
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-[480px] w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+        <table className="min-w-[600px] w-full divide-y divide-neutral-200 dark:divide-neutral-700">
           <thead className="bg-neutral-50 dark:bg-neutral-700">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 min-w-[120px] whitespace-nowrap">名前</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">給与形態</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">シフト時間</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">通常</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">深夜</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">合計</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">見込み額</th>
             </tr>
           </thead>
@@ -55,6 +58,8 @@ export function LaborCostSummary({ estimates, targetMonth }: LaborCostSummaryPro
                 <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">
                   {e.payType === 'monthly' ? '月給' : '時給'}
                 </td>
+                <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">{fmtTime(e.shiftMinutes - e.nightMinutes)}</td>
+                <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">{fmtTime(e.nightMinutes)}</td>
                 <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">{fmtTime(e.shiftMinutes)}</td>
                 <td className="px-6 py-3 text-sm font-medium text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">
                   ¥{e.estimatedCost.toLocaleString()}
@@ -64,6 +69,8 @@ export function LaborCostSummary({ estimates, targetMonth }: LaborCostSummaryPro
             <tr className="bg-neutral-50 dark:bg-neutral-700/50 border-t-2 border-neutral-300 dark:border-neutral-600">
               <td className="px-6 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 whitespace-nowrap">合計</td>
               <td className="px-6 py-3 text-right text-neutral-900 dark:text-neutral-100 whitespace-nowrap">-</td>
+              <td className="px-6 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">{fmtTime(totalMinutes - totalNightMinutes)}</td>
+              <td className="px-6 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">{fmtTime(totalNightMinutes)}</td>
               <td className="px-6 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">{fmtTime(totalMinutes)}</td>
               <td className="px-6 py-3 text-base font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">¥{totalCost.toLocaleString()}</td>
             </tr>
