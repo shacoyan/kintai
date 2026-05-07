@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { format, startOfWeek, addDays, startOfMonth, endOfMonth, isSameMonth, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ChevronRight as NextPrefIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronRight as NextPrefIcon } from 'lucide-react';
 import type { ShiftPreference } from '../../types';
 import { PreferenceActionRow } from './PreferenceActionRow';
-import { getPreferenceTheme, PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
+import { getPreferenceTheme } from '../../lib/preferenceTheme';
 import { EmptyState } from '../ui';
 
 interface ShiftPreferenceCalendarProps {
@@ -16,7 +16,6 @@ interface ShiftPreferenceCalendarProps {
   onRejectPreference?: (id: string) => Promise<void>;
   canManageStore?: (storeId: string | null) => boolean;
   onMutated?: () => void;
-  showStatusLegend?: boolean;
 }
 
 const MEMBER_TONE_CLASSES = [
@@ -28,190 +27,6 @@ const MEMBER_TONE_CLASSES = [
   'bg-neutral-100 text-neutral-700',
 ];
 
-const STATUS_LEGEND = [
-  { key: 'pending', dot: 'bg-warning-500 dark:bg-warning-400', label: '申請中' },
-  { key: 'approved', dot: 'bg-success-500 dark:bg-success-400', label: '承認済' },
-  { key: 'rejected', dot: 'bg-danger-500 dark:bg-danger-400', label: '却下' },
-  { key: 'modified', dot: 'bg-primary-500 dark:bg-primary-400', label: '修正' },
-  { key: 'cancelled', dot: 'bg-neutral-400 dark:bg-neutral-500', label: '取消' },
-];
-
-function CalendarLegend({
-  showStatusLegend,
-  memberNames,
-  memberEntries,
-  showAllMembers,
-  setShowAllMembers,
-  isAdminView,
-}: {
-  showStatusLegend: boolean;
-  memberNames?: Map<string, string>;
-  memberEntries: Array<[string, string]>;
-  showAllMembers: boolean;
-  setShowAllMembers: (v: boolean) => void;
-  isAdminView: boolean;
-}) {
-  return (
-    <>
-      {/* SP: 折りたたみ */}
-      <div className="md:hidden">
-        <details>
-          <summary className="list-none flex items-center gap-1 cursor-pointer text-sm font-semibold text-neutral-700 dark:text-neutral-200 select-none focus-ring rounded">
-            凡例
-            <ChevronDown className="w-4 h-4" aria-hidden="true" />
-          </summary>
-          <div className="mt-2 space-y-2">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
-              {isAdminView && memberNames ? (
-                <>
-                  {memberEntries.slice(0, 5).map(([uid, tone]) => (
-                    <div key={uid} className="inline-flex items-center gap-2">
-                      <span
-                        className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
-                        aria-hidden="true"
-                      />
-                      <span className="text-neutral-700 dark:text-neutral-300">{memberNames.get(uid) ?? '不明'}</span>
-                    </div>
-                  ))}
-                  {memberEntries.length > 5 && (
-                    <>
-                      {!showAllMembers && (
-                        <button
-                          type="button"
-                          onClick={() => setShowAllMembers(true)}
-                          className="inline-flex items-center gap-0.5 text-primary-600 dark:text-primary-400 hover:underline focus-ring rounded"
-                        >
-                          +{memberEntries.length - 5}
-                          <ChevronDown className="w-3 h-3" aria-hidden="true" />
-                        </button>
-                      )}
-                      {showAllMembers &&
-                        memberEntries.slice(5).map(([uid, tone]) => (
-                          <div key={uid} className="inline-flex items-center gap-2">
-                            <span
-                              className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
-                              aria-hidden="true"
-                            />
-                            <span className="text-neutral-700 dark:text-neutral-300">{memberNames.get(uid) ?? '不明'}</span>
-                          </div>
-                        ))}
-                      {showAllMembers && (
-                        <button
-                          type="button"
-                          onClick={() => setShowAllMembers(false)}
-                          className="inline-flex items-center gap-0.5 text-primary-600 dark:text-primary-400 hover:underline focus-ring rounded"
-                        >
-                          閉じる
-                          <ChevronUp className="w-3 h-3" aria-hidden="true" />
-                        </button>
-                      )}
-                    </>
-                  )}
-                </>
-              ) : (
-                PREFERENCE_THEME_LIST.map((theme) => (
-                  <div key={theme.type} className="inline-flex items-center gap-2">
-                    <theme.Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span className={'w-2 h-2 rounded-full ' + theme.dotClass} aria-hidden="true" />
-                    <span>{theme.label}</span>
-                  </div>
-                ))
-              )}
-            </div>
-            {showStatusLegend && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-300">
-                {STATUS_LEGEND.map((s) => (
-                  <div key={s.key} className="inline-flex items-center gap-2">
-                    <span
-                      className={'inline-block w-2 h-2 rounded-full ' + s.dot}
-                      aria-hidden="true"
-                    />
-                    <span>{s.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </details>
-      </div>
-
-      {/* PC: 常時展開 */}
-      <div className="hidden md:block px-1 space-y-1">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-neutral-600 dark:text-neutral-300">
-          {isAdminView && memberNames ? (
-            <>
-              {memberEntries.slice(0, 5).map(([uid, tone]) => (
-                <div key={uid} className="inline-flex items-center gap-2">
-                  <span
-                    className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
-                    aria-hidden="true"
-                  />
-                  <span className="text-neutral-700 dark:text-neutral-300">{memberNames.get(uid) ?? '不明'}</span>
-                </div>
-              ))}
-              {memberEntries.length > 5 && (
-                <>
-                  {!showAllMembers && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllMembers(true)}
-                      className="inline-flex items-center gap-0.5 text-primary-600 dark:text-primary-400 hover:underline focus-ring rounded"
-                    >
-                      +{memberEntries.length - 5}
-                      <ChevronDown className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  )}
-                  {showAllMembers &&
-                    memberEntries.slice(5).map(([uid, tone]) => (
-                      <div key={uid} className="inline-flex items-center gap-2">
-                        <span
-                          className={'w-2 h-2 rounded-full ' + tone.split(' ')[0]}
-                          aria-hidden="true"
-                        />
-                        <span className="text-neutral-700 dark:text-neutral-300">{memberNames.get(uid) ?? '不明'}</span>
-                      </div>
-                    ))}
-                  {showAllMembers && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAllMembers(false)}
-                      className="inline-flex items-center gap-0.5 text-primary-600 dark:text-primary-400 hover:underline focus-ring rounded"
-                    >
-                      閉じる
-                      <ChevronUp className="w-3 h-3" aria-hidden="true" />
-                    </button>
-                  )}
-                </>
-              )}
-            </>
-          ) : (
-            PREFERENCE_THEME_LIST.map((theme) => (
-              <div key={theme.type} className="inline-flex items-center gap-2">
-                <theme.Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                <span className={'w-2 h-2 rounded-full ' + theme.dotClass} aria-hidden="true" />
-                <span>{theme.label}</span>
-              </div>
-            ))
-          )}
-        </div>
-        {showStatusLegend && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-neutral-500 dark:text-neutral-300">
-            {STATUS_LEGEND.map((s) => (
-              <div key={s.key} className="inline-flex items-center gap-2">
-                <span
-                  className={'inline-block w-2 h-2 rounded-full ' + s.dot}
-                  aria-hidden="true"
-                />
-                <span>{s.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </>
-  );
-}
-
 export function ShiftPreferenceCalendar({
   preferences,
   onDateClick,
@@ -221,10 +36,8 @@ export function ShiftPreferenceCalendar({
   onRejectPreference,
   canManageStore,
   onMutated,
-  showStatusLegend = false,
 }: ShiftPreferenceCalendarProps) {
   const [baseDate, setBaseDate] = useState(() => new Date());
-  const [showAllMembers, setShowAllMembers] = useState(false);
 
   const dates = useMemo(() => {
     const result: Date[] = [];
@@ -290,11 +103,6 @@ export function ShiftPreferenceCalendar({
 
   const isAdminView = !!canManageTenant && !!memberNames;
 
-  const memberEntries = useMemo(() => {
-    if (!isAdminView || !memberNames) return [];
-    return [...userToneMap.entries()].filter(([uid]) => memberNames.has(uid));
-  }, [isAdminView, memberNames, userToneMap]);
-
   // SP 用: 当月かつ希望が 1 件以上ある日付のみ抽出（admin view 限定）
   const dailyGroups = useMemo(() => {
     if (!isAdminView) return [] as Array<{ date: Date; dateStr: string; prefs: ShiftPreference[] }>;
@@ -342,16 +150,6 @@ export function ShiftPreferenceCalendar({
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
-
-      {/* 凡例 (CalendarLegend) */}
-      <CalendarLegend
-        showStatusLegend={!!showStatusLegend}
-        memberNames={memberNames}
-        memberEntries={memberEntries}
-        showAllMembers={showAllMembers}
-        setShowAllMembers={setShowAllMembers}
-        isAdminView={isAdminView}
-      />
 
       {/* empty state バナー */}
       {isCurrentMonthEmpty && (
@@ -625,3 +423,4 @@ export function ShiftPreferenceCalendar({
     </div>
   );
 }
+

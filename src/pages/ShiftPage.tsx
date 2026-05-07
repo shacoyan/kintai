@@ -641,7 +641,6 @@ export function ShiftPage() {
                   onRejectPreference={canManageTenant && showAllMembersPrefs ? handleRejectPreference : undefined}
                   canManageStore={(sid) => sid ? isManagerOf(sid) : false}
                   onMutated={fetchPreferenceRange}
-                  showStatusLegend={canManageTenant && showAllMembersPrefs}
                 />
 
                 {/* 提出予定サマリ（自分視点のみ） */}
