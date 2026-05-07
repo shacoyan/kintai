@@ -3,6 +3,8 @@ import { Clock, CalendarClock, Trash2, Pencil, ArrowUp, ArrowDown, Save, X } fro
 import { useShiftPreset } from '../../hooks/useShiftPreset';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
+import { validateShiftTimeRange } from '../../utils/timeRange';
+import { formatTimeRange } from '../../utils/formatTimeRange';
 import { Card, Button, Badge, Input, Select, PageSkeleton, EmptyState, Heading } from '../ui';
 
 interface ShiftPresetManagerProps {
@@ -44,6 +46,11 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
 
   const handleAdd = async () => {
     if (!name.trim()) return;
+    const v = validateShiftTimeRange(startTime, endTime);
+    if (!v.ok) {
+      showToast(v.message, 'error');
+      return;
+    }
     setSaving(true);
     try {
       const effectiveScope: 'store' | 'tenant' = storeId == null ? 'tenant' : scope;
@@ -80,6 +87,11 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
 
   const saveEdit = async () => {
     if (!editingId || !editName.trim()) return;
+    const v = validateShiftTimeRange(editStartTime, editEndTime);
+    if (!v.ok) {
+      showToast(v.message, 'error');
+      return;
+    }
     try {
       await updatePreset(editingId, editName.trim(), editStartTime, editEndTime, editScope);
       showToast('プリセットを更新しました', 'success');
@@ -248,7 +260,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
                     </Badge>
                     <span className="text-sm text-neutral-600 dark:text-neutral-300 inline-flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
-                      {preset.start_time.slice(0, 5)} - {preset.end_time.slice(0, 5)}
+                      {formatTimeRange(preset.start_time, preset.end_time, { separator: ' - ' })}
                     </span>
                     <Badge tone={preset.store_id ? 'primary' : 'neutral'}>
                       {preset.store_id ? '店舗別' : '全店舗共通'}

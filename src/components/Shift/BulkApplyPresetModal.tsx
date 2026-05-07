@@ -5,6 +5,7 @@ import { formatSupabaseError } from '../../lib/errors';
 import { useToast } from '../../contexts/ToastContext';
 import { Button, Select, Input, Checkbox, BottomSheet } from '../ui';
 import type { ShiftPreset, TenantMember } from '../../types';
+import { formatTimeRange } from '../../utils/formatTimeRange';
 
 const DAY_LABELS = [
   { value: 1, label: '月' },
@@ -49,7 +50,7 @@ export function BulkApplyPresetModal({
     () =>
       presets.map((p) => ({
         value: String(p.id),
-        label: `${p.name} (${p.start_time.slice(0, 5)}-${p.end_time.slice(0, 5)})`,
+        label: `${p.name} (${formatTimeRange(p.start_time, p.end_time)})`,
       })),
     [presets]
   );

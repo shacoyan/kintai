@@ -9,6 +9,7 @@ import { PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
 
 import type { ShiftPreference, ShiftPreset, Store, ShiftPreferenceType } from '../../types';
 import { messages } from '../../lib/messages';
+import { formatTimeRange } from '../../utils/formatTimeRange';
 
 export interface ShiftPreferenceSidebarProps {
   mode: 'self' | 'admin';
@@ -230,8 +231,8 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
             <Card padding="none">
               <ul>
                 {timedPreferences.map(p => {
-                  const timeLabel = p.start_time && p.end_time 
-                    ? `${p.start_time}-${p.end_time}` 
+                  const timeLabel = p.start_time && p.end_time
+                    ? formatTimeRange(p.start_time, p.end_time)
                     : '時間未定';
                   const dateLabel = format(new Date(p.date + 'T00:00:00'), 'MM-dd');
                   

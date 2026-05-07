@@ -6,6 +6,8 @@ import { formatSupabaseError } from '../../lib/errors';
 import { PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
 import { Button, Select, Textarea, ErrorBanner } from '../ui';
 import { messages } from '../../lib/messages';
+import { validateShiftTimeRange } from '../../utils/timeRange';
+import { formatTimeRange } from '../../utils/formatTimeRange';
 
 interface ShiftPreferenceFormProps {
   date: string;
@@ -38,12 +40,6 @@ const TIME_OPTIONS: string[] = (() => {
   }
   return arr;
 })();
-
-function validateTimeRange(start: string, end: string): { ok: boolean; message?: string } {
-  if (start === end) return { ok: false, message: '開始と終了が同じ時刻です' };
-  if (start > end) return { ok: false, message: '終了は開始より後にしてください（夜勤跨ぎは未対応）' };
-  return { ok: true };
-}
 
 export function ShiftPreferenceForm({
   date,
@@ -87,7 +83,7 @@ export function ShiftPreferenceForm({
       return;
     }
     if (showTimeFields) {
-      const v = validateTimeRange(startTime, endTime);
+      const v = validateShiftTimeRange(startTime, endTime);
       if (!v.ok) {
         setFieldErrors({ start: v.message, end: v.message });
         setError(v.message ?? '時刻が不正です');
@@ -227,7 +223,7 @@ export function ShiftPreferenceForm({
                   setEndTime(p.end_time.slice(0, 5));
                 }}
               >
-                {`${p.name} (${p.start_time.slice(0, 5)}-${p.end_time.slice(0, 5)})`}
+                {`${p.name} (${formatTimeRange(p.start_time, p.end_time)})`}
               </Button>
             ))}
           </div>

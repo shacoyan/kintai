@@ -8,6 +8,8 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { messages } from '../../lib/messages';
+import { validateShiftTimeRange } from '../../utils/timeRange';
+import { formatTimeRange } from '../../utils/formatTimeRange';
 
 interface ShiftFormProps {
   date: string;
@@ -37,8 +39,9 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (startTime === endTime) {
-      setError(messages.validation.timeIdentical);
+    const v = validateShiftTimeRange(startTime, endTime);
+    if (!v.ok) {
+      setError(v.message);
       return;
     }
     if (!storeId) {
@@ -74,7 +77,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
               className="inline-flex items-center px-3 py-2 text-xs font-medium bg-primary-50 dark:bg-primary-900 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 motion-safe:transition-colors duration-120 ease-out-expo"
             >
               <Clock className="w-3.5 h-3.5 mr-1" />
-              {p.name} ({p.start_time.slice(0, 5)}-{p.end_time.slice(0, 5)})
+              {p.name} ({formatTimeRange(p.start_time, p.end_time)})
             </button>
           ))}
         </div>

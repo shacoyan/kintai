@@ -6,6 +6,7 @@ import type { ShiftPreference } from '../../types';
 import { PreferenceActionRow } from './PreferenceActionRow';
 import { getPreferenceTheme } from '../../lib/preferenceTheme';
 import { EmptyState } from '../ui';
+import { formatTimeRangeA11y } from '../../utils/formatTimeRange';
 
 interface ShiftPreferenceCalendarProps {
   preferences: ShiftPreference[];
@@ -235,6 +236,10 @@ export function ShiftPreferenceCalendar({
 
           const ariaLabel = `${format(d, 'yyyy年M月d日 (E)', { locale: ja })}${
             primaryPref ? ` ${getPreferenceTheme(primaryPref.preference_type).label}` : ''
+          }${
+            primaryPref && primaryPref.start_time && primaryPref.end_time
+              ? ` ${formatTimeRangeA11y(primaryPref.start_time, primaryPref.end_time)}`
+              : ''
           }`;
 
           const MAX_VISIBLE = 3;

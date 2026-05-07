@@ -5,6 +5,7 @@ import { EmptyState, Heading } from '../ui';
 import { ActionMenu, type ActionMenuItem } from '../ui/ActionMenu';
 import { Spinner } from '../ui/Spinner';
 import { messages } from '../../lib/messages';
+import { formatTimeRange } from '../../utils/formatTimeRange';
 
 interface ShiftAdminPanelProps {
   shifts: Shift[];
@@ -307,10 +308,10 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                     </div>
                   ) : (
                     <span className="text-sm text-neutral-700 dark:text-neutral-300 tabular-nums">
-                      {shift.start_time.slice(0, 5)} - {shift.end_time.slice(0, 5)}
-                      {shift.original_start_time && (
+                      {formatTimeRange(shift.start_time, shift.end_time, { separator: ' - ' })}
+                      {shift.original_start_time && shift.original_end_time && (
                         <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-2">
-                          (元: {shift.original_start_time.slice(0, 5)}-{shift.original_end_time?.slice(0, 5)})
+                          (元: {formatTimeRange(shift.original_start_time, shift.original_end_time)})
                         </span>
                       )}
                     </span>

@@ -13,6 +13,7 @@ import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { messages } from '../lib/messages';
 import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { formatTimeRange } from '../utils/formatTimeRange';
 
 export function DashboardPage() {
   const { currentTenant, myRole } = useTenant();
@@ -272,7 +273,7 @@ export function DashboardPage() {
                       {format(new Date(shift.date), 'M/d(E)', { locale: ja })}
                     </span>
                     <span className="text-neutral-800 dark:text-neutral-200">
-                      {shift.start_time.slice(0, 5)} 〜 {shift.end_time.slice(0, 5)}
+                      {formatTimeRange(shift.start_time, shift.end_time, { separator: ' 〜 ' })}
                     </span>
                     {shift.status === 'approved' ? (
                       <Badge tone="success" withDot>承認済</Badge>

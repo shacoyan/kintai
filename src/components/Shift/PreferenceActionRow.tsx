@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { abbreviateName } from '../../utils/displayNameAbbrev';
 import { Spinner } from '../ui/Spinner';
+import { formatTimeRange } from '../../utils/formatTimeRange';
 
 export interface PreferenceActionRowProps {
   preference: ShiftPreference;
@@ -264,7 +265,7 @@ export function PreferenceActionRow({
             </span>
             {preference.preference_type !== 'unavailable' && preference.start_time && preference.end_time && (
               <span className="text-xs text-neutral-500 dark:text-neutral-300">
-                {preference.start_time.slice(0, 5)} 〜 {preference.end_time.slice(0, 5)}
+                {formatTimeRange(preference.start_time, preference.end_time, { separator: ' 〜 ' })}
               </span>
             )}
           </div>

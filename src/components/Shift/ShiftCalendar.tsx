@@ -6,6 +6,7 @@ import type { Shift, LeaveRequest } from '../../types';
 import { abbreviateName } from '../../utils/displayNameAbbrev';
 import { EmptyState } from '../ui';
 import { isJapaneseHoliday, getJapaneseHolidayName } from '../../lib/holidays';
+import { formatTimeRange } from '../../utils/formatTimeRange';
 
 type ViewMode = 'week' | '2week' | 'month';
 
@@ -364,10 +365,10 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                       >
                         {memberNames ? (
                           <span title={memberNames.get(s.user_id) ?? ''}>
-                            {abbreviateName(memberNames.get(s.user_id))} {s.start_time.slice(0, 5)}-{s.end_time.slice(0, 5)}
+                            {abbreviateName(memberNames.get(s.user_id))} {formatTimeRange(s.start_time, s.end_time, { compactNextDay: true })}
                           </span>
                         ) : (
-                          <span>{s.start_time.slice(0, 5)}-{s.end_time.slice(0, 5)}</span>
+                          <span>{formatTimeRange(s.start_time, s.end_time, { compactNextDay: true })}</span>
                         )}
                       </div>
                     );

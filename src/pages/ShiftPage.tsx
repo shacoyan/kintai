@@ -28,6 +28,7 @@ import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdm
 import { ShiftPreferenceSidebar } from '../components/Shift/ShiftPreferenceSidebar';
 import { BulkApplyPresetModal } from '../components/Shift/BulkApplyPresetModal';
 import { PreferenceActionRow } from '../components/Shift/PreferenceActionRow';
+import { formatTimeRange } from '../utils/formatTimeRange';
 import { useStoreContext } from '../contexts/StoreContext';
 import type { ShiftPreferenceType, LeaveType } from '../types';
 
@@ -481,7 +482,7 @@ export function ShiftPage() {
                 >
                   <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{memberNames.get(s.user_id) ?? '不明'}</div>
                   <div className="text-xs text-neutral-600 dark:text-neutral-300">
-                    {s.start_time?.slice(0,5) ?? '--:--'}〜{s.end_time?.slice(0,5) ?? '--:--'} / {s.status}
+                    {s.start_time && s.end_time ? formatTimeRange(s.start_time, s.end_time, { separator: '〜' }) : '--:--〜--:--'} / {s.status}
                   </div>
                 </button>
               ))}
@@ -696,7 +697,7 @@ export function ShiftPage() {
                                   <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{theme.label}</p>
                                   {p.start_time && p.end_time && (
                                     <p className="text-xs text-neutral-500 dark:text-neutral-300 tabular-nums">
-                                      {p.start_time.slice(0, 5)} - {p.end_time.slice(0, 5)}
+                                      {formatTimeRange(p.start_time, p.end_time, { separator: ' - ' })}
                                     </p>
                                   )}
                                 </div>
@@ -863,7 +864,7 @@ export function ShiftPage() {
                             </span>
                             {pref.start_time && pref.end_time && (
                               <span className="text-xs text-neutral-500 dark:text-neutral-300 tabular-nums">
-                                {pref.start_time.slice(0, 5)} - {pref.end_time.slice(0, 5)}
+                                {formatTimeRange(pref.start_time, pref.end_time, { separator: ' - ' })}
                               </span>
                             )}
                           </div>
