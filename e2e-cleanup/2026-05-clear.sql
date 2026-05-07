@@ -26,7 +26,7 @@ WHERE tenant_id = '786f041f-4d89-4d5e-bf1b-b4c23dd38b0c'
 
 -- 3. breaks (本テストでは打刻しないが、attendance_records 経由で念のため)
 DELETE FROM public.breaks
-WHERE attendance_id IN (
+WHERE attendance_record_id IN (
   SELECT id
   FROM public.attendance_records
   WHERE tenant_id = '786f041f-4d89-4d5e-bf1b-b4c23dd38b0c'

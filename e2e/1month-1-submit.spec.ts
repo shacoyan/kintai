@@ -68,9 +68,20 @@ for (const spec of SHIFT_TEMPLATE) {
     }
     const tenantName = process.env.E2E_TENANT_NAME ?? 'テスト株式会社';
 
+    // approve spec と同様、lg(1024)+ では ShiftPreferenceSidebar が表示され、
+    // BottomSheet (lg:hidden) が出ない。1023×800 (md..lg-1) に固定し BottomSheet 経由で操作する。
+    await page.setViewportSize({ width: 1023, height: 800 });
+
     await loginAs(page, email, password, tenantName);
 
     await page.goto(ROUTES.shiftPreferenceTab);
+
+    // ShiftPage.activeTab は useState 初期値 'shift' 固定で URL ?tab=preference を読まない。
+    // staff 視点でも明示的に「希望」タブを click して ShiftPreferenceCalendar をマウントする。
+    await page
+      .getByRole('button', { name: /^希望$/ })
+      .first()
+      .click();
 
     const grid = page.getByRole(CALENDAR.grid.role, { name: CALENDAR.grid.name });
     await expect(grid).toBeVisible({ timeout: 10_000 });
@@ -86,12 +97,17 @@ for (const spec of SHIFT_TEMPLATE) {
         await reporter.step(`submit ${dateStr}`, async () => {
           await openDateCell(page, dateStr);
 
-          // 希望タイプボタン (id 指定)
+          // BottomSheet (dialog) スコープに限定: ShiftPreferenceSidebar (PC, hidden lg:block で
+          // viewport 1023 では非表示だが DOM に残存) 内の同一 id Form と衝突するのを避ける。
+          const sheet = page.getByRole('dialog').first();
+          await expect(sheet).toBeVisible({ timeout: 5_000 });
+
+          // 希望タイプボタン (id 指定 — dialog 内に絞ることで id 重複対策)
           const typeButtonId = PREF_FORM.typeButtonId(spec.preferenceType);
-          await page.locator(`#${typeButtonId}`).click();
+          await sheet.locator(`#${typeButtonId}`).click();
 
           // 店舗 select は selectableStores が 1 件のみだと表示されない場合あり
-          const storeSelectLocator = page.getByLabel(PREF_FORM.storeSelect.label, {
+          const storeSelectLocator = sheet.getByLabel(PREF_FORM.storeSelect.label, {
             exact: PREF_FORM.storeSelect.exact,
           });
           if ((await storeSelectLocator.count()) > 0) {
@@ -99,20 +115,20 @@ for (const spec of SHIFT_TEMPLATE) {
           }
 
           // 開始/終了時刻
-          await page
+          await sheet
             .getByLabel(PREF_FORM.startTimeSelect.label, { exact: PREF_FORM.startTimeSelect.exact })
             .selectOption(spec.startTime);
-          await page
+          await sheet
             .getByLabel(PREF_FORM.endTimeSelect.label, { exact: PREF_FORM.endTimeSelect.exact })
             .selectOption(spec.endTime);
 
           // submit (新規 = "登録する" / 既存 = "上書きする" 両対応)
-          const submitButton = page.getByRole('button', {
+          const submitButton = sheet.getByRole('button', {
             name: PREF_FORM.submitButton.namePattern,
           });
           await submitButton.click();
 
-          // submit ボタンが消えたら成功
+          // submit ボタンが消えたら成功 (dialog 自体が閉じる)
           await expect(submitButton).toBeHidden({ timeout: 5_000 });
         });
         successCount++;
