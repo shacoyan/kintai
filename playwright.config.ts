@@ -37,13 +37,32 @@ export default defineConfig({
       dependencies: ['setup'],
       // anon 系 spec (storageState 無し) と smoke は除外。Loop 41 #3 で smoke 追加。
       // smoke.spec.ts は認証不要の表示確認のため chromium-anon project でのみ実行。
-      testIgnore: [/.*\.setup\.ts/, /.*\.anon\.spec\.ts/, /smoke\.spec\.ts/],
+      // 1month-*.spec.ts は専用 project (e2e-1month) で毎回ログインするため除外。
+      testIgnore: [
+        /.*\.setup\.ts/,
+        /.*\.anon\.spec\.ts/,
+        /smoke\.spec\.ts/,
+        /1month-.*\.spec\.ts/,
+      ],
     },
     {
       name: 'chromium-anon',
       use: { ...devices['Desktop Chrome'] },
       // smoke + 任意の *.anon.spec.ts (例: visual-regression.anon.spec.ts) を対象。
       testMatch: [/smoke\.spec\.ts/, /.*\.anon\.spec\.ts/],
+    },
+    {
+      // 1ヶ月分シフト E2E テスト専用 project (Tech design: 2026-05-07-kintai-1month-shift-e2e)
+      // - storageState を持たず、各テスト内 loginAs() で毎回ログインする
+      // - B (submit) → C (approve) を順序保証するため fullyParallel: false / workers: 1
+      // - retries: 0 で失敗を握り潰さない、timeout: 600s で 93 件登録の長時間実行を許容
+      name: 'e2e-1month',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: [/1month-.*\.spec\.ts/],
+      fullyParallel: false,
+      workers: 1,
+      retries: 0,
+      timeout: 600_000,
     },
   ],
   webServer: {
