@@ -97,59 +97,79 @@ export function useNotification(userId: string | null) {
   }, [userId, notifications]);
 
   useEffect(() => {
-    if (!userId) {
+    // race 対策: removeChannel は Promise を返す非同期 API。await せず同名 channel を即再生成すると
+    // Supabase Realtime 内部状態で "subscribed 済" と判定され ".on() after subscribe()" エラーになる。
+    // setup を async でくくり全 removeChannel を await + cancelled flag で stale closure をガード。
+    let cancelled = false;
+
+    const setup = async () => {
+      if (!userId) {
+        if (channelRef.current) {
+          const ch = channelRef.current;
+          channelRef.current = null;
+          try { await supabase.removeChannel(ch); } catch (e) { console.warn('[useNotification] removeChannel failed:', e); }
+        }
+        return;
+      }
+
+      // 既存挙動維持: 初期データ取得は fire-and-forget
+      void fetchLatest();
+
+      // 冪等 cleanup (await で UNSUBSCRIBE 完了まで待つ)
       if (channelRef.current) {
-        try { supabase.removeChannel(channelRef.current); } catch (e) { console.warn('[useNotification] removeChannel failed:', e); }
+        const ch = channelRef.current;
+        channelRef.current = null;
+        try { await supabase.removeChannel(ch); } catch (e) { console.warn('[useNotification] removeChannel failed:', e); }
+      }
+      if (cancelled) return;
+
+      let channel: ReturnType<typeof supabase.channel> | null = null;
+      try {
+        channel = supabase
+          .channel(`notifications:${userId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${userId}`,
+            },
+            (payload) => {
+              const newItem = payload.new as NotificationItem;
+              setNotifications((prev) => [newItem, ...prev].slice(0, 100));
+            }
+          )
+          .subscribe((status, err) => {
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
+              console.warn('[useNotification] subscribe status:', status, err);
+            }
+          });
+        if (cancelled) {
+          try { await supabase.removeChannel(channel); } catch (e) { console.warn('[useNotification] removeChannel after cancel:', e); }
+          return;
+        }
+        channelRef.current = channel;
+      } catch (e) {
+        console.warn('[useNotification] channel setup failed:', e);
+        setError(formatSupabaseError(e));
+        if (channel) {
+          try { await supabase.removeChannel(channel); } catch (re) { console.warn('[useNotification] removeChannel after fail:', re); }
+        }
         channelRef.current = null;
       }
-      return;
-    }
+    };
 
-    fetchLatest();
-
-    // 冪等 cleanup
-    if (channelRef.current) {
-      try { supabase.removeChannel(channelRef.current); } catch (e) { console.warn('[useNotification] removeChannel failed:', e); }
-      channelRef.current = null;
-    }
-
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(`notifications:${userId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `user_id=eq.${userId}`,
-          },
-          (payload) => {
-            const newItem = payload.new as NotificationItem;
-            setNotifications((prev) => [newItem, ...prev].slice(0, 100));
-          }
-        )
-        .subscribe((status, err) => {
-          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
-            console.warn('[useNotification] subscribe status:', status, err);
-          }
-        });
-      channelRef.current = channel;
-    } catch (e) {
-      console.warn('[useNotification] channel setup failed:', e);
-      setError(formatSupabaseError(e));
-      if (channel) {
-        try { supabase.removeChannel(channel); } catch (re) { console.warn('[useNotification] removeChannel after fail:', re); }
-      }
-      channelRef.current = null;
-      return;
-    }
+    void setup();
 
     return () => {
-      if (channelRef.current) {
-        try { supabase.removeChannel(channelRef.current); } catch (e) { console.warn('[useNotification] removeChannel failed:', e); }
-        channelRef.current = null;
+      cancelled = true;
+      const ch = channelRef.current;
+      channelRef.current = null;
+      if (ch) {
+        void (async () => {
+          try { await supabase.removeChannel(ch); } catch (e) { console.warn('[useNotification] removeChannel failed:', e); }
+        })();
       }
     };
   }, [userId, fetchLatest]);
