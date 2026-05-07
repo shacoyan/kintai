@@ -39,7 +39,7 @@ export function useTenantAdmin(tenantId: string) {
         }
 
         const { data, error: e } = await supabase
-          .from('tenant_members')
+          .from('tenant_members_visible')
           .select('*')
           .eq('tenant_id', tenantId)
           .in('id', memberIds)
@@ -53,7 +53,7 @@ export function useTenantAdmin(tenantId: string) {
         }
       } else {
         const { data, error: e } = await supabase
-          .from('tenant_members')
+          .from('tenant_members_visible')
           .select('*')
           .eq('tenant_id', tenantId)
           .order('created_at', { ascending: true });
@@ -74,8 +74,8 @@ export function useTenantAdmin(tenantId: string) {
       .from('tenant_members')
       .update({ hourly_rate: rate })
       .eq('id', memberId)
-      .select()
-      .single();
+      .select('id')
+      .maybeSingle();
     if (e) throw new Error(formatSupabaseError(e).message);
     if (!data) throw new Error('時給の更新に失敗しました（権限がない可能性があります）');
     await fetchMembers();
@@ -163,8 +163,8 @@ export function useTenantAdmin(tenantId: string) {
       .from('tenant_members')
       .update({ pay_type: payType })
       .eq('id', memberId)
-      .select()
-      .single();
+      .select('id')
+      .maybeSingle();
     if (e) throw new Error(formatSupabaseError(e).message);
     if (!data) throw new Error('給与タイプの更新に失敗しました（権限がない可能性があります）');
     await fetchMembers();
@@ -175,8 +175,8 @@ export function useTenantAdmin(tenantId: string) {
       .from('tenant_members')
       .update({ monthly_salary: salary })
       .eq('id', memberId)
-      .select()
-      .single();
+      .select('id')
+      .maybeSingle();
     if (e) throw new Error(formatSupabaseError(e).message);
     if (!data) throw new Error('月給の更新に失敗しました（権限がない可能性があります）');
     await fetchMembers();
@@ -187,8 +187,8 @@ export function useTenantAdmin(tenantId: string) {
       .from('tenant_members')
       .update({ paid_leave_days: days })
       .eq('id', memberId)
-      .select()
-      .single();
+      .select('id')
+      .maybeSingle();
     if (e) throw new Error(formatSupabaseError(e).message);
     if (!data) throw new Error('有給日数の更新に失敗しました（権限がない可能性があります）');
     await fetchMembers();
@@ -200,8 +200,8 @@ export function useTenantAdmin(tenantId: string) {
       .update({ role })
       .eq('id', memberId)
       .eq('tenant_id', tenantId)
-      .select()
-      .single();
+      .select('id')
+      .maybeSingle();
     if (e) throw new Error(formatSupabaseError(e).message);
     if (!data) throw new Error('権限の更新に失敗しました（権限がない可能性があります）');
     await fetchMembers();
@@ -222,8 +222,8 @@ export function useTenantAdmin(tenantId: string) {
       .from('tenant_members')
       .update({ night_shift_enabled: enabled })
       .eq('id', memberId)
-      .select()
-      .single();
+      .select('id')
+      .maybeSingle();
     if (e) throw new Error(formatSupabaseError(e).message);
     if (!data) throw new Error('深夜給設定の更新に失敗しました（権限がない可能性があります）');
     await fetchMembers();
@@ -235,8 +235,8 @@ export function useTenantAdmin(tenantId: string) {
       .update({ role_id: roleId })
       .eq('id', memberId)
       .eq('tenant_id', tenantId)
-      .select()
-      .single();
+      .select('id')
+      .maybeSingle();
     if (e) throw new Error(formatSupabaseError(e).message);
     if (!data) throw new Error('役職の更新に失敗しました（権限がない可能性があります）');
     await fetchMembers();

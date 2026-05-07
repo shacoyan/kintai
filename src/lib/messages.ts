@@ -88,4 +88,29 @@ export const messages = {
     unfinalizePayroll: (year: number, month: number): string => `${year}年${month}月の確定を取り消しますか？`,
     deleteShiftDeadline: 'シフト提出期限を削除しますか？',
   },
+  /** @i18n-prefix onboarding */
+  onboarding: {
+    /** @i18n-namespace onboarding */
+    /** @i18n-key onboarding.welcome {tenantName} */
+    welcome: (tenantName: string): string => `ようこそ ${tenantName} へ`,
+    /** @i18n-key onboarding.description */
+    description:
+      '初回設定として、氏名（社内表記用）と表示名を入力してください。氏名はあなたと管理者（オーナー / マネージャー）のみが閲覧できます。',
+    /** @i18n-key onboarding.submit */
+    submit: '保存して始める',
+    /** @i18n-key onboarding.legalNameLabel */
+    legalNameLabel: '氏名（本名）',
+    /** @i18n-key onboarding.legalNameHint */
+    legalNameHint: 'あなたと管理者のみに表示されます',
+    /** @i18n-key onboarding.displayNameLabel */
+    displayNameLabel: '表示名',
+    /** @i18n-key onboarding.displayNameHint */
+    displayNameHint: 'シフト表・出退勤表で他のメンバーに表示されます',
+    /** @i18n-key onboarding.legalNamePlaceholder */
+    legalNamePlaceholder: '例: 山田 太郎',
+    /** @i18n-key onboarding.displayNamePlaceholder */
+    displayNamePlaceholder: '例: たろう',
+    /** @i18n-key onboarding.saveError */
+    saveError: '保存に失敗しました',
+  },
 } as const;

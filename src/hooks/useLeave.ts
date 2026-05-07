@@ -209,7 +209,7 @@ export function useLeave(tenantId: string) {
 
     // 付与日数を取得
     const { data: memberData } = await supabase
-      .from('tenant_members')
+      .from('tenant_members_visible')
       .select('paid_leave_days')
       .eq('tenant_id', tenantId)
       .eq('user_id', targetUserId)

@@ -105,7 +105,10 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, memberId: string) => {
-    if (e.key === 'Enter') handleSave(memberId);
+    if (e.key === 'Enter') {
+      if (e.nativeEvent.isComposing) return;
+      handleSave(memberId);
+    }
     if (e.key === 'Escape') handleCancel();
   };
 
@@ -141,7 +144,10 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   };
 
   const handleMonthlySalaryKeyDown = (e: React.KeyboardEvent, memberId: string) => {
-    if (e.key === 'Enter') handleSaveMonthlySalary(memberId);
+    if (e.key === 'Enter') {
+      if (e.nativeEvent.isComposing) return;
+      handleSaveMonthlySalary(memberId);
+    }
     if (e.key === 'Escape') setEditingMonthlySalaryId(null);
   };
 
@@ -169,7 +175,10 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   };
 
   const handlePaidLeaveDaysKeyDown = (e: React.KeyboardEvent, memberId: string) => {
-    if (e.key === 'Enter') handleSavePaidLeaveDays(memberId);
+    if (e.key === 'Enter') {
+      if (e.nativeEvent.isComposing) return;
+      handleSavePaidLeaveDays(memberId);
+    }
     if (e.key === 'Escape') setEditingPaidLeaveDaysId(null);
   };
 
@@ -187,7 +196,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
 
   const handleNightShiftToggle = async (member: TenantMember) => {
     try {
-      await updateNightShift(member.id, !member.night_shift_enabled);
+      await updateNightShift(member.id, !(member.night_shift_enabled ?? true));
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
     }
@@ -512,7 +521,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                           <input
                             type="checkbox"
-                            checked={member.night_shift_enabled ?? false}
+                            checked={member.night_shift_enabled ?? true}
                             onChange={() => handleNightShiftToggle(member)}
                             className="h-4 w-4 text-primary-600 dark:text-primary-400 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer"
                           />

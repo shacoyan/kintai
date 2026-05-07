@@ -31,6 +31,8 @@ interface TenantContextType {
   isManager: boolean;
   isStaff: boolean;
   myMemberId: string | null;
+  needsOnboarding: boolean;
+  completeOnboarding: (legalName: string, displayName: string) => Promise<void>;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -75,7 +77,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const fetchMembers = useCallback(async (tenantId: string) => {
     try {
       const { data, error: fetchError } = await supabase
-        .from('tenant_members')
+        .from('tenant_members_visible')
         .select('*')
         .eq('tenant_id', tenantId);
 
@@ -93,33 +95,55 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
       if (authError || !authUser) throw new Error('認証情報の取得に失敗しました');
 
-      const { data, error: fetchError } = await supabase
-        .from('tenant_members')
-        .select('*, tenants(*)')
-        .eq('user_id', authUser.id);
-
-      if (fetchError) throw fetchError;
-
-      interface TenantMemberWithJoin {
+      // Loop Reviewer BLOCKER #1: tenant_members_visible は VIEW のため PostgREST の
+      // FK metadata を持たず `.select('*, tenants(*)')` の embed が runtime で 400/500 になる。
+      // 2 段クエリ化: (a) member 行を取得 → (b) tenant_id 配列で tenants を別途取得 →
+      // (c) JS 側で tenant_id を key に join して従来 shape を再構築。
+      interface TenantMemberRow {
         id: string;
+        tenant_id: string;
         role: string;
         display_name: string;
-        tenants: Tenant | null;
       }
 
-      const mappedTenants: TenantWithRole[] = ((data || []) as TenantMemberWithJoin[])
-        .filter((item) => item.tenants !== null)
-        .map((item) => ({
-          id: item.tenants!.id,
-          name: item.tenants!.name,
-          invite_code: item.tenants!.invite_code,
-          created_at: item.tenants!.created_at,
-          owner_id: item.tenants!.owner_id,
-          deleted_at: item.tenants!.deleted_at ?? null,
-          role: item.role as UserRole,
-          display_name: item.display_name,
-          member_id: item.id,
-        }));
+      const { data: memberRows, error: memberError } = await supabase
+        .from('tenant_members_visible')
+        .select('id, tenant_id, role, display_name')
+        .eq('user_id', authUser.id);
+
+      if (memberError) throw memberError;
+
+      const memberList = (memberRows || []) as TenantMemberRow[];
+      const tenantIds = Array.from(new Set(memberList.map((m) => m.tenant_id)));
+
+      let tenantsById = new Map<string, Tenant>();
+      if (tenantIds.length > 0) {
+        const { data: tenantRows, error: tenantError } = await supabase
+          .from('tenants')
+          .select('*')
+          .in('id', tenantIds);
+
+        if (tenantError) throw tenantError;
+        tenantsById = new Map(((tenantRows || []) as Tenant[]).map((t) => [t.id, t]));
+      }
+
+      const mappedTenants: TenantWithRole[] = memberList
+        .map((item) => {
+          const tenantRow = tenantsById.get(item.tenant_id);
+          if (!tenantRow) return null;
+          return {
+            id: tenantRow.id,
+            name: tenantRow.name,
+            invite_code: tenantRow.invite_code,
+            created_at: tenantRow.created_at,
+            owner_id: tenantRow.owner_id,
+            deleted_at: tenantRow.deleted_at ?? null,
+            role: item.role as UserRole,
+            display_name: item.display_name,
+            member_id: item.id,
+          } satisfies TenantWithRole;
+        })
+        .filter((t): t is TenantWithRole => t !== null);
 
       setTenants(mappedTenants);
       return mappedTenants;
@@ -385,10 +409,25 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentTenant, isOwner, setCurrentTenant, fetchTenants]);
 
+  const completeOnboarding = useCallback(
+    async (legalName: string, displayName: string) => {
+      if (!currentTenant) throw new Error('no current tenant');
+      const { error: rpcError } = await supabase.rpc('complete_onboarding', {
+        p_tenant_id: currentTenant.id,
+        p_legal_name: legalName,
+        p_display_name: displayName,
+      });
+      if (rpcError) throw rpcError;
+      await fetchTenants();
+      await fetchMembers(currentTenant.id);
+    },
+    [currentTenant, fetchTenants, fetchMembers]
+  );
+
   const verifyTenantStillAccessible = async (tenantId: string): Promise<'ok' | 'gone' | 'transient'> => {
     try {
       const { error, status } = await supabase
-        .from('tenant_members')
+        .from('tenant_members_visible')
         .select('id', { count: 'exact', head: true })
         .eq('tenant_id', tenantId);
 
@@ -493,6 +532,11 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentTenant, fetchMembers]);
 
+  const myMember = currentTenant && user
+    ? members.find((m) => m.user_id === user.id && m.tenant_id === currentTenant.id) ?? null
+    : null;
+  const needsOnboarding = !!myMember && myMember.legal_name == null;
+
   return (
     <TenantContext.Provider value={{
       tenants,
@@ -514,6 +558,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       isManager,
       isStaff,
       myMemberId,
+      needsOnboarding,
+      completeOnboarding,
     }}>
       {children}
     </TenantContext.Provider>

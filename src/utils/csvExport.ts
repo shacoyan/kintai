@@ -54,7 +54,8 @@ export function generatePayrollCsv(
     if (workMins == null || workMins <= 0) continue;
 
     let nightMins = 0;
-    if (member.night_shift_enabled && r.clock_in && r.clock_out) {
+    // migration 036: night_shift_enabled DEFAULT true + NULL backfill のため、未指定 = ON 扱い。
+    if (member.night_shift_enabled !== false && r.clock_in && r.clock_out) {
       nightMins = getNightMinutesInRange(parseISO(r.clock_in), parseISO(r.clock_out));
       // 休憩中の深夜分を差し引く
       for (const b of (r.breaks || [])) {

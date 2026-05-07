@@ -93,7 +93,7 @@ export function useUnsubmittedMembers(
 
       // 2) tenant_members: staff / manager のみ（owner 除外）
       const { data: tenantMembersData, error: tenantMembersError } = await supabase
-        .from('tenant_members')
+        .from('tenant_members_visible')
         .select('id, user_id, display_name, role')
         .in('id', memberIds)
         .in('role', ['staff', 'manager']);

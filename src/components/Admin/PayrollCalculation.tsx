@@ -98,7 +98,7 @@ function calcMemberPayroll(
 
     totalMinutes += workMins;
 
-    if (member.night_shift_enabled && r.clock_in && r.clock_out) {
+    if (member.night_shift_enabled !== false && r.clock_in && r.clock_out) {
       const { normal, night } = splitNightMinutes(r.clock_in, r.clock_out);
       // 休憩時間を通常/深夜に分割
       let breakNormalMins = 0;
@@ -142,7 +142,7 @@ function calcMemberPayroll(
     payType,
     hourlyRate: rate,
     monthlySalary,
-    nightShiftEnabled: member.night_shift_enabled ?? false,
+    nightShiftEnabled: member.night_shift_enabled ?? true,
     workDays: dates.size,
     totalMinutes,
     normalMinutes,
@@ -189,7 +189,7 @@ function calcMemberShiftPayroll(
 
     totalMinutes += shiftMins;
 
-    if (member.night_shift_enabled) {
+    if (member.night_shift_enabled !== false) {
       const nightMins = getNightMinutesForShift(s.date, startTime, endTime);
       nightMinutes += nightMins;
       normalMinutes += shiftMins - nightMins;
@@ -213,7 +213,7 @@ function calcMemberShiftPayroll(
     payType,
     hourlyRate: rate,
     monthlySalary,
-    nightShiftEnabled: member.night_shift_enabled ?? false,
+    nightShiftEnabled: member.night_shift_enabled ?? true,
     workDays: dates.size,
     totalMinutes,
     normalMinutes,
@@ -466,12 +466,12 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   return (
     <Card padding="none">
       <Card.Header>
-        <div className="flex justify-between items-start">
-          <div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:flex-wrap">
+          <div className="min-w-0">
             <Heading level={2}>給与計算</Heading>
             <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">月次の勤怠データから給与を計算します</p>
           </div>
-          <div className="text-sm text-neutral-600 dark:text-neutral-300">
+          <div className="text-sm text-neutral-600 dark:text-neutral-300 shrink-0">
             締め日: {closeDay === 31 || !closeDay ? '月末' : `${closeDay}日`}
           </div>
         </div>

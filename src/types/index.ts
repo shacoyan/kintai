@@ -16,6 +16,8 @@ export interface TenantMember {
   user_id: string;
   role: 'owner' | 'manager' | 'staff';
   display_name: string;
+  legal_name: string | null;
+  onboarded_at: string | null;
   hourly_rate: number | null;
   night_shift_enabled: boolean | null;
   pay_type: 'hourly' | 'monthly';

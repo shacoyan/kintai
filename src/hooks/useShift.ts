@@ -256,7 +256,9 @@ export function useShift(tenantId: string, storeId: string | null) {
         totalMinutes += shiftMins;
 
         // 深夜帯の計算（共通ユーティリティ使用）
-        if (member.night_shift_enabled) {
+        // migration 036: night_shift_enabled DEFAULT true + 既存 NULL を true に UPDATE のため、
+        // 未指定 (undefined/null) = ON 扱いで統一する。
+        if (member.night_shift_enabled !== false) {
           nightMinutes += getNightMinutesForShift(s.date, s.start_time, s.end_time);
         }
       }
