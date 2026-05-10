@@ -273,8 +273,8 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
       {isCurrentMonthEmpty && (
         <EmptyState
           tone="info"
-          title="今月のシフトはまだありません"
-          action={shifts.some(s => isAfter(parseISO(s.date), startOfDay(baseDate))) ? { label: '次のシフトがある月へ', onClick: navigateToNextShiftMonth, iconRight: <ChevronRight className="w-4 h-4" />, variant: 'tertiary' } : undefined}
+          title="今月の確定シフトはまだありません"
+          action={shifts.some(s => isAfter(parseISO(s.date), startOfDay(baseDate))) ? { label: '次の確定シフトがある月へ', onClick: navigateToNextShiftMonth, iconRight: <ChevronRight className="w-4 h-4" />, variant: 'tertiary' } : undefined}
         />
       )}
 
@@ -377,7 +377,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     <button 
                       type="button"
                       onClick={(e) => { e.stopPropagation(); onDateClick(dateStr); }}
-                      aria-label={`${dateStr} の全シフトを表示`}
+                      aria-label={`${dateStr} の全確定シフトを表示`}
                       className="text-[10px] text-neutral-500 dark:text-neutral-300 hover:underline focus:outline-none"
                     >
                       +{dayShifts.length - 3}件

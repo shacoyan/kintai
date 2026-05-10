@@ -15,8 +15,8 @@ import { test, expect, type Locator, type Page } from '@playwright/test';
  *   Follows STYLE.md §セレクタ規約 (semantic roles first, data-testid as fallback).
  */
 
-const TRIGGER_BUTTON_NAME = 'シフト希望締切を設定';
-const DIALOG_TITLE = 'シフト提出期限設定';
+const TRIGGER_BUTTON_NAME = 'シフト申請締切を設定';
+const DIALOG_TITLE = 'シフト申請の提出期限設定';
 const CLOSE_BUTTON_LABEL = '閉じる';
 
 test.describe('keyboard navigation', () => {
@@ -171,7 +171,7 @@ test.describe('keyboard navigation', () => {
 
     await nestedTrigger.click();
 
-    const nestedDialog = page.getByRole('dialog').filter({ hasText: /^((?!シフト提出期限設定).)*$/ }).last();
+    const nestedDialog = page.getByRole('dialog').filter({ hasText: /^((?!シフト申請の提出期限設定).)*$/ }).last();
     await expect(nestedDialog).toBeVisible();
 
     // Verify outer dialog is still open

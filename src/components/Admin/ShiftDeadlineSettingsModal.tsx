@@ -136,8 +136,8 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
     <BottomSheet
       isOpen={open}
       onClose={onClose}
-      title="シフト提出期限設定"
-      description="対象月のシフト提出期限を設定します。"
+      title="シフト申請の提出期限設定"
+      description="対象月のシフト申請の提出期限を設定します。"
       footer={footerContent}
     >
       <div className="space-y-4">

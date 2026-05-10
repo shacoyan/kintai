@@ -242,7 +242,7 @@ export function PreferenceActionRow({
                   e.stopPropagation();
                   onToggleSelect?.(preference.id);
                 }}
-                aria-label={`${memberName ?? '不明'} の希望を選択`}
+                aria-label={`${memberName ?? '不明'} のシフト申請を選択`}
                 className="mt-1 w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-primary-600 dark:text-primary-400 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-800 cursor-pointer"
               />
             )}

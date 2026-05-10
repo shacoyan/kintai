@@ -245,7 +245,7 @@ export function ShiftPreferenceAdminList({
       {/* ヘッダー */}
       <div className="flex items-center justify-between">
         <Heading level={4} className="flex items-center gap-2">
-          {historyMode ? 'シフト希望の履歴' : 'シフト希望の承認'}
+          {historyMode ? 'シフト申請の履歴' : 'シフト申請の承認'}
           {historyMode ? (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300">
               全 {preferences.length} 件
@@ -298,7 +298,7 @@ export function ShiftPreferenceAdminList({
       {sortedDisplayed.length === 0 && (
         <EmptyState
           size="sm"
-          title={historyMode ? '履歴はありません' : (statusFilter === 'all' ? '希望がありません' : '未対応の希望はありません')}
+          title={historyMode ? '履歴はありません' : (statusFilter === 'all' ? 'シフト申請がありません' : '未対応のシフト申請はありません')}
         />
       )}
 

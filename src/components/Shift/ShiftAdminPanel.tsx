@@ -121,7 +121,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
     <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
       <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
         <div>
-          <Heading level={2}>シフト承認</Heading>
+          <Heading level={2}>シフト申請の承認</Heading>
           {pendingShifts.length > 0 && (
             <p className="text-sm text-neutral-500 dark:text-neutral-300 mt-0.5">{pendingShifts.length}件の承認待ち</p>
           )}

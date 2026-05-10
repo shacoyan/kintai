@@ -10,26 +10,26 @@
         "description": "出勤すると、ここに記録が表示されます。"
       },
       "shiftMonth": {
-        "title": "今月のシフトはまだありません",
-        "description": "上のボタンから最初のシフトを作成しましょう。"
+        "title": "今月の確定シフトはまだありません",
+        "description": "上のボタンから最初の確定シフトを作成しましょう。"
       },
       "shiftRequest": {
-        "title": "申請待ちのシフトはありません",
+        "title": "申請待ちのシフト申請はありません",
         "description": "メンバーから申請が届くとここに表示されます。"
       },
       "shiftDay": {
-        "title": "この日にシフトはありません"
+        "title": "この日に確定シフトはありません"
       },
       "shiftPreferenceMonth": {
-        "title": "今月の希望シフトはまだありません",
-        "description": "希望シフトを登録してチームに共有しましょう。"
+        "title": "今月のシフト申請はまだありません",
+        "description": "シフト申請を登録してチームに共有しましょう。"
       },
       "shiftPreferenceDay": {
-        "title": "この日の希望シフトはありません"
+        "title": "この日のシフト申請はありません"
       },
       "shiftMismatch": {
         "title": "シフト不一致はありません",
-        "description": "お疲れさまです。希望と確定シフトはすべて一致しています。"
+        "description": "お疲れさまです。シフト申請と確定シフトはすべて一致しています。"
       },
       "shiftPreset": {
         "title": "プリセットがまだありません",
@@ -104,7 +104,19 @@
       "revertCorrection": "この修正申請の承認を巻き戻しますか？\n勤怠レコードに加えた修正は元に戻されます。",
       "finalizePayroll": "{{year}}年{{month}}月の給与を確定しますか？",
       "unfinalizePayroll": "{{year}}年{{month}}月の確定を取り消しますか？",
-      "deleteShiftDeadline": "シフト提出期限を削除しますか？"
+      "deleteShiftDeadline": "シフト申請の提出期限を削除しますか？"
+    },
+    "onboarding": {
+      "welcome": "ようこそ {{tenantName}} へ",
+      "description": "初回設定として、氏名（社内表記用）と表示名を入力してください。氏名はあなたと管理者（オーナー / マネージャー）のみが閲覧できます。",
+      "submit": "保存して始める",
+      "legalNameLabel": "氏名（本名）",
+      "legalNameHint": "あなたと管理者のみに表示されます",
+      "displayNameLabel": "表示名",
+      "displayNameHint": "シフト表・出退勤表で他のメンバーに表示されます",
+      "legalNamePlaceholder": "例: 山田 太郎",
+      "displayNamePlaceholder": "例: たろう",
+      "saveError": "保存に失敗しました"
     },
     "_meta": {
       "toast.saved.fallback": "保存しました",

@@ -21,12 +21,12 @@ export const messages = {
   empty: {
     attendanceMonth: { title: '今月はまだ打刻記録がありません', description: '出勤ボタンから最初の打刻を始めましょう。' },
     attendanceDay: { title: 'この日の打刻記録はありません', description: '出勤すると、ここに記録が表示されます。' },
-    shiftMonth: { title: '今月のシフトはまだありません', description: '上のボタンから最初のシフトを作成しましょう。' },
-    shiftRequest: { title: '申請待ちのシフトはありません', description: 'メンバーから申請が届くとここに表示されます。' },
-    shiftDay: { title: 'この日にシフトはありません' },
-    shiftPreferenceMonth: { title: '今月の希望シフトはまだありません', description: '希望シフトを登録してチームに共有しましょう。' },
-    shiftPreferenceDay: { title: 'この日の希望シフトはありません' },
-    shiftMismatch: { title: 'シフト不一致はありません', description: 'お疲れさまです。希望と確定シフトはすべて一致しています。' },
+    shiftMonth: { title: '今月の確定シフトはまだありません', description: '上のボタンから最初の確定シフトを作成しましょう。' },
+    shiftRequest: { title: '申請待ちのシフト申請はありません', description: 'メンバーから申請が届くとここに表示されます。' },
+    shiftDay: { title: 'この日に確定シフトはありません' },
+    shiftPreferenceMonth: { title: '今月のシフト申請はまだありません', description: 'シフト申請を登録してチームに共有しましょう。' },
+    shiftPreferenceDay: { title: 'この日のシフト申請はありません' },
+    shiftMismatch: { title: 'シフト不一致はありません', description: 'お疲れさまです。シフト申請と確定シフトはすべて一致しています。' },
     shiftPreset: { title: 'プリセットがまだありません', description: 'よく使うシフトパターンを登録すると一括適用がはかどります。' },
     leave: { title: '休暇申請はまだありません', description: '右上のボタンから新しい休暇申請を作成できます。' },
     correction: { title: '修正申請はまだありません', description: '履歴画面から打刻の修正を申請できます。' },
@@ -86,7 +86,7 @@ export const messages = {
     finalizePayroll: (year: number, month: number): string => `${year}年${month}月の給与を確定しますか？`,
     /** @i18n-key confirm.unfinalizePayroll {year},{month} */
     unfinalizePayroll: (year: number, month: number): string => `${year}年${month}月の確定を取り消しますか？`,
-    deleteShiftDeadline: 'シフト提出期限を削除しますか？',
+    deleteShiftDeadline: 'シフト申請の提出期限を削除しますか？',
   },
   /** @i18n-prefix onboarding */
   onboarding: {

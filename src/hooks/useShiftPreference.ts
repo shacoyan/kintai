@@ -164,7 +164,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
         .select('*')
         .eq('id', preferenceId)
         .single();
-      if (fetchError || !pref) throw new Error(`希望の取得に失敗しました: ${fetchError?.message}`);
+      if (fetchError || !pref) throw new Error(`シフト申請の取得に失敗しました: ${fetchError?.message}`);
 
       // 出勤不可は提出時に自動承認済（DB trigger + submitPreference の二重ガード）。
       // 多重呼び出しレース対策として早期 return（no-op）。
@@ -179,14 +179,14 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
         throw new Error('開始・終了時刻が設定されていません');
       }
 
-      if (pref.store_id === null) throw new Error('シフト希望に店舗が紐付いていません');
+      if (pref.store_id === null) throw new Error('シフト申請に店舗が紐付いていません');
 
       // ステータスを承認済みに更新
       const { error: updateError } = await supabase
         .from('shift_preferences')
         .update({ status: 'approved' })
         .eq('id', preferenceId);
-      if (updateError) throw new Error(`希望の承認に失敗しました: ${updateError.message}`);
+      if (updateError) throw new Error(`シフト申請の承認に失敗しました: ${updateError.message}`);
 
       // shiftsテーブルにシフトを作成
       const { error: insertError } = await supabase
@@ -201,13 +201,13 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
           note: pref.note || null,
           store_id: pref.store_id,
         });
-      if (insertError) throw new Error(`シフト作成に失敗しました: ${insertError.message}`);
+      if (insertError) throw new Error(`確定シフトの作成に失敗しました: ${insertError.message}`);
 
       await notify({
         tenantId: pref.tenant_id,
         userId: pref.user_id,
         type: 'preference_approved' as NotificationType,
-        title: 'シフト希望が承認されました',
+        title: 'シフト申請が承認されました',
         link: `/shift?tab=preferences&date=${pref.date}`,
       });
     } catch (err) {
@@ -227,7 +227,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
         .select('user_id, tenant_id, date')
         .eq('id', preferenceId)
         .single();
-      if (fetchError || !pref) throw new Error(`希望の取得に失敗しました: ${fetchError?.message}`);
+      if (fetchError || !pref) throw new Error(`シフト申請の取得に失敗しました: ${fetchError?.message}`);
 
       const { error } = await supabase
         .from('shift_preferences')
@@ -239,7 +239,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
         tenantId: pref.tenant_id,
         userId: pref.user_id,
         type: 'preference_rejected' as NotificationType,
-        title: 'シフト希望が却下されました',
+        title: 'シフト申請が却下されました',
         link: '/shift?tab=preferences',
       });
     } catch (err) {
@@ -260,7 +260,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
         .select('*')
         .eq('id', preferenceId)
         .single();
-      if (fetchError || !pref) throw new Error(`希望の取得に失敗しました: ${fetchError?.message}`);
+      if (fetchError || !pref) throw new Error(`シフト申請の取得に失敗しました: ${fetchError?.message}`);
 
       // pendingなら何もしない
       if (pref.status === 'pending') return;
@@ -279,7 +279,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
             start_time: pref.start_time,
             end_time: pref.end_time,
           });
-        if (deleteError) throw new Error(`シフトの削除に失敗しました: ${deleteError.message}`);
+        if (deleteError) throw new Error(`確定シフトの削除に失敗しました: ${deleteError.message}`);
       }
 
       // ステータスをpendingに更新
@@ -287,13 +287,13 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
         .from('shift_preferences')
         .update({ status: 'pending' })
         .eq('id', preferenceId);
-      if (updateError) throw new Error(`希望の保留化に失敗しました: ${updateError.message}`);
+      if (updateError) throw new Error(`シフト申請の保留化に失敗しました: ${updateError.message}`);
 
       await notify({
         tenantId: pref.tenant_id,
         userId: pref.user_id,
         type: 'preference_reverted' as NotificationType,
-        title: 'シフト希望のステータスが戻されました',
+        title: 'シフト申請のステータスが戻されました',
         link: '/shift?tab=preferences',
       });
     } catch (err) {

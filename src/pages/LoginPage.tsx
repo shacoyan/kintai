@@ -33,12 +33,12 @@ function HeroSection() {
           Workforce Operations
         </p>
         <h1 className="font-serif text-[44px] xl:text-[52px] leading-tight font-bold mb-6">
-          シフトと勤怠を、
+          確定シフトと勤怠を、
           <br />
           静かに整える。
         </h1>
         <p className="text-[15px] leading-[1.8] text-white/70">
-          複数店舗のシフト希望、出退勤、給与計算までを一つに。
+          複数店舗のシフト申請、出退勤、給与計算までを一つに。
           <br />
           業務に集中できる、端正な業務ツールです。
         </p>

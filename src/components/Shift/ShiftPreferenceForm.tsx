@@ -135,7 +135,7 @@ export function ShiftPreferenceForm({
         role="note"
         className="text-sm text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-900 p-3 rounded-md"
       >
-        シフト希望は、希望日と時刻を選んで登録してください。締切前なら何度でも変更できます。
+        シフト申請は、希望日と時刻を選んで登録してください。締切前なら何度でも変更できます。
       </div>
 
       <p className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 tabular-nums">{date}</p>
@@ -156,7 +156,7 @@ export function ShiftPreferenceForm({
           role="status"
           className="rounded-md border border-warning-200 dark:border-warning-700 bg-warning-50 dark:bg-warning-900/30 px-3 py-2 text-xs text-warning-700 dark:text-warning-300"
         >
-          この日付には既に希望が登録されています。送信すると上書きされます。
+          この日付には既にシフト申請が登録されています。送信すると上書きされます。
         </div>
       )}
 

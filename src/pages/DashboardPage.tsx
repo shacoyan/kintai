@@ -256,7 +256,7 @@ export function DashboardPage() {
 
       {/* 今週のシフト */}
       <Card padding="md">
-        <Card.Header>今週のシフト</Card.Header>
+        <Card.Header>今週の確定シフト</Card.Header>
         <Card.Body>
           {shiftLoading ? (
             <div className="space-y-2">

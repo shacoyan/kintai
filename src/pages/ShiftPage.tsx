@@ -370,7 +370,7 @@ export function ShiftPage() {
       <div className="p-6">
         <Card padding="md">
           <Card.Body className="text-center text-sm text-neutral-700 dark:text-neutral-300">
-            店舗を選択してください。ヘッダーの店舗セレクターから操作対象の店舗を選ぶと、シフト・希望が表示されます。
+            店舗を選択してください。ヘッダーの店舗セレクターから操作対象の店舗を選ぶと、確定シフト・シフト申請が表示されます。
           </Card.Body>
         </Card>
       </div>
@@ -399,9 +399,10 @@ export function ShiftPage() {
       <div className="border-b border-neutral-200 dark:border-neutral-700">
         <nav className="flex space-x-8">
           {([
-            { id: 'shift' as TabId, label: 'シフト' },
-            { id: 'leave' as TabId, label: '休暇' },
-            { id: 'preference' as TabId, label: '希望' },
+            { id: 'shift' as TabId, label: '確定シフト' },
+            // hidden 2026-05-10: backlog で復活予定
+            // { id: 'leave' as TabId, label: '休暇' },
+            { id: 'preference' as TabId, label: 'シフト申請' },
           ]).map((tab) => (
             <button
               key={tab.id}
@@ -428,7 +429,7 @@ export function ShiftPage() {
         <div className="space-y-6">
           <header className="flex items-end justify-between gap-3">
             <div>
-              <Heading level={2}>シフト</Heading>
+              <Heading level={2}>確定シフト</Heading>
               <p className="text-sm text-neutral-500 dark:text-neutral-300 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
             </div>
             {canManageTenant && pendingShifts.length > 0 && (
@@ -471,7 +472,7 @@ export function ShiftPage() {
           <BottomSheet
             isOpen={!!selectedShiftDate}
             onClose={() => setSelectedShiftDate(null)}
-            title={selectedShiftDate ? `${selectedShiftDate} のシフト一覧` : ''}
+            title={selectedShiftDate ? `${selectedShiftDate} の確定シフト一覧` : ''}
           >
             <div className="space-y-2 p-4">
               {shifts.filter(s => s.date === selectedShiftDate).map(s => (
@@ -563,7 +564,7 @@ export function ShiftPage() {
                       <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-400 mt-0.5 shrink-0" aria-hidden="true" />
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-warning-800 dark:text-warning-200">
-                          シフト希望の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })}
+                          シフト申請の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })}
                         </p>
                         <p className="text-xs text-warning-700 dark:text-warning-300 mt-1 tabular-nums">
                           残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
@@ -601,7 +602,7 @@ export function ShiftPage() {
                           : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
                       }`}
                     >
-                      自分の希望
+                      自分のシフト申請
                     </button>
                     <button
                       type="button"
@@ -613,7 +614,7 @@ export function ShiftPage() {
                           : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
                       }`}
                     >
-                      全員の希望
+                      全員のシフト申請
                     </button>
                     {storeId && (
                       <button
@@ -653,7 +654,7 @@ export function ShiftPage() {
                           <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
                             {preferenceSummary.preferred}
                           </p>
-                          <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">希望日</p>
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">申請日</p>
                         </div>
                         <div className="border-x border-neutral-100 dark:border-neutral-700">
                           <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
@@ -715,7 +716,7 @@ export function ShiftPage() {
                   <BottomSheet
                     isOpen={!!selectedPrefDate}
                     onClose={() => setSelectedPrefDate(null)}
-                    title={selectedPrefDate ? `${selectedPrefDate} のシフト希望` : undefined}
+                    title={selectedPrefDate ? `${selectedPrefDate} のシフト申請` : undefined}
                   >
                     {selectedPrefDate && (
                       <ShiftPreferenceForm
@@ -736,7 +737,7 @@ export function ShiftPage() {
                   <BottomSheet
                     isOpen={!!allMemberPrefDate}
                     onClose={() => setAllMemberPrefDate(null)}
-                    title={allMemberPrefDate ? `${allMemberPrefDate} の希望一覧` : undefined}
+                    title={allMemberPrefDate ? `${allMemberPrefDate} のシフト申請一覧` : undefined}
                   >
                     <ul className="divide-y divide-neutral-100 dark:divide-neutral-700 p-2 space-y-2">
                       {allMemberPrefsForDate.length === 0 && (
@@ -777,7 +778,7 @@ export function ShiftPage() {
                       iconLeft={<Plus className="w-4 h-4" />}
                       onClick={() => setSelectedPrefDate(format(new Date(), 'yyyy-MM-dd'))}
                     >
-                      本日の希望を追加・編集
+                      本日のシフト申請を追加・編集
                     </Button>
                   </div>
                 )}

@@ -68,7 +68,7 @@ export function Sidebar() {
       <SectionLabel label="メイン" />
       <NavItem to="/" icon={Clock} label="打刻" />
       <NavItem to="/history" icon={List} label="履歴" />
-      <NavItem to="/shift" icon={Calendar} label="シフト" />
+      <NavItem to="/shift" icon={Calendar} label="確定シフト" />
 
       {isManagerial && (
         <>

@@ -79,7 +79,7 @@ for (const spec of SHIFT_TEMPLATE) {
     // ShiftPage.activeTab は useState 初期値 'shift' 固定で URL ?tab=preference を読まない。
     // staff 視点でも明示的に「希望」タブを click して ShiftPreferenceCalendar をマウントする。
     await page
-      .getByRole('button', { name: /^希望$/ })
+      .getByRole('button', { name: /^シフト申請$/ })
       .first()
       .click();
 

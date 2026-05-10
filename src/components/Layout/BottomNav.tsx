@@ -11,7 +11,7 @@ interface NavItemDef {
 const BASE_ITEMS: NavItemDef[] = [
   { to: '/', icon: Clock, label: '打刻' },
   { to: '/history', icon: List, label: '履歴' },
-  { to: '/shift', icon: Calendar, label: 'シフト' },
+  { to: '/shift', icon: Calendar, label: '確定シフト' },
 ];
 
 const ADMIN_ITEM: NavItemDef = {

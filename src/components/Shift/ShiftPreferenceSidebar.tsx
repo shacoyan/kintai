@@ -107,7 +107,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
   };
 
   return (
-    <aside aria-label="シフト希望サイドバー" className="w-[360px] sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4">
+    <aside aria-label="シフト申請サイドバー" className="w-[360px] sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4">
       {mode === 'admin' && (
         <>
           <Card padding="sm">
@@ -125,7 +125,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
 
           {adminSummary && (
             <Card padding="sm">
-              <Card.Header>{adminSummary.monthLabel}の希望</Card.Header>
+              <Card.Header>{adminSummary.monthLabel}のシフト申請</Card.Header>
               <div className="grid grid-cols-3 gap-2 text-center">
                 {PREFERENCE_THEME_LIST.map(t => (
                   <div key={t.type}>
@@ -148,7 +148,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
             </Card.Header>
             {!selectedDate ? (
               <div className="text-sm text-neutral-500">
-                カレンダーで日付を選択すると、その日のシフト希望一覧が表示されます。
+                カレンダーで日付を選択すると、その日のシフト申請一覧が表示されます。
               </div>
             ) : dateFilteredPreferences.length === 0 ? (
               <EmptyState
@@ -180,7 +180,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
                 {pendingPreferenceCount}
               </div>
               <div className="text-sm text-neutral-500 mt-1">
-                未対応の希望
+                未対応のシフト申請
               </div>
             </div>
           </Card>
@@ -208,7 +208,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
                 iconLeft={<Plus className="w-4 h-4" />}
                 onClick={() => onSelectedDateChange(format(new Date(), 'yyyy-MM-dd'))}
               >
-                本日の希望を追加・編集
+                本日のシフト申請を追加・編集
               </Button>
             )}
           </Card>

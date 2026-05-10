@@ -156,8 +156,8 @@ export function ShiftPreferenceCalendar({
       {isCurrentMonthEmpty && (
         <EmptyState
           tone="warning"
-          title="今月のシフト希望はまだありません"
-          action={nextPrefMonth ? { label: '次の希望がある月へ', onClick: navigateToNextPrefMonth, iconRight: <NextPrefIcon className="w-3 h-3" /> } : undefined}
+          title="今月のシフト申請はまだありません"
+          action={nextPrefMonth ? { label: '次のシフト申請がある月へ', onClick: navigateToNextPrefMonth, iconRight: <NextPrefIcon className="w-3 h-3" /> } : undefined}
         />
       )}
 
@@ -192,7 +192,7 @@ export function ShiftPreferenceCalendar({
           ' grid-cols-7 gap-1 md:gap-2'
         }
         role="grid"
-        aria-label="シフト希望カレンダー"
+        aria-label="シフト申請カレンダー"
         style={isAdminView ? { gridAutoRows: 'minmax(88px, auto)' } : { gridAutoRows: '1fr' }}
       >
         {dates.map((d, idx) => {
@@ -358,7 +358,7 @@ export function ShiftPreferenceCalendar({
         <div className="md:hidden flex flex-col gap-2">
           {dailyGroups.length === 0 && !isCurrentMonthEmpty && (
             <p className="text-xs text-neutral-500 dark:text-neutral-300 text-center py-4">
-              この月の希望データがありません
+              この月のシフト申請データがありません
             </p>
           )}
           {dailyGroups.map(({ date, dateStr, prefs }) => {
@@ -385,7 +385,7 @@ export function ShiftPreferenceCalendar({
                   type="button"
                   onClick={() => onDateClick(dateStr)}
                   className="w-full flex items-center justify-between px-3 py-2.5 border-b border-neutral-100 dark:border-neutral-700 focus-ring rounded-t-lg hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                  aria-label={`${format(date, 'M月d日 (E)', { locale: ja })} の希望一覧を開く`}
+                  aria-label={`${format(date, 'M月d日 (E)', { locale: ja })} のシフト申請一覧を開く`}
                 >
                   <span className={'text-sm font-semibold tabular-nums ' + dayColor}>
                     {format(date, 'M月d日 (E)', { locale: ja })}

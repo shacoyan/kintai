@@ -18,8 +18,8 @@ export const LOGIN = {
 
 /** カレンダー (希望提出 + 承認共通) */
 export const CALENDAR = {
-  /** カレンダー grid (role=grid, aria-label="シフト希望カレンダー") */
-  grid: { role: 'grid' as const, name: 'シフト希望カレンダー' },
+  /** カレンダー grid (role=grid, aria-label="シフト申請カレンダー") */
+  grid: { role: 'grid' as const, name: 'シフト申請カレンダー' },
   prevMonthButton: { role: 'button' as const, name: '前月' },
   nextMonthButton: { role: 'button' as const, name: '次月' },
   /** 月見出し例: "2026年5月" — `tabular-nums` クラスのテキストにマッチ */
@@ -61,7 +61,7 @@ export const DIALOG = {
 
 /** Admin 切替トグル (全員表示) */
 export const ADMIN = {
-  allMembersToggle: { role: 'button' as const, name: '全員の希望', exact: true },
+  allMembersToggle: { role: 'button' as const, name: '全員のシフト申請', exact: true },
 };
 
 /** 検証対象画面 */

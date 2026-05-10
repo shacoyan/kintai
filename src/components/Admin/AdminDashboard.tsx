@@ -58,6 +58,7 @@ const tabs = [
   { id: 'payroll' as const, label: '給与', icon: Wallet },
   { id: 'attendance' as const, label: '勤怠', icon: Clock },
   { id: 'corrections' as const, label: '修正', icon: Edit3 },
+  // hidden 2026-05-10: ナビからは filter で除外、render ロジック・型は温存（backlog で復活予定）
   { id: 'leaves' as const, label: '休暇', icon: Plane },
   { id: 'presets' as const, label: 'プリセット', icon: Sliders },
   { id: 'stores' as const, label: '店舗', icon: Store },
@@ -67,10 +68,15 @@ const tabs = [
 
 type TabId = typeof tabs[number]['id'];
 
+// hidden 2026-05-10: ナビ表示からは leaves を除外（render 分岐・キーボードナビは visibleTabs ベース、型は tabs 全体ベースで温存）
+const HIDDEN_TAB_IDS = new Set<TabId>(['leaves']);
+const visibleTabs = tabs.filter(t => !HIDDEN_TAB_IDS.has(t.id));
+
 const SECTIONS = [
   { label: '概要', items: ['dashboard'] },
   { label: 'メンバー管理', items: ['members'] },
-  { label: '給与・勤怠', items: ['payroll', 'attendance', 'corrections', 'leaves', 'mismatch'] },
+  // hidden 2026-05-10: 'leaves' は backlog で復活予定
+  { label: '給与・勤怠', items: ['payroll', 'attendance', 'corrections', 'mismatch'] },
   { label: '設定', items: ['presets', 'stores', 'settings'] },
 ] as const;
 
@@ -102,7 +108,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   }, []);
 
   const onTabKeyDown = useCallback((e: React.KeyboardEvent, idx: number) => {
-    const enabledTabs = tabs;
+    const enabledTabs = visibleTabs;
     let nextIdx = idx;
 
     if (isPC && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
@@ -354,7 +360,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   <div className="flex items-center gap-2">
                     <UserX className="w-5 h-5 text-warning-600" aria-hidden="true" />
                     <Heading level={3} as="h2">
-                      シフト希望 未提出メンバー
+                      シフト申請 未提出メンバー
                     </Heading>
                   </div>
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
@@ -362,7 +368,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   </span>
                 </div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-300 mb-3">
-                  対象月（{format(unsubmittedTargetMonth, 'yyyy年M月')}）に希望提出がないメンバー一覧です。
+                  対象月（{format(unsubmittedTargetMonth, 'yyyy年M月')}）にシフト申請がないメンバー一覧です。
                 </p>
                 <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
                   {unsubmittedMembers.map((m) => (
@@ -495,9 +501,9 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <Card padding="md">
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
-                    <Heading level={3} as="h2">シフト希望締切</Heading>
+                    <Heading level={3} as="h2">シフト申請締切</Heading>
                     <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
-                      対象月（{format(startOfMonth(new Date()), 'yyyy年M月')}）の希望提出締切日時を設定します。
+                      対象月（{format(startOfMonth(new Date()), 'yyyy年M月')}）のシフト申請締切日時を設定します。
                     </p>
                   </div>
                   <Button
@@ -505,7 +511,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                     iconLeft={<CalendarClock size={16} />}
                     onClick={() => setDeadlineModalOpen(true)}
                   >
-                    シフト希望締切を設定
+                    シフト申請締切を設定
                   </Button>
                 </div>
               </Card>
@@ -591,7 +597,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       {/* Mobile tabs - horizontal scroll */}
       <div className="md:hidden border-b border-neutral-200 dark:border-neutral-700 overflow-x-auto -mx-4 px-4">
         <nav role="tablist" className="flex space-x-1 min-w-max" style={{ scrollSnapType: 'x mandatory' }}>
-          {tabs.map((tab, idx) => (
+          {visibleTabs.map((tab, idx) => (
             <button
               key={tab.id}
               role="tab"
@@ -645,8 +651,8 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 <div key={section.label} role="presentation">
                   {sectionIndex > 0 && <div className="border-t border-neutral-100 dark:border-neutral-800 my-2" role="presentation" />}
                   <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider px-3 pt-3 pb-1" role="presentation">{section.label}</div>
-                  {tabs.filter(tab => (section.items as readonly string[]).includes(tab.id)).map((tab) => {
-                    const tabIdx = tabs.findIndex(t => t.id === tab.id);
+                  {visibleTabs.filter(tab => (section.items as readonly string[]).includes(tab.id)).map((tab) => {
+                    const tabIdx = visibleTabs.findIndex(t => t.id === tab.id);
                     const isActive = activeTab === tab.id;
                     return (
                       <button

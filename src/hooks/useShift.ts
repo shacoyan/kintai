@@ -116,7 +116,7 @@ export function useShift(tenantId: string, storeId: string | null) {
         note: note || null,
         store_id: effectiveStoreId,
       });
-    if (e) throw new Error(`シフト申請に失敗しました: ${e.message}`);
+    if (e) throw new Error(`確定シフトの作成に失敗しました: ${e.message}`);
   }, [tenantId, storeId]);
 
   const deleteShift = useCallback(async (shiftId: string) => {
@@ -124,7 +124,7 @@ export function useShift(tenantId: string, storeId: string | null) {
       .from('shifts')
       .delete()
       .eq('id', shiftId);
-    if (e) throw new Error(`シフト削除に失敗しました: ${e.message}`);
+    if (e) throw new Error(`確定シフトの削除に失敗しました: ${e.message}`);
   }, []);
 
   const cancelShift = useCallback(async (shiftId: string) => {
@@ -133,7 +133,7 @@ export function useShift(tenantId: string, storeId: string | null) {
       .update({ status: 'cancelled' })
       .eq('id', shiftId)
       .eq('status', 'pending');
-    if (e) throw new Error(`シフト取り消しに失敗しました: ${e.message}`);
+    if (e) throw new Error(`確定シフトの取り消しに失敗しました: ${e.message}`);
   }, []);
 
   const approveShift = useCallback(async (shiftId: string) => {
@@ -149,13 +149,13 @@ export function useShift(tenantId: string, storeId: string | null) {
       .eq('id', shiftId)
       .select('user_id, date, start_time')
       .single();
-    if (e) throw new Error(`シフト承認に失敗しました: ${e.message}`);
+    if (e) throw new Error(`確定シフトの承認に失敗しました: ${e.message}`);
     await notify({
       tenantId: tenantId,
       userId: data.user_id,
       type: 'shift_approved',
-      title: 'シフトが承認されました',
-      body: `${data.date} のシフトが承認されました`,
+      title: '確定シフトが承認されました',
+      body: `${data.date} の確定シフトが承認されました`,
       link: '/shift?date=' + data.date,
     });
   }, [tenantId]);
@@ -173,13 +173,13 @@ export function useShift(tenantId: string, storeId: string | null) {
       .eq('id', shiftId)
       .select('user_id, date, start_time')
       .single();
-    if (e) throw new Error(`シフト却下に失敗しました: ${e.message}`);
+    if (e) throw new Error(`確定シフトの却下に失敗しました: ${e.message}`);
     await notify({
       tenantId: tenantId,
       userId: data.user_id,
       type: 'shift_rejected',
-      title: 'シフトが却下されました',
-      body: `${data.date} のシフトが却下されました`,
+      title: '確定シフトが却下されました',
+      body: `${data.date} の確定シフトが却下されました`,
       link: '/shift?date=' + data.date,
     });
   }, [tenantId]);
@@ -208,7 +208,7 @@ export function useShift(tenantId: string, storeId: string | null) {
         ...(newStoreId !== undefined ? { store_id: newStoreId } : {}),
       })
       .eq('id', shiftId);
-    if (e) throw new Error(`シフト修正に失敗しました: ${e.message}`);
+    if (e) throw new Error(`確定シフトの修正に失敗しました: ${e.message}`);
   }, []);
 
   const bulkApprove = useCallback(async (shiftIds: string[]) => {
