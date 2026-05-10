@@ -1,0 +1,100 @@
+-- 043b_drop_legacy_deadline_policies.sql
+-- 目的:
+--   037 (consolidated_catchup) は prod に既適用 (2026-05-04 直接 apply 経緯) で、
+--   下記 037 由来の旧 PERMISSIVE policy が現存する:
+--     - shift_preferences_update_with_deadline   (FOR UPDATE)
+--     - shift_preferences_delete_self_or_manager (FOR DELETE)
+--     - shift_preferences_insert_with_deadline   (FOR INSERT)
+--
+--   043 で追加した新 policy
+--     - shift_preferences_update_self_pre_approval
+--     - shift_preferences_delete_self_pre_approval
+--     - shift_preferences_insert_self
+--   は同 cmd で AS PERMISSIVE のため、Postgres の RLS 評価仕様により
+--   旧 policy と OR 結合される。これにより 043 の「approved (≠ unavailable)
+--   は staff 編集不可」というガードが旧 _update_with_deadline 側の
+--   「user_id = auth.uid() なら通す」分岐で空洞化していた
+--   (2026-05-10 統合工程で本番 pg_policy 検査により発見)。
+--
+--   本 043b は UPDATE / DELETE 側の旧 policy を DROP し、
+--   043 の状態遷移ガードを単独で効かせる。
+--
+-- INSERT 側 (shift_preferences_insert_with_deadline) について:
+--   B-2「承認後ロック」とは無関係 (INSERT は status pending デフォルトで
+--   ロック対象外) のため、本 043b では DROP しない。INSERT 側 deadline
+--   ガードの本格復活は別 Loop (P2) で扱う。
+--
+-- 037 / 043 / 043b 統合後の最終 policy 構成 (期待値):
+--   FOR SELECT : "Managers can view all shift_preferences" (017) /
+--                "shift_preferences_select_self" (043)
+--   FOR INSERT : "shift_preferences_insert_self" (043) /
+--                "shift_preferences_insert_with_deadline" (037, 暫定温存)
+--   FOR UPDATE : "shift_preferences_update_self_pre_approval" (043) /
+--                "shift_preferences_manager_update" (039)
+--   FOR DELETE : "shift_preferences_delete_self_pre_approval" (043)
+
+BEGIN;
+
+DROP POLICY IF EXISTS "shift_preferences_update_with_deadline" ON public.shift_preferences;
+DROP POLICY IF EXISTS "shift_preferences_delete_self_or_manager" ON public.shift_preferences;
+
+COMMIT;
+
+-- ==========================================================================
+-- ROLLBACK 手順 (apply 後の緊急切戻し用、本ファイルでは実行しない)
+-- ==========================================================================
+-- BEGIN;
+--
+-- CREATE POLICY "shift_preferences_update_with_deadline"
+--   ON public.shift_preferences
+--   FOR UPDATE
+--   TO authenticated
+--   USING (
+--     tenant_id IN (SELECT get_my_tenant_ids())
+--     AND (
+--       user_id = auth.uid()
+--       OR EXISTS (
+--         SELECT 1 FROM tenant_members
+--         WHERE tenant_members.tenant_id = shift_preferences.tenant_id
+--           AND tenant_members.user_id = auth.uid()
+--           AND tenant_members.role = ANY (ARRAY['owner','manager'])
+--       )
+--     )
+--   )
+--   WITH CHECK (
+--     tenant_id IN (SELECT get_my_tenant_ids())
+--     AND (
+--       EXISTS (
+--         SELECT 1 FROM tenant_members
+--         WHERE tenant_members.tenant_id = shift_preferences.tenant_id
+--           AND tenant_members.user_id = auth.uid()
+--           AND tenant_members.role = ANY (ARRAY['owner','manager'])
+--       )
+--       OR (
+--         user_id = auth.uid()
+--         AND NOT EXISTS (
+--           SELECT 1 FROM shift_submission_deadlines d
+--           WHERE d.tenant_id = shift_preferences.tenant_id
+--             AND d.store_id = shift_preferences.store_id
+--             AND d.target_month = (date_trunc('month', shift_preferences.date::timestamptz))::date
+--             AND d.deadline_at < now()
+--         )
+--       )
+--     )
+--   );
+--
+-- CREATE POLICY "shift_preferences_delete_self_or_manager"
+--   ON public.shift_preferences
+--   FOR DELETE
+--   TO authenticated
+--   USING (
+--     user_id = auth.uid()
+--     OR EXISTS (
+--       SELECT 1 FROM tenant_members
+--       WHERE tenant_members.tenant_id = shift_preferences.tenant_id
+--         AND tenant_members.user_id = auth.uid()
+--         AND tenant_members.role = ANY (ARRAY['owner','manager'])
+--     )
+--   );
+--
+-- COMMIT;

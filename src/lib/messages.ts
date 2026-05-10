@@ -113,4 +113,98 @@ export const messages = {
     /** @i18n-key onboarding.saveError */
     saveError: '保存に失敗しました',
   },
+  /** @i18n-prefix invite */
+  invite: {
+    /** @i18n-namespace invite */
+    /** @i18n-key invite.urlIssueTitle */
+    urlIssueTitle: '招待URLを発行',
+    /** @i18n-key invite.urlIssueDescription */
+    urlIssueDescription:
+      'この招待URLで参加するメンバーを、以下の店舗に自動的に配属します。',
+    /** @i18n-key invite.storesLabel */
+    storesLabel: '配属先店舗（任意・複数選択可）',
+    /** @i18n-key invite.storesEmpty */
+    storesEmpty: '※ 何も選択しなければテナント加入のみとなります',
+    /** @i18n-key invite.storesPrimaryHint */
+    storesPrimaryHint: '※ 複数選択時は最上位の店舗が「主店舗」になります',
+    /** @i18n-key invite.storesNone */
+    storesNone: '店舗が登録されていません',
+    /** @i18n-key invite.expiresLabel */
+    expiresLabel: '有効期限',
+    /** @i18n-key invite.maxUsesLabel */
+    maxUsesLabel: '使用回数',
+    /** @i18n-key invite.urlPlaceholder */
+    urlPlaceholder: '発行ボタンを押すと招待URLが表示されます',
+    /** @i18n-key invite.urlLabel */
+    urlLabel: '招待URL',
+    /** @i18n-key invite.copyButton */
+    copyButton: 'コピー',
+    /** @i18n-key invite.copied */
+    copied: '招待URLをコピーしました',
+    /** @i18n-key invite.copyFailed */
+    copyFailed: 'コピーに失敗しました。手動で選択してコピーしてください。',
+    /** @i18n-key invite.issueButton */
+    issueButton: '招待URLを発行',
+    /** @i18n-key invite.reissueButton */
+    reissueButton: '招待URLを再発行',
+    /** @i18n-key invite.cancelButton */
+    cancelButton: 'キャンセル',
+    /** @i18n-key invite.urlIssued */
+    urlIssued: '招待URLを発行しました',
+    /** @i18n-key invite.reissueWarning */
+    reissueWarning:
+      '再発行すると以前の招待URLは無効になり、使用回数カウントは 0 にリセットされます。',
+    /** @i18n-key invite.permissionDenied */
+    permissionDenied: 'オーナーまたは店長のみ実行可能です',
+    /** @i18n-key invite.joinTitle {tenantName} */
+    joinTitle: (tenantName: string): string => `${tenantName} へ招待されています`,
+    /** @i18n-key invite.joinTitleFallback */
+    joinTitleFallback: 'kintai に招待されています',
+    /** @i18n-key invite.joinDescription */
+    joinDescription:
+      'ログイン後、加入後にあらためて本名（管理者のみが閲覧）の入力をお願いします。',
+    /** @i18n-key invite.assignedStoresLabel */
+    assignedStoresLabel: '配属予定の店舗',
+    /** @i18n-key invite.assignedStoresNone */
+    assignedStoresNone: '店舗の配属はありません（テナント加入のみ）',
+    /** @i18n-key invite.primaryStoreSuffix */
+    primaryStoreSuffix: '（主）',
+    /** @i18n-key invite.joinButton */
+    joinButton: '参加する',
+    /** @i18n-key invite.backHomeButton */
+    backHomeButton: 'ホームへ戻る',
+    /** @i18n-key invite.goDashboardButton */
+    goDashboardButton: 'ダッシュボードへ',
+    /** @i18n-key invite.alreadyMember */
+    alreadyMember: 'すでにこのテナントに参加しています',
+    /** @i18n-key invite.codeNotFound */
+    codeNotFound: '招待コードが見つかりません',
+    /** @i18n-key invite.codeExpired */
+    codeExpired: '招待コードの有効期限が切れています',
+    /** @i18n-key invite.codeMaxUsesReached */
+    codeMaxUsesReached: '招待コードの使用回数上限に達しました',
+    /** @i18n-key invite.codeInvalid */
+    codeInvalid: '無効な招待コードです',
+    /** @i18n-key invite.joinFailed */
+    joinFailed: '参加に失敗しました。しばらく待ってから再度お試しください。',
+    /** @i18n-key invite.previewUnavailable */
+    previewUnavailable: 'ログイン後に招待先の情報が表示されます。',
+    /** @i18n-key invite.urlValidUntil {date} */
+    urlValidUntil: (date: string): string => `有効期限: ${date}`,
+    /** @i18n-key invite.urlValidIndefinitely */
+    urlValidIndefinitely: '有効期限: 無期限',
+    /** @i18n-key invite.usageStatus {used},{max} */
+    usageStatus: (used: number, max: number): string => `使用回数: ${used} / ${max}`,
+    /** @i18n-key invite.usageStatusUnlimited {used} */
+    usageStatusUnlimited: (used: number): string => `使用回数: ${used} / 無制限`,
+  },
+  /** @i18n-prefix shiftPreference */
+  shiftPreference: {
+    /** @i18n-key shiftPreference.approvedLockedTitle */
+    approvedLockedTitle: '承認済みのシフト申請は変更できません',
+    /** @i18n-key shiftPreference.approvedLockedDescription */
+    approvedLockedDescription: '修正が必要な場合は店長にご相談ください。',
+    /** @i18n-key shiftPreference.unavailableApprovedNotice */
+    unavailableApprovedNotice: '出勤不可の解除は店長に通知され、承認が再度必要になります。',
+  },
 } as const;

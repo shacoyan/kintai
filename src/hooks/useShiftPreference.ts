@@ -37,12 +37,9 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
   const [error, setError] = useState<FriendlyError | null>(null);
   const clearError = useCallback(() => setError(null), []);
 
-  // 自分のシフト希望を期間で取得
+  // 自分のシフト希望を期間で取得（B-1 修正: 店舗横断で全店舗の自分の希望を取得する）
+  // tenant_id + user_id + 期間で絞る。store_id フィルタは廃止（複数店舗所属者対応）。
   const fetchMyPreferences = useCallback(async (startDate: string, endDate: string) => {
-    if (storeId === null) {
-      setMyPreferences([]);
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
@@ -52,7 +49,6 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
         .from('shift_preferences')
         .select('*')
         .eq('tenant_id', tenantId)
-        .eq('store_id', storeId)
         .eq('user_id', user.id)
         .gte('date', startDate)
         .lte('date', endDate)
@@ -66,7 +62,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [tenantId, storeId]);
+  }, [tenantId]);
 
   // 店長: 全員分の希望を取得
   const fetchAllPreferences = useCallback(async (startDate: string, endDate: string) => {

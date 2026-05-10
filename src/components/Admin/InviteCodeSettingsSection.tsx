@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react';
+import { Link2 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
 import { Heading } from '../ui/Heading';
 import { messages } from '../../lib/messages';
+import { InviteUrlIssueModal } from './InviteUrlIssueModal';
 
 interface InviteCodeSettingsSectionProps {
   tenantId: string;
@@ -41,13 +43,16 @@ function formatExpiresAt(iso: string | null | undefined): string {
 export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps> = ({
   tenantId,
 }) => {
-  const { currentTenant, isOwner, regenerateInviteCode } = useTenant();
+  const { currentTenant, isOwner, isManager, regenerateInviteCode } = useTenant();
   const { showToast } = useToast();
 
   const [expiresInDays, setExpiresInDays] = useState<ExpiresOption>(7);
   const [maxUses, setMaxUses] = useState<MaxUsesOption>(3);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [urlModalOpen, setUrlModalOpen] = useState<boolean>(false);
+
+  const canManageInvite = isOwner || isManager;
 
   const inviteCode = currentTenant?.invite_code ?? '';
   const expiresAt = currentTenant?.invite_code_expires_at ?? null;
@@ -58,14 +63,14 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
     return Math.max(0, codeMax - codeUsed);
   }, [codeMax, codeUsed]);
 
-  if (!isOwner) {
+  if (!canManageInvite) {
     return (
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4 border border-neutral-100 dark:border-neutral-700">
         <Heading level={2} as="h3" className="mb-2">
           招待コード設定
         </Heading>
         <p className="text-sm text-neutral-500 dark:text-neutral-300">
-          オーナーのみ実行可能です
+          {messages.invite.permissionDenied}
         </p>
       </div>
     );
@@ -177,7 +182,17 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
         </div>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:items-center">
+        <button
+          type="button"
+          onClick={() => setUrlModalOpen(true)}
+          disabled={submitting}
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-primary-700 dark:text-primary-300 bg-white dark:bg-neutral-800 border border-primary-300 dark:border-primary-700 rounded-md hover:bg-primary-50 dark:hover:bg-primary-900/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400 disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label={messages.invite.urlIssueTitle}
+        >
+          <Link2 className="h-4 w-4" aria-hidden="true" />
+          {messages.invite.issueButton}
+        </button>
         <button
           type="button"
           onClick={handleRegenerate}
@@ -191,6 +206,12 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
       <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-300 leading-relaxed">
         再発行すると以前のコードは無効になります。設定した期限・回数は新コードに適用され、使用回数カウントは 0 にリセットされます。
       </p>
+
+      <InviteUrlIssueModal
+        tenantId={tenantId}
+        isOpen={urlModalOpen}
+        onClose={() => setUrlModalOpen(false)}
+      />
     </div>
   );
 };

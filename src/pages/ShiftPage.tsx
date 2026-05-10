@@ -721,7 +721,7 @@ export function ShiftPage() {
                     {selectedPrefDate && (
                       <ShiftPreferenceForm
                         date={selectedPrefDate}
-                        existingPreference={myPreferences.find((p) => p.date === selectedPrefDate)}
+                        existingPreference={myPreferences.find((p) => p.date === selectedPrefDate && p.store_id === storeId) ?? myPreferences.find((p) => p.date === selectedPrefDate)}
                         onSubmit={handlePrefSubmit}
                         onDelete={handlePrefDelete}
                         onCancel={() => setSelectedPrefDate(null)}

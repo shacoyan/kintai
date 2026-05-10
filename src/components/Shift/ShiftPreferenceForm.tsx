@@ -74,10 +74,20 @@ export function ShiftPreferenceForm({
   const showTimeFields = preferenceType !== 'unavailable';
   // 締切ガード: 締切後かつバイパス権限なし → 送信不可（client guard。RLS でも二重ガードされる）
   const lockedByDeadline = isDeadlinePassed && !canBypassDeadline;
+  // 承認済みガード: approved & non-unavailable → 変更・削除不可（B-2）
+  const lockedByApproval =
+    existingPreference?.status === 'approved' && existingPreference.preference_type !== 'unavailable';
+  // 承認済み unavailable → 編集可能だが警告表示（解除すると pending に戻る）
+  const isUnavailableApproved =
+    existingPreference?.status === 'approved' && existingPreference.preference_type === 'unavailable';
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (lockedByApproval) {
+      setError(messages.shiftPreference.approvedLockedTitle);
+      return;
+    }
     if (lockedByDeadline) {
       setError(messages.validation.deadlinePassed);
       return;
@@ -114,6 +124,10 @@ export function ShiftPreferenceForm({
 
   const handleDelete = async () => {
     if (!existingPreference || !onDelete) return;
+    if (lockedByApproval) {
+      setError(messages.shiftPreference.approvedLockedTitle);
+      return;
+    }
     setError(null);
     setDeleting(true);
     try {
@@ -126,7 +140,7 @@ export function ShiftPreferenceForm({
   };
 
   const busy = submitting || deleting;
-  const submitDisabled = busy || lockedByDeadline;
+  const submitDisabled = busy || lockedByDeadline || lockedByApproval;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5" aria-busy={busy || undefined} aria-describedby="shift-pref-form-help">
@@ -151,7 +165,26 @@ export function ShiftPreferenceForm({
         </div>
       )}
 
-      {existingPreference && (
+      {lockedByApproval && (
+        <div
+          role="alert"
+          className="rounded-md border border-danger-200 dark:border-danger-800 bg-danger-50 dark:bg-danger-900/30 px-3 py-2 text-xs text-danger-800 dark:text-danger-200"
+        >
+          <p className="font-semibold">{messages.shiftPreference.approvedLockedTitle}</p>
+          <p>{messages.shiftPreference.approvedLockedDescription}</p>
+        </div>
+      )}
+
+      {isUnavailableApproved && (
+        <div
+          role="status"
+          className="rounded-md border border-info-200 dark:border-info-800 bg-info-50 dark:bg-info-900/30 px-3 py-2 text-xs text-info-800 dark:text-info-200"
+        >
+          {messages.shiftPreference.unavailableApprovedNotice}
+        </div>
+      )}
+
+      {existingPreference && !lockedByApproval && !isUnavailableApproved && (
         <div
           role="status"
           className="rounded-md border border-warning-200 dark:border-warning-700 bg-warning-50 dark:bg-warning-900/30 px-3 py-2 text-xs text-warning-700 dark:text-warning-300"
@@ -284,6 +317,11 @@ export function ShiftPreferenceForm({
         >
           {existingPreference ? '上書きする' : '登録する'}
         </Button>
+        {lockedByApproval && (
+          <p className="text-xs text-neutral-500 dark:text-neutral-300 text-center">
+            承認済みの申請は変更できません
+          </p>
+        )}
         {lockedByDeadline && (
           <p className="text-xs text-neutral-500 dark:text-neutral-300 text-center">
             締切後のため送信できません
@@ -296,7 +334,7 @@ export function ShiftPreferenceForm({
             size="md"
             fullWidth
             loading={deleting}
-            disabled={busy}
+            disabled={busy || lockedByApproval}
             iconLeft={<Trash2 className="w-4 h-4" />}
             onClick={handleDelete}
           >

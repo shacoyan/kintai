@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { LoginForm } from '../components/Auth/LoginForm';
 import { BrandMark, PageLoader, Heading } from '../components/ui';
+import { getPendingJoinCode } from '../lib/inviteUrl';
 
 function HeroSection() {
   return (
@@ -66,6 +67,13 @@ export const LoginPage = function LoginPage() {
   }
 
   if (user) {
+    // 招待URL復帰: ログイン直前に保存された pending_join_code があれば /join へ戻す。
+    // 設計書: .company/engineering/docs/2026-05-10-kintai-invite-url-techdesign.md §3.5 / §5.5
+    // localStorage 削除は JoinPage 側で「成功」or「挽回不能エラー」確定時に実行する。
+    const pendingJoinCode = getPendingJoinCode();
+    if (pendingJoinCode) {
+      return <Navigate to={`/join?code=${encodeURIComponent(pendingJoinCode)}`} replace />;
+    }
     return <Navigate to="/" replace />;
   }
 

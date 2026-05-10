@@ -67,8 +67,12 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
 
   const existingPreference = useMemo(() => {
     if (!selectedDate) return undefined;
-    return myPreferences.find(p => p.date === selectedDate);
-  }, [myPreferences, selectedDate]);
+    // B-1 修正: 同日に複数店舗の自分行が存在する場合 currentStore (defaultStoreId) を優先
+    return (
+      myPreferences.find(p => p.date === selectedDate && p.store_id === defaultStoreId)
+      ?? myPreferences.find(p => p.date === selectedDate)
+    );
+  }, [myPreferences, selectedDate, defaultStoreId]);
 
   const formattedSelectedDate = useMemo(() => {
     if (!selectedDate) return '日付を選択';

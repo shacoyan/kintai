@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { logger } from '../lib/logger';
+import { clearPendingJoinCode } from '../lib/inviteUrl';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { formatSupabaseError } from '../lib/errors';
@@ -14,11 +15,13 @@ interface TenantContextType {
   fetchTenants: () => Promise<TenantWithRole[]>;
   createTenant: (name: string, displayName: string) => Promise<Tenant>;
   joinTenant: (inviteCode: string, displayName: string) => Promise<Tenant>;
+  joinTenantViaUrl: (code: string, displayName: string) => Promise<Tenant>;
   regenerateInviteCode: (
     tenantId?: string,
     opts?: {
       expiresInDays?: 1 | 7 | 30 | null;
       maxUses?: 1 | 3 | 10 | null;
+      storeIds?: string[];
     }
   ) => Promise<string>;
   updateTenantName: (tenantId: string, newName: string) => Promise<void>;
@@ -217,7 +220,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // L12 Phase 2 (Reviewer M3): atomic な join — SELECT FOR UPDATE → 検証 → INSERT → +1 を
       // 1 トランザクションで完結する RPC に集約。フロント側で SELECT/INSERT を分けると
       // 上限 1 のコードに同時 join した際、両者が tenant_members INSERT に成功してしまう。
-      const { data: joinedTenantId, error: rpcError } = await supabase.rpc('join_tenant_with_invite', {
+      const { data: joinedTenantId, error: rpcError } = await supabase.rpc('join_tenant_with_invite_v2', {
         p_invite_code: inviteCode,
         p_display_name: displayName,
       });
@@ -258,10 +261,11 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     opts?: {
       expiresInDays?: 1 | 7 | 30 | null;
       maxUses?: 1 | 3 | 10 | null;
+      storeIds?: string[];
     }
   ): Promise<string> => {
     if (!currentTenant) throw new Error('テナントが選択されていません');
-    if (myRole !== 'owner') throw new Error('オーナーのみ実行可能です');
+    if (myRole !== 'owner' && myRole !== 'manager') throw new Error('オーナーまたは店長のみ実行可能です');
 
     const targetId = tenantId ?? currentTenant.id;
     if (targetId !== currentTenant.id) {
@@ -278,27 +282,26 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           ? new Date(Date.now() + opts.expiresInDays * 86400000).toISOString()
           : null;
       const maxUses = opts?.maxUses ?? null;
+      // storeIds 未指定 (undefined) → null を渡し RPC 側で既存紐付けを保持。
+      // 明示的に [] を渡された場合のみ全削除（クリア）。
+      const storeIds = opts?.storeIds === undefined ? null : opts.storeIds;
 
-      const updatePayload: {
-        invite_code: string;
-        invite_code_expires_at: string | null;
-        invite_code_max_uses: number | null;
-        invite_code_used_count: number;
-      } = {
-        invite_code: newCode,
-        invite_code_expires_at: expiresAt,
-        invite_code_max_uses: maxUses,
-        invite_code_used_count: 0,
-      };
+      const { error: rpcError } = await supabase.rpc('regenerate_invite_code_with_stores', {
+        p_tenant_id: targetId,
+        p_new_code: newCode,
+        p_expires_at: expiresAt,
+        p_max_uses: maxUses,
+        p_store_ids: storeIds,
+      });
 
-      const { error: updateError } = await supabase
-        .from('tenants')
-        .update(updatePayload)
-        .eq('id', targetId)
-        .select()
-        .single();
-
-      if (updateError) throw updateError;
+      if (rpcError) {
+        const msg = (rpcError.message || '').toLowerCase();
+        if (msg.includes('not_authorized')) throw new Error('オーナーまたは店長のみ実行可能です');
+        if (msg.includes('cross_tenant_store')) throw new Error('指定された店舗がテナントに属していません');
+        if (msg.includes('invalid_max_uses')) throw new Error('使用回数上限の値が無効です');
+        if (msg.includes('duplicate_invite_code')) throw new Error('招待コードの生成に失敗しました。もう一度お試しください。');
+        throw new Error(formatSupabaseError(rpcError).message);
+      }
 
       setCurrentTenant({
         ...currentTenant,
@@ -317,6 +320,14 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLoading(false);
     }
   }, [currentTenant, myRole, generateUniqueInviteCode, setCurrentTenant, fetchTenants]);
+
+  const joinTenantViaUrl = useCallback(async (code: string, displayName: string): Promise<Tenant> => {
+    // URL 経由 join のラッパ。成功時のみ pending_join_code を消す。
+    // エラー時は JoinPage 側で「ホームへ戻る」ボタンや再試行に応じて clear する責務を持たせる。
+    const result = await joinTenant(code, displayName);
+    clearPendingJoinCode();
+    return result;
+  }, [joinTenant]);
 
   const updateTenantName = useCallback(async (tenantId: string, newName: string): Promise<void> => {
     if (myRole !== 'owner') throw new Error('オーナーのみ実行可能です');
@@ -547,6 +558,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       fetchTenants,
       createTenant,
       joinTenant,
+      joinTenantViaUrl,
       regenerateInviteCode,
       updateTenantName,
       leaveTenant,

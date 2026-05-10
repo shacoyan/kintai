@@ -9,6 +9,7 @@ import { RequireTenant } from './components/Auth/RequireTenant';
 import { Layout } from './components/Layout/Layout';
 import { LoginPage } from './pages/LoginPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { JoinPage } from './pages/JoinPage';
 import TenantPage from './pages/TenantPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { HistoryPage } from './pages/HistoryPage';
@@ -37,6 +38,14 @@ const App: React.FC = () => {
               element={
                 <ErrorBoundary scope="route">
                   <ResetPasswordPage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/join"
+              element={
+                <ErrorBoundary scope="route">
+                  <JoinPage />
                 </ErrorBoundary>
               }
             />
