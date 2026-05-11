@@ -75,7 +75,22 @@ export const PREFERENCE_THEME_LIST: PreferenceTheme[] = [
   PREFERENCE_THEME.unavailable,
 ];
 
-/** 指定した希望タイプのテーマを取得する純関数 */
+/**
+ * 指定した希望タイプのテーマを取得する純関数。
+ *
+ * 想定外の値（旧 bundle 残留や DB 流入の `available` 等）を受けた場合は
+ * `'preferred'` テーマへ fallback し、開発環境でのみ警告を出す。
+ * SW キャッシュ bump（v3）と二重防御の関係で、過渡期の表示クラッシュを
+ * 防ぐための idempotent な救済処理。
+ */
 export function getPreferenceTheme(type: ShiftPreferenceType): PreferenceTheme {
-  return PREFERENCE_THEME[type];
+  const theme = PREFERENCE_THEME[type];
+  if (theme) return theme;
+  if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[preferenceTheme] unknown preference_type: ${String(type)}, falling back to 'preferred'`,
+    );
+  }
+  return PREFERENCE_THEME.preferred;
 }

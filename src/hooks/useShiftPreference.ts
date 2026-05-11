@@ -102,6 +102,20 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     storeIdOverride?: string,
   ) => {
     setError(null);
+
+    // 旧 bundle 残留対策: 廃止済の 'available' を受けたら 'preferred' に正規化。
+    // SW v3 キャッシュ bump 後の過渡期と、稀な SW activate 遅延端末への二重防御。
+    // TS 型上は ShiftPreferenceType（'preferred' | 'unavailable'）だが、runtime では
+    // 旧 chunk から 'available' が紛れ込む可能性があるため as string で比較する。
+    const normalizedType: ShiftPreferenceType =
+      (preferenceType as string) === 'available' ? 'preferred' : preferenceType;
+    if (import.meta.env.DEV && normalizedType !== preferenceType) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[useShiftPreference] normalized legacy preference_type '${String(preferenceType)}' -> '${normalizedType}'`,
+      );
+    }
+
     const effectiveStoreId = storeIdOverride ?? storeId;
     if (effectiveStoreId === null) throw new Error('店舗が選択されていません');
     const { data: { user } } = await supabase.auth.getUser();
@@ -113,12 +127,12 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
           tenant_id: tenantId,
           user_id: user.id,
           date,
-          preference_type: preferenceType,
+          preference_type: normalizedType,
           start_time: startTime || null,
           end_time: endTime || null,
           note: note || null,
           store_id: effectiveStoreId,
-          status: preferenceType === 'unavailable' ? 'approved' : 'pending',
+          status: normalizedType === 'unavailable' ? 'approved' : 'pending',
         }, { onConflict: 'tenant_id,user_id,date,store_id' });
       if (error) throw error;
     } catch (err) {
