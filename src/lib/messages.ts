@@ -147,6 +147,16 @@ export const messages = {
     issueButton: '招待URLを発行',
     /** @i18n-key invite.reissueButton */
     reissueButton: '招待URLを再発行',
+    /** @i18n-key invite.shareButton */
+    shareButton: '招待URLを共有',
+    /** @i18n-key invite.resetLink */
+    resetLink: '招待コードをリセット',
+    /** @i18n-key invite.resetConfirm */
+    resetConfirm: '招待コードをリセットします。\n現在の招待URLは無効になり、新しい招待URLが発行されます。続行しますか？',
+    /** @i18n-key invite.resetSuccess */
+    resetSuccess: '招待コードをリセットしました',
+    /** @i18n-key invite.settingsUpdated */
+    settingsUpdated: '招待URLの設定を更新しました',
     /** @i18n-key invite.cancelButton */
     cancelButton: 'キャンセル',
     /** @i18n-key invite.urlIssued */

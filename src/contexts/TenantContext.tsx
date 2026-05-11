@@ -24,6 +24,14 @@ interface TenantContextType {
       storeIds?: string[];
     }
   ) => Promise<string>;
+  updateInviteSettings: (
+    tenantId?: string,
+    opts?: {
+      expiresInDays?: 1 | 7 | 30 | null;
+      maxUses?: 1 | 3 | 10 | null;
+      storeIds?: string[];
+    }
+  ) => Promise<void>;
   updateTenantName: (tenantId: string, newName: string) => Promise<void>;
   leaveTenant: () => Promise<void>;
   deleteTenant: () => Promise<void>;
@@ -321,6 +329,72 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentTenant, myRole, generateUniqueInviteCode, setCurrentTenant, fetchTenants]);
 
+  const updateInviteSettings = useCallback(async (
+    tenantId?: string,
+    opts?: {
+      expiresInDays?: 1 | 7 | 30 | null;
+      maxUses?: 1 | 3 | 10 | null;
+      storeIds?: string[];
+    }
+  ): Promise<void> => {
+    if (!currentTenant) throw new Error('テナントが選択されていません');
+    if (myRole !== 'owner' && myRole !== 'manager') {
+      throw new Error('オーナーまたは店長のみ実行可能です');
+    }
+
+    const targetId = tenantId ?? currentTenant.id;
+    if (targetId !== currentTenant.id) {
+      throw new Error('現在選択中のテナントのみ更新できます');
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const expiresAt =
+        opts?.expiresInDays != null && opts.expiresInDays > 0
+          ? new Date(Date.now() + opts.expiresInDays * 86400000).toISOString()
+          : null;
+      const maxUses = opts?.maxUses ?? null;
+      // storeIds 未指定 (undefined) → null を渡し RPC 側で既存紐付けを保持。
+      // 明示的に [] を渡された場合のみ全削除（クリア）。045 / 048 で同型 semantics。
+      const storeIds = opts?.storeIds === undefined ? null : opts.storeIds;
+
+      const { error: rpcError } = await supabase.rpc('update_invite_code_settings', {
+        p_tenant_id: targetId,
+        p_expires_at: expiresAt,
+        p_max_uses: maxUses,
+        p_store_ids: storeIds,
+      });
+
+      if (rpcError) {
+        const msg = (rpcError.message || '').toLowerCase();
+        if (msg.includes('invite_code_missing')) {
+          // 専用エラーオブジェクトで投げる → caller がフォールバック判定可能。
+          const err = new Error('invite_code_missing');
+          (err as Error & { code?: string }).code = 'INVITE_CODE_MISSING';
+          throw err;
+        }
+        if (msg.includes('not_authorized')) throw new Error('オーナーまたは店長のみ実行可能です');
+        if (msg.includes('cross_tenant_store')) throw new Error('指定された店舗がテナントに属していません');
+        if (msg.includes('invalid_max_uses')) throw new Error('使用回数上限の値が無効です');
+        throw new Error(formatSupabaseError(rpcError).message);
+      }
+
+      // 楽観更新: invite_code / invite_code_used_count は touch しない（設定のみ更新）。
+      setCurrentTenant({
+        ...currentTenant,
+        invite_code_expires_at: expiresAt,
+        invite_code_max_uses: maxUses,
+      });
+      await fetchTenants();
+    } catch (err: unknown) {
+      setError(formatSupabaseError(err).message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [currentTenant, myRole, setCurrentTenant, fetchTenants]);
+
   const joinTenantViaUrl = useCallback(async (code: string, displayName: string): Promise<Tenant> => {
     // URL 経由 join のラッパ。成功時のみ pending_join_code を消す。
     // エラー時は JoinPage 側で「ホームへ戻る」ボタンや再試行に応じて clear する責務を持たせる。
@@ -560,6 +634,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       joinTenant,
       joinTenantViaUrl,
       regenerateInviteCode,
+      updateInviteSettings,
       updateTenantName,
       leaveTenant,
       deleteTenant,

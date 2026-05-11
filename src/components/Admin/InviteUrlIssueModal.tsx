@@ -52,7 +52,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { currentTenant, isOwner, isManager, regenerateInviteCode } = useTenant();
+  const { currentTenant, isOwner, isManager, regenerateInviteCode, updateInviteSettings } = useTenant();
   const { showToast } = useToast();
   const { stores, fetchStores } = useStore(tenantId);
 
@@ -110,35 +110,111 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
     );
   };
 
+  const hasExistingCode = !!currentTenant?.invite_code;
+
+  /**
+   * 共通: 招待URL クリップボードコピー + Toast 表示。
+   * 成功時の Toast 文言は呼び出し元から渡す（設定更新時は settingsUpdated、
+   * 新規発行時は urlIssuedAndCopied / urlIssued）。
+   */
+  const tryClipboardAndToast = async (code: string, successMessage: string) => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(buildInviteUrl(code));
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 2000);
+        showToast(successMessage, 'success');
+      } else {
+        showToast(successMessage, 'success');
+      }
+    } catch (clipboardErr) {
+      logger.warn('[InviteUrlIssueModal] auto copy failed', { err: clipboardErr });
+      showToast(messages.invite.autoCopyFailed, 'success');
+    }
+  };
+
   const handleIssue = async () => {
     setSubmitting(true);
     setError(null);
     setCopied(false);
-    logger.info('[InviteUrlIssueModal] issue start');
+    logger.info('[InviteUrlIssueModal] share start', {
+      branch: hasExistingCode ? 'update' : 'regenerate-fallback',
+    });
+    try {
+      let codeToShare: string;
+      let toastMessage: string;
+
+      if (hasExistingCode) {
+        // 通常パス: 設定のみ更新、コードは保持
+        try {
+          await updateInviteSettings(tenantId, {
+            expiresInDays,
+            maxUses,
+            storeIds: selectedStoreIds,
+          });
+          codeToShare = currentTenant!.invite_code!;
+          toastMessage = messages.invite.settingsUpdated;
+        } catch (err) {
+          // RPC が invite_code_missing を返した場合 → reset ルートにフォールバック
+          if ((err as Error & { code?: string })?.code === 'INVITE_CODE_MISSING') {
+            logger.info('[InviteUrlIssueModal] fallback to regenerate (code missing)');
+            codeToShare = await regenerateInviteCode(tenantId, {
+              expiresInDays,
+              maxUses,
+              storeIds: selectedStoreIds,
+            });
+            toastMessage = messages.invite.urlIssuedAndCopied;
+          } else {
+            throw err;
+          }
+        }
+      } else {
+        // 初回発行パス: 自動で regenerate ルート
+        logger.info('[InviteUrlIssueModal] initial issue via regenerate');
+        codeToShare = await regenerateInviteCode(tenantId, {
+          expiresInDays,
+          maxUses,
+          storeIds: selectedStoreIds,
+        });
+        toastMessage = messages.invite.urlIssuedAndCopied;
+      }
+
+      logger.info('[InviteUrlIssueModal] share success', {
+        code: codeToShare.slice(0, 2) + '****',
+      });
+      setHasJustIssued(true);
+      await tryClipboardAndToast(codeToShare, toastMessage);
+    } catch (err) {
+      logger.error('[InviteUrlIssueModal] share failed', err);
+      const msg = formatSupabaseError(err).message || messages.invite.joinFailed;
+      setError(msg);
+      showToast(msg, 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReset = async () => {
+    // eslint-disable-next-line no-alert
+    const ok = window.confirm(messages.invite.resetConfirm);
+    if (!ok) return;
+    setSubmitting(true);
+    setError(null);
+    setCopied(false);
+    logger.info('[InviteUrlIssueModal] reset start');
     try {
       const newCode = await regenerateInviteCode(tenantId, {
         expiresInDays,
         maxUses,
         storeIds: selectedStoreIds,
       });
-      logger.info('[InviteUrlIssueModal] issue success', { code: newCode.slice(0,2)+'****' });
+      logger.info('[InviteUrlIssueModal] reset success', {
+        code: newCode.slice(0, 2) + '****',
+      });
       setHasJustIssued(true);
-
-      try {
-        if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(buildInviteUrl(newCode));
-          setCopied(true);
-          window.setTimeout(() => setCopied(false), 2000);
-          showToast(messages.invite.urlIssuedAndCopied, 'success');
-        } else {
-          showToast(messages.invite.urlIssued, 'success');
-        }
-      } catch (clipboardErr) {
-        logger.warn('[InviteUrlIssueModal] auto copy failed', { err: clipboardErr });
-        showToast(messages.invite.autoCopyFailed, 'success');
-      }
+      await tryClipboardAndToast(newCode, messages.invite.resetSuccess);
     } catch (err) {
-      logger.error('[InviteUrlIssueModal] issue failed', err);
+      logger.error('[InviteUrlIssueModal] reset failed', err);
       const msg = formatSupabaseError(err).message || messages.invite.joinFailed;
       setError(msg);
       showToast(msg, 'error');
@@ -349,23 +425,37 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
           {messages.invite.reissueWarning}
         </p>
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button
-            type="button"
-            variant="tertiary"
-            onClick={onClose}
-            disabled={submitting}
-          >
-            {messages.invite.cancelButton}
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={handleIssue}
-            loading={submitting}
-          >
-            {hasJustIssued ? messages.invite.reissueButton : messages.invite.issueButton}
-          </Button>
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="tertiary"
+              onClick={onClose}
+              disabled={submitting}
+            >
+              {messages.invite.cancelButton}
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleIssue}
+              loading={submitting}
+            >
+              {messages.invite.shareButton}
+            </Button>
+          </div>
+          {hasExistingCode && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={submitting}
+                className="text-xs text-danger-600 dark:text-danger-400 underline-offset-2 hover:underline focus:outline-none focus-visible:underline disabled:opacity-50"
+              >
+                {messages.invite.resetLink}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </BottomSheet>
