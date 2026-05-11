@@ -1,5 +1,5 @@
-const CACHE_NAME = 'kintai-v2';
-const ASSET_CACHE = 'kintai-assets-v2';
+const CACHE_NAME = 'kintai-v3';
+const ASSET_CACHE = 'kintai-assets-v3';
 const NAV_FALLBACK = '/index.html';
 
 self.addEventListener('install', (event) => {
