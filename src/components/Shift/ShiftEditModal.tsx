@@ -160,7 +160,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
     <BottomSheet
       isOpen={true}
       onClose={onClose}
-      title={`${shift.date} の確定シフト`}
+      title={`${shift.date} のシフト`}
       description={memberName}
       footer={renderFooter()}
     >
@@ -232,7 +232,7 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
 
       {mode === 'confirmDelete' && (
         <p className="text-sm text-neutral-700 dark:text-neutral-300">
-          この確定シフトを削除しますか？この操作は元に戻せません。
+          このシフトを削除しますか？この操作は元に戻せません。
         </p>
       )}
     </BottomSheet>

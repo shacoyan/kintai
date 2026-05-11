@@ -339,7 +339,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           </span>
           <span className="flex items-center gap-1">
             <AlertTriangle className="w-4 h-4 text-danger-500 dark:text-danger-400" aria-hidden="true" />
-            確定シフトあり・勤怠なし
+            シフトあり・勤怠なし
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded bg-neutral-100 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600" />
@@ -427,7 +427,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                             <span className={textColor}>{fmtMinutes(workMin)}</span>
                           );
                         } else if (hasShift) {
-                          cellContent = <AlertTriangle className="w-4 h-4 text-danger-500 dark:text-danger-400 mx-auto" aria-label="確定シフトあり・勤怠なし" />;
+                          cellContent = <AlertTriangle className="w-4 h-4 text-danger-500 dark:text-danger-400 mx-auto" aria-label="シフトあり・勤怠なし" />;
                           cellBg = 'bg-danger-50 dark:bg-danger-900/20';
                         }
 

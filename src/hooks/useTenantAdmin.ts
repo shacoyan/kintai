@@ -208,14 +208,17 @@ export function useTenantAdmin(tenantId: string) {
   }, [tenantId, fetchMembers]);
 
   const deleteMember = useCallback(async (memberId: string) => {
-    const { error: e } = await supabase
-      .from('tenant_members')
-      .delete()
-      .eq('id', memberId)
-      .eq('tenant_id', tenantId);
+    // SECURITY DEFINER RPC 経由で削除 (migration 046)。
+    // tenant_members の DELETE RLS は self-only のため、bare .delete() は
+    // owner/manager が他人を消そうとしても RLS 0 行除外で無音 success になっていた。
+    // RPC 内でガード (caller=owner/manager + 対象 != owner + tenant 一致) し、
+    // 戻り値 (= 削除した member_id) が null なら明示エラー化 (二重防御)。
+    const { data, error: e } = await supabase
+      .rpc('remove_tenant_member', { p_member_id: memberId });
     if (e) throw new Error(formatSupabaseError(e).message);
+    if (!data) throw new Error('メンバーを削除できませんでした（権限不足または対象が見つかりません）');
     await fetchMembers();
-  }, [tenantId, fetchMembers]);
+  }, [fetchMembers]);
 
   const updateNightShift = useCallback(async (memberId: string, enabled: boolean) => {
     const { data, error: e } = await supabase

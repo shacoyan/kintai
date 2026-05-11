@@ -10,15 +10,15 @@
         "description": "出勤すると、ここに記録が表示されます。"
       },
       "shiftMonth": {
-        "title": "今月の確定シフトはまだありません",
-        "description": "上のボタンから最初の確定シフトを作成しましょう。"
+        "title": "今月のシフトはまだありません",
+        "description": "上のボタンから最初のシフトを作成しましょう。"
       },
       "shiftRequest": {
         "title": "申請待ちのシフト申請はありません",
         "description": "メンバーから申請が届くとここに表示されます。"
       },
       "shiftDay": {
-        "title": "この日に確定シフトはありません"
+        "title": "この日にシフトはありません"
       },
       "shiftPreferenceMonth": {
         "title": "今月のシフト申請はまだありません",
@@ -29,7 +29,7 @@
       },
       "shiftMismatch": {
         "title": "シフト不一致はありません",
-        "description": "お疲れさまです。シフト申請と確定シフトはすべて一致しています。"
+        "description": "お疲れさまです。シフト申請とシフトはすべて一致しています。"
       },
       "shiftPreset": {
         "title": "プリセットがまだありません",

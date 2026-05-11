@@ -34,7 +34,7 @@ function HeroSection() {
           Workforce Operations
         </p>
         <h1 className="font-serif text-[44px] xl:text-[52px] leading-tight font-bold mb-6">
-          確定シフトと勤怠を、
+          シフトと勤怠を、
           <br />
           静かに整える。
         </h1>

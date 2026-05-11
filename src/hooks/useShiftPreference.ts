@@ -197,7 +197,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
           note: pref.note || null,
           store_id: pref.store_id,
         });
-      if (insertError) throw new Error(`確定シフトの作成に失敗しました: ${insertError.message}`);
+      if (insertError) throw new Error(`シフトの作成に失敗しました: ${insertError.message}`);
 
       await notify({
         tenantId: pref.tenant_id,
@@ -275,7 +275,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
             start_time: pref.start_time,
             end_time: pref.end_time,
           });
-        if (deleteError) throw new Error(`確定シフトの削除に失敗しました: ${deleteError.message}`);
+        if (deleteError) throw new Error(`シフトの削除に失敗しました: ${deleteError.message}`);
       }
 
       // ステータスをpendingに更新

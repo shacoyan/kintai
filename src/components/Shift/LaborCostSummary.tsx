@@ -35,7 +35,7 @@ export function LaborCostSummary({ estimates, targetMonth }: LaborCostSummaryPro
         <p className="text-sm text-neutral-500 dark:text-neutral-300 mt-0.5">
           {targetMonth
             ? `${format(targetMonth, 'yyyy年M月')} の見込み人件費（承認済 + 申請中）`
-            : '承認済・申請中の確定シフトの見込み人件費'}
+            : '承認済・申請中のシフトの見込み人件費'}
         </p>
       </div>
 

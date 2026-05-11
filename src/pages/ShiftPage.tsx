@@ -165,9 +165,10 @@ export function ShiftPage() {
     const start = format(startOfMonth(now), 'yyyy-MM-dd');
     const end = format(endOfMonth(addWeeks(now, 4)), 'yyyy-MM-dd');
     if (canManageTenant) {
-      fetchAllPreferences(start, end);
+      void fetchAllPreferences(start, end);
+      void fetchMyPreferences(start, end);
     } else {
-      fetchMyPreferences(start, end);
+      void fetchMyPreferences(start, end);
     }
   }, [canManageTenant, fetchAllPreferences, fetchMyPreferences]);
 
@@ -370,7 +371,7 @@ export function ShiftPage() {
       <div className="p-6">
         <Card padding="md">
           <Card.Body className="text-center text-sm text-neutral-700 dark:text-neutral-300">
-            店舗を選択してください。ヘッダーの店舗セレクターから操作対象の店舗を選ぶと、確定シフト・シフト申請が表示されます。
+            店舗を選択してください。ヘッダーの店舗セレクターから操作対象の店舗を選ぶと、シフト・シフト申請が表示されます。
           </Card.Body>
         </Card>
       </div>
@@ -399,7 +400,7 @@ export function ShiftPage() {
       <div className="border-b border-neutral-200 dark:border-neutral-700">
         <nav className="flex space-x-8">
           {([
-            { id: 'shift' as TabId, label: '確定シフト' },
+            { id: 'shift' as TabId, label: 'シフト' },
             // hidden 2026-05-10: backlog で復活予定
             // { id: 'leave' as TabId, label: '休暇' },
             { id: 'preference' as TabId, label: 'シフト申請' },
@@ -429,7 +430,7 @@ export function ShiftPage() {
         <div className="space-y-6">
           <header className="flex items-end justify-between gap-3">
             <div>
-              <Heading level={2}>確定シフト</Heading>
+              <Heading level={2}>シフト</Heading>
               <p className="text-sm text-neutral-500 dark:text-neutral-300 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
             </div>
             {canManageTenant && pendingShifts.length > 0 && (
@@ -472,7 +473,7 @@ export function ShiftPage() {
           <BottomSheet
             isOpen={!!selectedShiftDate}
             onClose={() => setSelectedShiftDate(null)}
-            title={selectedShiftDate ? `${selectedShiftDate} の確定シフト一覧` : ''}
+            title={selectedShiftDate ? `${selectedShiftDate} のシフト一覧` : ''}
           >
             <div className="space-y-2 p-4">
               {shifts.filter(s => s.date === selectedShiftDate).map(s => (
