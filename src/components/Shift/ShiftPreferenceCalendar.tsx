@@ -4,6 +4,7 @@ import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, ChevronRight as NextPrefIcon } from 'lucide-react';
 import type { ShiftPreference } from '../../types';
 import { PreferenceActionRow } from './PreferenceActionRow';
+import { PreferenceBar } from './PreferenceBar';
 import { getPreferenceTheme } from '../../lib/preferenceTheme';
 import { EmptyState } from '../ui';
 import { formatTimeRangeA11y } from '../../utils/formatTimeRange';
@@ -202,12 +203,9 @@ export function ShiftPreferenceCalendar({
           const dayPrefs = preferencesByDate.get(dateStr) || [];
           const dayOfWeek = idx % 7;
 
-          const primaryPref = dayPrefs[0];
+          const selfBar = dayPrefs.find(p => p.preference_type === 'preferred' && p.start_time && p.end_time) || null;
+          const primaryPref = selfBar ?? dayPrefs[0];
           const theme = primaryPref ? getPreferenceTheme(primaryPref.preference_type) : null;
-          const hasTime =
-            primaryPref?.preference_type !== 'unavailable' &&
-            !!primaryPref?.start_time &&
-            !!primaryPref?.end_time;
 
           const pendingCount = dayPrefs.filter(p => p.status === 'pending').length;
 
@@ -242,9 +240,16 @@ export function ShiftPreferenceCalendar({
               : ''
           }`;
 
-          const MAX_VISIBLE = 3;
-          const visiblePrefs = dayPrefs.slice(0, MAX_VISIBLE);
-          const overflowCount = dayPrefs.length - MAX_VISIBLE;
+          const dayBars = dayPrefs.filter(p => p.preference_type === 'preferred' && p.start_time && p.end_time).sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? '') || (memberNames?.get(a.user_id) ?? '').localeCompare(memberNames?.get(b.user_id) ?? '', 'ja'));
+          const dayIconOnly = dayPrefs.filter(p => p.preference_type !== 'preferred' || !p.start_time || !p.end_time);
+
+          const MAX_VISIBLE_BARS = 3;
+          const visibleBars = dayBars.slice(0, MAX_VISIBLE_BARS);
+          const overflowBars = dayBars.length - MAX_VISIBLE_BARS;
+
+          const nU = dayIconOnly.filter(p => p.preference_type === 'unavailable').length;
+          const nA = dayIconOnly.filter(p => p.preference_type === 'available').length;
+          const nP = dayIconOnly.filter(p => p.preference_type === 'preferred').length;
 
           const cellChildren = (
             <>
@@ -264,43 +269,29 @@ export function ShiftPreferenceCalendar({
                 )}
               </div>
 
-              {/* スタッフビュー: 時間 or アイコン */}
-              {!isAdminView && primaryPref && theme && (
+              {/* スタッフビュー: PreferenceBar または アイコン */}
+              {!isAdminView && (
                 <>
-                  {hasTime && primaryPref.start_time && primaryPref.end_time ? (
-                    <span className="text-[10px] font-semibold tabular-nums leading-none">
-                      {primaryPref.start_time.slice(0, 5)}
-                    </span>
-                  ) : (
+                  {selfBar ? (
+                    <PreferenceBar preference={selfBar} />
+                  ) : primaryPref && theme ? (
                     <theme.Icon className="w-3.5 h-3.5" aria-hidden="true" />
-                  )}
+                  ) : null}
                 </>
               )}
 
-              {/* 店長ビュー: 最大 3 件 PreferenceActionRow 表示 + +N件 */}
+              {/* 店長ビュー: 最大 3 件 PreferenceBar 表示 + +N件 + アイコン集約 */}
               {isAdminView && dayPrefs.length > 0 && (
                 <div className="flex flex-col gap-0.5 px-0.5 pb-1 w-full">
-                  {visiblePrefs.map(p => {
-                    const tone = userToneMap.get(p.user_id) ?? MEMBER_TONE_CLASSES[0];
-                    return (
-                      <div
-                        key={p.id}
-                        className={tone + ' rounded-sm px-1 py-0.5 w-full'}
-                      >
-                        <PreferenceActionRow
-                          preference={p}
-                          memberName={memberNames?.get(p.user_id)}
-                          memberDotClass={tone.split(' ')[0]}
-                          onApprove={onApprovePreference ?? (async () => {})}
-                          onReject={onRejectPreference ?? (async () => {})}
-                          canManage={canManageStore?.(p.store_id) ?? false}
-                          variant="compact"
-                          onMutated={onMutated}
-                        />
-                      </div>
-                    );
-                  })}
-                  {overflowCount > 0 && (
+                  {visibleBars.map(p => (
+                    <PreferenceBar 
+                      key={p.id} 
+                      preference={p} 
+                      memberName={memberNames?.get(p.user_id)} 
+                      showMemberName 
+                    />
+                  ))}
+                  {overflowBars > 0 && (
                     <button
                       type="button"
                       onClick={(e) => {
@@ -309,9 +300,18 @@ export function ShiftPreferenceCalendar({
                       }}
                       className="w-full text-left text-[10px] text-primary-600 dark:text-primary-400 px-1 hover:underline"
                     >
-                      +{overflowCount}件
+                      +{overflowBars}件
                     </button>
                   )}
+                  {(nU > 0 || nA > 0 || nP > 0) ? (
+                    <span className="text-[9px] text-neutral-500 dark:text-neutral-400 px-1">
+                      {[
+                        nU > 0 ? `不可${nU}` : null,
+                        nA > 0 ? `可${nA}` : null,
+                        nP > 0 ? `希望${nP}` : null,
+                      ].filter(Boolean).join(' / ')}
+                    </span>
+                  ) : null}
                 </div>
               )}
             </>
@@ -428,4 +428,3 @@ export function ShiftPreferenceCalendar({
     </div>
   );
 }
-
