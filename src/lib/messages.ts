@@ -151,6 +151,10 @@ export const messages = {
     cancelButton: 'キャンセル',
     /** @i18n-key invite.urlIssued */
     urlIssued: '招待URLを発行しました',
+    /** @i18n-key invite.urlIssuedAndCopied */
+    urlIssuedAndCopied: '招待URLを発行してコピーしました',
+    /** @i18n-key invite.autoCopyFailed */
+    autoCopyFailed: '招待URLを発行しました（自動コピーは失敗しました。ボタンから手動でコピーしてください）',
     /** @i18n-key invite.reissueWarning */
     reissueWarning:
       '再発行すると以前の招待URLは無効になり、使用回数カウントは 0 にリセットされます。',

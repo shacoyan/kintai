@@ -1,13 +1,3 @@
-/**
- * 招待URL発行モーダル（admin 画面用）。
- *
- * - owner / manager のみ起動可能（呼び出し側でガード前提だが本コンポーネント内でも防衛的にチェック）
- * - 店舗複数選択（チェックボックス）+ 期限プリセット + 上限プリセット
- * - 「招待URLを発行」→ regenerateInviteCode(tenantId, { expiresInDays, maxUses, storeIds })
- * - 成功で URL 表示 + コピー（buildInviteUrl(code)）
- *
- * 設計書: .company/engineering/docs/2026-05-10-kintai-invite-url-techdesign.md §5.2
- */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { BottomSheet } from '../ui/BottomSheet';
@@ -19,6 +9,7 @@ import { useStore } from '../../hooks/useStore';
 import { formatSupabaseError } from '../../lib/errors';
 import { buildInviteUrl } from '../../lib/inviteUrl';
 import { messages } from '../../lib/messages';
+import { logger } from '../../lib/logger';
 import type { Store } from '../../types';
 
 interface InviteUrlIssueModalProps {
@@ -70,12 +61,12 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
   const [maxUses, setMaxUses] = useState<MaxUsesOption>(3);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [issuedCode, setIssuedCode] = useState<string | null>(null);
-  const [issuedExpiresAt, setIssuedExpiresAt] = useState<string | null>(null);
-  const [issuedMaxUses, setIssuedMaxUses] = useState<number | null>(null);
+  const [hasJustIssued, setHasJustIssued] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
 
   const canIssue = isOwner || isManager;
+
+  const displayCode = hasJustIssued ? (currentTenant?.invite_code ?? '') : '';
 
   // モーダル開時に stores fetch + state リセット
   useEffect(() => {
@@ -87,16 +78,14 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
     setExpiresInDays(7);
     setMaxUses(3);
     setError(null);
-    setIssuedCode(null);
-    setIssuedExpiresAt(null);
-    setIssuedMaxUses(null);
+    setHasJustIssued(false);
     setCopied(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const inviteUrl = useMemo(
-    () => (issuedCode ? buildInviteUrl(issuedCode) : ''),
-    [issuedCode]
+    () => (displayCode ? buildInviteUrl(displayCode) : ''),
+    [displayCode]
   );
 
   if (!canIssue) {
@@ -125,21 +114,31 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
     setSubmitting(true);
     setError(null);
     setCopied(false);
+    logger.info('[InviteUrlIssueModal] issue start');
     try {
       const newCode = await regenerateInviteCode(tenantId, {
         expiresInDays,
         maxUses,
         storeIds: selectedStoreIds,
       });
-      setIssuedCode(newCode);
-      const expiresAt =
-        expiresInDays != null && expiresInDays > 0
-          ? new Date(Date.now() + expiresInDays * 86400000).toISOString()
-          : null;
-      setIssuedExpiresAt(expiresAt);
-      setIssuedMaxUses(maxUses);
-      showToast(messages.invite.urlIssued, 'success');
+      logger.info('[InviteUrlIssueModal] issue success', { code: newCode.slice(0,2)+'****' });
+      setHasJustIssued(true);
+
+      try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(buildInviteUrl(newCode));
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 2000);
+          showToast(messages.invite.urlIssuedAndCopied, 'success');
+        } else {
+          showToast(messages.invite.urlIssued, 'success');
+        }
+      } catch (clipboardErr) {
+        logger.warn('[InviteUrlIssueModal] auto copy failed', { err: clipboardErr });
+        showToast(messages.invite.autoCopyFailed, 'success');
+      }
     } catch (err) {
+      logger.error('[InviteUrlIssueModal] issue failed', err);
       const msg = formatSupabaseError(err).message || messages.invite.joinFailed;
       setError(msg);
       showToast(msg, 'error');
@@ -296,7 +295,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
         {error && <ErrorBanner message={error} />}
 
         {/* 発行結果 */}
-        {issuedCode && (
+        {hasJustIssued && currentTenant?.invite_code && (
           <section
             className="rounded-md border border-success-200 dark:border-success-800 bg-success-50 dark:bg-success-900/30 p-3"
             aria-live="polite"
@@ -330,16 +329,16 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
             <dl className="mt-2 text-xs text-neutral-700 dark:text-neutral-200 space-y-0.5">
               <div className="flex gap-1">
                 <dt className="text-neutral-500 dark:text-neutral-400">招待コード:</dt>
-                <dd className="font-mono tracking-widest">{issuedCode}</dd>
+                <dd className="font-mono tracking-widest">{displayCode}</dd>
               </div>
               <div>
-                <span>{formatExpiresAt(issuedExpiresAt)}</span>
+                <span>{formatExpiresAt(currentTenant?.invite_code_expires_at ?? null)}</span>
               </div>
               <div>
                 <span>
-                  {issuedMaxUses == null
+                  {(currentTenant?.invite_code_max_uses) == null
                     ? messages.invite.usageStatusUnlimited(0)
-                    : messages.invite.usageStatus(0, issuedMaxUses)}
+                    : messages.invite.usageStatus(0, currentTenant.invite_code_max_uses)}
                 </span>
               </div>
             </dl>
@@ -365,7 +364,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
             onClick={handleIssue}
             loading={submitting}
           >
-            {issuedCode ? messages.invite.reissueButton : messages.invite.issueButton}
+            {hasJustIssued ? messages.invite.reissueButton : messages.invite.issueButton}
           </Button>
         </div>
       </div>
