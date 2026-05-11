@@ -248,7 +248,6 @@ export function ShiftPreferenceCalendar({
           const overflowBars = dayBars.length - MAX_VISIBLE_BARS;
 
           const nU = dayIconOnly.filter(p => p.preference_type === 'unavailable').length;
-          const nA = dayIconOnly.filter(p => p.preference_type === 'available').length;
           const nP = dayIconOnly.filter(p => p.preference_type === 'preferred').length;
 
           const cellChildren = (
@@ -303,11 +302,10 @@ export function ShiftPreferenceCalendar({
                       +{overflowBars}件
                     </button>
                   )}
-                  {(nU > 0 || nA > 0 || nP > 0) ? (
+                  {(nU > 0 || nP > 0) ? (
                     <span className="text-[9px] text-neutral-500 dark:text-neutral-400 px-1">
                       {[
                         nU > 0 ? `不可${nU}` : null,
-                        nA > 0 ? `可${nA}` : null,
                         nP > 0 ? `希望${nP}` : null,
                       ].filter(Boolean).join(' / ')}
                     </span>

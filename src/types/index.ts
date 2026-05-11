@@ -154,7 +154,7 @@ export interface StoreMember {
   created_at: string;
 }
 
-export type ShiftPreferenceType = 'available' | 'preferred' | 'unavailable';
+export type ShiftPreferenceType = 'preferred' | 'unavailable';
 
 export interface ShiftPreference {
   id: string;

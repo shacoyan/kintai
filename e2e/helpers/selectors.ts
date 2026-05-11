@@ -34,7 +34,7 @@ export const CALENDAR = {
 
 /** ShiftPreferenceForm (BottomSheet 内) */
 export const PREF_FORM = {
-  typeButtonId: (type: 'preferred' | 'available' | 'unavailable') =>
+  typeButtonId: (type: 'preferred' | 'unavailable') =>
     `pref-type-${type}-btn`,
   storeSelect: { label: '店舗', exact: true },
   startTimeSelect: { label: '開始時刻', exact: true },

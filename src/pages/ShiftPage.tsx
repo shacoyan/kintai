@@ -110,7 +110,6 @@ export function ShiftPage() {
     const active = myPreferences.filter((p) => p.status !== 'rejected');
     return {
       preferred: active.filter((p) => p.preference_type === 'preferred').length,
-      available: active.filter((p) => p.preference_type === 'available').length,
       unavailable: active.filter((p) => p.preference_type === 'unavailable').length,
     };
   }, [myPreferences]);
@@ -122,7 +121,6 @@ export function ShiftPage() {
     return {
       counts: {
         preferred: monthPrefs.filter(p => p.preference_type === 'preferred').length,
-        available: monthPrefs.filter(p => p.preference_type === 'available').length,
         unavailable: monthPrefs.filter(p => p.preference_type === 'unavailable').length,
       },
       monthLabel: format(now, 'yyyy年M月'),
@@ -650,20 +648,14 @@ export function ShiftPage() {
                 {!(canManageTenant && showAllMembersPrefs) && (
                   <div className="lg:hidden">
                     <Card padding="md">
-                      <Card.Body className="grid grid-cols-3 gap-3 text-center">
+                      <Card.Body className="grid grid-cols-2 gap-3 text-center">
                         <div>
                           <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
                             {preferenceSummary.preferred}
                           </p>
                           <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">申請日</p>
                         </div>
-                        <div className="border-x border-neutral-100 dark:border-neutral-700">
-                          <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
-                            {preferenceSummary.available}
-                          </p>
-                          <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">出勤可</p>
-                        </div>
-                        <div>
+                        <div className="border-l border-neutral-100 dark:border-neutral-700">
                           <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
                             {preferenceSummary.unavailable}
                           </p>

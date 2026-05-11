@@ -54,7 +54,7 @@ export function ShiftPreferenceForm({
   canBypassDeadline = false,
 }: ShiftPreferenceFormProps) {
   const [preferenceType, setPreferenceType] = useState<ShiftPreferenceType>(
-    existingPreference?.preference_type ?? 'available',
+    existingPreference?.preference_type ?? 'preferred',
   );
   const [startTime, setStartTime] = useState<string>(
     existingPreference?.start_time?.slice(0, 5) ?? '09:00',
@@ -196,7 +196,7 @@ export function ShiftPreferenceForm({
       {/* 希望タイプ選択 */}
       <div>
         <span className="block text-label text-neutral-700 dark:text-neutral-300 mb-2">希望タイプ</span>
-        <div role="group" aria-label="希望タイプ" className="grid grid-cols-3 gap-2">
+        <div role="group" aria-label="希望タイプ" className="grid grid-cols-2 gap-2">
           {PREFERENCE_THEME_LIST.map((t) => {
             const isSelected = preferenceType === t.type;
             const Icon = t.Icon;

@@ -1,14 +1,14 @@
 /**
- * @fileoverview シフト希望タイプ（preferred / available / unavailable）ごとのテーマ定義。
+ * @fileoverview シフト希望タイプ（preferred / unavailable）ごとのテーマ定義。
  * アイコン・色・ラベル・Tailwind クラスを一元管理し、UI 全体で一貫したスタイルを提供する。
  */
 
 import type { LucideIcon } from 'lucide-react';
-import { Star, CheckCircle2, Ban } from 'lucide-react';
+import { Star, Ban } from 'lucide-react';
 import type { ShiftPreferenceType } from '../types';
 
 /** テーマの色調を表す型 */
-export type PreferenceTone = 'primary' | 'success' | 'neutral';
+export type PreferenceTone = 'primary' | 'neutral';
 
 /** シフト希望タイプに紐づくテーマ情報 */
 export interface PreferenceTheme {
@@ -48,25 +48,6 @@ export const PREFERENCE_THEME: Record<ShiftPreferenceType, PreferenceTheme> = {
     badgeClass:
       'bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-200',
   },
-  available: {
-    type: 'available',
-    tone: 'success',
-    label: '出勤可能',
-    shortLabel: '可',
-    description: '出勤可能 (調整OK)',
-    Icon: CheckCircle2,
-    cellClass:
-      'bg-success-50 ring-1 ring-success-300 text-success-700 dark:bg-success-900/30 dark:ring-success-700 dark:text-success-200',
-    countTextClass: 'text-success-600 dark:text-success-400',
-    dotClass: 'bg-success-500 dark:bg-success-400',
-    iconColorClass: 'text-success-500 dark:text-success-400',
-    iconBoxClass:
-      'bg-success-50 text-success-700 dark:bg-success-900/40 dark:text-success-300',
-    cardBorderBgClass:
-      'border-success-200 bg-success-50 dark:border-success-700 dark:bg-success-950',
-    badgeClass:
-      'bg-success-100 text-success-700 dark:bg-success-800 dark:text-success-200',
-  },
   unavailable: {
     type: 'unavailable',
     tone: 'neutral',
@@ -88,10 +69,9 @@ export const PREFERENCE_THEME: Record<ShiftPreferenceType, PreferenceTheme> = {
   },
 };
 
-/** テーマを順序付き配列として取得する（preferred → available → unavailable） */
+/** テーマを順序付き配列として取得する（preferred → unavailable） */
 export const PREFERENCE_THEME_LIST: PreferenceTheme[] = [
   PREFERENCE_THEME.preferred,
-  PREFERENCE_THEME.available,
   PREFERENCE_THEME.unavailable,
 ];
 
