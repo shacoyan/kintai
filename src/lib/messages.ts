@@ -211,6 +211,44 @@ export const messages = {
     usageStatus: (used: number, max: number): string => `使用回数: ${used} / ${max}`,
     /** @i18n-key invite.usageStatusUnlimited {used} */
     usageStatusUnlimited: (used: number): string => `使用回数: ${used} / 無制限`,
+    /** @i18n-key invite.listTitle */
+    listTitle: '招待URL の管理',
+    /** @i18n-key invite.listEmpty */
+    listEmpty: 'まだ招待URL を発行していません。',
+    /** @i18n-key invite.newCodeButton */
+    newCodeButton: '新規発行',
+    /** @i18n-key invite.storesPlaceholder */
+    storesPlaceholder: '配属先店舗',
+    /** @i18n-key invite.storesHintOptional */
+    storesHintOptional: '店舗を選択しないとテナント加入のみとなります',
+    /** @i18n-key invite.assignedStoresHiddenUntilJoin */
+    assignedStoresHiddenUntilJoin: '配属予定店舗は加入後に確認できます',
+    /** @i18n-key invite.labelPlaceholder */
+    labelPlaceholder: 'メモ（任意・例: 4月新人向け 本店）',
+    /** @i18n-key invite.labelHint */
+    labelHint: '※ 自分用のメモ。スタッフには見えません',
+    /** @i18n-key invite.rowLabelFallback */
+    rowLabelFallback: '(メモなし)',
+    /** @i18n-key invite.rowStoresLabel */
+    rowStoresLabel: '配属先',
+    /** @i18n-key invite.rowExpiresLabel */
+    rowExpiresLabel: '有効期限',
+    /** @i18n-key invite.rowUsageLabel */
+    rowUsageLabel: '使用',
+    /** @i18n-key invite.rowActionEdit */
+    rowActionEdit: '設定変更',
+    /** @i18n-key invite.rowActionRevoke */
+    rowActionRevoke: '失効',
+    /** @i18n-key invite.rowActionCopy */
+    rowActionCopy: 'URL コピー',
+    /** @i18n-key invite.revokeConfirm */
+    revokeConfirm: 'この招待URL を失効させます。\nこれ以降のアクセスは無効になります。続行しますか？',
+    /** @i18n-key invite.revokeSuccess */
+    revokeSuccess: '招待URL を失効しました',
+    /** @i18n-key invite.issueSuccess */
+    issueSuccess: '招待URL を発行してコピーしました',
+    /** @i18n-key invite.updateSuccess */
+    updateSuccess: '招待URL の設定を更新しました',
   },
   /** @i18n-prefix shiftPreference */
   shiftPreference: {

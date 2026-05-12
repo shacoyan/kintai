@@ -9,6 +9,7 @@
  *  - 既メンバー / 期限切れ / 上限到達 / 無効コード をそれぞれ識別表示
  *
  * 設計書: .company/engineering/docs/2026-05-10-kintai-invite-url-techdesign.md §5.3 / §6.4
+ *         .company/engineering/docs/2026-05-12-kintai-invite-url-per-store-techdesign.md §15.1 (P1-B)
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -34,6 +35,9 @@ type PreviewState =
       tenant: Pick<Tenant, 'id' | 'name'>;
       stores: { id: string; name: string }[];
       alreadyMember: boolean;
+      // 2026-05-12: tenant_invite_code_stores SELECT が RLS で 0 行 or error の場合 true。
+      // true かつ stores.length === 0 のとき「加入後に確認できます」文言を表示する。
+      storeRowsBlocked: boolean;
     }
   | { status: 'expired' }
   | { status: 'maxUsesReached' }
@@ -42,10 +46,16 @@ type PreviewState =
 
 interface InvitePreviewRow {
   id: string;
-  name: string;
-  invite_code_expires_at: string | null;
-  invite_code_max_uses: number | null;
-  invite_code_used_count: number;
+  tenant_id: string;
+  expires_at: string | null;
+  max_uses: number | null;
+  used_count: number;
+  revoked_at: string | null;
+  tenants: {
+    id: string;
+    name: string;
+    deleted_at: string | null;
+  } | null;
 }
 
 export function JoinPage(): JSX.Element {
@@ -107,13 +117,17 @@ export function JoinPage(): JSX.Element {
     (async () => {
       setPreview({ status: 'loading' });
       try {
+        // 2026-05-12: per-store invite URL 対応。
+        // 旧: tenants.invite_code 直接 lookup
+        // 新: tenant_invite_codes lookup + tenants embed
         const { data, error } = await supabase
-          .from('tenants')
+          .from('tenant_invite_codes')
           .select(
-            'id, name, invite_code_expires_at, invite_code_max_uses, invite_code_used_count'
+            'id, tenant_id, expires_at, max_uses, used_count, revoked_at, tenants!inner(id, name, deleted_at)'
           )
-          .eq('invite_code', code)
-          .is('deleted_at', null)
+          .eq('code', code)
+          .is('revoked_at', null)
+          .is('tenants.deleted_at', null)
           .maybeSingle();
 
         if (cancelled) return;
@@ -128,35 +142,51 @@ export function JoinPage(): JSX.Element {
         }
 
         if (!data) {
-          // RLS で行が見えない or コード不正。実 join は RPC が
-          // 詳細エラー（expired/maxUses 等）を返すため、
-          // 既メンバー以外のテナント lookup が NULL の場合は notFound 扱い。
+          // v3 で見つからなければ即 notFound 確定 (v2 fallback は本 Loop では実装しない)。
           setPreview({ status: 'notFound' });
           return;
         }
 
-        const row = data as InvitePreviewRow;
+        const row = data as unknown as InvitePreviewRow;
+        const tenantRow = row.tenants;
+        if (!tenantRow || tenantRow.deleted_at != null) {
+          setPreview({ status: 'notFound' });
+          return;
+        }
 
         if (
-          row.invite_code_expires_at &&
-          new Date(row.invite_code_expires_at).getTime() < Date.now()
+          row.expires_at &&
+          new Date(row.expires_at).getTime() < Date.now()
         ) {
           setPreview({ status: 'expired' });
           return;
         }
         if (
-          row.invite_code_max_uses != null &&
-          row.invite_code_used_count >= row.invite_code_max_uses
+          row.max_uses != null &&
+          row.used_count >= row.max_uses
         ) {
           setPreview({ status: 'maxUsesReached' });
           return;
         }
 
-        // 配属予定店舗 lookup（RLS で owner/manager のみ visible）
-        const { data: storeRows } = await supabase
-          .from('invite_code_stores')
-          .select('store_id, stores(id, name)')
-          .eq('tenant_id', row.id);
+        // 配属予定店舗 lookup (tenant_invite_code_stores ベース)
+        // 2026-05-12 P1-B: 未参加 user は RLS で中間表を見られないため、
+        // storeErr 発生時のみ storeRowsBlocked=true で続行し、表示側でフォールバック文言を出す。
+        // N=0 招待 (店舗ゼロ＝テナント加入のみ) は正常状態として storeRowsBlocked=false のまま扱う。
+        const { data: storeRows, error: storeErr } = await supabase
+          .from('tenant_invite_code_stores')
+          .select('store_id, sort_order, stores(id, name)')
+          .eq('invite_code_id', row.id)
+          .order('sort_order');
+
+        if (storeErr) {
+          logger.error(
+            'invite preview store lookup blocked (likely RLS):',
+            formatSupabaseError(storeErr)
+          );
+        }
+
+        const storeRowsBlocked = !!storeErr;
 
         const stores: { id: string; name: string }[] = Array.isArray(storeRows)
           ? storeRows
@@ -167,13 +197,14 @@ export function JoinPage(): JSX.Element {
               .filter((s): s is { id: string; name: string } => s != null)
           : [];
 
-        const alreadyMember = tenants.some((t) => t.id === row.id);
+        const alreadyMember = tenants.some((t) => t.id === tenantRow.id);
 
         setPreview({
           status: 'ok',
-          tenant: { id: row.id, name: row.name },
+          tenant: { id: tenantRow.id, name: tenantRow.name },
           stores,
           alreadyMember,
+          storeRowsBlocked,
         });
       } catch (e) {
         if (cancelled) return;
@@ -297,7 +328,7 @@ export function JoinPage(): JSX.Element {
     );
   }
 
-  const { tenant, stores, alreadyMember } = preview;
+  const { tenant, stores, alreadyMember, storeRowsBlocked } = preview;
 
   if (alreadyMember) {
     return (
@@ -315,6 +346,8 @@ export function JoinPage(): JSX.Element {
       </CenteredCard>
     );
   }
+
+  const assignedHiddenLabel = messages.invite.assignedStoresHiddenUntilJoin;
 
   return (
     <CenteredCard>
@@ -342,7 +375,7 @@ export function JoinPage(): JSX.Element {
           hint="シフト表・出退勤表で他のメンバーに表示されます。後から変更できます。"
         />
 
-        {stores.length > 0 && (
+        {stores.length > 0 ? (
           <section className="rounded-md border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/40 p-3">
             <div className="mb-1 text-sm font-medium text-neutral-700 dark:text-neutral-200">
               {messages.invite.assignedStoresLabel}
@@ -361,7 +394,9 @@ export function JoinPage(): JSX.Element {
               ))}
             </ul>
           </section>
-        )}
+        ) : storeRowsBlocked ? (
+          <p className="text-xs text-text-muted">{assignedHiddenLabel}</p>
+        ) : null}
 
         {submitError && <ErrorBanner message={submitError} />}
 

@@ -225,3 +225,39 @@ export interface NotificationItem {
   read_at: string | null;
   created_at: string;
 }
+
+// === 2026-05-12 per-store invite URL (Loop) ===
+// 設計書: .company/engineering/docs/2026-05-12-kintai-invite-url-per-store-techdesign.md §7.1
+export interface InviteCode {
+  id: string;
+  tenant_id: string;
+  code: string;
+  expires_at: string | null;
+  max_uses: number | null;
+  used_count: number;
+  created_by: string;
+  created_at: string;
+  revoked_at: string | null;
+  label: string | null;
+  stores: InviteCodeStore[]; // join 済みリスト (TenantContext で composition)
+}
+
+export interface InviteCodeStore {
+  store_id: string;
+  store_name: string;
+  sort_order: number;
+}
+
+export interface IssueInviteCodeOptions {
+  expiresInDays: 1 | 7 | 30 | null;
+  maxUses: 1 | 3 | 10 | null;
+  storeIds: string[];
+  label?: string | null;
+}
+
+export interface UpdateInviteCodeOptions {
+  expiresInDays?: 1 | 7 | 30 | null;
+  maxUses?: 1 | 3 | 10 | null;
+  storeIds?: string[]; // undefined=保持, []=全削除, [...]=置換
+  label?: string | null;
+}

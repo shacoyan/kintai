@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Copy, Pencil, Trash2, Plus } from 'lucide-react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/Button';
 import { ErrorBanner } from '../ui/ErrorBanner';
@@ -10,7 +10,8 @@ import { formatSupabaseError } from '../../lib/errors';
 import { buildInviteUrl } from '../../lib/inviteUrl';
 import { messages } from '../../lib/messages';
 import { logger } from '../../lib/logger';
-import type { Store } from '../../types';
+import type { InviteCode } from '../../types';
+import { InviteCodeIssueDialog, type IssueDialogMode } from './InviteCodeIssueDialog';
 
 interface InviteUrlIssueModalProps {
   tenantId: string;
@@ -18,24 +19,8 @@ interface InviteUrlIssueModalProps {
   onClose: () => void;
 }
 
-type ExpiresOption = 1 | 7 | 30 | null;
-type MaxUsesOption = 1 | 3 | 10 | null;
-
-const EXPIRES_OPTIONS: { value: ExpiresOption; label: string }[] = [
-  { value: 1, label: '1日' },
-  { value: 7, label: '7日' },
-  { value: 30, label: '30日' },
-  { value: null, label: '無期限' },
-];
-
-const MAX_USES_OPTIONS: { value: MaxUsesOption; label: string }[] = [
-  { value: 1, label: '1回' },
-  { value: 3, label: '3回' },
-  { value: 10, label: '10回' },
-  { value: null, label: '無制限' },
-];
-
-function formatExpiresAt(iso: string | null | undefined): string {
+/** ISO 文字列を `YYYY/MM/DD HH:mm` に整形。null は「無期限」。 */
+function formatExpiresAt(iso: string | null): string {
   if (!iso) return messages.invite.urlValidIndefinitely;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return messages.invite.urlValidIndefinitely;
@@ -47,54 +32,68 @@ function formatExpiresAt(iso: string | null | undefined): string {
   return messages.invite.urlValidUntil(`${yyyy}/${mm}/${dd} ${hh}:${mi}`);
 }
 
+function formatUsage(code: InviteCode): string {
+  return code.max_uses == null
+    ? messages.invite.usageStatusUnlimited(code.used_count)
+    : messages.invite.usageStatus(code.used_count, code.max_uses);
+}
+
 export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
   tenantId,
   isOpen,
   onClose,
 }) => {
-  const { currentTenant, isOwner, isManager, regenerateInviteCode, updateInviteSettings } = useTenant();
+  const {
+    currentTenant,
+    isOwner,
+    isManager,
+    listInviteCodes,
+    revokeInviteCode,
+  } = useTenant();
   const { showToast } = useToast();
-  const { stores, fetchStores } = useStore(tenantId);
+  const { stores: selectableStores, fetchStores } = useStore(tenantId);
 
-  const [selectedStoreIds, setSelectedStoreIds] = useState<string[]>([]);
-  const [expiresInDays, setExpiresInDays] = useState<ExpiresOption>(7);
-  const [maxUses, setMaxUses] = useState<MaxUsesOption>(3);
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [codes, setCodes] = useState<InviteCode[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasJustIssued, setHasJustIssued] = useState<boolean>(false);
-  const [copied, setCopied] = useState<boolean>(false);
+  const [issueDialogOpen, setIssueDialogOpen] = useState<boolean>(false);
+  const [editTarget, setEditTarget] = useState<InviteCode | null>(null);
+  const [lastCopiedCodeId, setLastCopiedCodeId] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   const canIssue = isOwner || isManager;
+  const tenantName = currentTenant?.name ?? '';
 
-  const displayCode = hasJustIssued ? (currentTenant?.invite_code ?? '') : '';
+  const fetchCodes = useCallback(async () => {
+    if (!tenantId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const rows = await listInviteCodes(tenantId);
+      setCodes(rows);
+    } catch (err) {
+      logger.error('[InviteUrlIssueModal] listInviteCodes failed', err);
+      setError(formatSupabaseError(err).message || messages.invite.previewUnavailable);
+    } finally {
+      setLoading(false);
+    }
+  }, [tenantId, listInviteCodes]);
 
-  // モーダル開時に stores fetch + state リセット
+  // Modal open のたびに fetch + state リセット
   useEffect(() => {
     if (!isOpen) return;
+    setLastCopiedCodeId(null);
+    setIssueDialogOpen(false);
+    setEditTarget(null);
+    void fetchCodes();
     void fetchStores().catch(() => {
-      // エラーは下部 ErrorBanner で表示
+      // store fetch error は ErrorBanner では出さず、サブモーダル open 時の空表示に任せる
     });
-    setSelectedStoreIds([]);
-    setExpiresInDays(7);
-    setMaxUses(3);
-    setError(null);
-    setHasJustIssued(false);
-    setCopied(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
-
-  const inviteUrl = useMemo(
-    () => (displayCode ? buildInviteUrl(displayCode) : ''),
-    [displayCode]
-  );
+  }, [isOpen, fetchCodes, fetchStores]);
 
   if (!canIssue) {
     return (
-      <BottomSheet
-        isOpen={isOpen}
-        onClose={onClose}
-        title={messages.invite.urlIssueTitle}
-      >
+      <BottomSheet isOpen={isOpen} onClose={onClose} title={messages.invite.listTitle}>
         <p className="text-sm text-neutral-500 dark:text-neutral-300">
           {messages.invite.permissionDenied}
         </p>
@@ -102,139 +101,15 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
     );
   }
 
-  const toggleStore = (storeId: string) => {
-    setSelectedStoreIds((prev) =>
-      prev.includes(storeId)
-        ? prev.filter((id) => id !== storeId)
-        : [...prev, storeId]
-    );
-  };
-
-  const hasExistingCode = !!currentTenant?.invite_code;
-
-  /**
-   * 共通: 招待URL クリップボードコピー + Toast 表示。
-   * 成功時の Toast 文言は呼び出し元から渡す（設定更新時は settingsUpdated、
-   * 新規発行時は urlIssuedAndCopied / urlIssued）。
-   */
-  const tryClipboardAndToast = async (code: string, successMessage: string) => {
+  /** clipboard コピー（fallback 込み） + Toast。 */
+  const copyToClipboard = async (text: string, successMessage: string): Promise<boolean> => {
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(buildInviteUrl(code));
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 2000);
-        showToast(successMessage, 'success');
-      } else {
-        showToast(successMessage, 'success');
-      }
-    } catch (clipboardErr) {
-      logger.warn('[InviteUrlIssueModal] auto copy failed', { err: clipboardErr });
-      showToast(messages.invite.autoCopyFailed, 'success');
-    }
-  };
-
-  const handleIssue = async () => {
-    setSubmitting(true);
-    setError(null);
-    setCopied(false);
-    logger.info('[InviteUrlIssueModal] share start', {
-      branch: hasExistingCode ? 'update' : 'regenerate-fallback',
-    });
-    try {
-      let codeToShare: string;
-      let toastMessage: string;
-
-      if (hasExistingCode) {
-        // 通常パス: 設定のみ更新、コードは保持
-        try {
-          await updateInviteSettings(tenantId, {
-            expiresInDays,
-            maxUses,
-            storeIds: selectedStoreIds,
-          });
-          codeToShare = currentTenant!.invite_code!;
-          toastMessage = messages.invite.settingsUpdated;
-        } catch (err) {
-          // RPC が invite_code_missing を返した場合 → reset ルートにフォールバック
-          if ((err as Error & { code?: string })?.code === 'INVITE_CODE_MISSING') {
-            logger.info('[InviteUrlIssueModal] fallback to regenerate (code missing)');
-            codeToShare = await regenerateInviteCode(tenantId, {
-              expiresInDays,
-              maxUses,
-              storeIds: selectedStoreIds,
-            });
-            toastMessage = messages.invite.urlIssuedAndCopied;
-          } else {
-            throw err;
-          }
-        }
-      } else {
-        // 初回発行パス: 自動で regenerate ルート
-        logger.info('[InviteUrlIssueModal] initial issue via regenerate');
-        codeToShare = await regenerateInviteCode(tenantId, {
-          expiresInDays,
-          maxUses,
-          storeIds: selectedStoreIds,
-        });
-        toastMessage = messages.invite.urlIssuedAndCopied;
-      }
-
-      logger.info('[InviteUrlIssueModal] share success', {
-        code: codeToShare.slice(0, 2) + '****',
-      });
-      setHasJustIssued(true);
-      await tryClipboardAndToast(codeToShare, toastMessage);
-    } catch (err) {
-      logger.error('[InviteUrlIssueModal] share failed', err);
-      const msg = formatSupabaseError(err).message || messages.invite.joinFailed;
-      setError(msg);
-      showToast(msg, 'error');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleReset = async () => {
-    // eslint-disable-next-line no-alert
-    const ok = window.confirm(messages.invite.resetConfirm);
-    if (!ok) return;
-    setSubmitting(true);
-    setError(null);
-    setCopied(false);
-    logger.info('[InviteUrlIssueModal] reset start');
-    try {
-      const newCode = await regenerateInviteCode(tenantId, {
-        expiresInDays,
-        maxUses,
-        storeIds: selectedStoreIds,
-      });
-      logger.info('[InviteUrlIssueModal] reset success', {
-        code: newCode.slice(0, 2) + '****',
-      });
-      setHasJustIssued(true);
-      await tryClipboardAndToast(newCode, messages.invite.resetSuccess);
-    } catch (err) {
-      logger.error('[InviteUrlIssueModal] reset failed', err);
-      const msg = formatSupabaseError(err).message || messages.invite.joinFailed;
-      setError(msg);
-      showToast(msg, 'error');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleCopy = async () => {
-    if (!inviteUrl) return;
-    try {
-      if (
-        typeof navigator !== 'undefined' &&
-        navigator.clipboard?.writeText
-      ) {
-        await navigator.clipboard.writeText(inviteUrl);
+        await navigator.clipboard.writeText(text);
       } else {
         // legacy fallback
         const ta = document.createElement('textarea');
-        ta.value = inviteUrl;
+        ta.value = text;
         ta.style.position = 'fixed';
         ta.style.opacity = '0';
         document.body.appendChild(ta);
@@ -242,223 +117,263 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
         document.execCommand('copy');
         document.body.removeChild(ta);
       }
-      setCopied(true);
-      showToast(messages.invite.copied, 'success');
-      window.setTimeout(() => setCopied(false), 2000);
+      showToast(successMessage, 'success');
+      return true;
     } catch (err) {
+      logger.warn('[InviteUrlIssueModal] clipboard failed', { err });
       showToast(messages.invite.copyFailed, 'error');
+      return false;
     }
   };
 
-  const tenantName = currentTenant?.name ?? '';
+  const handleCopy = async (code: InviteCode) => {
+    const url = buildInviteUrl(code.code);
+    const ok = await copyToClipboard(url, messages.invite.copied);
+    if (ok) {
+      setLastCopiedCodeId(code.id);
+      window.setTimeout(() => {
+        setLastCopiedCodeId((prev) => (prev === code.id ? null : prev));
+      }, 2000);
+    }
+  };
+
+  const handleOpenIssueDialog = () => {
+    setEditTarget(null);
+    setIssueDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (code: InviteCode) => {
+    setEditTarget(code);
+    setIssueDialogOpen(true);
+  };
+
+  const handleRevoke = async (code: InviteCode) => {
+    // eslint-disable-next-line no-alert
+    const ok = window.confirm(messages.invite.revokeConfirm);
+    if (!ok) return;
+    setRevokingId(code.id);
+    try {
+      await revokeInviteCode(code.id);
+      logger.info('[InviteUrlIssueModal] revoke success', {
+        codeId: code.id,
+      });
+      showToast(messages.invite.revokeSuccess, 'success');
+      await fetchCodes();
+    } catch (err) {
+      logger.error('[InviteUrlIssueModal] revoke failed', err);
+      const msg = formatSupabaseError(err).message || messages.invite.joinFailed;
+      showToast(msg, 'error');
+    } finally {
+      setRevokingId(null);
+    }
+  };
+
+  // サブモーダル callback
+  const handleIssued = async (invite: InviteCode) => {
+    const url = buildInviteUrl(invite.code);
+    await copyToClipboard(url, messages.invite.issueSuccess);
+    setLastCopiedCodeId(invite.id);
+    window.setTimeout(() => {
+      setLastCopiedCodeId((prev) => (prev === invite.id ? null : prev));
+    }, 2000);
+    await fetchCodes();
+  };
+
+  const handleUpdated = async () => {
+    showToast(messages.invite.updateSuccess, 'success');
+    await fetchCodes();
+  };
+
+  const dialogMode: IssueDialogMode = editTarget
+    ? { type: 'edit', code: editTarget }
+    : { type: 'issue' };
 
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={onClose}
-      title={messages.invite.urlIssueTitle}
-      description={messages.invite.urlIssueDescription}
-    >
-      <div className="flex flex-col gap-5">
-        {tenantName && (
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            ワークスペース: <span className="font-medium text-neutral-700 dark:text-neutral-200">{tenantName}</span>
-          </p>
-        )}
-
-        {/* 店舗選択 */}
-        <fieldset>
-          <legend className="text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
-            {messages.invite.storesLabel}
-          </legend>
-          {stores.length === 0 ? (
-            <p className="text-sm text-neutral-500 dark:text-neutral-300">
-              {messages.invite.storesNone}
+    <>
+      <BottomSheet
+        isOpen={isOpen && !issueDialogOpen}
+        onClose={onClose}
+        title={messages.invite.listTitle}
+      >
+        <div className="flex flex-col gap-4">
+          {tenantName && (
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              ワークスペース:{' '}
+              <span className="font-medium text-neutral-700 dark:text-neutral-200">
+                {tenantName}
+              </span>
             </p>
-          ) : (
-            <ul className="max-h-48 overflow-y-auto rounded-md border border-neutral-200 dark:border-neutral-700 divide-y divide-neutral-200 dark:divide-neutral-700">
-              {stores.map((s: Store) => {
-                const checked = selectedStoreIds.includes(s.id);
-                const isPrimary = checked && selectedStoreIds[0] === s.id;
-                return (
-                  <li key={s.id}>
-                    <label
-                      htmlFor={`invite-store-${s.id}`}
-                      className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700/40"
-                    >
-                      <input
-                        id={`invite-store-${s.id}`}
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleStore(s.id)}
-                        disabled={submitting}
-                        className="h-4 w-4 rounded text-primary-600 dark:text-primary-400 focus:ring-primary-500 dark:focus:ring-primary-400"
-                      />
-                      <span className="text-sm text-neutral-700 dark:text-neutral-200 flex-1">
-                        {s.name}
-                      </span>
-                      {isPrimary && (
-                        <span className="text-xs text-neutral-500 dark:text-neutral-300">
-                          {messages.invite.primaryStoreSuffix}
-                        </span>
-                      )}
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
           )}
-          <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-300">
-            {messages.invite.storesEmpty}
-          </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-300">
-            {messages.invite.storesPrimaryHint}
-          </p>
-        </fieldset>
 
-        {/* 有効期限 */}
-        <fieldset>
-          <legend className="text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
-            {messages.invite.expiresLabel}
-          </legend>
-          <div className="flex flex-wrap gap-3">
-            {EXPIRES_OPTIONS.map((opt) => (
-              <label
-                key={String(opt.value)}
-                className="inline-flex items-center text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  name="invite-url-expires"
-                  value={String(opt.value)}
-                  checked={expiresInDays === opt.value}
-                  onChange={() => setExpiresInDays(opt.value)}
-                  disabled={submitting}
-                  className="mr-1.5 text-primary-600 dark:text-primary-400 focus:ring-primary-500 dark:focus:ring-primary-400"
-                />
-                {opt.label}
-              </label>
-            ))}
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={handleOpenIssueDialog}
+              disabled={loading}
+            >
+              <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
+              {messages.invite.newCodeButton}
+            </Button>
           </div>
-        </fieldset>
 
-        {/* 使用回数 */}
-        <fieldset>
-          <legend className="text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
-            {messages.invite.maxUsesLabel}
-          </legend>
-          <div className="flex flex-wrap gap-3">
-            {MAX_USES_OPTIONS.map((opt) => (
-              <label
-                key={String(opt.value)}
-                className="inline-flex items-center text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  name="invite-url-max-uses"
-                  value={String(opt.value)}
-                  checked={maxUses === opt.value}
-                  onChange={() => setMaxUses(opt.value)}
-                  disabled={submitting}
-                  className="mr-1.5 text-primary-600 dark:text-primary-400 focus:ring-primary-500 dark:focus:ring-primary-400"
-                />
-                {opt.label}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+          {error && <ErrorBanner message={error} onRetry={() => void fetchCodes()} />}
 
-        {error && <ErrorBanner message={error} />}
-
-        {/* 発行結果 */}
-        {hasJustIssued && currentTenant?.invite_code && (
+          {/* リスト本体 */}
           <section
-            className="rounded-md border border-success-200 dark:border-success-800 bg-success-50 dark:bg-success-900/30 p-3"
+            className="max-h-[60vh] overflow-y-auto rounded-md border border-neutral-200 dark:border-neutral-700"
             aria-live="polite"
           >
-            <div className="text-xs text-neutral-700 dark:text-neutral-200 font-medium mb-1">
-              {messages.invite.urlLabel}
-            </div>
-            <div className="flex items-stretch gap-2">
-              <input
-                type="text"
-                readOnly
-                value={inviteUrl}
-                aria-label={messages.invite.urlLabel}
-                className="flex-1 min-w-0 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2 py-1.5 text-xs font-mono text-neutral-800 dark:text-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
-                onFocus={(e) => e.currentTarget.select()}
-              />
-              <button
-                type="button"
-                onClick={handleCopy}
-                aria-label={messages.invite.copyButton}
-                className="inline-flex items-center gap-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2.5 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
-              >
-                {copied ? (
-                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                ) : (
-                  <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                )}
-                {copied ? 'コピー済' : messages.invite.copyButton}
-              </button>
-            </div>
-            <dl className="mt-2 text-xs text-neutral-700 dark:text-neutral-200 space-y-0.5">
-              <div className="flex gap-1">
-                <dt className="text-neutral-500 dark:text-neutral-400">招待コード:</dt>
-                <dd className="font-mono tracking-widest">{displayCode}</dd>
-              </div>
-              <div>
-                <span>{formatExpiresAt(currentTenant?.invite_code_expires_at ?? null)}</span>
-              </div>
-              <div>
-                <span>
-                  {(currentTenant?.invite_code_max_uses) == null
-                    ? messages.invite.usageStatusUnlimited(0)
-                    : messages.invite.usageStatus(0, currentTenant.invite_code_max_uses)}
-                </span>
-              </div>
-            </dl>
+            {loading && codes.length === 0 ? (
+              <p className="px-3 py-6 text-sm text-neutral-500 dark:text-neutral-300 text-center">
+                読み込み中...
+              </p>
+            ) : codes.length === 0 ? (
+              <p className="px-3 py-6 text-sm text-neutral-500 dark:text-neutral-300 text-center">
+                {messages.invite.listEmpty}
+              </p>
+            ) : (
+              <ul className="divide-y divide-neutral-200 dark:divide-neutral-700">
+                {codes.map((code) => {
+                  const url = buildInviteUrl(code.code);
+                  const isJustCopied = lastCopiedCodeId === code.id;
+                  const sortedStores = [...code.stores].sort(
+                    (a, b) => a.sort_order - b.sort_order,
+                  );
+                  return (
+                    <li
+                      key={code.id}
+                      className="px-3 py-3 flex flex-col gap-2 bg-white dark:bg-neutral-800"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">
+                            {code.label && code.label.length > 0
+                              ? code.label
+                              : messages.invite.rowLabelFallback}
+                          </p>
+                          <p
+                            className="mt-0.5 text-xs font-mono tracking-widest text-neutral-600 dark:text-neutral-300 select-all break-all"
+                            aria-label="招待コード"
+                            title={url}
+                          >
+                            {code.code}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 配属店舗 chip */}
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400 self-center">
+                          {messages.invite.rowStoresLabel}:
+                        </span>
+                        {sortedStores.length === 0 ? (
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                            {messages.invite.assignedStoresNone}
+                          </span>
+                        ) : (
+                          sortedStores.map((s, idx) => (
+                            <span
+                              key={s.store_id}
+                              className="inline-flex items-center rounded-full bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 text-xs text-neutral-700 dark:text-neutral-200"
+                            >
+                              {s.store_name}
+                              {idx === 0 && (
+                                <span className="ml-1 text-neutral-500 dark:text-neutral-400">
+                                  {messages.invite.primaryStoreSuffix}
+                                </span>
+                              )}
+                            </span>
+                          ))
+                        )}
+                      </div>
+
+                      {/* 期限 / 使用回数 */}
+                      <dl className="text-xs text-neutral-600 dark:text-neutral-300 space-y-0.5">
+                        <div className="flex gap-1">
+                          <dt className="text-neutral-500 dark:text-neutral-400">
+                            {messages.invite.rowExpiresLabel}:
+                          </dt>
+                          <dd>{formatExpiresAt(code.expires_at)}</dd>
+                        </div>
+                        <div className="flex gap-1">
+                          <dt className="text-neutral-500 dark:text-neutral-400">
+                            {messages.invite.rowUsageLabel}:
+                          </dt>
+                          <dd>{formatUsage(code)}</dd>
+                        </div>
+                      </dl>
+
+                      {/* アクション */}
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => void handleCopy(code)}
+                          className="inline-flex items-center gap-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2.5 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
+                          disabled={revokingId === code.id}
+                        >
+                          <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                          {isJustCopied ? 'コピー済' : messages.invite.rowActionCopy}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditDialog(code)}
+                          className="inline-flex items-center gap-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2.5 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
+                          disabled={revokingId === code.id}
+                        >
+                          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                          {messages.invite.rowActionEdit}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleRevoke(code)}
+                          className="inline-flex items-center gap-1 rounded border border-danger-300 dark:border-danger-700 bg-white dark:bg-neutral-800 px-2.5 py-1.5 text-xs font-medium text-danger-700 dark:text-danger-300 hover:bg-danger-50 dark:hover:bg-danger-900/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-danger-500 dark:focus-visible:ring-danger-400 disabled:opacity-50"
+                          disabled={revokingId === code.id}
+                          aria-busy={revokingId === code.id || undefined}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          {messages.invite.rowActionRevoke}
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </section>
-        )}
 
-        <p className="text-xs text-neutral-500 dark:text-neutral-300 leading-relaxed">
-          {messages.invite.reissueWarning}
-        </p>
+          <p className="text-xs text-neutral-500 dark:text-neutral-300 leading-relaxed">
+            {messages.invite.reissueWarning}
+          </p>
 
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <div className="flex justify-end">
             <Button
               type="button"
               variant="tertiary"
               onClick={onClose}
-              disabled={submitting}
+              disabled={loading}
             >
               {messages.invite.cancelButton}
             </Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={handleIssue}
-              loading={submitting}
-            >
-              {messages.invite.shareButton}
-            </Button>
           </div>
-          {hasExistingCode && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleReset}
-                disabled={submitting}
-                className="text-xs text-danger-600 dark:text-danger-400 underline-offset-2 hover:underline focus:outline-none focus-visible:underline disabled:opacity-50"
-              >
-                {messages.invite.resetLink}
-              </button>
-            </div>
-          )}
         </div>
-      </div>
-    </BottomSheet>
+      </BottomSheet>
+
+      {/* 発行 / 設定変更サブモーダル */}
+      <InviteCodeIssueDialog
+        tenantId={tenantId}
+        isOpen={isOpen && issueDialogOpen}
+        mode={dialogMode}
+        onClose={() => {
+          setIssueDialogOpen(false);
+          setEditTarget(null);
+        }}
+        onIssued={handleIssued}
+        onUpdated={handleUpdated}
+        selectableStores={selectableStores}
+      />
+    </>
   );
 };
 

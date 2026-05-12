@@ -4,7 +4,16 @@ import { clearPendingJoinCode } from '../lib/inviteUrl';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { formatSupabaseError } from '../lib/errors';
-import type { Tenant, TenantMember, TenantWithRole, UserRole } from '../types';
+import type {
+  Tenant,
+  TenantMember,
+  TenantWithRole,
+  UserRole,
+  InviteCode,
+  InviteCodeStore,
+  IssueInviteCodeOptions,
+  UpdateInviteCodeOptions,
+} from '../types';
 
 interface TenantContextType {
   tenants: TenantWithRole[];
@@ -33,6 +42,11 @@ interface TenantContextType {
     }
   ) => Promise<void>;
   updateTenantName: (tenantId: string, newName: string) => Promise<void>;
+  // === 2026-05-12 per-store invite URL ===
+  listInviteCodes: (tenantId?: string) => Promise<InviteCode[]>;
+  issueInviteCode: (tenantId: string, opts: IssueInviteCodeOptions) => Promise<InviteCode>;
+  updateInviteCode: (codeId: string, opts: UpdateInviteCodeOptions) => Promise<void>;
+  revokeInviteCode: (codeId: string) => Promise<void>;
   leaveTenant: () => Promise<void>;
   deleteTenant: () => Promise<void>;
   transferOwnership: (newOwnerUserId: string) => Promise<void>;
@@ -225,22 +239,24 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setLoading(true);
     setError(null);
     try {
-      // L12 Phase 2 (Reviewer M3): atomic な join — SELECT FOR UPDATE → 検証 → INSERT → +1 を
-      // 1 トランザクションで完結する RPC に集約。フロント側で SELECT/INSERT を分けると
-      // 上限 1 のコードに同時 join した際、両者が tenant_members INSERT に成功してしまう。
-      const { data: joinedTenantId, error: rpcError } = await supabase.rpc('join_tenant_with_invite_v2', {
+      // 2026-05-12: v2 → v3 切替 (per-store invite URL)。
+      // tenant_invite_codes 行ロック → 検証 → tenant_members INSERT → invite_code_stores から
+      // store_members 自動 attach までを atomic に実行。
+      const { data: joinedTenantId, error: rpcError } = await supabase.rpc('join_tenant_with_invite_v3', {
         p_invite_code: inviteCode,
         p_display_name: displayName,
       });
 
       if (rpcError) {
         const msg = (rpcError.message || '').toLowerCase();
-        if (msg.includes('not authenticated')) throw new Error('認証情報の取得に失敗しました');
-        if (msg.includes('display name required')) throw new Error('表示名を入力してください');
-        if (msg.includes('not found')) throw new Error('無効な招待コードです');
-        if (msg.includes('expired')) throw new Error('招待コードの有効期限が切れています');
-        if (msg.includes('max uses')) throw new Error('招待コードの使用回数上限に達しています');
-        if (msg.includes('already a member')) throw new Error('すでにこのテナントに参加しています');
+        if (msg.includes('not_authenticated')) throw new Error('認証情報の取得に失敗しました');
+        if (msg.includes('display_name_required')) throw new Error('表示名を入力してください');
+        if (msg.includes('display_name_too_long')) throw new Error('表示名は 30 文字以内で入力してください');
+        if (msg.includes('invite_code_not_found')) throw new Error('無効な招待コードです');
+        if (msg.includes('invite_code_expired')) throw new Error('招待コードの有効期限が切れています');
+        if (msg.includes('invite_code_max_uses_reached')) throw new Error('招待コードの使用回数上限に達しています');
+        if (msg.includes('already_a_member')) throw new Error('すでにこのテナントに参加しています');
+        if (msg.includes('tenant_not_found')) throw new Error('参加先テナントが見つかりません');
         throw new Error(formatSupabaseError(rpcError).message);
       }
 
@@ -402,6 +418,162 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     clearPendingJoinCode();
     return result;
   }, [joinTenant]);
+
+  // === 2026-05-12 per-store invite URL: 新 API 4 個 ===
+  // 設計書: .company/engineering/docs/2026-05-12-kintai-invite-url-per-store-techdesign.md §7.3
+
+  const listInviteCodes = useCallback(async (tenantId?: string): Promise<InviteCode[]> => {
+    const targetId = tenantId ?? currentTenant?.id;
+    if (!targetId) throw new Error('テナントが選択されていません');
+
+    // SELECT 1: active な tenant_invite_codes 行
+    const { data: codeRows, error: codeError } = await supabase
+      .from('tenant_invite_codes')
+      .select('id, tenant_id, code, expires_at, max_uses, used_count, created_by, created_at, revoked_at, label')
+      .eq('tenant_id', targetId)
+      .is('revoked_at', null)
+      .order('created_at', { ascending: false });
+
+    if (codeError) throw codeError;
+    const codes = (codeRows ?? []) as Array<Omit<InviteCode, 'stores'>>;
+    if (codes.length === 0) return [];
+
+    // SELECT 2: tenant_invite_code_stores を invite_code_id IN (...) で fetch
+    const codeIds = codes.map((c) => c.id);
+    interface StoreJoinRow {
+      invite_code_id: string;
+      store_id: string;
+      sort_order: number;
+      stores: { id: string; name: string } | null;
+    }
+    const { data: storeRows, error: storeError } = await supabase
+      .from('tenant_invite_code_stores')
+      .select('invite_code_id, store_id, sort_order, stores(id, name)')
+      .in('invite_code_id', codeIds)
+      .order('sort_order');
+
+    if (storeError) throw storeError;
+
+    // composition: invite_code_id → InviteCodeStore[]
+    const storesByCodeId = new Map<string, InviteCodeStore[]>();
+    for (const raw of (storeRows ?? []) as unknown as StoreJoinRow[]) {
+      const list = storesByCodeId.get(raw.invite_code_id) ?? [];
+      list.push({
+        store_id: raw.store_id,
+        store_name: raw.stores?.name ?? '',
+        sort_order: raw.sort_order,
+      });
+      storesByCodeId.set(raw.invite_code_id, list);
+    }
+
+    return codes.map((c) => ({
+      ...c,
+      stores: storesByCodeId.get(c.id) ?? [],
+    }));
+  }, [currentTenant]);
+
+  const issueInviteCode = useCallback(async (
+    tenantId: string,
+    opts: IssueInviteCodeOptions,
+  ): Promise<InviteCode> => {
+    const expiresAt =
+      opts.expiresInDays != null && opts.expiresInDays > 0
+        ? new Date(Date.now() + opts.expiresInDays * 86400000).toISOString()
+        : null;
+
+    const { data: newId, error: rpcError } = await supabase.rpc('issue_tenant_invite_code', {
+      p_tenant_id: tenantId,
+      p_expires_at: expiresAt,
+      p_max_uses: opts.maxUses ?? null,
+      p_store_ids: opts.storeIds,
+      p_label: opts.label ?? null,
+    });
+
+    if (rpcError) {
+      const msg = (rpcError.message || '').toLowerCase();
+      if (msg.includes('not_authorized')) throw new Error('オーナーまたは店長のみ実行可能です');
+      if (msg.includes('invalid_max_uses')) throw new Error('使用回数上限の値が無効です');
+      if (msg.includes('label_too_long')) throw new Error('メモは 40 文字以内で入力してください');
+      if (msg.includes('too_many_active_codes')) throw new Error('このテナントの有効な招待URLが上限 (50) に達しています');
+      if (msg.includes('duplicate_invite_code')) throw new Error('招待コードの生成に失敗しました。もう一度お試しください。');
+      throw new Error(formatSupabaseError(rpcError).message);
+    }
+
+    if (!newId) throw new Error('招待URLの発行に失敗しました');
+
+    // 新規行を id 指定で再 fetch (race 回避)
+    const { data: codeRow, error: codeError } = await supabase
+      .from('tenant_invite_codes')
+      .select('id, tenant_id, code, expires_at, max_uses, used_count, created_by, created_at, revoked_at, label')
+      .eq('id', newId)
+      .single();
+
+    if (codeError || !codeRow) throw new Error('発行した招待URLの取得に失敗しました');
+
+    interface StoreJoinRow {
+      store_id: string;
+      sort_order: number;
+      stores: { id: string; name: string } | null;
+    }
+    const { data: storeRows } = await supabase
+      .from('tenant_invite_code_stores')
+      .select('store_id, sort_order, stores(id, name)')
+      .eq('invite_code_id', newId)
+      .order('sort_order');
+
+    const stores: InviteCodeStore[] = ((storeRows ?? []) as unknown as StoreJoinRow[]).map((r) => ({
+      store_id: r.store_id,
+      store_name: r.stores?.name ?? '',
+      sort_order: r.sort_order,
+    }));
+
+    return { ...(codeRow as Omit<InviteCode, 'stores'>), stores };
+  }, []);
+
+  const updateInviteCode = useCallback(async (
+    codeId: string,
+    opts: UpdateInviteCodeOptions,
+  ): Promise<void> => {
+    // 045/048 と同型 semantics: undefined=null (保持) / []=空配列 (全削除) / 配列=置換
+    const expiresAt =
+      opts.expiresInDays === undefined
+        ? null
+        : opts.expiresInDays != null && opts.expiresInDays > 0
+        ? new Date(Date.now() + opts.expiresInDays * 86400000).toISOString()
+        : null;
+    const maxUses = opts.maxUses === undefined ? null : opts.maxUses;
+    const storeIds = opts.storeIds === undefined ? null : opts.storeIds;
+    const label = opts.label === undefined ? null : opts.label;
+
+    const { error: rpcError } = await supabase.rpc('update_tenant_invite_code', {
+      p_code_id: codeId,
+      p_expires_at: expiresAt,
+      p_max_uses: maxUses,
+      p_store_ids: storeIds,
+      p_label: label,
+    });
+
+    if (rpcError) {
+      const msg = (rpcError.message || '').toLowerCase();
+      if (msg.includes('invite_code_not_found')) throw new Error('招待URLが見つかりません');
+      if (msg.includes('not_authorized')) throw new Error('オーナーまたは店長のみ実行可能です');
+      if (msg.includes('invalid_max_uses')) throw new Error('使用回数上限の値が無効です');
+      if (msg.includes('label_too_long')) throw new Error('メモは 40 文字以内で入力してください');
+      throw new Error(formatSupabaseError(rpcError).message);
+    }
+  }, []);
+
+  const revokeInviteCode = useCallback(async (codeId: string): Promise<void> => {
+    const { error: rpcError } = await supabase.rpc('revoke_tenant_invite_code', {
+      p_code_id: codeId,
+    });
+
+    if (rpcError) {
+      const msg = (rpcError.message || '').toLowerCase();
+      if (msg.includes('not_authorized')) throw new Error('オーナーまたは店長のみ実行可能です');
+      throw new Error(formatSupabaseError(rpcError).message);
+    }
+  }, []);
 
   const updateTenantName = useCallback(async (tenantId: string, newName: string): Promise<void> => {
     if (myRole !== 'owner') throw new Error('オーナーのみ実行可能です');
@@ -635,6 +807,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       joinTenantViaUrl,
       regenerateInviteCode,
       updateInviteSettings,
+      listInviteCodes,
+      issueInviteCode,
+      updateInviteCode,
+      revokeInviteCode,
       updateTenantName,
       leaveTenant,
       deleteTenant,
