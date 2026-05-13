@@ -261,3 +261,19 @@ export interface UpdateInviteCodeOptions {
   storeIds?: string[]; // undefined=保持, []=全削除, [...]=置換
   label?: string | null;
 }
+
+// === 2026-05-13 一括シフト申請 (Engineer A) ===
+// 設計書: .company/engineering/docs/2026-05-13-kintai-bulk-shift-preference-techdesign.md §6.1 / §9 Engineer A
+export interface BulkSubmitPreferenceArgs {
+  dates: string[];                       // 'YYYY-MM-DD'[]
+  type: 'preferred' | 'unavailable';
+  startTime: string | null;              // preferred のみ意味あり ('HH:mm' or 'HH:mm:ss')
+  endTime: string | null;
+  presetId?: string | null;              // 利用元プリセット ID（任意・将来監査用）
+}
+
+export interface BulkSubmitResult {
+  successCount: number;
+  failedDates: string[];
+  lockedDates: string[];   // 承認済 preferred で事前除外された日付
+}

@@ -258,5 +258,74 @@ export const messages = {
     approvedLockedDescription: '修正が必要な場合は店長にご相談ください。',
     /** @i18n-key shiftPreference.unavailableApprovedNotice */
     unavailableApprovedNotice: '出勤不可の解除は店長に通知され、承認が再度必要になります。',
+    /** @i18n-namespace shiftPreference.bulk */
+    bulk: {
+      /** @i18n-key shiftPreference.bulk.entryButton */
+      entryButton: 'まとめて申請',
+      /** @i18n-key shiftPreference.bulk.entryButtonAria */
+      entryButtonAria: '複数の日付にまとめてシフト申請を行う',
+      /** @i18n-key shiftPreference.bulk.cancelMode */
+      cancelMode: 'キャンセル',
+      /** @i18n-key shiftPreference.bulk.clearAll */
+      clearAll: 'すべて解除',
+      /** @i18n-key shiftPreference.bulk.selectedCount */
+      selectedCount: (count: number): string => `${count}日選択中`,
+      /** @i18n-key shiftPreference.bulk.proceedButton */
+      proceedButton: (count: number): string => `${count}日を一括申請`,
+      /** @i18n-key shiftPreference.bulk.dialogTitle */
+      dialogTitle: '一括シフト申請',
+      /** @i18n-key shiftPreference.bulk.dateCount */
+      dateCount: (count: number): string => `${count}日を選択中`,
+      /** @i18n-key shiftPreference.bulk.typeLabel */
+      typeLabel: '希望種別',
+      /** @i18n-key shiftPreference.bulk.typePreferred */
+      typePreferred: '希望',
+      /** @i18n-key shiftPreference.bulk.typeUnavailable */
+      typeUnavailable: '出勤不可',
+      /** @i18n-key shiftPreference.bulk.presetLabel */
+      presetLabel: 'プリセット',
+      /** @i18n-key shiftPreference.bulk.presetPlaceholder */
+      presetPlaceholder: '-- 選択 --',
+      /** @i18n-key shiftPreference.bulk.presetCustom */
+      presetCustom: 'カスタム時刻',
+      /** @i18n-key shiftPreference.bulk.presetEmpty */
+      presetEmpty:
+        'プリセットが未登録です。設定 > プリセットから追加するか「カスタム時刻」を選んでください。',
+      /** @i18n-key shiftPreference.bulk.customStartLabel */
+      customStartLabel: '開始時刻',
+      /** @i18n-key shiftPreference.bulk.customEndLabel */
+      customEndLabel: '終了時刻',
+      /** @i18n-key shiftPreference.bulk.unavailableHint */
+      unavailableHint: '出勤不可は時間指定なしで一括登録され、自動承認されます。',
+      /** @i18n-key shiftPreference.bulk.overwriteWarning */
+      overwriteWarning: (total: number, overwrite: number): string =>
+        `選択した${total}日のうち${overwrite}日に既存の申請があります。上書きされます。`,
+      /** @i18n-key shiftPreference.bulk.lockedWarning */
+      lockedWarning: (total: number, locked: number): string =>
+        `${total}日中${locked}日は承認済のためスキップされます。`,
+      /** @i18n-key shiftPreference.bulk.submitButton */
+      submitButton: '申請する',
+      /** @i18n-key shiftPreference.bulk.submitting */
+      submitting: '送信中…',
+      /** @i18n-key shiftPreference.bulk.cancelButton */
+      cancelButton: 'キャンセル',
+      /** @i18n-key shiftPreference.bulk.successToast */
+      successToast: (count: number): string => `${count}日のシフト申請を登録しました`,
+      /** @i18n-key shiftPreference.bulk.partialFailureToast */
+      partialFailureToast: (success: number, failed: number): string =>
+        `${success}日 成功 / ${failed}日 失敗（承認済または競合のためスキップ）`,
+      /** @i18n-key shiftPreference.bulk.lockedToast */
+      lockedToast: '承認済みのシフト申請はスキップされました。',
+      /** @i18n-key shiftPreference.bulk.failureToast */
+      failureToast: '一括シフト申請に失敗しました。時間をおいて再度お試しください。',
+      /** @i18n-key shiftPreference.bulk.validationError */
+      validationError: '入力内容にエラーがあります。修正してください。',
+      /** @i18n-key shiftPreference.bulk.timeRequired */
+      timeRequired: '時刻を入力してください',
+      /** @i18n-key shiftPreference.bulk.maxSelectionExceeded */
+      maxSelectionExceeded: (max: number): string => `選択できるのは${max}日までです。`,
+      /** @i18n-key shiftPreference.bulk.deadlinePassed */
+      deadlinePassed: '提出締切を過ぎているため申請できません。',
+    },
   },
 } as const;

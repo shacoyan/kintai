@@ -18,6 +18,12 @@ interface ShiftPreferenceCalendarProps {
   onRejectPreference?: (id: string) => Promise<void>;
   canManageStore?: (storeId: string | null) => boolean;
   onMutated?: () => void;
+  /** 一括選択モード ON 時、セルクリックを選択トグルに切り替える */
+  bulkSelectionMode?: boolean;
+  /** 一括選択中の日付集合 ('YYYY-MM-DD') */
+  selectedDates?: Set<string>;
+  /** 一括選択モード中のトグルハンドラ */
+  onToggleBulkDate?: (date: string) => void;
 }
 
 const MEMBER_TONE_CLASSES = [
@@ -38,6 +44,9 @@ export function ShiftPreferenceCalendar({
   onRejectPreference,
   canManageStore,
   onMutated,
+  bulkSelectionMode = false,
+  selectedDates,
+  onToggleBulkDate,
 }: ShiftPreferenceCalendarProps) {
   const [baseDate, setBaseDate] = useState(() => new Date());
 
@@ -102,6 +111,18 @@ export function ShiftPreferenceCalendar({
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const weekDays = ['月', '火', '水', '木', '金', '土', '日'];
+
+  // 一括選択モード中のセルクリック分岐 (§4.2)
+  const handleCellActivate = (dateStr: string, isCurrentMonth: boolean) => {
+    if (!isCurrentMonth) return;
+    if (bulkSelectionMode && onToggleBulkDate) {
+      onToggleBulkDate(dateStr);
+      return;
+    }
+    onDateClick(dateStr);
+  };
+
+  const bulkSelectedCount = bulkSelectionMode && selectedDates ? selectedDates.size : 0;
 
   const isAdminView = !!canManageTenant && !!memberNames;
 
@@ -193,7 +214,11 @@ export function ShiftPreferenceCalendar({
           ' grid-cols-7 gap-1 md:gap-2'
         }
         role="grid"
-        aria-label="シフト申請カレンダー"
+        aria-label={
+          bulkSelectionMode
+            ? `一括選択カレンダー — ${bulkSelectedCount}日選択中`
+            : 'シフト申請カレンダー'
+        }
         style={isAdminView ? { gridAutoRows: 'minmax(88px, auto)' } : { gridAutoRows: '1fr' }}
       >
         {dates.map((d, idx) => {
@@ -223,6 +248,13 @@ export function ShiftPreferenceCalendar({
               'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800';
           }
           const todayRing = isToday ? ' ring-2 ring-primary-500' : '';
+          const isBulkSelected = bulkSelectionMode && !!selectedDates && selectedDates.has(dateStr);
+          // 選択中視覚 (§5.3 + P2-INT-1):
+          //   bg-info-50 (solid) は preferred/unavailable 等の既存 cellClass を上書きする恐れがあるため
+          //   ring-2 + bg-info-100/50 (半透明) に変更し、既存色を透かす。
+          const bulkSelectedClass = isBulkSelected
+            ? ' ring-2 ring-info-500 ring-offset-1 bg-info-100/50 dark:bg-info-900/30'
+            : '';
           const dayNumColor =
             !isCurrentMonth
               ? 'text-neutral-500 dark:text-neutral-500'
@@ -322,15 +354,17 @@ export function ShiftPreferenceCalendar({
               tabIndex={isCurrentMonth ? 0 : -1}
               aria-label={ariaLabel}
               aria-disabled={!isCurrentMonth}
-              onClick={() => isCurrentMonth && onDateClick(dateStr)}
+              aria-pressed={bulkSelectionMode ? isBulkSelected : undefined}
+              aria-selected={bulkSelectionMode ? isBulkSelected : undefined}
+              onClick={() => handleCellActivate(dateStr, isCurrentMonth)}
               onKeyDown={(e) => {
                 if (!isCurrentMonth) return;
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onDateClick(dateStr);
+                  handleCellActivate(dateStr, isCurrentMonth);
                 }
               }}
-              className={baseCell + ' ' + stateCell + todayRing + (!isCurrentMonth ? ' opacity-60' : '')}
+              className={baseCell + ' ' + stateCell + todayRing + bulkSelectedClass + (!isCurrentMonth ? ' opacity-60' : '')}
             >
               {cellChildren}
             </div>
@@ -340,10 +374,15 @@ export function ShiftPreferenceCalendar({
               type="button"
               role="gridcell"
               aria-label={ariaLabel}
-              aria-pressed={!!primaryPref && !isAdminView}
+              aria-pressed={
+                bulkSelectionMode
+                  ? isBulkSelected
+                  : !!primaryPref && !isAdminView
+              }
+              aria-selected={bulkSelectionMode ? isBulkSelected : undefined}
               disabled={!isCurrentMonth}
-              onClick={() => isCurrentMonth && onDateClick(dateStr)}
-              className={baseCell + ' ' + stateCell + todayRing}
+              onClick={() => handleCellActivate(dateStr, isCurrentMonth)}
+              className={baseCell + ' ' + stateCell + todayRing + bulkSelectedClass}
             >
               {cellChildren}
             </button>
@@ -381,8 +420,15 @@ export function ShiftPreferenceCalendar({
               >
                 <button
                   type="button"
-                  onClick={() => onDateClick(dateStr)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 border-b border-neutral-100 dark:border-neutral-700 focus-ring rounded-t-lg hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                  onClick={() => handleCellActivate(dateStr, true)}
+                  aria-pressed={bulkSelectionMode ? !!selectedDates?.has(dateStr) : undefined}
+                  aria-selected={bulkSelectionMode ? !!selectedDates?.has(dateStr) : undefined}
+                  className={
+                    'w-full flex items-center justify-between px-3 py-2.5 border-b border-neutral-100 dark:border-neutral-700 focus-ring rounded-t-lg hover:bg-neutral-50 dark:hover:bg-neutral-800' +
+                    (bulkSelectionMode && selectedDates?.has(dateStr)
+                      ? ' ring-2 ring-info-500 ring-offset-1 bg-info-100/50 dark:bg-info-900/30'
+                      : '')
+                  }
                   aria-label={`${format(date, 'M月d日 (E)', { locale: ja })} のシフト申請一覧を開く`}
                 >
                   <span className={'text-sm font-semibold tabular-nums ' + dayColor}>

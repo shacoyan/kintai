@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Clock, History, Plus, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Clock, History, Plus, ChevronRight, AlertTriangle, CalendarPlus, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Button, Card, Badge, BottomSheet, ShiftSkeleton, EmptyState, Heading } from '../components/ui';
 import { messages } from '../lib/messages';
@@ -27,10 +27,12 @@ import { ShiftPreferenceForm } from '../components/Shift/ShiftPreferenceForm';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
 import { ShiftPreferenceSidebar } from '../components/Shift/ShiftPreferenceSidebar';
 import { BulkApplyPresetModal } from '../components/Shift/BulkApplyPresetModal';
+import { BulkShiftPreferenceDialog } from '../components/Shift/BulkShiftPreferenceDialog';
 import { PreferenceActionRow } from '../components/Shift/PreferenceActionRow';
 import { formatTimeRange } from '../utils/formatTimeRange';
 import { useStoreContext } from '../contexts/StoreContext';
-import type { ShiftPreferenceType, LeaveType } from '../types';
+import { useToast } from '../contexts/ToastContext';
+import type { ShiftPreferenceType, LeaveType, BulkSubmitPreferenceArgs } from '../types';
 
 type TabId = 'shift' | 'leave' | 'preference';
 type PreferenceView = 'current' | 'history';
@@ -46,7 +48,8 @@ export function ShiftPage() {
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave, getRemainingPaidLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
-  const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference } = useShiftPreference(tenantId, storeId);
+  const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference, bulkSubmitPreferences } = useShiftPreference(tenantId, storeId);
+  const { showToast } = useToast();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const initialActiveTab = useMemo<TabId>(() => {
@@ -98,6 +101,12 @@ export function ShiftPage() {
   }, [shiftViewMonth, searchParams, setSearchParams]);
   const [allMemberPrefDate, setAllMemberPrefDate] = useState<string | null>(null);
   const [showBulkApplyModal, setShowBulkApplyModal] = useState(false);
+
+  // 一括シフト申請 (Engineer C / §4): 選択モード on/off, 選択 Set, ダイアログ表示
+  const [isBulkMode, setIsBulkMode] = useState<boolean>(false);
+  const [selectedBulkDates, setSelectedBulkDates] = useState<Set<string>>(() => new Set());
+  const [isBulkDialogOpen, setIsBulkDialogOpen] = useState<boolean>(false);
+  const BULK_MAX_DATES = 31;
 
   const pendingPreferenceCount = useMemo(
     () => allPreferences.filter(p => p.status === 'pending').length,
@@ -325,6 +334,131 @@ export function ShiftPage() {
     fetchPreferenceRange();
     fetchRange();
   };
+
+  // 一括選択モードの自動 OFF (§4.1 + P2-INT-2):
+  //   preference タブ外 / 管理者一覧 / storeId null / preferenceView !== 'current'
+  useEffect(() => {
+    const shouldDisable =
+      activeTab !== 'preference' ||
+      (canManageTenant && showAllMembersPrefs) ||
+      !storeId ||
+      preferenceView !== 'current';
+    if (shouldDisable) {
+      setIsBulkMode((prev) => (prev ? false : prev));
+      setSelectedBulkDates((prev) => (prev.size > 0 ? new Set() : prev));
+      setIsBulkDialogOpen((prev) => (prev ? false : prev));
+    }
+  }, [activeTab, canManageTenant, showAllMembersPrefs, storeId, preferenceView]);
+
+  // 選択モード OFF 遷移時に Set クリア (§4.1)
+  useEffect(() => {
+    if (!isBulkMode) {
+      setSelectedBulkDates((prev) => (prev.size > 0 ? new Set() : prev));
+    }
+  }, [isBulkMode]);
+
+  // 既存申請のある日付集合 (§6.4): ダイアログの上書き警告に利用
+  const existingBulkPreferenceDates = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of myPreferences) {
+      if (selectedBulkDates.has(p.date) && p.store_id === storeId) {
+        set.add(p.date);
+      }
+    }
+    return set;
+  }, [myPreferences, selectedBulkDates, storeId]);
+
+  // ロック済み (approved & preferred) の日付集合 (P1-INT-1):
+  // Dialog のロック警告 (lockedDates) に配線。
+  const lockedBulkDates = useMemo(
+    () =>
+      new Set(
+        myPreferences
+          .filter(
+            (p) =>
+              selectedBulkDates.has(p.date) &&
+              p.store_id === storeId &&
+              p.status === 'approved' &&
+              p.preference_type === 'preferred',
+          )
+          .map((p) => p.date),
+      ),
+    [myPreferences, selectedBulkDates, storeId],
+  );
+
+  const sortedSelectedBulkDates = useMemo(
+    () => Array.from(selectedBulkDates).sort(),
+    [selectedBulkDates],
+  );
+
+  const handleToggleBulkDate = useCallback(
+    (date: string) => {
+      setSelectedBulkDates((prev) => {
+        const next = new Set(prev);
+        if (next.has(date)) {
+          next.delete(date);
+          return next;
+        }
+        if (next.size >= BULK_MAX_DATES) {
+          showToast(messages.shiftPreference.bulk.maxSelectionExceeded(BULK_MAX_DATES), { tone: 'warning' });
+          return prev;
+        }
+        next.add(date);
+        return next;
+      });
+    },
+    [showToast],
+  );
+
+  const handleEnterBulkMode = useCallback(() => {
+    setIsBulkMode(true);
+  }, []);
+
+  const handleCancelBulkMode = useCallback(() => {
+    setIsBulkMode(false);
+    setSelectedBulkDates(() => new Set());
+    setIsBulkDialogOpen(false);
+  }, []);
+
+  const handleClearAllBulkDates = useCallback(() => {
+    setSelectedBulkDates(() => new Set());
+  }, []);
+
+  const handleProceedBulkDialog = useCallback(() => {
+    setSelectedBulkDates((prev) => {
+      if (prev.size === 0) return prev;
+      setIsBulkDialogOpen(true);
+      return prev;
+    });
+  }, []);
+
+  const handleBulkPreferenceSubmit = useCallback(
+    async (args: BulkSubmitPreferenceArgs) => {
+      const result = await bulkSubmitPreferences(args);
+      setIsBulkDialogOpen(false);
+      setIsBulkMode(false);
+      setSelectedBulkDates(() => new Set());
+      await fetchPreferenceRange();
+
+      const successCount = result.successCount;
+      const failedCount = result.failedDates.length + (result.lockedDates?.length ?? 0);
+      if (failedCount === 0) {
+        showToast(
+          messages.shiftPreference.bulk.successToast(successCount),
+          'success',
+        );
+      } else if (successCount > 0) {
+        showToast(
+          messages.shiftPreference.bulk.partialFailureToast(successCount, failedCount),
+          { tone: 'warning' },
+        );
+      } else {
+        showToast(messages.shiftPreference.bulk.failureToast, 'error');
+      }
+      return result;
+    },
+    [bulkSubmitPreferences, fetchPreferenceRange, showToast],
+  );
 
   const handleBulkApprovePreferences = async (ids: string[]) => {
     let errors = 0;
@@ -642,6 +776,65 @@ export function ShiftPage() {
                   </div>
                 )}
 
+                {/* 一括シフト申請 — エントリー / 選択モード操作 UI (§5.1 / §5.5)
+                    self view (= !showAllMembersPrefs) かつ storeId 有り の時のみ表示 */}
+                {!(canManageTenant && showAllMembersPrefs) && storeId && (
+                  isBulkMode ? (
+                    <div
+                      role="region"
+                      aria-label="一括シフト申請 選択モード"
+                      className="flex items-center justify-between gap-2 flex-wrap rounded-md border border-info-200 dark:border-info-700 bg-info-50 dark:bg-info-900/30 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-info-700 dark:text-info-200 tabular-nums">
+                          {messages.shiftPreference.bulk.selectedCount(selectedBulkDates.size)}
+                        </span>
+                        {selectedBulkDates.size > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleClearAllBulkDates}
+                            className="text-xs font-semibold text-info-700 dark:text-info-300 hover:underline focus-ring"
+                          >
+                            {messages.shiftPreference.bulk.clearAll}
+                          </button>
+                        )}
+                      </div>
+                      <div className="hidden md:flex items-center gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          iconLeft={<X className="w-4 h-4" />}
+                          onClick={handleCancelBulkMode}
+                        >
+                          {messages.shiftPreference.bulk.cancelMode}
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={handleProceedBulkDialog}
+                          disabled={selectedBulkDates.size === 0}
+                        >
+                          {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        iconLeft={<CalendarPlus className="w-4 h-4" />}
+                        onClick={handleEnterBulkMode}
+                        disabled={isDeadlinePassed && !canEditDeadline}
+                        aria-pressed={isBulkMode}
+                        aria-label={messages.shiftPreference.bulk.entryButtonAria}
+                      >
+                        {messages.shiftPreference.bulk.entryButton}
+                      </Button>
+                    </div>
+                  )
+                )}
+
                 <ShiftPreferenceCalendar
                   preferences={preferencesForCalendar}
                   onDateClick={(date) => {
@@ -657,6 +850,9 @@ export function ShiftPage() {
                   onRejectPreference={canManageTenant && showAllMembersPrefs ? handleRejectPreference : undefined}
                   canManageStore={(sid) => sid ? isManagerOf(sid) : false}
                   onMutated={fetchPreferenceRange}
+                  bulkSelectionMode={isBulkMode && !(canManageTenant && showAllMembersPrefs)}
+                  selectedDates={selectedBulkDates}
+                  onToggleBulkDate={handleToggleBulkDate}
                 />
 
                 {/* 提出予定サマリ（自分視点のみ） */}
@@ -776,18 +972,40 @@ export function ShiftPage() {
                   </BottomSheet>
                 </div>
 
-                {/* sticky 追加ボタン（自分視点のみ） */}
+                {/* sticky 追加ボタン（自分視点のみ） — bulk モード中は「次へ / キャンセル」に差し替え (§5.5) */}
                 {!(canManageTenant && showAllMembersPrefs) && (
                   <div className="lg:hidden sticky bottom-16 md:bottom-0 -mx-4 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-700 z-20">
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      fullWidth
-                      iconLeft={<Plus className="w-4 h-4" />}
-                      onClick={() => setSelectedPrefDate(format(new Date(), 'yyyy-MM-dd'))}
-                    >
-                      本日のシフト申請を追加・編集
-                    </Button>
+                    {isBulkMode ? (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="secondary"
+                          size="lg"
+                          onClick={handleCancelBulkMode}
+                          iconLeft={<X className="w-4 h-4" />}
+                        >
+                          {messages.shiftPreference.bulk.cancelMode}
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="lg"
+                          fullWidth
+                          onClick={handleProceedBulkDialog}
+                          disabled={selectedBulkDates.size === 0}
+                        >
+                          {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        fullWidth
+                        iconLeft={<Plus className="w-4 h-4" />}
+                        onClick={() => setSelectedPrefDate(format(new Date(), 'yyyy-MM-dd'))}
+                      >
+                        本日のシフト申請を追加・編集
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -964,6 +1182,21 @@ export function ShiftPage() {
           onApplied={() => {
             fetchPreferenceRange();
           }}
+        />
+      )}
+
+      {/* 一括シフト申請ダイアログ (Engineer C 配線): self view 限定 */}
+      {storeId && !(canManageTenant && showAllMembersPrefs) && (
+        <BulkShiftPreferenceDialog
+          isOpen={isBulkDialogOpen}
+          onClose={() => setIsBulkDialogOpen(false)}
+          selectedDates={sortedSelectedBulkDates}
+          existingPreferenceDates={existingBulkPreferenceDates}
+          lockedDates={lockedBulkDates}
+          presets={presets}
+          onSubmit={handleBulkPreferenceSubmit}
+          isDeadlinePassed={isDeadlinePassed}
+          canBypassDeadline={canEditDeadline}
         />
       )}
     </div>

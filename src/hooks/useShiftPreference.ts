@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { formatSupabaseError, type FriendlyError } from '../lib/errors';
-import type { ShiftPreference, ShiftPreferenceType } from '../types';
+import type { ShiftPreference, ShiftPreferenceType, BulkSubmitPreferenceArgs, BulkSubmitResult } from '../types';
 import type { NotificationType } from '../types';
 
 async function notify(args: {
@@ -314,10 +314,83 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     }
   }, []);
 
+  const bulkSubmitPreferences = useCallback(async (args: BulkSubmitPreferenceArgs): Promise<BulkSubmitResult> => {
+    if (args.dates.length === 0) {
+      return { successCount: 0, failedDates: [], lockedDates: [] };
+    }
+
+    setError(null);
+
+    if (storeId === null) throw new Error('店舗が選択されていません');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('認証が必要です');
+
+    try {
+      // 事前 fetch: 既存行を取得
+      const { data: existing, error: fetchError } = await supabase
+        .from('shift_preferences')
+        .select('date,status,preference_type')
+        .eq('tenant_id', tenantId)
+        .eq('user_id', user.id)
+        .eq('store_id', storeId)
+        .in('date', args.dates);
+
+      if (fetchError) throw fetchError;
+
+      // 承認済み preferred の date 集合を抽出
+      const lockedDates = (existing || [])
+        .filter((r: any) => r.status === 'approved' && r.preference_type === 'preferred')
+        .map((r: any) => r.date as string);
+      const lockedDatesSet = new Set(lockedDates);
+
+      const targetDates = args.dates.filter(d => !lockedDatesSet.has(d));
+
+      if (targetDates.length === 0) {
+        return { successCount: 0, failedDates: [], lockedDates };
+      }
+
+      const rows = targetDates.map(date => ({
+        tenant_id: tenantId,
+        user_id: user.id,
+        date,
+        preference_type: args.type,
+        start_time: args.type === 'preferred' ? (args.startTime || null) : null,
+        end_time: args.type === 'preferred' ? (args.endTime || null) : null,
+        note: null,
+        store_id: storeId,
+        status: args.type === 'unavailable' ? 'approved' : 'pending',
+      }));
+
+      const { data, error } = await supabase
+        .from('shift_preferences')
+        .upsert(rows, { onConflict: 'tenant_id,user_id,date,store_id' })
+        .select('id,date');
+
+      if (error) {
+        const formatted = formatSupabaseError(error);
+        setError(formatted);
+        logger.error('bulkSubmitPreferences error:', formatted);
+        return { successCount: 0, failedDates: targetDates.slice(), lockedDates };
+      }
+
+      const returnedDates = new Set((data || []).map((r: any) => r.date as string));
+      const failedDates = targetDates.filter(d => !returnedDates.has(d));
+      const successCount = targetDates.length - failedDates.length;
+
+      return { successCount, failedDates, lockedDates };
+    } catch (err) {
+      const formatted = formatSupabaseError(err);
+      setError(formatted);
+      logger.error('bulkSubmitPreferences error:', formatted);
+      return { successCount: 0, failedDates: args.dates.slice(), lockedDates: [] };
+    }
+  }, [tenantId, storeId]);
+
   return {
     myPreferences, allPreferences, loading, error, clearError,
     fetchMyPreferences, fetchAllPreferences,
     submitPreference, deletePreference,
+    bulkSubmitPreferences,
     approvePreference, rejectPreference,
     revertPreference,
   };
