@@ -779,7 +779,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     })();
 
     return () => { cancelled = true; };
-  }, [user, authLoading, fetchTenants, fetchMembers]);
+  // 2026-05-13 Track B: 依存配列を user → user?.id に変更。
+  // AuthContext の setUser は id 同一なら参照保持するよう Track B で修正済だが、
+  // 防御層として依存配列側も userId 比較に揃え、TOKEN_REFRESHED race で fetchTenants が
+  // 再走→setLoading(true)→RequireTenant 配下 tree unmount を起こさないようにする。
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, authLoading, fetchTenants, fetchMembers]);
 
   useEffect(() => {
     if (currentTenant) {

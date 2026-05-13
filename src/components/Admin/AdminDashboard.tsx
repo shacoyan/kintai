@@ -81,13 +81,21 @@ const SECTIONS = [
 ] as const;
 
 export function AdminDashboard({ tenantId }: AdminDashboardProps) {
-  const [searchParams] = useSearchParams();
-  const initialTab = (() => {
-    const t = searchParams.get('tab');
-    if (t && tabs.some(x => x.id === t)) return t as TabId;
-    return 'dashboard';
-  })();
-  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialActiveTab = useMemo<TabId>(() => {
+    const t = searchParams.get('adminTab');
+    return (t && tabs.some(x => x.id === t)) ? (t as TabId) : 'dashboard';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const [activeTab, setActiveTabState] = useState<TabId>(initialActiveTab);
+  const setActiveTab = useCallback((tab: TabId) => {
+    setActiveTabState(tab);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('adminTab', tab);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
   const [rejectingLeaveId, setRejectingLeaveId] = useState<string | null>(null);
   const [approveConfirm, setApproveConfirm] = useState<{ leaveId: string; userId: string } | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);

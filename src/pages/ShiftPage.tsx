@@ -48,7 +48,21 @@ export function ShiftPage() {
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
   const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference } = useShiftPreference(tenantId, storeId);
 
-  const [activeTab, setActiveTab] = useState<TabId>('shift');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialActiveTab = useMemo<TabId>(() => {
+    const t = searchParams.get('tab');
+    return (t === 'shift' || t === 'preference' || t === 'leave') ? t : 'shift';
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const [activeTab, setActiveTabState] = useState<TabId>(initialActiveTab);
+  const setActiveTab = useCallback((tab: TabId) => {
+    setActiveTabState(tab);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', tab);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
   const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
   const [selectedShiftDate, setSelectedShiftDate] = useState<string | null>(null);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
@@ -58,7 +72,6 @@ export function ShiftPage() {
   const [selectedPrefDate, setSelectedPrefDate] = useState<string | null>(null);
   const [showAllMembersPrefs, setShowAllMembersPrefs] = useState(false);
   const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
-  const [searchParams, setSearchParams] = useSearchParams();
   const initialShiftMonth = useMemo(() => {
     const monthParam = searchParams.get('month');
     if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
@@ -72,13 +85,15 @@ export function ShiftPage() {
   useEffect(() => {
     const ym = format(shiftViewMonth, 'yyyy-MM');
     if (searchParams.get('month') !== ym) {
-      const next = new URLSearchParams(searchParams);
-      next.set('month', ym);
-      // 規律: setSearchParams は必ず new URLSearchParams(searchParams) で複製してから set すること。
+      // 規律: setSearchParams は functional updater 形式で prev を複製してから set すること。
       // オブジェクトリテラル直接渡し (setSearchParams({ key: value })) は他クエリを破壊するため禁止。
       // 詳細: .company/engineering/docs/2026-04-28-kintai-loop15-techdesign.md L15-2 セクション参照
-      // (Loop 14 Phase 2 L14-6 で確立した規律)
-      setSearchParams(next, { replace: true });
+      // (Loop 14 Phase 2 L14-6 で確立した規律 + Track C で functional updater 化)
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('month', ym);
+        return next;
+      }, { replace: true });
     }
   }, [shiftViewMonth, searchParams, setSearchParams]);
   const [allMemberPrefDate, setAllMemberPrefDate] = useState<string | null>(null);

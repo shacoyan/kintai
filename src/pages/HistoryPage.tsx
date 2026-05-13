@@ -276,13 +276,15 @@ export function HistoryPage() {
   useEffect(() => {
     const ym = `${year}-${String(month).padStart(2, '0')}`;
     if (searchParams.get('date') !== ym) {
-      const next = new URLSearchParams(searchParams);
-      next.set('date', ym);
-      // 規律: setSearchParams は必ず new URLSearchParams(searchParams) で複製してから set すること。
+      // 規律: setSearchParams は functional updater 形式で prev を複製してから set すること。
       // オブジェクトリテラル直接渡し (setSearchParams({ key: value })) は他クエリを破壊するため禁止。
       // 詳細: .company/engineering/docs/2026-04-28-kintai-loop15-techdesign.md L15-2 セクション参照
-      // (Loop 14 Phase 2 L14-6 で確立した規律)
-      setSearchParams(next, { replace: true });
+      // (Loop 14 Phase 2 L14-6 で確立した規律 + Track C で functional updater 化)
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('date', ym);
+        return next;
+      }, { replace: true });
     }
   }, [year, month, searchParams, setSearchParams]);
 

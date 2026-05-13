@@ -94,7 +94,7 @@ export function StoreSelector() {
           <span>店舗が割り当てられていません</span>
           {isOwner ? (
             <a
-              href="/admin?tab=stores"
+              href="/admin?adminTab=stores"
               className="text-primary-600 dark:text-primary-400 hover:underline mt-0.5"
             >
               店舗を作成してください →
