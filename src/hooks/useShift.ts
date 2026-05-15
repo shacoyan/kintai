@@ -137,26 +137,16 @@ export function useShift(tenantId: string, storeId: string | null) {
   }, []);
 
   const approveShift = useCallback(async (shiftId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-    const { data, error: e } = await supabase
-      .from('shifts')
-      .update({
-        status: 'approved',
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq('id', shiftId)
-      .select('user_id, date, start_time')
-      .single();
+    const { data, error: e } = await supabase.rpc('approve_shift_final', { p_shift_id: shiftId });
     if (e) throw new Error(`シフトの承認に失敗しました: ${e.message}`);
+    const shift = data as Shift;
     await notify({
       tenantId: tenantId,
-      userId: data.user_id,
+      userId: shift.user_id,
       type: 'shift_approved',
       title: 'シフトが承認されました',
-      body: `${data.date} のシフトが承認されました`,
-      link: '/shift?date=' + data.date,
+      body: `${shift.date} のシフトが承認されました`,
+      link: '/shift?date=' + shift.date,
     });
   }, [tenantId]);
 
@@ -185,44 +175,46 @@ export function useShift(tenantId: string, storeId: string | null) {
   }, [tenantId]);
 
   const modifyShift = useCallback(async (shiftId: string, newStartTime: string, newEndTime: string, newStoreId?: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-
-    // まず現在のシフトを取得して元の時間を保存
-    const { data: current } = await supabase
-      .from('shifts')
-      .select('start_time, end_time')
-      .eq('id', shiftId)
-      .single();
-
-    const { error: e } = await supabase
-      .from('shifts')
-      .update({
-        start_time: newStartTime,
-        end_time: newEndTime,
-        original_start_time: current?.start_time || null,
-        original_end_time: current?.end_time || null,
-        status: 'modified',
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-        ...(newStoreId !== undefined ? { store_id: newStoreId } : {}),
-      })
-      .eq('id', shiftId);
+    const { error: e } = await supabase.rpc('update_shift_time', {
+      p_shift_id: shiftId,
+      p_start_time: newStartTime,
+      p_end_time: newEndTime,
+      p_store_id: newStoreId ?? null
+    });
     if (e) throw new Error(`シフトの修正に失敗しました: ${e.message}`);
   }, []);
 
-  const bulkApprove = useCallback(async (shiftIds: string[]) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-    const { error: e } = await supabase
-      .from('shifts')
-      .update({
-        status: 'approved',
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-      })
-      .in('id', shiftIds);
-    if (e) throw new Error(`一括承認に失敗しました: ${e.message}`);
+  const tentativeApproveShift = useCallback(async (shiftId: string) => {
+    const { data, error: e } = await supabase.rpc('approve_shift_tentative', { p_shift_id: shiftId });
+    if (e) throw new Error(`シフトの仮承認に失敗しました: ${e.message}`);
+    const shift = data as Shift;
+    await notify({
+      tenantId: tenantId,
+      userId: shift.user_id,
+      type: 'shift_approved',
+      title: 'シフトが仮承認されました',
+      body: `${shift.date} のシフトが仮承認されました`,
+      link: '/shift?date=' + shift.date,
+    });
+  }, [tenantId]);
+
+  const cancelShiftTentative = useCallback(async (shiftId: string) => {
+    const { error: e } = await supabase.rpc('cancel_shift_tentative', { p_shift_id: shiftId });
+    if (e) throw new Error(`仮承認の取消に失敗しました: ${e.message}`);
+  }, []);
+
+  const restoreShift = useCallback(async (shiftId: string) => {
+    const { data, error: e } = await supabase.rpc('restore_shift', { p_shift_id: shiftId });
+    if (e) throw new Error(`シフトの復元に失敗しました: ${e.message}`);
+    if (!data) throw new Error('restore_shift returned no row');
+    return data as Shift;
+  }, []);
+
+  const finalApproveStoreShifts = useCallback(async (tenantId: string, storeId: string) => {
+    const { data, error: e } = await supabase.rpc('approve_store_shifts_final', { p_tenant_id: tenantId, p_store_id: storeId });
+    if (e) throw new Error(`店舗の一括本承認に失敗しました: ${e.message}`);
+    const row = (data as Array<{approved_count: number; approved_ids: string[]}> | null)?.[0];
+    return { approvedCount: row?.approved_count ?? 0, approvedIds: row?.approved_ids ?? [] as string[] };
   }, []);
 
   const getLaborCostEstimate = useCallback((
@@ -299,7 +291,10 @@ export function useShift(tenantId: string, storeId: string | null) {
     approveShift,
     rejectShift,
     modifyShift,
-    bulkApprove,
+    tentativeApproveShift,
+    cancelShiftTentative,
+    restoreShift,
+    finalApproveStoreShifts,
     getLaborCostEstimate,
   };
 }

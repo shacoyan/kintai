@@ -9,15 +9,18 @@ interface ShiftEditModalProps {
   shift: Shift;
   memberName?: string;
   canManageTenant: boolean;
+  canManageStore: boolean;
+  selectableStores: Store[];
+  storeName?: string;
   onModify: (shiftId: string, startTime: string, endTime: string, storeId?: string) => Promise<void>;
   onDelete: (shiftId: string) => Promise<void>;
   onApprove?: (shiftId: string) => Promise<void>;
+  onTentativeApprove?: (shiftId: string) => Promise<void>;
+  onCancelTentative?: (shiftId: string) => Promise<void>;
   onReject?: (shiftId: string) => Promise<void>;
+  onRestore?: (shiftId: string) => Promise<void>;
   onClose: () => void;
   onRefresh: () => void;
-  selectableStores: Store[];
-  storeName?: string;
-  canManageStore: boolean;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -29,13 +32,30 @@ for (let h = 0; h < 24; h++) {
 
 const STATUS_LABEL: Record<string, { text: string; className: string }> = {
   pending: { text: '申請中', className: 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300' },
+  tentative: { text: '仮承認', className: 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-300' },
   approved: { text: '承認済', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
   rejected: { text: '却下', className: 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300' },
   modified: { text: '修正済', className: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300' },
   cancelled: { text: '取消', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700/30 dark:text-neutral-300' },
 };
 
-export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, onDelete, onApprove, onReject, onClose, onRefresh, selectableStores, storeName, canManageStore }: ShiftEditModalProps) {
+export function ShiftEditModal({
+  shift,
+  memberName,
+  canManageTenant,
+  canManageStore,
+  selectableStores,
+  storeName,
+  onModify,
+  onDelete,
+  onApprove,
+  onTentativeApprove,
+  onCancelTentative,
+  onReject,
+  onRestore,
+  onClose,
+  onRefresh
+}: ShiftEditModalProps) {
   const [startTime, setStartTime] = useState(shift.start_time.slice(0, 5));
   const [endTime, setEndTime] = useState(shift.end_time.slice(0, 5));
   const [editStoreId, setEditStoreId] = useState<string | null>(shift.store_id ?? null);
@@ -63,14 +83,14 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
     if (mode === 'view') {
       return (
         <div className="flex flex-wrap gap-2">
-          {canManageTenant && canManageStore && shift.status === 'pending' && onApprove && (
+          {canManageTenant && canManageStore && shift.status === 'pending' && onTentativeApprove && (
             <Button
-              onClick={() => handleAction(() => onApprove(shift.id))}
+              onClick={() => handleAction(() => onTentativeApprove(shift.id))}
               disabled={processing}
               variant="primary"
               className="bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400"
             >
-              承認
+              仮承認
             </Button>
           )}
           {canManageTenant && canManageStore && shift.status === 'pending' && onReject && (
@@ -82,7 +102,26 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
               却下
             </Button>
           )}
-          {canManageTenant && canManageStore && (
+          {canManageTenant && canManageStore && shift.status === 'tentative' && onApprove && (
+            <Button
+              onClick={() => handleAction(() => onApprove(shift.id))}
+              disabled={processing}
+              variant="primary"
+              className="bg-success-700 dark:bg-success-600 hover:bg-success-800 dark:hover:bg-success-500"
+            >
+              本承認
+            </Button>
+          )}
+          {canManageTenant && canManageStore && shift.status === 'tentative' && onCancelTentative && (
+            <Button
+              onClick={() => handleAction(() => onCancelTentative(shift.id))}
+              disabled={processing}
+              variant="tertiary"
+            >
+              仮承認を取消
+            </Button>
+          )}
+          {canManageTenant && canManageStore && shift.status === 'approved' && (
             <Button
               onClick={() => setMode('edit')}
               variant="primary"
@@ -90,13 +129,74 @@ export function ShiftEditModal({ shift, memberName, canManageTenant, onModify, o
               修正
             </Button>
           )}
-          {canManageTenant && canManageStore && (
+          {canManageTenant && canManageStore && shift.status === 'approved' && (
             <Button
               onClick={() => setMode('confirmDelete')}
               variant="danger"
             >
               削除
             </Button>
+          )}
+          {canManageTenant && canManageStore && shift.status === 'rejected' && onRestore && (
+            <Button
+              onClick={() => handleAction(() => onRestore(shift.id))}
+              disabled={processing}
+              variant="primary"
+              className="bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400"
+            >
+              復活承認
+            </Button>
+          )}
+          {canManageTenant && canManageStore && shift.status === 'rejected' && (
+            <Button
+              onClick={() => setMode('confirmDelete')}
+              variant="danger"
+            >
+              削除
+            </Button>
+          )}
+          {canManageTenant && canManageStore && shift.status === 'modified' && onTentativeApprove && (
+            <Button
+              onClick={() => handleAction(() => onTentativeApprove(shift.id))}
+              disabled={processing}
+              variant="primary"
+              className="bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400"
+            >
+              仮承認
+            </Button>
+          )}
+          {canManageTenant && canManageStore && shift.status === 'modified' && (
+            <Button
+              onClick={() => setMode('edit')}
+              variant="primary"
+            >
+              再修正
+            </Button>
+          )}
+          {canManageTenant && canManageStore && shift.status === 'modified' && onReject && (
+            <Button
+              onClick={() => handleAction(() => onReject(shift.id))}
+              disabled={processing}
+              variant="danger"
+            >
+              却下
+            </Button>
+          )}
+          {canManageTenant && canManageStore && shift.status === 'modified' && (
+            <Button
+              onClick={() => setMode('confirmDelete')}
+              variant="danger"
+            >
+              削除
+            </Button>
+          )}
+          {/* Fallback modify/delete for other potential unhandled statuses if necessary, 
+              or keeping existing logic for general cases if required. Assuming status is strictly typed. */}
+          {!['pending', 'tentative', 'approved', 'rejected', 'modified'].includes(shift.status) && canManageTenant && canManageStore && (
+            <>
+              <Button onClick={() => setMode('edit')} variant="primary">修正</Button>
+              <Button onClick={() => setMode('confirmDelete')} variant="danger">削除</Button>
+            </>
           )}
           {canManageTenant && !canManageStore && (
             <p className="text-xs text-neutral-500 dark:text-neutral-300">この店舗の管理権限がありません</p>

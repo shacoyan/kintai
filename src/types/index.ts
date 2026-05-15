@@ -81,13 +81,15 @@ export interface Shift {
   date: string;
   start_time: string;
   end_time: string;
-  status: 'pending' | 'approved' | 'rejected' | 'modified' | 'cancelled';
+  status: 'pending' | 'tentative' | 'approved' | 'rejected' | 'modified' | 'cancelled';
   original_start_time: string | null;
   original_end_time: string | null;
   note: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
   created_at: string;
+  tentative_approved_by: string | null;
+  tentative_approved_at: string | null;
   store_id: string | null;
 }
 

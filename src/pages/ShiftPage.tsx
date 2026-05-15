@@ -44,7 +44,7 @@ export function ShiftPage() {
   const { currentStore, stores, isManagerOf } = useStoreContext();
   const storeId = currentStore?.id ?? null;
 
-  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, bulkApprove, getLaborCostEstimate } = useShift(tenantId, storeId);
+  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, restoreShift, finalApproveStoreShifts, getLaborCostEstimate } = useShift(tenantId, storeId);
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave, getRemainingPaidLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
@@ -497,11 +497,17 @@ export function ShiftPage() {
   };
 
   const laborEstimates = useMemo(() => {
-    if (!canManageTenant || members.length === 0) return [];
+    if (!canManageTenant || members.length === 0) {
+      return { tentative: [], all: [] };
+    }
     const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
     const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
     const monthShifts = shifts.filter(s => s.date >= monthStart && s.date <= monthEnd);
-    return getLaborCostEstimate(monthShifts, members);
+    const tentativeShifts = monthShifts.filter(s => s.status === 'tentative');
+    return {
+      tentative: getLaborCostEstimate(tentativeShifts, members),
+      all: getLaborCostEstimate(monthShifts, members),
+    };
   }, [canManageTenant, shifts, members, getLaborCostEstimate, shiftViewMonth]);
 
   const pendingShifts = shifts.filter(s => s.status === 'pending');
@@ -609,6 +615,9 @@ export function ShiftPage() {
               onDelete={deleteShift}
               onApprove={approveShift}
               onReject={rejectShift}
+              onTentativeApprove={tentativeApproveShift}
+              onCancelTentative={cancelShiftTentative}
+              onRestore={async (id) => { await restoreShift(id); }}
               onClose={() => setSelectedShift(null)}
               onRefresh={fetchRange}
               selectableStores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
@@ -652,14 +661,23 @@ export function ShiftPage() {
                 onApprove={approveShift}
                 onReject={rejectShift}
                 onModify={modifyShift}
-                onBulkApprove={bulkApprove}
+                onBulkApprove={async () => { /* deprecated: tentative/final approve flow に移行済 */ }}
+                onTentativeApprove={tentativeApproveShift}
+                onCancelTentative={cancelShiftTentative}
+                onRestore={async (id) => { await restoreShift(id); }}
+                onFinalApproveStore={async (tid, sid) => {
+                  const r = await finalApproveStoreShifts(tid, sid);
+                  return { approved_count: r.approvedCount, approved_ids: r.approvedIds };
+                }}
+                tenantId={tenantId}
+                onToast={showToast}
                 onDelete={deleteShift}
                 onRefresh={fetchRange}
                 stores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
                 canManageStore={(sid) => sid ? isManagerOf(sid) : false}
               />
 
-              <LaborCostSummary estimates={laborEstimates} targetMonth={shiftViewMonth} />
+              <LaborCostSummary tentativeEstimates={laborEstimates.tentative} allEstimates={laborEstimates.all} targetMonth={shiftViewMonth} />
             </>
           )}
         </div>

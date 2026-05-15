@@ -18,6 +18,12 @@ interface ShiftAdminPanelProps {
   onRefresh: () => void;
   canManageStore: (storeId: string | null) => boolean;
   stores?: { id: string; name: string }[];
+  onTentativeApprove?: (shiftId: string) => Promise<void>;
+  onCancelTentative?: (shiftId: string) => Promise<void>;
+  onFinalApproveStore?: (tenantId: string, storeId: string) => Promise<{ approved_count: number; approved_ids: string[] }>;
+  onRestore?: (shiftId: string) => Promise<void>;
+  tenantId?: string;
+  onToast?: (message: string, type?: 'success' | 'error') => void;
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -29,15 +35,33 @@ for (let h = 0; h < 24; h++) {
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   pending: { label: '申請中', className: 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300' },
-  approved: { label: '承認済', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
+  tentative: { label: '仮承認', className: 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-300' },
+  approved: { label: '本承認', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
   rejected: { label: '却下', className: 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300' },
   modified: { label: '修正', className: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300' },
 };
 
 type SortKey = 'date_asc' | 'date_desc' | 'created_asc' | 'created_desc';
 
-export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify, onBulkApprove, onDelete, onRefresh, canManageStore, stores }: ShiftAdminPanelProps) {
-  const [statusFilter, setStatusFilter] = useState<'pending' | 'approved' | 'all'>('pending');
+export function ShiftAdminPanel({
+  shifts,
+  members,
+  onApprove,
+  onReject,
+  onModify,
+  onBulkApprove: _onBulkApprove,
+  onDelete,
+  onRefresh,
+  canManageStore,
+  stores,
+  onTentativeApprove,
+  onCancelTentative,
+  onFinalApproveStore,
+  onRestore,
+  tenantId,
+  onToast
+}: ShiftAdminPanelProps) {
+  const [statusFilter, setStatusFilter] = useState<'pending' | 'tentative' | 'approved' | 'all'>('pending');
   const [modifyingId, setModifyingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [modStart, setModStart] = useState('');
@@ -45,23 +69,27 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('date_desc');
-  const [confirmingId, setConfirmingId] = useState<{ id: string; action: 'approve' | 'reject' | 'restore' } | null>(null);
-  const [bulkConfirming, setBulkConfirming] = useState(false);
+  const [confirmingId, setConfirmingId] = useState<{ id: string; action: 'approve' | 'reject' | 'restore' | 'tentative' | 'final-approve' } | null>(null);
+  const [bulkConfirmingStoreId, setBulkConfirmingStoreId] = useState<string | null>(null);
+  const [cancelingTentativeId, setCancelingTentativeId] = useState<string | null>(null);
 
   const memberMap = new Map(members.map(m => [m.user_id, m.display_name]));
   const storeMap = useMemo(() => new Map((stores ?? []).map(s => [s.id, s.name])), [stores]);
   const showStoreBadge = (stores?.length ?? 0) >= 2;
 
-  const manageableShifts = shifts.filter(s => canManageStore(s.store_id));
+  const manageableShifts = useMemo(() => shifts.filter(s => canManageStore(s.store_id)), [shifts, canManageStore]);
 
+  const pendingShifts = useMemo(() => manageableShifts.filter(s => s.status === 'pending'), [manageableShifts]);
+  const tentativeShifts = useMemo(() => manageableShifts.filter(s => s.status === 'tentative'), [manageableShifts]);
   const approvedShifts = useMemo(() => manageableShifts.filter(s => s.status === 'approved'), [manageableShifts]);
   const allShifts = useMemo(() => manageableShifts.filter(s => s.status !== 'cancelled'), [manageableShifts]);
-  const pendingShifts = manageableShifts.filter(s => s.status === 'pending');
 
   const displayedShifts = useMemo(() => {
     const filtered = shifts.filter(s =>
       statusFilter === 'pending'
         ? s.status === 'pending'
+        : statusFilter === 'tentative'
+        ? s.status === 'tentative'
         : statusFilter === 'approved'
         ? s.status === 'approved'
         : s.status !== 'cancelled'
@@ -93,6 +121,16 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const visibleShifts = displayedShifts.slice(startIndex, startIndex + PAGE_SIZE);
 
+  const tentativeByStore = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const s of tentativeShifts) {
+      if (s.store_id) {
+        map.set(s.store_id, (map.get(s.store_id) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [tentativeShifts]);
+
   const handleAction = async (action: () => Promise<void>) => {
     setProcessing(true);
     setError(null);
@@ -117,45 +155,75 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
     setModifyingId(null);
   };
 
+  const handleBulkFinalApproveStore = async (storeId: string) => {
+    if (!onFinalApproveStore || !tenantId) return;
+    await handleAction(async () => {
+      const result = await onFinalApproveStore(tenantId, storeId);
+      const storeName = storeMap.get(storeId) ?? '不明店舗';
+      onToast?.(`${storeName}の仮承認 ${result.approved_count} 件を本承認しました`, 'success');
+    });
+    setBulkConfirmingStoreId(null);
+  };
+
+  const renderBulkButton = () => {
+    if (statusFilter === 'pending') return null;
+    if (statusFilter !== 'tentative') return null;
+    if (!onFinalApproveStore || !tenantId) return null;
+    if (tentativeByStore.size === 0) return null;
+
+    const buttons: React.ReactNode[] = [];
+
+    for (const [storeId, count] of tentativeByStore.entries()) {
+      const storeName = storeMap.get(storeId);
+      if (!storeName || count < 1) continue;
+
+      if (bulkConfirmingStoreId === storeId) {
+        buttons.push(
+          <div key={storeId} className="flex gap-2">
+            <button
+              onClick={() => handleBulkFinalApproveStore(storeId)}
+              disabled={processing}
+              className="px-3 py-2 min-h-[44px] text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 dark:hover:bg-success-600 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo flex items-center"
+            >
+              {processing && <Spinner size="sm" inline className="mr-1" />}
+              <span>{storeName} の仮承認 {count}件を本承認する</span>
+            </button>
+            <button
+              onClick={() => setBulkConfirmingStoreId(null)}
+              className="px-3 py-2 min-h-[44px] text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
+            >
+              戻す
+            </button>
+          </div>
+        );
+      } else {
+        buttons.push(
+          <button
+            key={storeId}
+            onClick={() => setBulkConfirmingStoreId(storeId)}
+            disabled={processing}
+            className="px-3 py-2 min-h-[44px] text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo flex items-center"
+          >
+            {processing && <Spinner size="sm" inline className="mr-1" />}
+            <span>{storeName} の仮承認 {count}件を一括本承認</span>
+          </button>
+        );
+      }
+    }
+
+    return <div className="flex flex-wrap items-center gap-2">{buttons}</div>;
+  };
+
   return (
     <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between flex-wrap gap-2">
         <div>
           <Heading level={2}>シフト申請の承認</Heading>
           {pendingShifts.length > 0 && (
             <p className="text-sm text-neutral-500 dark:text-neutral-300 mt-0.5">{pendingShifts.length}件の承認待ち</p>
           )}
         </div>
-        {pendingShifts.length > 0 && (
-          bulkConfirming ? (
-            <div className="flex gap-2">
-              <button
-                onClick={() => { handleAction(() => onBulkApprove(pendingShifts.map(s => s.id))); setBulkConfirming(false); }}
-                disabled={processing}
-                className="px-3 py-2 min-h-[44px] text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 dark:hover:bg-success-600 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo flex items-center"
-              >
-                {processing && <Spinner size="sm" inline className="mr-1" />}
-                <span>{pendingShifts.length}件 承認する</span>
-              </button>
-              <button
-                onClick={() => setBulkConfirming(false)}
-                className="px-3 py-2 min-h-[44px] text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
-              >
-                戻す
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setBulkConfirming(true)}
-              disabled={processing}
-              className="px-3 py-2 min-h-[44px] text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo flex items-center"
-            >
-              {processing && <Spinner size="sm" inline className="mr-1" />}
-              <span>一括承認</span>
-              <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-success-500 rounded-full tabular-nums">{pendingShifts.length}</span>
-            </button>
-          )
-        )}
+        {renderBulkButton()}
       </div>
 
       <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-700">
@@ -172,6 +240,17 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
             申請中 ({pendingShifts.length})
           </button>
           <button
+            onClick={() => setStatusFilter('tentative')}
+            aria-pressed={statusFilter === 'tentative'}
+            className={`flex-1 px-4 py-2 text-sm font-medium text-center motion-safe:transition-colors duration-120 ease-out-expo focus:outline-none ${
+              statusFilter === 'tentative'
+                ? 'text-primary-600 border-b-2 border-primary-600 dark:text-primary-400 dark:border-primary-400'
+                : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-200'
+            }`}
+          >
+            仮承認 ({tentativeShifts.length})
+          </button>
+          <button
             onClick={() => setStatusFilter('approved')}
             aria-pressed={statusFilter === 'approved'}
             className={`flex-1 px-4 py-2 text-sm font-medium text-center motion-safe:transition-colors duration-120 ease-out-expo focus:outline-none ${
@@ -180,7 +259,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                 : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-200'
             }`}
           >
-            承認済 ({approvedShifts.length})
+            本承認 ({approvedShifts.length})
           </button>
           <button
             onClick={() => setStatusFilter('all')}
@@ -236,6 +315,11 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                   { key: 'modify', label: '修正', onSelect: () => handleModifyStart(shift), tone: 'primary' },
                   { key: 'reject', label: '却下', onSelect: () => setConfirmingId({ id: shift.id, action: 'reject' }), tone: 'danger' }
                 ];
+              } else if (shift.status === 'tentative') {
+                actionItems = [
+                  { key: 'modify', label: '修正', onSelect: () => handleModifyStart(shift), tone: 'primary' },
+                  { key: 'cancel-tentative', label: '仮承認を取消', onSelect: () => setCancelingTentativeId(shift.id), tone: 'danger' }
+                ];
               } else if (shift.status === 'approved') {
                 actionItems = [
                   { key: 'delete', label: '削除', onSelect: () => setDeletingId(shift.id), tone: 'danger' }
@@ -246,6 +330,7 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                 ];
               } else if (shift.status === 'modified') {
                 actionItems = [
+                  { key: 'modify', label: '再修正', onSelect: () => handleModifyStart(shift), tone: 'primary' },
                   { key: 'delete', label: '削除', onSelect: () => setDeletingId(shift.id), tone: 'danger' }
                 ];
               }
@@ -335,14 +420,19 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                             戻す
                           </button>
                         </>
-                      ) : confirmingId?.id === shift.id && confirmingId.action === 'approve' ? (
+                      ) : confirmingId?.id === shift.id && confirmingId.action === 'tentative' ? (
                         <>
                           <button
-                            onClick={() => { handleAction(() => onApprove(shift.id)); setConfirmingId(null); }}
-                            disabled={processing}
+                            onClick={() => {
+                              if (onTentativeApprove) {
+                                handleAction(() => onTentativeApprove(shift.id));
+                              }
+                              setConfirmingId(null);
+                            }}
+                            disabled={processing || !onTentativeApprove}
                             className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
                           >
-                            承認する
+                            仮承認する
                           </button>
                           <button
                             onClick={() => setConfirmingId(null)}
@@ -354,11 +444,65 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       ) : (
                         <>
                           <button
-                            onClick={() => setConfirmingId({ id: shift.id, action: 'approve' })}
-                            disabled={processing}
+                            onClick={() => setConfirmingId({ id: shift.id, action: 'tentative' })}
+                            disabled={processing || !onTentativeApprove}
                             className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
                           >
-                            承認
+                            仮承認
+                          </button>
+                          <ActionMenu items={actionItems} align="end" bottomSheetTitle={menuTitle} />
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {!isModifying && canManageRow && shift.status === 'tentative' && (
+                    <div className="flex items-center gap-2">
+                      {cancelingTentativeId === shift.id ? (
+                        <>
+                          <button
+                            onClick={() => {
+                              if (onCancelTentative) {
+                                handleAction(() => onCancelTentative(shift.id));
+                              }
+                              setCancelingTentativeId(null);
+                            }}
+                            disabled={processing || !onCancelTentative}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 dark:hover:bg-danger-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            取消する
+                          </button>
+                          <button
+                            onClick={() => setCancelingTentativeId(null)}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            戻す
+                          </button>
+                        </>
+                      ) : confirmingId?.id === shift.id && confirmingId.action === 'final-approve' ? (
+                        <>
+                          <button
+                            onClick={() => { handleAction(() => onApprove(shift.id)); setConfirmingId(null); }}
+                            disabled={processing}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-700 rounded hover:bg-success-800 dark:hover:bg-success-600 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            本承認する
+                          </button>
+                          <button
+                            onClick={() => setConfirmingId(null)}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            戻す
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setConfirmingId({ id: shift.id, action: 'final-approve' })}
+                            disabled={processing}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-700 rounded hover:bg-success-800 dark:hover:bg-success-600 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            本承認
                           </button>
                           <ActionMenu items={actionItems} align="end" bottomSheetTitle={menuTitle} />
                         </>
@@ -387,9 +531,9 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       ) : (
                         <>
                           <button
-                            onClick={() => handleModifyStart(shift)}
-                            disabled={processing}
-                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
+                            disabled
+                            title="本承認後は修正不可"
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded opacity-50 cursor-not-allowed"
                           >
                             修正
                           </button>
@@ -420,8 +564,8 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                       ) : confirmingId?.id === shift.id && confirmingId.action === 'restore' ? (
                         <>
                           <button
-                            onClick={() => { handleAction(() => onApprove(shift.id)); setConfirmingId(null); }}
-                            disabled={processing}
+                            onClick={() => { handleAction(async () => { if (onRestore) await onRestore(shift.id); }); setConfirmingId(null); }}
+                            disabled={processing || !onRestore}
                             className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
                           >
                             復活承認する
@@ -466,14 +610,35 @@ export function ShiftAdminPanel({ shifts, members, onApprove, onReject, onModify
                             戻す
                           </button>
                         </>
+                      ) : confirmingId?.id === shift.id && confirmingId.action === 'tentative' ? (
+                        <>
+                          <button
+                            onClick={() => {
+                              if (onTentativeApprove) {
+                                handleAction(() => onTentativeApprove(shift.id));
+                              }
+                              setConfirmingId(null);
+                            }}
+                            disabled={processing || !onTentativeApprove}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            仮承認する
+                          </button>
+                          <button
+                            onClick={() => setConfirmingId(null)}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            戻す
+                          </button>
+                        </>
                       ) : (
                         <>
                           <button
-                            onClick={() => handleModifyStart(shift)}
-                            disabled={processing}
-                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
+                            onClick={() => setConfirmingId({ id: shift.id, action: 'tentative' })}
+                            disabled={processing || !onTentativeApprove}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
                           >
-                            再修正
+                            仮承認
                           </button>
                           <ActionMenu items={actionItems} align="end" bottomSheetTitle={menuTitle} />
                         </>
