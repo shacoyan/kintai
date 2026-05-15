@@ -13,7 +13,6 @@ interface ShiftAdminPanelProps {
   onApprove: (shiftId: string) => Promise<void>;
   onReject: (shiftId: string) => Promise<void>;
   onModify: (shiftId: string, startTime: string, endTime: string, storeId?: string) => Promise<void>;
-  onBulkApprove: (shiftIds: string[]) => Promise<void>;
   onDelete: (shiftId: string) => Promise<void>;
   onRefresh: () => void;
   canManageStore: (storeId: string | null) => boolean;
@@ -49,7 +48,6 @@ export function ShiftAdminPanel({
   onApprove,
   onReject,
   onModify,
-  onBulkApprove: _onBulkApprove,
   onDelete,
   onRefresh,
   canManageStore,
@@ -85,7 +83,7 @@ export function ShiftAdminPanel({
   const allShifts = useMemo(() => manageableShifts.filter(s => s.status !== 'cancelled'), [manageableShifts]);
 
   const displayedShifts = useMemo(() => {
-    const filtered = shifts.filter(s =>
+    const filtered = manageableShifts.filter(s =>
       statusFilter === 'pending'
         ? s.status === 'pending'
         : statusFilter === 'tentative'
@@ -94,7 +92,7 @@ export function ShiftAdminPanel({
         ? s.status === 'approved'
         : s.status !== 'cancelled'
     );
-    
+
     const arr = [...filtered];
     switch (sortKey) {
       case 'date_asc':
@@ -108,7 +106,7 @@ export function ShiftAdminPanel({
       default:
         return arr;
     }
-  }, [shifts, statusFilter, sortKey]);
+  }, [manageableShifts, statusFilter, sortKey]);
 
   const PAGE_SIZE = 25;
   const [currentPage, setCurrentPage] = useState(1);
@@ -183,6 +181,7 @@ export function ShiftAdminPanel({
             <button
               onClick={() => handleBulkFinalApproveStore(storeId)}
               disabled={processing}
+              aria-label={`${storeName} の仮承認 ${count}件を本承認する (確定)`}
               className="px-3 py-2 min-h-[44px] text-xs font-medium text-white bg-success-700 rounded-md hover:bg-success-800 dark:hover:bg-success-600 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo flex items-center"
             >
               {processing && <Spinner size="sm" inline className="mr-1" />}
@@ -190,6 +189,7 @@ export function ShiftAdminPanel({
             </button>
             <button
               onClick={() => setBulkConfirmingStoreId(null)}
+              aria-label="一括本承認を取消"
               className="px-3 py-2 min-h-[44px] text-xs font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
             >
               戻す
@@ -202,6 +202,7 @@ export function ShiftAdminPanel({
             key={storeId}
             onClick={() => setBulkConfirmingStoreId(storeId)}
             disabled={processing}
+            aria-label={`${storeName} の仮承認 ${count}件を一括本承認`}
             className="px-3 py-2 min-h-[44px] text-xs font-medium text-white bg-success-600 rounded-md hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo flex items-center"
           >
             {processing && <Spinner size="sm" inline className="mr-1" />}

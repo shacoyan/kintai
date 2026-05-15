@@ -36,6 +36,7 @@ const MEMBER_COLORS = [
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-warning-100 border-warning-300 text-warning-800 dark:bg-warning-900/30 dark:border-warning-700 dark:text-warning-300',
+  tentative: 'bg-info-100 border-info-300 text-info-800 dark:bg-info-900/30 dark:border-info-700 dark:text-info-300',
   approved: 'bg-success-100 border-success-300 text-success-800 dark:bg-success-900/30 dark:border-success-700 dark:text-success-300',
   rejected: 'bg-danger-100 border-danger-300 text-danger-800 dark:bg-danger-900/30 dark:border-danger-700 dark:text-danger-300',
   modified: 'bg-primary-100 border-primary-300 text-primary-800 dark:bg-primary-900/30 dark:border-primary-700 dark:text-primary-300',
@@ -44,6 +45,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 const STATUS_DOT: Record<string, string> = {
   pending: 'bg-warning-400',
+  tentative: 'bg-info-400',
   approved: 'bg-success-400',
   rejected: 'bg-danger-400',
   modified: 'bg-primary-400',
@@ -260,7 +262,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
             )}
           </>
         ) : (
-          Object.entries({ pending: '申請中', approved: '承認済', rejected: '却下', modified: '修正', cancelled: '取消' }).map(([key, label]) => (
+          Object.entries({ pending: '申請中', tentative: '仮承認', approved: '承認済', rejected: '却下', modified: '修正', cancelled: '取消' }).map(([key, label]) => (
             <div key={key} className="flex items-center gap-1">
               <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[key]}`} />
               <span className="text-neutral-600 dark:text-neutral-300">{label}</span>

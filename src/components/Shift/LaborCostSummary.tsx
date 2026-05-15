@@ -24,7 +24,7 @@ export function LaborCostSummary({ tentativeEstimates, allEstimates, targetMonth
   };
 
   const tentativeTotal = tentativeEstimates.reduce((s, e) => s + e.estimatedCost, 0);
-  const hasTentative = tentativeEstimates.some(e => e.estimatedCost > 0);
+  const hasTentative = tentativeEstimates.length > 0;
   const hasAll = allEstimates.length > 0;
 
   if (!hasTentative && !hasAll) return null;

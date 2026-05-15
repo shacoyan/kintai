@@ -661,7 +661,6 @@ export function ShiftPage() {
                 onApprove={approveShift}
                 onReject={rejectShift}
                 onModify={modifyShift}
-                onBulkApprove={async () => { /* deprecated: tentative/final approve flow に移行済 */ }}
                 onTentativeApprove={tentativeApproveShift}
                 onCancelTentative={cancelShiftTentative}
                 onRestore={async (id) => { await restoreShift(id); }}
