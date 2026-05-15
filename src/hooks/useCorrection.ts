@@ -2,18 +2,29 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { CorrectionRequest } from '../types';
-import type { NotificationType } from '../types';
-import { differenceInMinutes, parseISO } from 'date-fns';
 import { formatSupabaseError } from '../lib/errors';
 
-async function notify(args: { tenantId: string; userId: string; type: NotificationType; title: string; body?: string | null; link?: string | null; }) {
-  try {
-    const { error: nerr } = await supabase.from('notifications').insert({
-      tenant_id: args.tenantId, user_id: args.userId, type: args.type,
-      title: args.title, body: args.body ?? null, link: args.link ?? null,
-    });
-    if (nerr) console.warn('[notify] insert failed:', nerr.message);
-  } catch (e) { console.warn('[notify] threw:', e); }
+function mapReviewErrorCode(error: unknown): string {
+  const code = (error && typeof error === 'object' && 'code' in error)
+    ? String((error as { code?: unknown }).code ?? '')
+    : '';
+  const message = (error && typeof error === 'object' && 'message' in error)
+    ? String((error as { message?: unknown }).message ?? '')
+    : '';
+  switch (code) {
+    case '22023':
+      return message.includes('24時間') ? '24時間以上の修正は無効です' : `不正なパラメータ: ${message}`;
+    case '28000':
+      return '未認証です。ログインし直してください';
+    case 'P0002':
+      return '申請が見つかりません (削除済みの可能性)';
+    case '40001':
+      return 'この申請は既に処理済みです。画面をリロードしてください';
+    case '42501':
+      return '権限がありません (manager / owner のみ)';
+    default:
+      return `承認処理に失敗しました: ${message || '不明なエラー'}`;
+  }
 }
 
 export function useCorrection(tenantId: string) {
@@ -112,207 +123,21 @@ export function useCorrection(tenantId: string) {
   const reviewRequest = async (
     requestId: string,
     reviewStatus: 'approved' | 'rejected',
-    options?: { onApproved?: (target: CorrectionRequest) => void | Promise<void> }
   ) => {
     setError(null);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      if (reviewStatus === 'approved') {
-        const { data: targetData, error: targetError } = await supabase
-          .from('correction_requests')
-          .select('*')
-          .eq('id', requestId)
-          .single();
-        if (targetError) {
-          throw new Error(`申請の取得に失敗: ${targetError.message}`);
-        }
-        if (!targetData) {
-          throw new Error('申請が見つかりません (削除済み or 権限不足の可能性)。');
-        }
-        const target = targetData as CorrectionRequest;
-
-        {
-          if (target.request_type === 'delete' && target.attendance_record_id) {
-            const { data: delData, error: delError } = await supabase
-              .from('attendance_records')
-              .delete()
-              .eq('id', target.attendance_record_id)
-              .select('id');
-            if (delError) {
-              throw new Error(`勤怠レコードの削除に失敗: ${delError.message}`);
-            }
-            if (!delData || delData.length === 0) {
-              throw new Error('勤怠レコードの削除が拒否されました (権限不足の可能性)。RLS / レコード存在を確認してください。');
-            }
-          } else if (target.request_type !== 'delete') {
-            let clockIn = target.requested_clock_in || null;
-            let clockOut = target.requested_clock_out || null;
-
-            if (target.attendance_record_id && (!clockIn || !clockOut)) {
-              const { data: existingRecord } = await supabase
-                .from('attendance_records')
-                .select('clock_in, clock_out')
-                .eq('id', target.attendance_record_id)
-                .single();
-              if (existingRecord) {
-                if (!clockIn) clockIn = existingRecord.clock_in;
-                if (!clockOut) clockOut = existingRecord.clock_out;
-              }
-            }
-
-            let totalWorkMinutes: number | null = null;
-            if (clockIn && clockOut) {
-              let outDate = parseISO(clockOut);
-              const inDate = parseISO(clockIn);
-
-              // 夜勤跨ぎ補正: clockOut が clockIn より前 → 翌日扱い
-              if (outDate < inDate) {
-                outDate = new Date(outDate.getTime() + 24 * 60 * 60 * 1000);
-                clockOut = outDate.toISOString();
-              }
-
-              // 24時間超過バリデーション
-              if (Math.abs(differenceInMinutes(outDate, inDate)) > 24 * 60) {
-                throw new Error('24時間以上の修正は無効です');
-              }
-
-              totalWorkMinutes = differenceInMinutes(outDate, inDate);
-
-              if (target.attendance_record_id) {
-                const { data: breaks } = await supabase
-                  .from('breaks')
-                  .select('start_time, end_time')
-                  .eq('attendance_record_id', target.attendance_record_id);
-                if (breaks) {
-                  const breakMins = breaks.reduce((sum, b) => {
-                    if (b.start_time && b.end_time) {
-                      return sum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
-                    }
-                    return sum;
-                  }, 0);
-                  totalWorkMinutes -= breakMins;
-                }
-              }
-              totalWorkMinutes = Math.max(0, totalWorkMinutes);
-            }
-
-            if (target.attendance_record_id) {
-              const updateData: Record<string, any> = {};
-              if (clockIn) updateData.clock_in = clockIn;
-              if (clockOut) updateData.clock_out = clockOut;
-              if (totalWorkMinutes !== null) updateData.total_work_minutes = totalWorkMinutes;
-              if (Object.keys(updateData).length > 0) {
-                const { data: updData, error: updError } = await supabase
-                  .from('attendance_records')
-                  .update(updateData)
-                  .eq('id', target.attendance_record_id)
-                  .select('id');
-                if (updError) {
-                  throw new Error(`勤怠レコードの更新に失敗: ${updError.message}`);
-                }
-                if (!updData || updData.length === 0) {
-                  throw new Error('勤怠レコードの更新が拒否されました (権限不足の可能性)。');
-                }
-              }
-            } else if (clockIn) {
-              const { data: insData, error: insError } = await supabase
-                .from('attendance_records')
-                .insert({
-                  tenant_id: target.tenant_id,
-                  user_id: target.user_id,
-                  date: target.date,
-                  clock_in: clockIn,
-                  clock_out: clockOut,
-                  total_work_minutes: totalWorkMinutes,
-                })
-                .select('id');
-              if (insError) {
-                throw new Error(`勤怠レコードの作成に失敗: ${insError.message}`);
-              }
-              if (!insData || insData.length === 0) {
-                throw new Error('勤怠レコードの作成が拒否されました (権限不足の可能性)。');
-              }
-            }
-          }
-
-          // 勤怠レコードの操作が成功した後にのみ、correction_requestsのステータスを更新
-          const { data: statusUpdData, error: updError } = await supabase
-            .from('correction_requests')
-            .update({
-              status: reviewStatus,
-              reviewed_by: user.id,
-              reviewed_at: new Date().toISOString(),
-            })
-            .eq('id', requestId)
-            .select('id');
-          if (updError) {
-            logger.error('Review correction request error:', formatSupabaseError(updError));
-            setError(formatSupabaseError(updError).message);
-            throw new Error(`申請ステータスの更新に失敗: ${updError.message}`);
-          }
-          if (!statusUpdData || statusUpdData.length === 0) {
-            throw new Error('申請ステータスの更新が拒否されました (権限不足 / レコード消失の可能性)。');
-          }
-
-          await options?.onApproved?.(target);
-          await notify({
-            tenantId: target.tenant_id,
-            userId: target.user_id,
-            type: 'correction_approved',
-            title: '修正申請が承認されました',
-            body: target.date,
-            link: `/history?date=${target.date}`,
-          });
-        }
-      } else if (reviewStatus === 'rejected') {
-        const { data: rejectUpdData, error: updError } = await supabase
-          .from('correction_requests')
-          .update({
-            status: reviewStatus,
-            reviewed_by: user.id,
-            reviewed_at: new Date().toISOString(),
-          })
-          .eq('id', requestId)
-          .select('id');
-        if (updError) {
-          logger.error('Review correction request error:', formatSupabaseError(updError));
-          setError(formatSupabaseError(updError).message);
-          throw new Error(`申請の却下処理に失敗: ${updError.message}`);
-        }
-        if (!rejectUpdData || rejectUpdData.length === 0) {
-          throw new Error('申請の却下処理が拒否されました (権限不足 / レコード消失の可能性)。');
-        }
-
-        const { data: targetData, error: targetError } = await supabase
-          .from('correction_requests')
-          .select('*')
-          .eq('id', requestId)
-          .single();
-        if (targetError) {
-          throw new Error(`申請の取得に失敗: ${targetError.message}`);
-        }
-        if (!targetData) {
-          throw new Error('申請が見つかりません (削除済み or 権限不足の可能性)。');
-        }
-        const target = targetData as CorrectionRequest;
-
-        {
-          await notify({
-            tenantId: target.tenant_id,
-            userId: target.user_id,
-            type: 'correction_rejected',
-            title: '修正申請が却下されました',
-            body: target.date,
-            link: `/history?date=${target.date}`,
-          });
-        }
+      const { data, error } = await supabase.rpc('review_correction_request', {
+        p_request_id: requestId,
+        p_review_status: reviewStatus,
+      });
+      if (error) {
+        logger.error('Review correction request error:', formatSupabaseError(error));
+        const friendly = mapReviewErrorCode(error);
+        setError(friendly);
+        throw new Error(friendly);
       }
-
       await fetchRequests();
+      return data;
     } catch (err: unknown) {
       logger.error('Review correction request error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
