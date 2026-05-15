@@ -231,7 +231,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
             differenceInMinutes(parseISO(clockOutISO), parseISO(clockInISO))
           );
         }
-        const { error: insertError } = await supabase
+        const { data: insertData, error: insertError } = await supabase
           .from('attendance_records')
           .insert({
             tenant_id: tenantId,
@@ -241,8 +241,12 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
             clock_in: clockInISO,
             clock_out: clockOutISO,
             total_work_minutes: totalWorkMinutes,
-          });
+          })
+          .select('id');
         if (insertError) throw new Error(insertError.message);
+        if (!insertData || insertData.length === 0) {
+          throw new Error('勤怠レコードの作成が拒否されました (権限不足の可能性)。');
+        }
         showToast(messages.toast.created('勤怠記録'), 'success');
       }
       await Promise.all([

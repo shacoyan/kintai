@@ -121,36 +121,32 @@ export function useCorrection(tenantId: string) {
       } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
-        .from('correction_requests')
-        .update({
-          status: reviewStatus,
-          reviewed_by: user.id,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', requestId);
-      if (error) {
-        logger.error('Review correction request error:', formatSupabaseError(error));
-        setError(formatSupabaseError(error).message);
-        throw error;
-      }
-
       if (reviewStatus === 'approved') {
-        const { data: targetData } = await supabase
+        const { data: targetData, error: targetError } = await supabase
           .from('correction_requests')
           .select('*')
           .eq('id', requestId)
           .single();
-        const target = targetData as CorrectionRequest | null;
+        if (targetError) {
+          throw new Error(`申請の取得に失敗: ${targetError.message}`);
+        }
+        if (!targetData) {
+          throw new Error('申請が見つかりません (削除済み or 権限不足の可能性)。');
+        }
+        const target = targetData as CorrectionRequest;
 
-        if (target) {
+        {
           if (target.request_type === 'delete' && target.attendance_record_id) {
-            const { error: delError } = await supabase
+            const { data: delData, error: delError } = await supabase
               .from('attendance_records')
               .delete()
-              .eq('id', target.attendance_record_id);
+              .eq('id', target.attendance_record_id)
+              .select('id');
             if (delError) {
               throw new Error(`勤怠レコードの削除に失敗: ${delError.message}`);
+            }
+            if (!delData || delData.length === 0) {
+              throw new Error('勤怠レコードの削除が拒否されました (権限不足の可能性)。RLS / レコード存在を確認してください。');
             }
           } else if (target.request_type !== 'delete') {
             let clockIn = target.requested_clock_in || null;
@@ -210,16 +206,20 @@ export function useCorrection(tenantId: string) {
               if (clockOut) updateData.clock_out = clockOut;
               if (totalWorkMinutes !== null) updateData.total_work_minutes = totalWorkMinutes;
               if (Object.keys(updateData).length > 0) {
-                const { error: updError } = await supabase
+                const { data: updData, error: updError } = await supabase
                   .from('attendance_records')
                   .update(updateData)
-                  .eq('id', target.attendance_record_id);
+                  .eq('id', target.attendance_record_id)
+                  .select('id');
                 if (updError) {
                   throw new Error(`勤怠レコードの更新に失敗: ${updError.message}`);
                 }
+                if (!updData || updData.length === 0) {
+                  throw new Error('勤怠レコードの更新が拒否されました (権限不足の可能性)。');
+                }
               }
             } else if (clockIn) {
-              const { error: insError } = await supabase
+              const { data: insData, error: insError } = await supabase
                 .from('attendance_records')
                 .insert({
                   tenant_id: target.tenant_id,
@@ -228,11 +228,34 @@ export function useCorrection(tenantId: string) {
                   clock_in: clockIn,
                   clock_out: clockOut,
                   total_work_minutes: totalWorkMinutes,
-                });
+                })
+                .select('id');
               if (insError) {
                 throw new Error(`勤怠レコードの作成に失敗: ${insError.message}`);
               }
+              if (!insData || insData.length === 0) {
+                throw new Error('勤怠レコードの作成が拒否されました (権限不足の可能性)。');
+              }
             }
+          }
+
+          // 勤怠レコードの操作が成功した後にのみ、correction_requestsのステータスを更新
+          const { data: statusUpdData, error: updError } = await supabase
+            .from('correction_requests')
+            .update({
+              status: reviewStatus,
+              reviewed_by: user.id,
+              reviewed_at: new Date().toISOString(),
+            })
+            .eq('id', requestId)
+            .select('id');
+          if (updError) {
+            logger.error('Review correction request error:', formatSupabaseError(updError));
+            setError(formatSupabaseError(updError).message);
+            throw new Error(`申請ステータスの更新に失敗: ${updError.message}`);
+          }
+          if (!statusUpdData || statusUpdData.length === 0) {
+            throw new Error('申請ステータスの更新が拒否されました (権限不足 / レコード消失の可能性)。');
           }
 
           await options?.onApproved?.(target);
@@ -246,14 +269,38 @@ export function useCorrection(tenantId: string) {
           });
         }
       } else if (reviewStatus === 'rejected') {
-        const { data: targetData } = await supabase
+        const { data: rejectUpdData, error: updError } = await supabase
+          .from('correction_requests')
+          .update({
+            status: reviewStatus,
+            reviewed_by: user.id,
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq('id', requestId)
+          .select('id');
+        if (updError) {
+          logger.error('Review correction request error:', formatSupabaseError(updError));
+          setError(formatSupabaseError(updError).message);
+          throw new Error(`申請の却下処理に失敗: ${updError.message}`);
+        }
+        if (!rejectUpdData || rejectUpdData.length === 0) {
+          throw new Error('申請の却下処理が拒否されました (権限不足 / レコード消失の可能性)。');
+        }
+
+        const { data: targetData, error: targetError } = await supabase
           .from('correction_requests')
           .select('*')
           .eq('id', requestId)
           .single();
-        const target = targetData as CorrectionRequest | null;
+        if (targetError) {
+          throw new Error(`申請の取得に失敗: ${targetError.message}`);
+        }
+        if (!targetData) {
+          throw new Error('申請が見つかりません (削除済み or 権限不足の可能性)。');
+        }
+        const target = targetData as CorrectionRequest;
 
-        if (target) {
+        {
           await notify({
             tenantId: target.tenant_id,
             userId: target.user_id,
