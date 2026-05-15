@@ -5,6 +5,7 @@ import { TopBar } from './TopBar';
 import { MobileHeader } from './MobileHeader';
 import { BottomNav } from './BottomNav';
 import { OnboardingDialog } from '../Onboarding/OnboardingDialog';
+import { PersistentErrorStack } from '../ui/PersistentErrorStack';
 
 interface LayoutProps {
   children: ReactNode;
@@ -17,6 +18,7 @@ export function Layout({ children }: LayoutProps) {
       topbar={<TopBar />}
       mobileHeader={<MobileHeader />}
       bottomNav={<BottomNav />}
+      errorSlot={<PersistentErrorStack />}
     >
       <OnboardingDialog />
       {children}

@@ -53,6 +53,10 @@ export type { HeadingProps, HeadingLevel } from './Heading';
 export { BottomSheet } from './BottomSheet';
 export { EmptyState } from './EmptyState';
 export { ErrorBanner } from './ErrorBanner';
+
+// Loop E: 持続エラーバナー
+export { PersistentErrorBanner } from './PersistentErrorBanner';
+export { PersistentErrorStack } from './PersistentErrorStack';
 export { Skeleton, CardSkeleton, TableSkeleton, PageSkeleton, ListRowSkeleton, DashboardSkeleton, HistorySkeleton, ShiftSkeleton, AdminSkeleton } from './Skeleton';
 
 export { Section } from './Section';

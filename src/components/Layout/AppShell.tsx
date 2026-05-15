@@ -6,9 +6,13 @@ export interface AppShellProps {
   topbar?: ReactNode;
   mobileHeader?: ReactNode;
   bottomNav?: ReactNode;
+  /**
+   * <main> 直上の sticky スロット。Loop E 持続エラーバナー (PersistentErrorStack) を配置する用途。
+   */
+  errorSlot?: ReactNode;
 }
 
-export function AppShell({ children, sidebar, topbar, mobileHeader, bottomNav }: AppShellProps) {
+export function AppShell({ children, sidebar, topbar, mobileHeader, bottomNav, errorSlot }: AppShellProps) {
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 flex">
       {sidebar && (
@@ -32,6 +36,8 @@ export function AppShell({ children, sidebar, topbar, mobileHeader, bottomNav }:
             {mobileHeader}
           </header>
         )}
+
+        {errorSlot}
 
         <main id="main" className="flex-1 min-w-0 px-4 md:px-6 py-4 md:py-6 pb-20 md:pb-6">
           {children}

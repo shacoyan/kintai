@@ -14,6 +14,7 @@ import { useUnsubmittedMembers } from '../../hooks/useUnsubmittedMembers';
 import { useTenant, usePayrollCloseDay } from '../../hooks/useTenant';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { useToast } from '../../contexts/ToastContext';
+import { usePersistentError } from '../../contexts/PersistentErrorContext';
 import { CorrectionList } from '../Correction/CorrectionList';
 import { LeaveList } from '../Leave/LeaveList';
 import { RejectLeaveModal } from '../Leave/RejectLeaveModal';
@@ -45,7 +46,7 @@ import {
   RefreshCw,
   Settings,
 } from 'lucide-react';
-import { StatCard, Card, PageSkeleton, ErrorBanner, Button, Heading } from '../ui';
+import { StatCard, Card, PageSkeleton, Button, Heading } from '../ui';
 import type { Shift, AttendanceRecord } from '../../types';
 
 interface AdminDashboardProps {
@@ -98,7 +99,6 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   }, [setSearchParams]);
   const [rejectingLeaveId, setRejectingLeaveId] = useState<string | null>(null);
   const [approveConfirm, setApproveConfirm] = useState<{ leaveId: string; userId: string } | null>(null);
-  const [reviewError, setReviewError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [deadlineModalOpen, setDeadlineModalOpen] = useState(false);
   const [regenConfirmOpen, setRegenConfirmOpen] = useState(false);
@@ -153,6 +153,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const { currentStore, stores } = useStoreContext();
   const storeNames = useMemo(() => new Map(stores.map(s => [s.id, s.name])), [stores]);
   const { showToast } = useToast();
+  const { addError } = usePersistentError();
   const canEditDeadline = isOwner || myRole === 'manager';
   // === Loop 7 (Engineer A) ===
   const {
@@ -166,6 +167,12 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   }, [payrollCloseDay]);
   // === /Loop 7 (Engineer A) ===
   const { requests, loading: correctionLoading, fetchRequests, reviewRequest } = useCorrection(tenantId);
+  // Loop E Round 2 (P1): retry closure stale 化対策。バナー生存中に再 mount すると
+  // 旧 reviewRequest を捕捉してしまうため、ref 経由で最新 instance を呼ぶ。
+  const reviewRequestRef = useRef(reviewRequest);
+  useEffect(() => {
+    reviewRequestRef.current = reviewRequest;
+  }, [reviewRequest]);
   const { allLeaves, loading: leaveLoading, getAllLeaves, approveLeave, rejectLeave, getRemainingPaidLeave } = useLeave(tenantId);
   const { members: adminMembers, fetchMembers: fetchAdminMembers } = useTenantAdmin(tenantId);
 
@@ -313,11 +320,22 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const processedRequests = requests.filter((r) => r.status !== 'pending');
 
   const handleReview = async (requestId: string, status: 'approved' | 'rejected') => {
-    setReviewError(null);
     try {
       await reviewRequest(requestId, status);
     } catch (err) {
-      setReviewError(formatSupabaseError(err).message);
+      const formatted = formatSupabaseError(err);
+      // Loop E: 持続エラーバナーに表示 (画面遷移しても消えない / 再試行可)。
+      addError({
+        key: `correction.review.${status}.${requestId}`,
+        severity: 'critical',
+        operation: status === 'approved' ? '修正申請の承認' : '修正申請の却下',
+        title:
+          status === 'approved'
+            ? '修正申請の承認に失敗しました'
+            : '修正申請の却下に失敗しました',
+        message: formatted.message,
+        retry: () => reviewRequestRef.current(requestId, status),
+      });
     }
   };
 
@@ -462,9 +480,6 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   </span>
                 )}
               </div>
-              {reviewError && (
-                <ErrorBanner message={reviewError} />
-              )}
               {correctionLoading ? (
                 <PageSkeleton />
               ) : (
