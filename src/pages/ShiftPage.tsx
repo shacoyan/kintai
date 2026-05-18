@@ -12,6 +12,7 @@ import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
 import { useLeave } from '../hooks/useLeave';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
+import { useStoreMemberIds } from '../hooks/useStoreMemberIds';
 import { useTenantRoles } from '../hooks/useTenantRoles';
 import { useShiftPreset } from '../hooks/useShiftPreset';
 import { useShiftPreference } from '../hooks/useShiftPreference';
@@ -49,6 +50,13 @@ export function ShiftPage() {
   const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, restoreShift, finalApproveStoreShifts, getLaborCostEstimate } = useShift(tenantId, storeId);
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave, getRemainingPaidLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
+  // Loop I (2026-05-18): ShiftPayrollPreview の集計対象を「自店舗の従業員のみ」に絞るための member_id 集合
+  const storeMemberIds = useStoreMemberIds(storeId);
+  const payrollMembers = useMemo(() => {
+    // storeId NULL (全店舗モード) または取得待ち = 全 members を維持（現状互換）
+    if (storeMemberIds === null) return members;
+    return members.filter((m) => storeMemberIds.has(m.id));
+  }, [members, storeMemberIds]);
   const { roles, fetchRoles } = useTenantRoles(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
   const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference, bulkSubmitPreferences } = useShiftPreference(tenantId, storeId);
@@ -704,7 +712,7 @@ export function ShiftPage() {
                   storeId={storeId}
                   currentMonth={shiftViewMonth}
                   allShifts={allShifts}
-                  members={members}
+                  members={payrollMembers}
                   roles={roles}
                 />
               </aside>
