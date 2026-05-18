@@ -118,7 +118,16 @@ export function ShiftEditModal({
               disabled={processing}
               variant="tertiary"
             >
-              仮承認を取消
+              差し戻し
+            </Button>
+          )}
+          {canManageTenant && canManageStore && shift.status === 'tentative' && onReject && (
+            <Button
+              onClick={() => handleAction(() => onReject(shift.id))}
+              disabled={processing}
+              variant="danger"
+            >
+              却下
             </Button>
           )}
           {canManageTenant && canManageStore && shift.status === 'approved' && (

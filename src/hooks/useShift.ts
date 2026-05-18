@@ -150,27 +150,39 @@ export function useShift(tenantId: string, storeId: string | null) {
     });
   }, [tenantId]);
 
-  const rejectShift = useCallback(async (shiftId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-    const { data, error: e } = await supabase
-      .from('shifts')
-      .update({
-        status: 'rejected',
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq('id', shiftId)
-      .select('user_id, date, start_time')
-      .single();
-    if (e) throw new Error(`シフトの却下に失敗しました: ${e.message}`);
+  const rejectShift = useCallback(async (shiftId: string, reason?: string) => {
+    const { data, error: e } = await supabase.rpc('reject_shift', {
+      p_shift_id: shiftId,
+      p_reason: reason ?? null,
+    });
+    if (e) {
+      // SQLSTATE → 日本語マップ (Loop D `mapReviewErrorCode` パターン踏襲)
+      const code = (e as { code?: string }).code;
+      const msg = e.message ?? '';
+      if (code === '42501' || /permission denied/i.test(msg)) {
+        throw new Error('シフトの却下権限がありません。管理者に確認してください。');
+      }
+      if (/cannot reject shift with status/i.test(msg)) {
+        throw new Error('このシフトは現在のステータスでは却下できません。画面を更新してください。');
+      }
+      if (/shift not found/i.test(msg)) {
+        throw new Error('シフトが見つかりませんでした。画面を更新してください。');
+      }
+      if (/auth\.uid is null|auth required/i.test(msg)) {
+        throw new Error('ログインが必要です。再ログインしてください。');
+      }
+      throw new Error(`シフトの却下に失敗しました: ${msg}`);
+    }
+    // RPC は `RETURNS shifts` のため 0 行返却は仕様上ありえないが、念のため検査 (Loop A 規律)
+    if (!data) throw new Error('reject_shift returned no row');
+    const shift = data as Shift;
     await notify({
       tenantId: tenantId,
-      userId: data.user_id,
+      userId: shift.user_id,
       type: 'shift_rejected',
       title: 'シフトが却下されました',
-      body: `${data.date} のシフトが却下されました`,
-      link: '/shift?date=' + data.date,
+      body: `${shift.date} のシフトが却下されました`,
+      link: '/shift?date=' + shift.date,
     });
   }, [tenantId]);
 
@@ -185,18 +197,11 @@ export function useShift(tenantId: string, storeId: string | null) {
   }, []);
 
   const tentativeApproveShift = useCallback(async (shiftId: string) => {
-    const { data, error: e } = await supabase.rpc('approve_shift_tentative', { p_shift_id: shiftId });
+    const { error: e } = await supabase.rpc('approve_shift_tentative', { p_shift_id: shiftId });
     if (e) throw new Error(`シフトの仮承認に失敗しました: ${e.message}`);
-    const shift = data as Shift;
-    await notify({
-      tenantId: tenantId,
-      userId: shift.user_id,
-      type: 'shift_approved',
-      title: 'シフトが仮承認されました',
-      body: `${shift.date} のシフトが仮承認されました`,
-      link: '/shift?date=' + shift.date,
-    });
-  }, [tenantId]);
+    // 仮承認時のスタッフ通知は出さない (設計書 §補遺 A Q4=b)
+    // 本承認時 (approveShift) の shift_approved 通知のみ送る
+  }, []);
 
   const cancelShiftTentative = useCallback(async (shiftId: string) => {
     const { error: e } = await supabase.rpc('cancel_shift_tentative', { p_shift_id: shiftId });

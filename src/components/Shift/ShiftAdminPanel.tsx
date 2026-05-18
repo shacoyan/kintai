@@ -319,7 +319,8 @@ export function ShiftAdminPanel({
               } else if (shift.status === 'tentative') {
                 actionItems = [
                   { key: 'modify', label: '修正', onSelect: () => handleModifyStart(shift), tone: 'primary' },
-                  { key: 'cancel-tentative', label: '仮承認を取消', onSelect: () => setCancelingTentativeId(shift.id), tone: 'danger' }
+                  { key: 'cancel-tentative', label: '差し戻し (申請中へ)', onSelect: () => setCancelingTentativeId(shift.id), tone: 'danger' },
+                  { key: 'reject', label: '却下', onSelect: () => setConfirmingId({ id: shift.id, action: 'reject' }), tone: 'danger' }
                 ];
               } else if (shift.status === 'approved') {
                 actionItems = [
@@ -332,6 +333,7 @@ export function ShiftAdminPanel({
               } else if (shift.status === 'modified') {
                 actionItems = [
                   { key: 'modify', label: '再修正', onSelect: () => handleModifyStart(shift), tone: 'primary' },
+                  { key: 'reject', label: '却下', onSelect: () => setConfirmingId({ id: shift.id, action: 'reject' }), tone: 'danger' },
                   { key: 'delete', label: '削除', onSelect: () => setDeletingId(shift.id), tone: 'danger' }
                 ];
               }
@@ -471,10 +473,26 @@ export function ShiftAdminPanel({
                             disabled={processing || !onCancelTentative}
                             className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 dark:hover:bg-danger-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
                           >
-                            取消する
+                            差し戻す
                           </button>
                           <button
                             onClick={() => setCancelingTentativeId(null)}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            戻す
+                          </button>
+                        </>
+                      ) : confirmingId?.id === shift.id && confirmingId.action === 'reject' ? (
+                        <>
+                          <button
+                            onClick={() => { handleAction(() => onReject(shift.id)); setConfirmingId(null); }}
+                            disabled={processing}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 dark:hover:bg-danger-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            却下する
+                          </button>
+                          <button
+                            onClick={() => setConfirmingId(null)}
                             className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
                           >
                             戻す
@@ -624,6 +642,22 @@ export function ShiftAdminPanel({
                             className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-success-600 rounded hover:bg-success-700 dark:hover:bg-success-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
                           >
                             仮承認する
+                          </button>
+                          <button
+                            onClick={() => setConfirmingId(null)}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            戻す
+                          </button>
+                        </>
+                      ) : confirmingId?.id === shift.id && confirmingId.action === 'reject' ? (
+                        <>
+                          <button
+                            onClick={() => { handleAction(() => onReject(shift.id)); setConfirmingId(null); }}
+                            disabled={processing}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-danger-600 rounded hover:bg-danger-700 dark:hover:bg-danger-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            却下する
                           </button>
                           <button
                             onClick={() => setConfirmingId(null)}

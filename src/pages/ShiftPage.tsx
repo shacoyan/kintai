@@ -12,6 +12,7 @@ import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
 import { useLeave } from '../hooks/useLeave';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
+import { useTenantRoles } from '../hooks/useTenantRoles';
 import { useShiftPreset } from '../hooks/useShiftPreset';
 import { useShiftPreference } from '../hooks/useShiftPreference';
 import { useShiftSubmissionDeadline } from '../hooks/useShiftSubmissionDeadline';
@@ -19,6 +20,7 @@ import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
 import { ShiftAdminPanel } from '../components/Shift/ShiftAdminPanel';
 import { LaborCostSummary } from '../components/Shift/LaborCostSummary';
+import ShiftPayrollPreview from '../components/Admin/ShiftPayrollPreview';
 import { LeaveForm } from '../components/Leave/LeaveForm';
 import { LeaveList } from '../components/Leave/LeaveList';
 import { RejectLeaveModal } from '../components/Leave/RejectLeaveModal';
@@ -47,6 +49,7 @@ export function ShiftPage() {
   const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, restoreShift, finalApproveStoreShifts, getLaborCostEstimate } = useShift(tenantId, storeId);
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave, getRemainingPaidLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
+  const { roles, fetchRoles } = useTenantRoles(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
   const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference, bulkSubmitPreferences } = useShiftPreference(tenantId, storeId);
   const { showToast } = useToast();
@@ -181,6 +184,13 @@ export function ShiftPage() {
       getMyLeaves(start, end);
     }
   }, [canManageTenant, getAllShifts, getAllLeaves, getMyShifts, getMyLeaves, fetchMembers]);
+
+  // 役職マスタは ShiftPayrollPreview の人件費計算で使用 (props 経由配信)
+  useEffect(() => {
+    if (canManageTenant && tenantId) {
+      void fetchRoles();
+    }
+  }, [canManageTenant, tenantId, fetchRoles]);
 
   const fetchPreferenceRange = useCallback(() => {
     const now = new Date();
@@ -633,14 +643,22 @@ export function ShiftPage() {
           >
             <div className="space-y-2 p-4">
               {shifts.filter(s => s.date === selectedShiftDate).map(s => (
-                <button 
-                  key={s.id} 
+                <button
+                  key={s.id}
                   onClick={() => { setSelectedShift(s); setSelectedShiftDate(null); }}
                   className="w-full text-left p-3 bg-neutral-50 dark:bg-neutral-800 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
                 >
                   <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{memberNames.get(s.user_id) ?? '不明'}</div>
-                  <div className="text-xs text-neutral-600 dark:text-neutral-300">
-                    {s.start_time && s.end_time ? formatTimeRange(s.start_time, s.end_time, { separator: '〜' }) : '--:--〜--:--'} / {s.status}
+                  <div className="text-xs text-neutral-600 dark:text-neutral-300 flex flex-wrap items-center gap-1.5">
+                    <span>{s.start_time && s.end_time ? formatTimeRange(s.start_time, s.end_time, { separator: '〜' }) : '--:--〜--:--'}</span>
+                    {s.status === 'tentative' && (
+                      <span className="inline-flex items-center gap-1 rounded bg-warning-50 dark:bg-warning-900/30 px-2 py-0.5 text-xs text-warning-700 dark:text-warning-300">
+                        仮承認 (まだ確定ではありません)
+                      </span>
+                    )}
+                    {s.status !== 'tentative' && s.status !== 'approved' && (
+                      <span className="text-neutral-400 dark:text-neutral-500">/ {s.status}</span>
+                    )}
                   </div>
                 </button>
               ))}
@@ -654,30 +672,43 @@ export function ShiftPage() {
           </BottomSheet>
 
           {canManageTenant && (
-            <>
-              <ShiftAdminPanel
-                shifts={shifts.filter(s => s.status !== 'cancelled')}
-                members={members}
-                onApprove={approveShift}
-                onReject={rejectShift}
-                onModify={modifyShift}
-                onTentativeApprove={tentativeApproveShift}
-                onCancelTentative={cancelShiftTentative}
-                onRestore={async (id) => { await restoreShift(id); }}
-                onFinalApproveStore={async (tid, sid) => {
-                  const r = await finalApproveStoreShifts(tid, sid);
-                  return { approved_count: r.approvedCount, approved_ids: r.approvedIds };
-                }}
-                tenantId={tenantId}
-                onToast={showToast}
-                onDelete={deleteShift}
-                onRefresh={fetchRange}
-                stores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
-                canManageStore={(sid) => sid ? isManagerOf(sid) : false}
-              />
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr,360px] gap-4">
+              <div className="min-w-0 flex flex-col gap-4">
+                <ShiftAdminPanel
+                  shifts={shifts.filter(s => s.status !== 'cancelled')}
+                  members={members}
+                  onApprove={approveShift}
+                  onReject={rejectShift}
+                  onModify={modifyShift}
+                  onTentativeApprove={tentativeApproveShift}
+                  onCancelTentative={cancelShiftTentative}
+                  onRestore={async (id) => { await restoreShift(id); }}
+                  onFinalApproveStore={async (tid, sid) => {
+                    const r = await finalApproveStoreShifts(tid, sid);
+                    return { approved_count: r.approvedCount, approved_ids: r.approvedIds };
+                  }}
+                  tenantId={tenantId}
+                  onToast={showToast}
+                  onDelete={deleteShift}
+                  onRefresh={fetchRange}
+                  stores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
+                  canManageStore={(sid) => sid ? isManagerOf(sid) : false}
+                />
 
-              <LaborCostSummary tentativeEstimates={laborEstimates.tentative} allEstimates={laborEstimates.all} targetMonth={shiftViewMonth} />
-            </>
+                <LaborCostSummary tentativeEstimates={laborEstimates.tentative} allEstimates={laborEstimates.all} targetMonth={shiftViewMonth} />
+              </div>
+
+              <aside className="min-w-0 lg:sticky lg:top-4 self-start rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 shadow-sm">
+                <ShiftPayrollPreview
+                  tenantId={tenantId}
+                  storeId={storeId}
+                  currentMonth={shiftViewMonth}
+                  allShifts={allShifts}
+                  members={members}
+                  roles={roles}
+                />
+              </aside>
+            </div>
           )}
         </div>
       )}
