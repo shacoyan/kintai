@@ -352,7 +352,7 @@ export function PreferenceActionRow({
                 variant="primary"
                 className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
               >
-                承認
+                仮承認
               </Button>
               <Button
                 type="button"
@@ -361,7 +361,7 @@ export function PreferenceActionRow({
                 variant="tertiary"
                 className="h-auto px-3 py-1 text-xs text-primary-700 bg-primary-50 border border-primary-200 hover:bg-primary-100 dark:text-primary-300 dark:bg-primary-900 dark:border-primary-700 dark:hover:bg-primary-800"
               >
-                時間指定承認
+                時間指定で仮承認
               </Button>
               <Button
                 type="button"
@@ -384,7 +384,7 @@ export function PreferenceActionRow({
                 variant="primary"
                 className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
               >
-                時間指定で承認
+                時間指定で仮承認
               </Button>
               <Button
                 type="button"
@@ -406,7 +406,7 @@ export function PreferenceActionRow({
                 onClick={(e) => { e.stopPropagation(); handleApprove(); }}
                 className="h-auto px-3 py-1 text-xs rounded text-white bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400 disabled:opacity-50"
               >
-                {state.loading && <Spinner size="sm" inline className="mr-1" />}承認する
+                {state.loading && <Spinner size="sm" inline className="mr-1" />}仮承認する
               </button>
               <button
                 type="button"
@@ -446,7 +446,7 @@ export function PreferenceActionRow({
                 onClick={(e) => { e.stopPropagation(); handleApprove(true); }}
                 className="h-auto px-3 py-1 text-xs rounded text-white bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400 disabled:opacity-50"
               >
-                {state.loading && <Spinner size="sm" inline className="mr-1" />}この時刻で承認する
+                {state.loading && <Spinner size="sm" inline className="mr-1" />}この時刻で仮承認する
               </button>
               <button
                 type="button"

@@ -191,14 +191,18 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
 
       if (pref.store_id === null) throw new Error('シフト申請に店舗が紐付いていません');
 
-      // ステータスを承認済みに更新
+      // ステータスを承認済みに更新（preference 側は従来通り 1 段階承認）
       const { error: updateError } = await supabase
         .from('shift_preferences')
         .update({ status: 'approved' })
         .eq('id', preferenceId);
       if (updateError) throw new Error(`シフト申請の承認に失敗しました: ${updateError.message}`);
 
-      // shiftsテーブルにシフトを作成
+      // 承認操作者を取得（shifts.tentative_approved_by に記録）
+      const { data: { user: approver } } = await supabase.auth.getUser();
+
+      // shifts テーブルにシフトを「仮承認」状態で作成（Loop K: 案 Z）
+      // preference 承認 = shifts の仮承認 → シフトタブで本承認する 2 段階フロー
       const { error: insertError } = await supabase
         .from('shifts')
         .insert({
@@ -207,7 +211,9 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
           date: pref.date,
           start_time: startTime,
           end_time: endTime,
-          status: 'approved',
+          status: 'tentative',
+          tentative_approved_at: new Date().toISOString(),
+          tentative_approved_by: approver?.id ?? null,
           note: pref.note || null,
           store_id: pref.store_id,
         });
@@ -276,6 +282,9 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
       if (pref.status === 'pending') return;
 
       // approvedの場合は対応するshiftsレコードを削除
+      // Loop K: approvePreference は status='tentative' で INSERT するため、
+      // 仮承認のままで未昇格のシフトを削除する（status を match 条件から外す）。
+      // 既に本承認 (approved) されたシフトはオーナーが意図的に昇格させたものなので削除しない。
       if (pref.status === 'approved') {
         const { error: deleteError } = await supabase
           .from('shifts')
@@ -285,7 +294,7 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
             user_id: pref.user_id,
             date: pref.date,
             store_id: pref.store_id,
-            status: 'approved',
+            status: 'tentative',
             start_time: pref.start_time,
             end_time: pref.end_time,
           });
