@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { format, parseISO } from 'date-fns';
+import { useState, useEffect, useRef } from 'react';
+import { differenceInMinutes, format, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { AttendanceRecord } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
-import { Spinner } from '../ui/Spinner';
+import { Badge, Button, Card } from '../ui';
 
 interface ClockButtonProps {
   status: 'not_started' | 'working' | 'on_break';
@@ -20,14 +20,6 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
   const [processing, setProcessing] = useState(false);
   const [flashGreen, setFlashGreen] = useState(false);
   const prevStatusRef = useRef(status);
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
-
-  const TOOLTIP_TEXTS: Record<ClockButtonProps['status'], string> = {
-    not_started: '出勤する',
-    working: '退勤する',
-    on_break: '休憩終了',
-  };
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -47,23 +39,6 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
     }
     prevStatusRef.current = status;
   }, [status]);
-
-  const handlePointerDown = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-    }
-    longPressTimerRef.current = setTimeout(() => {
-      setShowTooltip(true);
-    }, 500);
-  }, []);
-
-  const clearLongPress = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-    setShowTooltip(false);
-  }, []);
 
   const triggerHaptic = () => {
     if ('vibrate' in navigator) {
@@ -95,74 +70,90 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
     switch (status) {
       case 'not_started':
         if (todayRecords.some((r) => r.date === todayStr)) {
-          return { label: '再出勤', bg: 'bg-success-500 hover:bg-success-600 dark:hover:bg-success-500', disabled: false };
+          return {
+            label: '再出勤する',
+            badgeLabel: '待機中',
+            badgeTone: 'neutral' as const,
+            withDot: false,
+            buttonVariant: 'primary' as const,
+            borderColor: 'border-neutral-200 dark:border-neutral-700',
+            disabled: false,
+          };
         }
-        return { label: '出勤', bg: 'bg-success-500 hover:bg-success-600 dark:hover:bg-success-500', disabled: false };
+        return {
+          label: '出勤する',
+          badgeLabel: '待機中',
+          badgeTone: 'neutral' as const,
+          withDot: false,
+          buttonVariant: 'primary' as const,
+          borderColor: 'border-neutral-200 dark:border-neutral-700',
+          disabled: false,
+        };
       case 'working':
-        return { label: isCarryOver ? '退勤（日跨ぎ）' : '退勤', bg: 'bg-danger-500 hover:bg-danger-600 dark:hover:bg-danger-500', disabled: false };
+        return {
+          label: isCarryOver ? '退勤する（日跨ぎ）' : '退勤する',
+          badgeLabel: isCarryOver ? '日跨ぎ勤務' : '勤務中',
+          badgeTone: isCarryOver ? 'warning' as const : 'success' as const,
+          withDot: true,
+          buttonVariant: 'danger' as const,
+          borderColor: isCarryOver ? 'border-warning-500 dark:border-warning-400' : 'border-success-500 dark:border-success-400',
+          disabled: false,
+        };
       case 'on_break':
-        return { label: '休憩中...', bg: 'bg-warning-400', disabled: true };
+        return {
+          label: '休憩中…',
+          badgeLabel: '休憩中',
+          badgeTone: 'warning' as const,
+          withDot: true,
+          buttonVariant: 'primary' as const,
+          borderColor: 'border-warning-400 dark:border-warning-300',
+          disabled: true,
+        };
     }
   };
 
   const config = getButtonConfig();
   const formatTime = (iso: string | null | undefined) => iso ? format(parseISO(iso), 'HH:mm') : null;
+  const elapsedMin = activeRecord?.clock_in ? differenceInMinutes(currentTime, parseISO(activeRecord.clock_in)) : 0;
+  const elapsedH = Math.floor(elapsedMin / 60);
+  const elapsedM = elapsedMin % 60;
+  const elapsedText = elapsedH > 0 ? `${elapsedH}時間${elapsedM}分` : `${elapsedM}分`;
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="text-5xl md:text-6xl font-bold font-mono text-neutral-800 dark:text-neutral-100 tabular-nums tracking-tight">
-        {format(currentTime, 'HH:mm:ss')}
-      </div>
-      <div className="relative">
-        {showTooltip && (
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-neutral-800 dark:bg-neutral-200 px-4 py-2 text-sm text-white dark:text-neutral-800 shadow-lg z-10">
-            {TOOLTIP_TEXTS[status]}
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-neutral-800 dark:bg-neutral-200 rotate-45"></div>
-          </div>
-        )}
-        <button
-          onClick={handleClick}
-          onPointerDown={handlePointerDown}
-          onPointerUp={clearLongPress}
-          onPointerLeave={clearLongPress}
-          disabled={config.disabled || processing}
-          aria-label={config.label}
-          aria-pressed={status !== 'not_started'}
-          className={`w-48 h-48 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg motion-safe:transition-colors duration-180 ease-out-expo select-none ${flashGreen ? 'bg-success-400 scale-105' : config.bg} ${config.disabled ? 'cursor-not-allowed opacity-70' : 'active:scale-[0.98]'}`}
-        >
-          {processing && <Spinner size="sm" inline className="mr-2" />}{config.label}
-        </button>
+    <Card
+      padding="md"
+      className={`w-full border-l-4 motion-safe:transition-all duration-180 ease-out-expo ${config.borderColor} ${flashGreen ? 'border-l-[6px] bg-success-50/60 dark:bg-success-900/20' : ''}`}
+      aria-busy={processing || undefined}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <Badge tone={config.badgeTone} withDot={config.withDot}>{config.badgeLabel}</Badge>
+        <div className="text-kpi-lg font-num tabular-nums text-neutral-900 dark:text-neutral-50 min-w-[8ch] text-right">
+          {format(currentTime, 'HH:mm')}
+          <span className="ml-1 text-body-sm font-num tabular-nums text-neutral-500 dark:text-neutral-400 align-baseline">
+            :{format(currentTime, 'ss')}
+          </span>
+        </div>
       </div>
 
       {activeRecord?.clock_in && (
-        <div className="flex gap-6 text-sm text-neutral-500 dark:text-neutral-300">
-          <span>出勤: {formatTime(activeRecord.clock_in)}</span>
-          {activeRecord.clock_out && <span>退勤: {formatTime(activeRecord.clock_out)}</span>}
+        <div className="mt-3 text-body-sm text-neutral-500 dark:text-neutral-300">
+          出勤 <span className="font-num tabular-nums">{formatTime(activeRecord.clock_in)}</span> ・ 経過 <span className="font-num tabular-nums">{elapsedText}</span>
         </div>
       )}
 
-      {todayRecords.length > 0 && (
-        <div className="w-full max-w-sm mt-2">
-          <p className="text-xs text-neutral-400 dark:text-neutral-500 mb-2 text-center">セッション一覧</p>
-          <div className="space-y-1">
-            {todayRecords.map((record, index) => {
-              const isCrossDay = record.date !== todayStr;
-              return (
-                <div key={record.id} className={`min-h-[44px] flex items-center justify-between text-sm rounded px-3 py-2 ${isCrossDay ? 'bg-warning-50 dark:bg-warning-900/30' : 'bg-neutral-50 dark:bg-neutral-800'}`}>
-                  <span className="text-neutral-500 dark:text-neutral-300">
-                    {isCrossDay ? `${record.date}〜` : `${index + 1}回目`}
-                  </span>
-                  <div className="flex gap-3">
-                    <span className="text-neutral-700 dark:text-neutral-300">{formatTime(record.clock_in) || '-'}</span>
-                    <span className="text-neutral-400 dark:text-neutral-500">〜</span>
-                    <span className="text-neutral-700 dark:text-neutral-300">{formatTime(record.clock_out) || '勤務中'}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
+      <div className="mt-4">
+        <Button
+          variant={config.buttonVariant}
+          size="lg"
+          fullWidth
+          onClick={handleClick}
+          disabled={config.disabled || processing}
+          aria-label={config.label}
+          loading={processing}
+        >
+          {config.label}
+        </Button>
+      </div>
+    </Card>
   );
 }
