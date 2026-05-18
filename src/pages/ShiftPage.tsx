@@ -911,6 +911,22 @@ export function ShiftPage() {
                   onToggleBulkDate={handleToggleBulkDate}
                 />
 
+                {/* Loop J (2026-05-19): 全員のシフト申請ビュー (admin × current) で想定人件費を表示。
+                    Loop H の shift タブ aside と同じ ShiftPayrollPreview を再利用、
+                    集計ソースは allShifts(tentative+approved)。希望ベースは未対応。 */}
+                {canManageTenant && showAllMembersPrefs && (
+                  <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 shadow-sm">
+                    <ShiftPayrollPreview
+                      tenantId={tenantId}
+                      storeId={storeId}
+                      currentMonth={shiftViewMonth}
+                      allShifts={allShifts}
+                      members={payrollMembers}
+                      roles={roles}
+                    />
+                  </div>
+                )}
+
                 {/* 提出予定サマリ（自分視点のみ） */}
                 {!(canManageTenant && showAllMembersPrefs) && (
                   <div className="lg:hidden">
