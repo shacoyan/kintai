@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, addWeeks, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Clock, History, Plus, ChevronRight, AlertTriangle, CalendarPlus, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
@@ -28,6 +28,7 @@ import { RejectLeaveModal } from '../components/Leave/RejectLeaveModal';
 import { ShiftPreferenceCalendar } from '../components/Shift/ShiftPreferenceCalendar';
 import { ShiftPreferenceForm } from '../components/Shift/ShiftPreferenceForm';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
+import { getInitialShiftMonth } from '../utils/initialShiftMonth';
 import { ShiftPreferenceSidebar } from '../components/Shift/ShiftPreferenceSidebar';
 import { BulkApplyPresetModal } from '../components/Shift/BulkApplyPresetModal';
 import { BulkShiftPreferenceDialog } from '../components/Shift/BulkShiftPreferenceDialog';
@@ -92,7 +93,7 @@ export function ShiftPage() {
       const [y, m] = monthParam.split('-').map(Number);
       if (y && m && m >= 1 && m <= 12) return new Date(y, m - 1, 1);
     }
-    return new Date();
+    return getInitialShiftMonth();
   }, []); // 初回のみ
   const [shiftViewMonth, setShiftViewMonth] = useState<Date>(initialShiftMonth);
 
@@ -234,7 +235,7 @@ export function ShiftPage() {
     return map;
   }, [members]);
 
-  const targetMonth = useMemo(() => startOfMonth(addMonths(new Date(), 1)), []);
+  const targetMonth = useMemo(() => getInitialShiftMonth(), []);
   const { deadline, canEdit: canEditDeadline } = useShiftSubmissionDeadline(targetMonth);
   const isDeadlinePassed = useMemo(() => {
     if (!storeId || !deadline) return false;

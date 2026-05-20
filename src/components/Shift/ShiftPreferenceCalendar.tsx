@@ -8,6 +8,7 @@ import { PreferenceBar } from './PreferenceBar';
 import { getPreferenceTheme } from '../../lib/preferenceTheme';
 import { EmptyState } from '../ui';
 import { formatTimeRangeA11y } from '../../utils/formatTimeRange';
+import { getInitialShiftMonth } from '../../utils/initialShiftMonth';
 
 interface ShiftPreferenceCalendarProps {
   preferences: ShiftPreference[];
@@ -48,7 +49,7 @@ export function ShiftPreferenceCalendar({
   selectedDates,
   onToggleBulkDate,
 }: ShiftPreferenceCalendarProps) {
-  const [baseDate, setBaseDate] = useState(() => new Date());
+  const [baseDate, setBaseDate] = useState(getInitialShiftMonth);
 
   const dates = useMemo(() => {
     const result: Date[] = [];

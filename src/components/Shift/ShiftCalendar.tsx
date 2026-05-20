@@ -7,6 +7,7 @@ import { abbreviateName } from '../../utils/displayNameAbbrev';
 import { EmptyState } from '../ui';
 import { isJapaneseHoliday, getJapaneseHolidayName } from '../../lib/holidays';
 import { formatTimeRange } from '../../utils/formatTimeRange';
+import { getInitialShiftMonth } from '../../utils/initialShiftMonth';
 
 type ViewMode = 'week' | '2week' | 'month';
 
@@ -80,7 +81,7 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
 
 export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange, leaves = [] }: ShiftCalendarProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
-  const [baseDate, setBaseDate] = useState(() => new Date());
+  const [baseDate, setBaseDate] = useState(getInitialShiftMonth);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
