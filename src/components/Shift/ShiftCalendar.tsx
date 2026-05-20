@@ -346,7 +346,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                   {format(d, 'd')}
                 </div>
                 <div className="space-y-0.5">
-                  {dayShifts.slice(0, 3).map((s) => {
+                  {dayShifts.map((s) => {
                     const colorClass = memberNames
                       ? userColorMap.get(s.user_id) || MEMBER_COLORS[0]
                       : STATUS_COLORS[s.status];
@@ -375,16 +375,6 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                       </div>
                     );
                   })}
-                  {dayShifts.length > 3 && (
-                    <button 
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); onDateClick(dateStr); }}
-                      aria-label={`${dateStr} の全シフトを表示`}
-                      className="text-[10px] text-neutral-500 dark:text-neutral-300 hover:underline focus:outline-none"
-                    >
-                      +{dayShifts.length - 3}件
-                    </button>
-                  )}
                 </div>
                 {dayLeaves.length > 0 && (
                   <div title={leaveTooltip} className="absolute bottom-1 right-1 flex items-center gap-0.5">

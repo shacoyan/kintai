@@ -186,7 +186,16 @@ const ShiftPayrollPreview: React.FC<ShiftPayrollPreviewProps> = ({
       workDays += r.workDays;
       payment += r.payment;
     }
-    return { totalMinutes, workDays, payment };
+
+    const monthlyTotal = rows
+      .filter((r) => r.payType === 'monthly')
+      .reduce((s, r) => s + r.payment, 0);
+    const hourlyTotal = rows
+      .filter((r) => r.payType === 'hourly')
+      .reduce((s, r) => s + r.payment, 0);
+    const grandTotal = monthlyTotal + hourlyTotal;
+
+    return { totalMinutes, workDays, payment, monthlyTotal, hourlyTotal, grandTotal };
   }, [rows]);
 
   const titleMonth = format(currentMonth, 'yyyy年M月', { locale: ja });
@@ -194,29 +203,49 @@ const ShiftPayrollPreview: React.FC<ShiftPayrollPreviewProps> = ({
 
   return (
     <div className="w-full">
-      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-neutral-100 mb-3">
         想定人件費 ({titleMonth})
       </h3>
 
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+        <div className="rounded-md p-3 bg-indigo-50 dark:bg-indigo-900/30">
+          <div className="text-xs text-indigo-900 dark:text-indigo-100 mb-1 flex items-center gap-1.5">
+            月給合計
+            <span className="text-[10px] bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 px-1.5 py-0.5 rounded-full leading-none">(固定費)</span>
+          </div>
+          <div className="text-lg font-bold text-indigo-900 dark:text-indigo-100 tabular-nums">{fmtYen(totals.monthlyTotal)}</div>
+        </div>
+        <div className="rounded-md p-3 bg-emerald-50 dark:bg-emerald-900/30">
+          <div className="text-xs text-emerald-900 dark:text-emerald-100 mb-1">時給合計</div>
+          <div className="text-lg font-bold text-emerald-900 dark:text-emerald-100 tabular-nums">{fmtYen(totals.hourlyTotal)}</div>
+        </div>
+        <div className="rounded-md p-3 bg-neutral-50 dark:bg-neutral-700/50">
+          <div className="text-xs text-neutral-900 dark:text-neutral-50 mb-1">総計</div>
+          <div className="text-xl font-extrabold text-neutral-900 dark:text-neutral-50 tabular-nums">{fmtYen(totals.grandTotal)}</div>
+        </div>
+      </div>
+
+      <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">※ 月給は仮承認の有無に関わらず固定費として全月給メンバー分を計上しています</p>
+
       {isEmpty ? (
-        <p className="text-sm text-gray-500 py-6 text-center">
-          対象月の仮承認・本承認シフトはありません
+        <p className="text-sm text-gray-500 dark:text-neutral-400 py-6 text-center">
+          該当する仮承認・本承認シフトはありません（月給は上記サマリに計上済み）
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="py-2 px-2 text-left font-medium text-gray-600">
+              <tr className="border-b border-gray-200 dark:border-neutral-700">
+                <th className="py-2 px-2 text-left font-medium text-gray-600 dark:text-neutral-400">
                   名前
                 </th>
-                <th className="py-2 px-2 text-right font-medium text-gray-600">
+                <th className="py-2 px-2 text-right font-medium text-gray-600 dark:text-neutral-400">
                   勤務時間
                 </th>
-                <th className="py-2 px-2 text-right font-medium text-gray-600">
+                <th className="py-2 px-2 text-right font-medium text-gray-600 dark:text-neutral-400">
                   出勤日数
                 </th>
-                <th className="py-2 px-2 text-right font-medium text-gray-600">
+                <th className="py-2 px-2 text-right font-medium text-gray-600 dark:text-neutral-400">
                   想定人件費
                 </th>
               </tr>
@@ -225,40 +254,40 @@ const ShiftPayrollPreview: React.FC<ShiftPayrollPreviewProps> = ({
               {rows.map((row) => (
                 <tr
                   key={row.userId}
-                  className="border-b border-gray-100 hover:bg-gray-50"
+                  className="border-b border-gray-100 dark:border-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-800"
                 >
-                  <td className="py-2 px-2 text-gray-900 whitespace-nowrap">
+                  <td className="py-2 px-2 text-gray-900 dark:text-neutral-100 whitespace-nowrap">
                     <div className="flex items-center gap-1">
                       <span>{row.displayName}</span>
                       {row.payType === 'monthly' && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
                           月給
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="py-2 px-2 text-right text-gray-700 tabular-nums">
+                  <td className="py-2 px-2 text-right text-gray-700 dark:text-neutral-300 tabular-nums">
                     {fmtTime(row.totalMinutes)}
                   </td>
-                  <td className="py-2 px-2 text-right text-gray-700 tabular-nums">
+                  <td className="py-2 px-2 text-right text-gray-700 dark:text-neutral-300 tabular-nums">
                     {row.workDays}
                   </td>
-                  <td className="py-2 px-2 text-right text-gray-900 font-medium tabular-nums">
+                  <td className="py-2 px-2 text-right text-gray-900 dark:text-neutral-100 font-medium tabular-nums">
                     {fmtYen(row.payment)}
                   </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-gray-300 font-semibold">
-                <td className="py-2 px-2 text-gray-900">合計</td>
-                <td className="py-2 px-2 text-right text-gray-900 tabular-nums">
+              <tr className="border-t-2 border-gray-300 dark:border-neutral-600 font-semibold">
+                <td className="py-2 px-2 text-gray-900 dark:text-neutral-100">合計</td>
+                <td className="py-2 px-2 text-right text-gray-900 dark:text-neutral-100 tabular-nums">
                   {fmtTime(totals.totalMinutes)}
                 </td>
-                <td className="py-2 px-2 text-right text-gray-900 tabular-nums">
+                <td className="py-2 px-2 text-right text-gray-900 dark:text-neutral-100 tabular-nums">
                   {totals.workDays}
                 </td>
-                <td className="py-2 px-2 text-right text-gray-900 tabular-nums">
+                <td className="py-2 px-2 text-right text-gray-900 dark:text-neutral-100 tabular-nums">
                   {fmtYen(totals.payment)}
                 </td>
               </tr>

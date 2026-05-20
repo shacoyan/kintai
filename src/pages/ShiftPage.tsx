@@ -703,7 +703,7 @@ export function ShiftPage() {
                   canManageStore={(sid) => sid ? isManagerOf(sid) : false}
                 />
 
-                <LaborCostSummary tentativeEstimates={laborEstimates.tentative} allEstimates={laborEstimates.all} targetMonth={shiftViewMonth} />
+                <LaborCostSummary tentativeEstimates={laborEstimates.tentative} allEstimates={laborEstimates.all} members={payrollMembers} roles={roles} targetMonth={shiftViewMonth} />
               </div>
 
               <aside className="min-w-0 lg:sticky lg:top-4 self-start rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 shadow-sm">
