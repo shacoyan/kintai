@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useId } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
 import { MoreVertical } from 'lucide-react';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { BottomSheet } from './BottomSheet';
@@ -41,6 +42,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
   const menuId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
 
   const handleToggle = () => {
     if (disabled) return;
@@ -59,6 +61,45 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
     item.onSelect();
     handleClose();
   };
+
+  const recalc = React.useCallback(() => {
+    if (!triggerRef.current || !menuRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    const menuWidth = menuRef.current.offsetWidth;
+    const menuHeight = menuRef.current.offsetHeight;
+
+    let top = rect.bottom + 4;
+    let left = align === 'end'
+      ? rect.right - menuWidth
+      : rect.left;
+
+    left = Math.max(8, Math.min(left, window.innerWidth - menuWidth - 8));
+
+    if (top + menuHeight > window.innerHeight - 8) {
+      top = rect.top - menuHeight - 4;
+      top = Math.max(8, top);
+    }
+
+    setPosition({ top, left });
+  }, [align]);
+
+  useLayoutEffect(() => {
+    if (open && isDesktop) {
+      recalc();
+
+      const scrollOptions = { passive: true, capture: true } as const;
+      window.addEventListener('scroll', recalc, scrollOptions);
+      window.addEventListener('resize', recalc);
+
+      return () => {
+        window.removeEventListener('scroll', recalc, scrollOptions);
+        window.removeEventListener('resize', recalc);
+      };
+    } else {
+      setPosition(null);
+    }
+  }, [open, isDesktop, recalc]);
 
   useEffect(() => {
     if (!open || !isDesktop) return;
@@ -90,8 +131,6 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
   }, [open, isDesktop, handleClose]);
 
   const iconSize = triggerSize === 'sm' ? 16 : 20;
-
-  const popoverAlignClass = align === 'start' ? 'left-0' : 'right-0';
 
   const renderedItems = items.map((item) => {
     const tone = item.tone || 'default';
@@ -135,19 +174,28 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
         >
           <MoreVertical aria-hidden="true" size={iconSize} />
         </button>
-
-        {open && isDesktop && (
-          <div
-            ref={menuRef}
-            id={menuId}
-            role="menu"
-            aria-orientation="vertical"
-            className={`absolute ${popoverAlignClass} mt-1 z-20 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg min-w-[160px] py-1`}
-          >
-            {renderedItems}
-          </div>
-        )}
       </div>
+
+      {open && isDesktop && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={menuRef}
+          id={menuId}
+          role="menu"
+          aria-orientation="vertical"
+          className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg min-w-[160px] py-1"
+          style={{
+            position: 'fixed',
+            top: position?.top,
+            left: position?.left,
+            zIndex: 50,
+            visibility: position ? 'visible' : 'hidden',
+            maxWidth: 'calc(100vw - 16px)',
+          }}
+        >
+          {renderedItems}
+        </div>,
+        document.body
+      )}
 
       {!isDesktop && (
         <BottomSheet

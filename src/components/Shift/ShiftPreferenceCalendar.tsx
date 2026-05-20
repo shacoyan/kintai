@@ -272,12 +272,8 @@ export function ShiftPreferenceCalendar({
               : ''
           }`;
 
-          const dayBars = dayPrefs.filter(p => p.preference_type === 'preferred' && p.start_time && p.end_time).sort((a, b) => (a.start_time ?? '').localeCompare(b.start_time ?? '') || (memberNames?.get(a.user_id) ?? '').localeCompare(memberNames?.get(b.user_id) ?? '', 'ja'));
+          const dayBars = dayPrefs.filter(p => p.preference_type === 'preferred' && p.start_time && p.end_time).sort((a, b) => Number(b.status === 'approved') - Number(a.status === 'approved') || (a.start_time ?? '').localeCompare(b.start_time ?? '') || (memberNames?.get(a.user_id) ?? '').localeCompare(memberNames?.get(b.user_id) ?? '', 'ja'));
           const dayIconOnly = dayPrefs.filter(p => p.preference_type !== 'preferred' || !p.start_time || !p.end_time);
-
-          const MAX_VISIBLE_BARS = 3;
-          const visibleBars = dayBars.slice(0, MAX_VISIBLE_BARS);
-          const overflowBars = dayBars.length - MAX_VISIBLE_BARS;
 
           const nU = dayIconOnly.filter(p => p.preference_type === 'unavailable').length;
           const nP = dayIconOnly.filter(p => p.preference_type === 'preferred').length;
@@ -311,29 +307,17 @@ export function ShiftPreferenceCalendar({
                 </>
               )}
 
-              {/* 店長ビュー: 最大 3 件 PreferenceBar 表示 + +N件 + アイコン集約 */}
+              {/* 店長ビュー: PreferenceBar 全件表示 + アイコン集約 */}
               {isAdminView && dayPrefs.length > 0 && (
                 <div className="flex flex-col gap-0.5 px-0.5 pb-1 w-full">
-                  {visibleBars.map(p => (
-                    <PreferenceBar 
-                      key={p.id} 
-                      preference={p} 
-                      memberName={memberNames?.get(p.user_id)} 
-                      showMemberName 
+                  {dayBars.map(p => (
+                    <PreferenceBar
+                      key={p.id}
+                      preference={p}
+                      memberName={memberNames?.get(p.user_id)}
+                      showMemberName
                     />
                   ))}
-                  {overflowBars > 0 && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDateClick(dateStr);
-                      }}
-                      className="w-full text-left text-[10px] text-primary-600 dark:text-primary-400 px-1 hover:underline"
-                    >
-                      +{overflowBars}件
-                    </button>
-                  )}
                   {(nU > 0 || nP > 0) ? (
                     <span className="text-[9px] text-neutral-500 dark:text-neutral-400 px-1">
                       {[
