@@ -208,6 +208,29 @@ export function useShift(tenantId: string, storeId: string | null) {
     if (e) throw new Error(`仮承認の取消に失敗しました: ${e.message}`);
   }, []);
 
+  const revertShiftToTentative = useCallback(async (shiftId: string) => {
+    const { data, error: e } = await supabase.rpc('revert_shift_to_tentative', { p_shift_id: shiftId });
+    if (e) {
+      const code = (e as { code?: string }).code;
+      const msg = e.message ?? '';
+      if (code === '42501' || /permission denied/i.test(msg)) {
+        throw new Error('シフトを仮承認に戻す権限がありません。管理者に確認してください。');
+      }
+      if (/cannot revert: not in approved state/i.test(msg)) {
+        throw new Error('このシフトは確定承認済みではないため仮承認に戻せません。画面を更新してください。');
+      }
+      if (/shift not found/i.test(msg)) {
+        throw new Error('シフトが見つかりませんでした。画面を更新してください。');
+      }
+      if (/auth\.uid is null/i.test(msg)) {
+        throw new Error('ログインが必要です。再ログインしてください。');
+      }
+      throw new Error(`シフトを仮承認に戻すのに失敗しました: ${msg}`);
+    }
+    if (!data) throw new Error('revert_shift_to_tentative returned no row');
+    return data as Shift;
+  }, []);
+
   const restoreShift = useCallback(async (shiftId: string) => {
     const { data, error: e } = await supabase.rpc('restore_shift', { p_shift_id: shiftId });
     if (e) throw new Error(`シフトの復元に失敗しました: ${e.message}`);
@@ -298,6 +321,7 @@ export function useShift(tenantId: string, storeId: string | null) {
     modifyShift,
     tentativeApproveShift,
     cancelShiftTentative,
+    revertShiftToTentative,
     restoreShift,
     finalApproveStoreShifts,
     getLaborCostEstimate,

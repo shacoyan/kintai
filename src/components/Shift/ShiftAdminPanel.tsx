@@ -21,6 +21,7 @@ interface ShiftAdminPanelProps {
   onCancelTentative?: (shiftId: string) => Promise<void>;
   onFinalApproveStore?: (tenantId: string, storeId: string) => Promise<{ approved_count: number; approved_ids: string[] }>;
   onRestore?: (shiftId: string) => Promise<void>;
+  onRevertToTentative?: (shiftId: string) => Promise<void>;
   tenantId?: string;
   onToast?: (message: string, type?: 'success' | 'error') => void;
 }
@@ -56,6 +57,7 @@ export function ShiftAdminPanel({
   onCancelTentative,
   onFinalApproveStore,
   onRestore,
+  onRevertToTentative,
   tenantId,
   onToast
 }: ShiftAdminPanelProps) {
@@ -70,6 +72,7 @@ export function ShiftAdminPanel({
   const [confirmingId, setConfirmingId] = useState<{ id: string; action: 'approve' | 'reject' | 'restore' | 'tentative' | 'final-approve' } | null>(null);
   const [bulkConfirmingStoreId, setBulkConfirmingStoreId] = useState<string | null>(null);
   const [cancelingTentativeId, setCancelingTentativeId] = useState<string | null>(null);
+  const [revertingToTentativeId, setRevertingToTentativeId] = useState<string | null>(null);
 
   const memberMap = new Map(members.map(m => [m.user_id, m.display_name]));
   const storeMap = useMemo(() => new Map((stores ?? []).map(s => [s.id, s.name])), [stores]);
@@ -323,9 +326,21 @@ export function ShiftAdminPanel({
                   { key: 'reject', label: '却下', onSelect: () => setConfirmingId({ id: shift.id, action: 'reject' }), tone: 'danger' }
                 ];
               } else if (shift.status === 'approved') {
-                actionItems = [
-                  { key: 'delete', label: '削除', onSelect: () => setDeletingId(shift.id), tone: 'danger' }
-                ];
+                actionItems = [];
+                if (onRevertToTentative) {
+                  actionItems.push({
+                    key: 'revert-to-tentative',
+                    label: '仮承認に戻す',
+                    onSelect: () => setRevertingToTentativeId(shift.id),
+                    tone: 'danger'
+                  });
+                }
+                actionItems.push({
+                  key: 'delete',
+                  label: '削除',
+                  onSelect: () => setDeletingId(shift.id),
+                  tone: 'danger'
+                });
               } else if (shift.status === 'rejected') {
                 actionItems = [
                   { key: 'delete', label: '削除', onSelect: () => setDeletingId(shift.id), tone: 'danger' }
@@ -542,6 +557,27 @@ export function ShiftAdminPanel({
                           </button>
                           <button
                             onClick={() => setDeletingId(null)}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            戻す
+                          </button>
+                        </>
+                      ) : revertingToTentativeId === shift.id ? (
+                        <>
+                          <button
+                            onClick={() => {
+                              if (onRevertToTentative) {
+                                handleAction(() => onRevertToTentative(shift.id));
+                              }
+                              setRevertingToTentativeId(null);
+                            }}
+                            disabled={processing || !onRevertToTentative}
+                            className="px-3 py-2 min-h-[44px] text-sm font-medium text-white bg-warning-600 rounded hover:bg-warning-700 dark:hover:bg-warning-500 disabled:opacity-50 motion-safe:transition-colors duration-120 ease-out-expo"
+                          >
+                            仮承認に戻す
+                          </button>
+                          <button
+                            onClick={() => setRevertingToTentativeId(null)}
                             className="px-3 py-2 min-h-[44px] text-sm font-medium text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 rounded hover:bg-neutral-200 dark:hover:bg-neutral-600 motion-safe:transition-colors duration-120 ease-out-expo"
                           >
                             戻す

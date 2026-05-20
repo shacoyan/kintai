@@ -48,7 +48,7 @@ export function ShiftPage() {
   const { currentStore, stores, isManagerOf } = useStoreContext();
   const storeId = currentStore?.id ?? null;
 
-  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, restoreShift, finalApproveStoreShifts, getLaborCostEstimate } = useShift(tenantId, storeId);
+  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift, finalApproveStoreShifts, getLaborCostEstimate } = useShift(tenantId, storeId);
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave, getRemainingPaidLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
   // Loop I (2026-05-18): ShiftPayrollPreview の集計対象を「自店舗の従業員のみ」に絞るための member_id 集合
@@ -691,6 +691,7 @@ export function ShiftPage() {
                   onModify={modifyShift}
                   onTentativeApprove={tentativeApproveShift}
                   onCancelTentative={cancelShiftTentative}
+                  onRevertToTentative={async (id) => { await revertShiftToTentative(id); }}
                   onRestore={async (id) => { await restoreShift(id); }}
                   onFinalApproveStore={async (tid, sid) => {
                     const r = await finalApproveStoreShifts(tid, sid);
