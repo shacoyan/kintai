@@ -636,6 +636,7 @@ export function ShiftPage() {
               onReject={rejectShift}
               onTentativeApprove={tentativeApproveShift}
               onCancelTentative={cancelShiftTentative}
+              onRevertToTentative={async (id) => { await revertShiftToTentative(id); }}
               onRestore={async (id) => { await restoreShift(id); }}
               onClose={() => setSelectedShift(null)}
               onRefresh={fetchRange}

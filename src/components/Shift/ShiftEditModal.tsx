@@ -17,6 +17,7 @@ interface ShiftEditModalProps {
   onApprove?: (shiftId: string) => Promise<void>;
   onTentativeApprove?: (shiftId: string) => Promise<void>;
   onCancelTentative?: (shiftId: string) => Promise<void>;
+  onRevertToTentative?: (shiftId: string) => Promise<void>;
   onReject?: (shiftId: string) => Promise<void>;
   onRestore?: (shiftId: string) => Promise<void>;
   onClose: () => void;
@@ -51,6 +52,7 @@ export function ShiftEditModal({
   onApprove,
   onTentativeApprove,
   onCancelTentative,
+  onRevertToTentative,
   onReject,
   onRestore,
   onClose,
@@ -136,6 +138,16 @@ export function ShiftEditModal({
               variant="primary"
             >
               修正
+            </Button>
+          )}
+          {canManageTenant && canManageStore && shift.status === 'approved' && onRevertToTentative && (
+            <Button
+              onClick={() => handleAction(() => onRevertToTentative(shift.id))}
+              disabled={processing}
+              variant="tertiary"
+              className="bg-warning-100 hover:bg-warning-200 text-warning-800 dark:bg-warning-900/30 dark:hover:bg-warning-900/50 dark:text-warning-300"
+            >
+              仮承認に戻す
             </Button>
           )}
           {canManageTenant && canManageStore && shift.status === 'approved' && (
