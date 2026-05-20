@@ -2,13 +2,14 @@ import { useMemo, useState } from 'react';
 import { format, startOfWeek, addDays, startOfMonth, endOfMonth, isSameMonth, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, ChevronRight as NextPrefIcon } from 'lucide-react';
-import type { ShiftPreference } from '../../types';
+import type { Shift, ShiftPreference } from '../../types';
 import { PreferenceActionRow } from './PreferenceActionRow';
 import { PreferenceBar } from './PreferenceBar';
 import { getPreferenceTheme } from '../../lib/preferenceTheme';
 import { EmptyState } from '../ui';
 import { formatTimeRangeA11y } from '../../utils/formatTimeRange';
 import { getInitialShiftMonth } from '../../utils/initialShiftMonth';
+import { buildTentativeShiftMap, getEffectiveTime } from '../../utils/preferenceEffectiveTime';
 
 interface ShiftPreferenceCalendarProps {
   preferences: ShiftPreference[];
@@ -25,6 +26,8 @@ interface ShiftPreferenceCalendarProps {
   selectedDates?: Set<string>;
   /** 一括選択モード中のトグルハンドラ */
   onToggleBulkDate?: (date: string) => void;
+  /** 仮承認後の時間を PreferenceBar に反映するためのシフト一覧 (admin 全員モードで使用) */
+  shifts?: Shift[];
 }
 
 const MEMBER_TONE_CLASSES = [
@@ -48,6 +51,7 @@ export function ShiftPreferenceCalendar({
   bulkSelectionMode = false,
   selectedDates,
   onToggleBulkDate,
+  shifts,
 }: ShiftPreferenceCalendarProps) {
   const [baseDate, setBaseDate] = useState(getInitialShiftMonth);
 
@@ -82,6 +86,11 @@ export function ShiftPreferenceCalendar({
     }
     return map;
   }, [preferences]);
+
+  const tentativeShiftMap = useMemo(
+    () => buildTentativeShiftMap(shifts ?? []),
+    [shifts]
+  );
 
   const navigate = (dir: number) => {
     setBaseDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + dir, 1));
@@ -311,14 +320,20 @@ export function ShiftPreferenceCalendar({
               {/* 店長ビュー: PreferenceBar 全件表示 + アイコン集約 */}
               {isAdminView && dayPrefs.length > 0 && (
                 <div className="flex flex-col gap-0.5 px-0.5 pb-1 w-full">
-                  {dayBars.map(p => (
-                    <PreferenceBar
-                      key={p.id}
-                      preference={p}
-                      memberName={memberNames?.get(p.user_id)}
-                      showMemberName
-                    />
-                  ))}
+                  {dayBars.map(p => {
+                    const eff = getEffectiveTime(p, tentativeShiftMap);
+                    return (
+                      <PreferenceBar
+                        key={p.id}
+                        preference={p}
+                        memberName={memberNames?.get(p.user_id)}
+                        showMemberName
+                        effectiveStart={eff.start ?? undefined}
+                        effectiveEnd={eff.end ?? undefined}
+                        isOverridden={eff.isOverridden}
+                      />
+                    );
+                  })}
                   {(nU > 0 || nP > 0) ? (
                     <span className="text-[9px] text-neutral-500 dark:text-neutral-400 px-1">
                       {[

@@ -910,6 +910,7 @@ export function ShiftPage() {
                   bulkSelectionMode={isBulkMode && !(canManageTenant && showAllMembersPrefs)}
                   selectedDates={selectedBulkDates}
                   onToggleBulkDate={handleToggleBulkDate}
+                  shifts={canManageTenant && showAllMembersPrefs ? allShifts : undefined}
                 />
 
                 {/* Loop J (2026-05-19): 全員のシフト申請ビュー (admin × current) で想定人件費を表示。
@@ -1105,6 +1106,7 @@ export function ShiftPage() {
                   stores={stores}
                   defaultStoreId={storeId}
                   onMutated={fetchPreferenceRange}
+                  shifts={canManageTenant && showAllMembersPrefs ? allShifts : undefined}
                 />
               </div>
             </div>

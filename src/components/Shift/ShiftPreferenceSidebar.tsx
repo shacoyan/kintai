@@ -7,9 +7,10 @@ import { PreferenceActionRow } from './PreferenceActionRow';
 import { ShiftPreferenceForm } from './ShiftPreferenceForm';
 import { PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
 
-import type { ShiftPreference, ShiftPreset, Store, ShiftPreferenceType } from '../../types';
+import type { Shift, ShiftPreference, ShiftPreset, Store, ShiftPreferenceType } from '../../types';
 import { messages } from '../../lib/messages';
 import { formatTimeRange } from '../../utils/formatTimeRange';
+import { buildTentativeShiftMap, getEffectiveTime } from '../../utils/preferenceEffectiveTime';
 
 export interface ShiftPreferenceSidebarProps {
   mode: 'self' | 'admin';
@@ -35,6 +36,8 @@ export interface ShiftPreferenceSidebarProps {
     monthLabel: string;
   };
   onRevertPreference?: (id: string) => Promise<void>;
+  /** 仮承認後の時間を併記表示するためのシフト一覧 (admin モードでのみ使用) */
+  shifts?: Shift[];
 }
 
 export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
@@ -58,12 +61,18 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
     defaultStoreId,
     onMutated,
     adminSummary,
+    shifts,
   } = props;
 
   const dateFilteredPreferences = useMemo(() => {
     if (!selectedDate) return [];
     return preferences.filter(p => p.date === selectedDate);
   }, [preferences, selectedDate]);
+
+  const tentativeShiftMap = useMemo(
+    () => buildTentativeShiftMap(shifts ?? []),
+    [shifts]
+  );
 
   const existingPreference = useMemo(() => {
     if (!selectedDate) return undefined;
@@ -161,19 +170,40 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
               />
             ) : (
               <ul className="space-y-2">
-                {dateFilteredPreferences.map(p => (
-                  <li key={p.id}>
-                    <PreferenceActionRow
-                      preference={p}
-                      memberName={memberNames.get(p.user_id)}
-                      onApprove={onApprovePreference}
-                      onReject={onRejectPreference}
-                      canManage={canManageStore(p.store_id)}
-                      variant="full"
-                      onMutated={onMutated}
-                    />
-                  </li>
-                ))}
+                {dateFilteredPreferences.map(p => {
+                  const eff = getEffectiveTime(p, tentativeShiftMap);
+                  const showOverrideRow =
+                    eff.isOverridden && !!p.start_time && !!p.end_time && !!eff.start && !!eff.end;
+                  return (
+                    <li key={p.id} className="space-y-1">
+                      <PreferenceActionRow
+                        preference={p}
+                        memberName={memberNames.get(p.user_id)}
+                        onApprove={onApprovePreference}
+                        onReject={onRejectPreference}
+                        canManage={canManageStore(p.store_id)}
+                        variant="full"
+                        onMutated={onMutated}
+                      />
+                      {showOverrideRow && (
+                        <div className="text-[11px] text-neutral-500 dark:text-neutral-300 px-2 leading-relaxed">
+                          <div>
+                            申請:{' '}
+                            <span className="tabular-nums">
+                              {formatTimeRange(p.start_time!, p.end_time!, { separator: ' 〜 ' })}
+                            </span>
+                          </div>
+                          <div>
+                            承認:{' '}
+                            <span className="tabular-nums font-semibold text-success-600 dark:text-success-300">
+                              {formatTimeRange(eff.start!, eff.end!, { separator: ' 〜 ' })}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </Card>
