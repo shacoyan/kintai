@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Plus, ChevronRight } from 'lucide-react';
@@ -119,8 +119,40 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
     onSelectedDateChange(date);
   };
 
+  // Loop7 / 要望 X: 全員モードのみ Sidebar 外クリックで選択解除する。
+  // - self モードでは ShiftPreferenceForm の入力中に誤発火する恐れがあるため発火させない。
+  // - Modal / Portal (例: BulkApplyPresetModal, BulkShiftPreferenceDialog, Toast 内の dialog) を
+  //   `[role="dialog"]` 祖先判定で除外し、その内側クリックで Sidebar の選択が消えないようにする。
+  // - mousedown ではなく click を採用: dropdown 等の onClick より早く発火させないため。
+  // - P0 修正 (Reviewer 指摘): カレンダーグリッド (`[role="grid"]`) も除外する。
+  //   bubble phase でこの listener が走るため、セル onClick → setAllMemberPrefDate(newDate) の直後に
+  //   document click listener が同 event で発火し、target がグリッド内 (Sidebar 外) → null 上書きで
+  //   即解除されるバグがあった。React 18 自動 batching で setState(newDate) → setState(null) の順となり
+  //   null が勝つため、日付切替自体が破壊される。グリッド内クリックを早期 return で除外して根治。
+  // - P3 修正: ActionMenu (`[role="menu"]`) / Toast (`[role="status"]`) / alertdialog も除外漏れだった。
+  const sidebarRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (mode !== 'admin') return;
+    if (!selectedDate) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (sidebarRef.current?.contains(target)) return;
+      // Sidebar 内 / Modal 内 / カレンダーグリッド内 / ActionMenu 内 / Toast 内 は除外
+      if (target.closest('[role="dialog"], [role="alertdialog"], [role="menu"], [role="status"], [role="grid"]')) return;
+      onSelectedDateChange(null);
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [mode, selectedDate, onSelectedDateChange]);
+
   return (
-    <aside aria-label="シフト申請サイドバー" className="w-[360px] sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4">
+    <aside ref={sidebarRef} aria-label="シフト申請サイドバー" className="w-[360px] sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4">
       {mode === 'admin' && (
         <>
           <Card padding="sm">

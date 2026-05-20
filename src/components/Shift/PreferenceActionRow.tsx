@@ -5,7 +5,6 @@ import { formatSupabaseError } from '../../lib/errors';
 import { getPreferenceTheme } from '../../lib/preferenceTheme';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { abbreviateName } from '../../utils/displayNameAbbrev';
 import { Spinner } from '../ui/Spinner';
 import { formatTimeRange } from '../../utils/formatTimeRange';
 
@@ -138,7 +137,7 @@ export function PreferenceActionRow({
   const isUnavailable = preference.preference_type === 'unavailable';
 
   if (variant === 'compact') {
-    const abbreviation = memberName ? abbreviateName(memberName) : '?';
+    const fullName = memberName ?? '?';
     const statusDotClass = STATUS_DOT_CLASS[preference.status] || STATUS_DOT_CLASS.pending;
     const theme = getPreferenceTheme(preference.preference_type);
     const timeLabel = !isUnavailable && preference.start_time ? preference.start_time.slice(0, 5) : '';
@@ -149,7 +148,7 @@ export function PreferenceActionRow({
         <div className={`flex items-center gap-1 py-0.5 text-[10px] leading-tight text-neutral-900 dark:text-neutral-100 ${isRejected ? 'opacity-60 line-through' : ''}`} title={state.error ?? memberTitle}>
           <span className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass}`} />
           <span className={`flex-shrink-0 w-2 h-2 rounded-sm ${memberDotClass ?? 'bg-neutral-300'}`} aria-hidden="true" />
-          <span className="font-medium">{abbreviation}</span>
+          <span className="font-medium">{fullName}</span>
           <span className="text-neutral-600 dark:text-neutral-300">
             {isApproved ? '不可（自動）' : '不可'}
           </span>
@@ -162,7 +161,7 @@ export function PreferenceActionRow({
         <div className="flex items-center gap-1 text-[10px] leading-tight text-neutral-900 dark:text-neutral-100">
           <span className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass}`} />
           <span className={`flex-shrink-0 w-2 h-2 rounded-sm ${memberDotClass ?? 'bg-neutral-300'}`} aria-hidden="true" />
-          <span className="font-medium truncate">{abbreviation}</span>
+          <span className="font-medium truncate">{fullName}</span>
           <span className="text-neutral-600 dark:text-neutral-300 flex-shrink-0">
             {theme.label}
           </span>

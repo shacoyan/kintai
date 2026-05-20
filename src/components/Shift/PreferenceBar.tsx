@@ -1,5 +1,4 @@
 import { formatTimeRange, formatTimeRangeA11y } from '../../utils/formatTimeRange';
-import { abbreviateName } from '../../utils/displayNameAbbrev';
 import { getPreferenceBarTheme } from '../../lib/preferenceBarTheme';
 import type { ShiftPreference } from '../../types';
 
@@ -31,7 +30,7 @@ export function PreferenceBar(props: PreferenceBarProps): JSX.Element | null {
 
   let label = formatBarLabel(displayStart, displayEnd);
   if (showMemberName && memberName) {
-    label += ` ${abbreviateName(memberName)}`;
+    label += ` ${memberName}`;
   }
 
   let title: string;

@@ -17,6 +17,7 @@ import { useTenantRoles } from '../hooks/useTenantRoles';
 import { useShiftPreset } from '../hooks/useShiftPreset';
 import { useShiftPreference } from '../hooks/useShiftPreference';
 import { useShiftSubmissionDeadline } from '../hooks/useShiftSubmissionDeadline';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
 import { ShiftAdminPanel } from '../components/Shift/ShiftAdminPanel';
@@ -47,6 +48,11 @@ export function ShiftPage() {
   const canManageTenant = myRole === 'owner' || myRole === 'manager';
   const { currentStore, stores, isManagerOf } = useStoreContext();
   const storeId = currentStore?.id ?? null;
+  // Loop7 / 要望 X: PC では BottomSheet を完全 unmount し、useBodyScrollLock を発火させない。
+  // CSS の `lg:hidden` は display:none のみで React の unmount にはならないため、
+  // BottomSheet が PC でもマウントされ続け `document.body.style.overflow = 'hidden'` が
+  // 走ってしまう症状を根治する。Tailwind の lg ブレークポイントと一致させる。
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift, finalApproveStoreShifts, getLaborCostEstimate } = useShift(tenantId, storeId);
   const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave, getRemainingPaidLeave } = useLeave(tenantId);
@@ -992,61 +998,65 @@ export function ShiftPage() {
                   </div>
                 )}
 
-                <div className="lg:hidden">
-                  <BottomSheet
-                    isOpen={!!selectedPrefDate}
-                    onClose={() => setSelectedPrefDate(null)}
-                    title={selectedPrefDate ? `${selectedPrefDate} のシフト申請` : undefined}
-                  >
-                    {selectedPrefDate && (
-                      <ShiftPreferenceForm
-                        date={selectedPrefDate}
-                        existingPreference={myPreferences.find((p) => p.date === selectedPrefDate && p.store_id === storeId) ?? myPreferences.find((p) => p.date === selectedPrefDate)}
-                        onSubmit={handlePrefSubmit}
-                        onDelete={handlePrefDelete}
-                        onCancel={() => setSelectedPrefDate(null)}
-                        presets={presets}
-                        selectableStores={stores}
-                        defaultStoreId={storeId}
-                        isDeadlinePassed={isDeadlinePassed}
-                        canBypassDeadline={canEditDeadline}
-                      />
-                    )}
-                  </BottomSheet>
-
-                  <BottomSheet
-                    isOpen={!!allMemberPrefDate}
-                    onClose={() => setAllMemberPrefDate(null)}
-                    title={allMemberPrefDate ? `${allMemberPrefDate} のシフト申請一覧` : undefined}
-                  >
-                    <ul className="divide-y divide-neutral-100 dark:divide-neutral-700 p-2 space-y-2">
-                      {allMemberPrefsForDate.length === 0 && (
-                        <li>
-                          <EmptyState
-                            size="sm"
-                            title={messages.empty.shiftPreferenceDay.title}
-                          />
-                        </li>
+                {/* Loop7 / 要望 X: SP のみで BottomSheet をマウント。
+                    PC では JS レベルで unmount し、useBodyScrollLock の発火を防ぐ。 */}
+                {!isDesktop && (
+                  <>
+                    <BottomSheet
+                      isOpen={!!selectedPrefDate}
+                      onClose={() => setSelectedPrefDate(null)}
+                      title={selectedPrefDate ? `${selectedPrefDate} のシフト申請` : undefined}
+                    >
+                      {selectedPrefDate && (
+                        <ShiftPreferenceForm
+                          date={selectedPrefDate}
+                          existingPreference={myPreferences.find((p) => p.date === selectedPrefDate && p.store_id === storeId) ?? myPreferences.find((p) => p.date === selectedPrefDate)}
+                          onSubmit={handlePrefSubmit}
+                          onDelete={handlePrefDelete}
+                          onCancel={() => setSelectedPrefDate(null)}
+                          presets={presets}
+                          selectableStores={stores}
+                          defaultStoreId={storeId}
+                          isDeadlinePassed={isDeadlinePassed}
+                          canBypassDeadline={canEditDeadline}
+                        />
                       )}
-                      {allMemberPrefsForDate.map(p => (
-                        <li key={p.id}>
-                          <PreferenceActionRow
-                            preference={p}
-                            memberName={memberNames.get(p.user_id)}
-                            onApprove={handleApprovePreference}
-                            onReject={handleRejectPreference}
-                            canManage={p.store_id ? isManagerOf(p.store_id) : false}
-                            variant="full"
-                            onMutated={fetchPreferenceRange}
-                            onRevert={handleRevertPreference}
-                            storeName={adminListStores.find(s => s.id === p.store_id)?.name}
-                            showStoreBadge={adminListStores.length >= 2}
-                          />
-                        </li>
-                      ))}
-                    </ul>
-                  </BottomSheet>
-                </div>
+                    </BottomSheet>
+
+                    <BottomSheet
+                      isOpen={!!allMemberPrefDate}
+                      onClose={() => setAllMemberPrefDate(null)}
+                      title={allMemberPrefDate ? `${allMemberPrefDate} のシフト申請一覧` : undefined}
+                    >
+                      <ul className="divide-y divide-neutral-100 dark:divide-neutral-700 p-2 space-y-2">
+                        {allMemberPrefsForDate.length === 0 && (
+                          <li>
+                            <EmptyState
+                              size="sm"
+                              title={messages.empty.shiftPreferenceDay.title}
+                            />
+                          </li>
+                        )}
+                        {allMemberPrefsForDate.map(p => (
+                          <li key={p.id}>
+                            <PreferenceActionRow
+                              preference={p}
+                              memberName={memberNames.get(p.user_id)}
+                              onApprove={handleApprovePreference}
+                              onReject={handleRejectPreference}
+                              canManage={p.store_id ? isManagerOf(p.store_id) : false}
+                              variant="full"
+                              onMutated={fetchPreferenceRange}
+                              onRevert={handleRevertPreference}
+                              storeName={adminListStores.find(s => s.id === p.store_id)?.name}
+                              showStoreBadge={adminListStores.length >= 2}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    </BottomSheet>
+                  </>
+                )}
 
                 {/* sticky 追加ボタン（自分視点のみ） — bulk モード中は「次へ / キャンセル」に差し替え (§5.5) */}
                 {!(canManageTenant && showAllMembersPrefs) && (
@@ -1086,7 +1096,9 @@ export function ShiftPage() {
                 )}
               </div>
 
-              <div className="hidden lg:block">
+              {/* Loop7 / 要望 X: PC でのみ Sidebar をマウント。
+                  CSS の hidden lg:block を JS 制御に変更し、SP では完全 unmount する。 */}
+              {isDesktop && (
                 <ShiftPreferenceSidebar
                   mode={canManageTenant && showAllMembersPrefs ? "admin" : "self"}
                   selectedDate={canManageTenant && showAllMembersPrefs ? allMemberPrefDate : selectedPrefDate}
@@ -1110,7 +1122,7 @@ export function ShiftPage() {
                   onMutated={fetchPreferenceRange}
                   shifts={canManageTenant && showAllMembersPrefs ? allShifts : undefined}
                 />
-              </div>
+              )}
             </div>
           )}
 

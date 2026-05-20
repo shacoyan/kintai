@@ -38,8 +38,28 @@ export function LaborCostSummary({ tentativeEstimates, allEstimates, members, ro
 
   const rolesMap = useMemo(() => new Map(roles.map(r => [r.id, r])), [roles]);
 
+  // P3 nit 修正 (Reviewer 指摘): isMonthlyMember を useMemo 内に inline 化して
+  // eslint-disable-next-line react-hooks/exhaustive-deps を外す。
+  // 以前は外部関数 isMonthlyMember を依存追跡できず eslint-disable を付けていたが、
+  // inline 化することで依存が [members, rolesMap] のみであることが明確になり警告ゼロで動作する。
+  // 他で参照している箇所（monthlyTotal）も同じ判定式を inline で持つ。
+  const monthlyMembers = useMemo(
+    () => members
+      .filter(m => (m.pay_type ?? 'hourly') === 'monthly' && getEffectiveMonthlySalary(m, rolesMap) > 0)
+      .sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? '', 'ja')),
+    [members, rolesMap]
+  );
+
   const isMonthlyMember = (m: TenantMember) =>
     (m.pay_type ?? 'hourly') === 'monthly' && getEffectiveMonthlySalary(m, rolesMap) > 0;
+
+  const allHourlyEstimates = useMemo(
+    () => allEstimates
+      .filter(e => e.payType === 'hourly')
+      .slice()
+      .sort((a, b) => a.displayName.localeCompare(b.displayName, 'ja')),
+    [allEstimates]
+  );
 
   const monthlyTotal = members.filter(isMonthlyMember).reduce((s, m) => s + getEffectiveMonthlySalary(m, rolesMap), 0);
   const tentativeHourlyTotal = tentativeEstimates.filter(e => e.payType === 'hourly').reduce((s, e) => s + e.estimatedCost, 0);
@@ -50,7 +70,6 @@ export function LaborCostSummary({ tentativeEstimates, allEstimates, members, ro
 
   if (!hasTentative && !hasAll && monthlyTotal === 0) return null;
 
-  const allHourlyEstimates = allEstimates.filter(e => e.payType === 'hourly');
   const allHourlyTotalMinutes = allHourlyEstimates.reduce((s, e) => s + e.shiftMinutes, 0);
   const allHourlyTotalNightMinutes = allHourlyEstimates.reduce((s, e) => s + e.nightMinutes, 0);
 
@@ -112,12 +131,13 @@ export function LaborCostSummary({ tentativeEstimates, allEstimates, members, ro
             </div>
           </div>
 
-          {allHourlyEstimates.length > 0 && (
+          {(monthlyMembers.length + allHourlyEstimates.length) > 0 && (
             <div className="overflow-x-auto">
-              <table className="min-w-[600px] w-full divide-y divide-neutral-200 dark:divide-neutral-700">
+              <table className="min-w-[680px] w-full divide-y divide-neutral-200 dark:divide-neutral-700">
                 <thead className="bg-neutral-50 dark:bg-neutral-700">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 min-w-[120px] whitespace-nowrap">名前</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">給与形態</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">通常</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">深夜</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 dark:text-neutral-300 whitespace-nowrap">合計</th>
@@ -125,23 +145,63 @@ export function LaborCostSummary({ tentativeEstimates, allEstimates, members, ro
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-neutral-800 divide-y divide-neutral-200 dark:divide-neutral-700 tabular-nums">
-                  {allHourlyEstimates.map((e) => (
-                    <tr key={e.userId} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50">
-                      <td className="px-6 py-3 text-sm font-medium text-neutral-900 dark:text-neutral-100 whitespace-nowrap">{e.displayName}</td>
-                      <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">{fmtTime(e.shiftMinutes - e.nightMinutes)}</td>
-                      <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">{fmtTime(e.nightMinutes)}</td>
-                      <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">{fmtTime(e.shiftMinutes)}</td>
-                      <td className="px-6 py-3 text-sm font-medium text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">
-                        ¥{e.estimatedCost.toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
+                  {monthlyMembers.length > 0 && (
+                    <>
+                      <tr>
+                        <td colSpan={6} className="px-6 py-1 text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-200">月給メンバー ({monthlyMembers.length}名)</td>
+                      </tr>
+                      {monthlyMembers.map((m) => (
+                        <tr key={m.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50">
+                          <td className="px-6 py-3 text-sm font-medium text-neutral-900 dark:text-neutral-100 whitespace-nowrap">{m.display_name ?? ''}</td>
+                          <td className="px-6 py-3 text-sm whitespace-nowrap">
+                            <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200">月給</span>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">-</td>
+                          <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">-</td>
+                          <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">-</td>
+                          <td className="px-6 py-3 text-sm font-medium text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">
+                            ¥{getEffectiveMonthlySalary(m, rolesMap).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </>
+                  )}
+                  {allHourlyEstimates.length > 0 && (
+                    <>
+                      <tr>
+                        <td colSpan={6} className="px-6 py-1 text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-200">時給メンバー ({allHourlyEstimates.length}名)</td>
+                      </tr>
+                      {allHourlyEstimates.map((e) => (
+                        <tr key={e.userId} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50">
+                          <td className="px-6 py-3 text-sm font-medium text-neutral-900 dark:text-neutral-100 whitespace-nowrap">{e.displayName}</td>
+                          <td className="px-6 py-3 text-sm whitespace-nowrap">
+                            <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">時給</span>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">{fmtTime(e.shiftMinutes - e.nightMinutes)}</td>
+                          <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">{fmtTime(e.nightMinutes)}</td>
+                          <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 text-right whitespace-nowrap">{fmtTime(e.shiftMinutes)}</td>
+                          <td className="px-6 py-3 text-sm font-medium text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">
+                            ¥{e.estimatedCost.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </>
+                  )}
                   <tr className="bg-neutral-50 dark:bg-neutral-700/50 border-t-2 border-neutral-300 dark:border-neutral-600">
                     <td className="px-6 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 whitespace-nowrap">合計</td>
-                    <td className="px-6 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">{fmtTime(allHourlyTotalMinutes - allHourlyTotalNightMinutes)}</td>
-                    <td className="px-6 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">{fmtTime(allHourlyTotalNightMinutes)}</td>
-                    <td className="px-6 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">{fmtTime(allHourlyTotalMinutes)}</td>
-                    <td className="px-6 py-3 text-base font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">¥{allHourlyTotal.toLocaleString()}</td>
+                    <td className="px-6 py-3 text-sm text-neutral-700 dark:text-neutral-300 whitespace-nowrap">-</td>
+                    <td className="px-6 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">
+                      {allHourlyEstimates.length > 0 ? fmtTime(allHourlyTotalMinutes - allHourlyTotalNightMinutes) : '-'}
+                    </td>
+                    <td className="px-6 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">
+                      {allHourlyEstimates.length > 0 ? fmtTime(allHourlyTotalNightMinutes) : '-'}
+                    </td>
+                    <td className="px-6 py-3 text-sm font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">
+                      {allHourlyEstimates.length > 0 ? fmtTime(allHourlyTotalMinutes) : '-'}
+                    </td>
+                    <td className="px-6 py-3 text-base font-bold text-neutral-900 dark:text-neutral-100 text-right whitespace-nowrap">
+                      ¥{(monthlyTotal + allHourlyTotal).toLocaleString()}
+                    </td>
                   </tr>
                 </tbody>
               </table>
