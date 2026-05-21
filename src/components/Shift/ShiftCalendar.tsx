@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { format, startOfWeek, addDays, startOfMonth, endOfMonth, addWeeks, isAfter, startOfDay, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Shift, LeaveRequest } from '../../types';
+import type { Shift, LeaveRequest, ShiftPreference } from '../../types';
+import type { StatusFilterValue } from './unifiedShiftTypes';
 import { EmptyState } from '../ui';
 import { isJapaneseHoliday, getJapaneseHolidayName } from '../../lib/holidays';
 import { formatTimeRange } from '../../utils/formatTimeRange';
@@ -19,6 +20,17 @@ interface ShiftCalendarProps {
   onViewMonthChange?: (date: Date) => void;
   /** leave requests */
   leaves?: LeaveRequest[];
+  /** shift preferences to display (pending only for separate row display) */
+  preferences?: ShiftPreference[];
+  onPreferenceClick?: (pref: ShiftPreference) => void;
+  statusFilter?: Set<StatusFilterValue>;
+  /**
+   * pending_preference の表示制御。
+   * - true: statusFilter の pending_preference エントリに従う（admin 全員モード）
+   * - false (default): UI に control が無いコンテキスト（self モード等）→ statusFilter の
+   *   pending_preference 設定を無視し、常に pending 申請を表示する。
+   */
+  showPreferenceStatus?: boolean;
 }
 
 const MEMBER_COLORS = [
@@ -41,15 +53,6 @@ const STATUS_COLORS: Record<string, string> = {
   rejected: 'bg-danger-100 border-danger-300 text-danger-800 dark:bg-danger-900/30 dark:border-danger-700 dark:text-danger-300',
   modified: 'bg-primary-100 border-primary-300 text-primary-800 dark:bg-primary-900/30 dark:border-primary-700 dark:text-primary-300',
   cancelled: 'bg-neutral-100 border-neutral-300 text-neutral-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300',
-};
-
-const STATUS_DOT: Record<string, string> = {
-  pending: 'bg-warning-400',
-  tentative: 'bg-info-400',
-  approved: 'bg-success-400',
-  rejected: 'bg-danger-400',
-  modified: 'bg-primary-400',
-  cancelled: 'bg-neutral-400',
 };
 
 const LEAVE_TYPE_DOT: Record<string, string> = {
@@ -78,7 +81,7 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
   other: 'その他',
 };
 
-export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange, leaves = [] }: ShiftCalendarProps) {
+export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange, leaves = [], preferences, onPreferenceClick, statusFilter, showPreferenceStatus = false }: ShiftCalendarProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [baseDate, setBaseDate] = useState(getInitialShiftMonth);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -117,22 +120,42 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
 
   const userColorMap = useMemo(() => {
     const map = new Map<string, string>();
-    const uniqueUsers = [...new Set(shifts.map(s => s.user_id))];
+    const pendingPrefs = (preferences ?? []).filter(p => p.status === 'pending');
+    const uniqueUsers = [...new Set([...shifts.map(s => s.user_id), ...pendingPrefs.map(p => p.user_id)])];
     uniqueUsers.forEach((uid, i) => {
       map.set(uid, MEMBER_COLORS[i % MEMBER_COLORS.length]);
     });
     return map;
-  }, [shifts]);
+  }, [shifts, preferences]);
 
   const shiftsByDate = useMemo(() => {
     const map = new Map<string, Shift[]>();
     for (const s of shifts) {
-      const arr = map.get(s.date) || [];
-      arr.push(s);
-      map.set(s.date, arr);
+      if (!statusFilter || statusFilter.has(s.status as StatusFilterValue)) {
+        const arr = map.get(s.date) || [];
+        arr.push(s);
+        map.set(s.date, arr);
+      }
     }
     return map;
-  }, [shifts]);
+  }, [shifts, statusFilter]);
+
+  const preferencesByDate = useMemo(() => {
+    const map = new Map<string, ShiftPreference[]>();
+    if (!preferences) return map;
+    // showPreferenceStatus=false の場合は UI に control が無いため statusFilter の
+    // pending_preference 設定を無視し、常に pending 申請を表示する (P2-C2)。
+    for (const p of preferences) {
+      if (p.status !== 'pending') continue;
+      const showByFilter = !showPreferenceStatus || !statusFilter || statusFilter.has('pending_preference');
+      if (showByFilter) {
+        const arr = map.get(p.date) || [];
+        arr.push(p);
+        map.set(p.date, arr);
+      }
+    }
+    return map;
+  }, [preferences, statusFilter, showPreferenceStatus]);
 
   const leavesByDate = useMemo(() => {
     const map = new Map<string, LeaveRequest[]>();
@@ -226,50 +249,32 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
         </div>
       </div>
 
-      {/* Compact Legend */}
-      <div className="flex items-center flex-wrap gap-x-4 gap-y-2 px-1 py-2 bg-neutral-50 dark:bg-neutral-800 rounded-md text-xs">
-        {/* Status Legend (L2-04) */}
-        <div className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300 flex-wrap border-r border-neutral-200 dark:border-neutral-600 pr-4 mr-2">
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-warning-400" /> 申請中</span>
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success-500 dark:bg-success-400" /> 承認済</span>
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-danger-500 dark:bg-danger-400" /> 却下</span>
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-info-500" /> 修正</span>
-          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-neutral-400" /> 取消</span>
+      {/* Member Legend (status legend は ShiftStatusFilter に移行) */}
+      {memberNames && (
+        <div className="flex items-center flex-wrap gap-x-4 gap-y-2 px-1 py-2 bg-neutral-50 dark:bg-neutral-800 rounded-md text-xs">
+          {(() => {
+            const entries = [...userColorMap.entries()];
+            const displayEntries = isExpanded ? entries : entries.slice(0, isMobile ? 3 : 5);
+            return displayEntries.map(([uid, colorClass]) => {
+              const bgClass = colorClass.split(' ')[0];
+              return (
+                <div key={uid} className="flex items-center gap-1">
+                  <div className={`w-2.5 h-2.5 rounded-full ${bgClass.replace('100', '400')}`} />
+                  <span className="text-neutral-600 dark:text-neutral-300">{memberNames.get(uid) || '不明'}</span>
+                </div>
+              );
+            });
+          })()}
+          {userColorMap.size > (isMobile ? 3 : 5) && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-primary-600 dark:text-primary-400 font-medium hover:underline focus:outline-none"
+            >
+              {isExpanded ? '閉じる' : `…(+${userColorMap.size - (isMobile ? 3 : 5)})`}
+            </button>
+          )}
         </div>
-        
-        {memberNames ? (
-          <>
-            {(() => {
-              const entries = [...userColorMap.entries()];
-              const displayEntries = isExpanded ? entries : entries.slice(0, isMobile ? 3 : 5);
-              return displayEntries.map(([uid, colorClass]) => {
-                const bgClass = colorClass.split(' ')[0];
-                return (
-                  <div key={uid} className="flex items-center gap-1">
-                    <div className={`w-2.5 h-2.5 rounded-full ${bgClass.replace('100', '400')}`} />
-                    <span className="text-neutral-600 dark:text-neutral-300">{memberNames.get(uid) || '不明'}</span>
-                  </div>
-                );
-              });
-            })()}
-            {userColorMap.size > (isMobile ? 3 : 5) && (
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="text-primary-600 dark:text-primary-400 font-medium hover:underline focus:outline-none"
-              >
-                {isExpanded ? '閉じる' : `…(+${userColorMap.size - (isMobile ? 3 : 5)})`}
-              </button>
-            )}
-          </>
-        ) : (
-          Object.entries({ pending: '申請中', tentative: '仮承認', approved: '承認済', rejected: '却下', modified: '修正', cancelled: '取消' }).map(([key, label]) => (
-            <div key={key} className="flex items-center gap-1">
-              <div className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT[key]}`} />
-              <span className="text-neutral-600 dark:text-neutral-300">{label}</span>
-            </div>
-          ))
-        )}
-      </div>
+      )}
 
       {/* Empty state banner */}
       {isCurrentMonthEmpty && (
@@ -294,11 +299,12 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
         </div>
 
         {/* Cells */}
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-7" role="grid" aria-label="シフトカレンダー">
           {dates.map((d) => {
             const dateStr = format(d, 'yyyy-MM-dd');
             const isToday = dateStr === today;
             const dayShifts = shiftsByDate.get(dateStr) || [];
+            const dayPendingPreferences = preferencesByDate.get(dateStr) || [];
             const dayLeaves = leavesByDate.get(dateStr) || [];
             const isCurrentMonth = viewMode === 'month' ? d.getMonth() === baseDate.getMonth() : true;
             const dayOfWeek = d.getDay();
@@ -372,6 +378,37 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                         ) : (
                           <span>{formatTimeRange(s.start_time, s.end_time, { compactNextDay: true })}</span>
                         )}
+                      </div>
+                    );
+                  })}
+                  {dayPendingPreferences.map((p) => {
+                    const colorBase = userColorMap.get(p.user_id) || MEMBER_COLORS[0];
+                    const timeDisplay = (p.start_time && p.end_time)
+                      ? formatTimeRange(p.start_time, p.end_time, { compactNextDay: true })
+                      : '終日';
+                    return (
+                      <div
+                        key={'pref-' + p.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); onPreferenceClick?.(p); }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            onPreferenceClick?.(p);
+                          }
+                        }}
+                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border border-dashed truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-120 ease-out-expo ${colorBase}`}
+                      >
+                        {memberNames ? (
+                          <span title={memberNames.get(p.user_id) ?? ''}>
+                            {memberNames.get(p.user_id) ?? '不明'} {timeDisplay}
+                          </span>
+                        ) : (
+                          <span>{timeDisplay}</span>
+                        )}
+                        <span className="ml-1 inline-block bg-warning-50 text-warning-700 dark:bg-warning-900/40 dark:text-warning-300 text-[8px] px-1 rounded">申請</span>
                       </div>
                     );
                   })}

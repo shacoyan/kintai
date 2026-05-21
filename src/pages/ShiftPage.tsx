@@ -10,7 +10,6 @@ import { Spinner } from '../components/ui/Spinner';
 import type { BadgeTone } from '../components/ui';
 import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
-import { useLeave } from '../hooks/useLeave';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
 import { useStoreMemberIds } from '../hooks/useStoreMemberIds';
 import { useTenantRoles } from '../hooks/useTenantRoles';
@@ -23,26 +22,24 @@ import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
 import { ShiftAdminPanel } from '../components/Shift/ShiftAdminPanel';
 import { LaborCostSummary } from '../components/Shift/LaborCostSummary';
 import ShiftPayrollPreview from '../components/Admin/ShiftPayrollPreview';
-import { LeaveForm } from '../components/Leave/LeaveForm';
-import { LeaveList } from '../components/Leave/LeaveList';
-import { RejectLeaveModal } from '../components/Leave/RejectLeaveModal';
-import { ShiftPreferenceCalendar } from '../components/Shift/ShiftPreferenceCalendar';
-import { ShiftPreferenceForm } from '../components/Shift/ShiftPreferenceForm';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
 import { getInitialShiftMonth } from '../utils/initialShiftMonth';
-import { ShiftPreferenceSidebar } from '../components/Shift/ShiftPreferenceSidebar';
+import { UnifiedShiftSidebar } from '../components/Shift/UnifiedShiftSidebar';
+import { ShiftStatusFilter, readStatusFilter, writeStatusFilter } from '../components/Shift/ShiftStatusFilter';
+import type { StatusFilterValue } from '../components/Shift/unifiedShiftTypes';
 import { BulkApplyPresetModal } from '../components/Shift/BulkApplyPresetModal';
 import { BulkShiftPreferenceDialog } from '../components/Shift/BulkShiftPreferenceDialog';
-import { PreferenceActionRow } from '../components/Shift/PreferenceActionRow';
 import { formatTimeRange } from '../utils/formatTimeRange';
 import { useStoreContext } from '../contexts/StoreContext';
 import { useToast } from '../contexts/ToastContext';
-import type { ShiftPreferenceType, LeaveType, BulkSubmitPreferenceArgs } from '../types';
+import { useAuth } from '../hooks/useAuth';
+import type { ShiftPreferenceType, BulkSubmitPreferenceArgs } from '../types';
 
-type TabId = 'shift' | 'leave' | 'preference';
 type PreferenceView = 'current' | 'history';
 
 export function ShiftPage() {
+  const { user } = useAuth();
+  const currentUserId = user?.id ?? null;
   const { currentTenant, myRole, isOwner } = useTenant();
   const tenantId = currentTenant?.id || '';
   const canManageTenant = myRole === 'owner' || myRole === 'manager';
@@ -55,12 +52,9 @@ export function ShiftPage() {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift, finalApproveStoreShifts, getLaborCostEstimate } = useShift(tenantId, storeId);
-  const { myLeaves, allLeaves, loading: leaveLoading, getMyLeaves, getAllLeaves, submitLeave, cancelLeave, approveLeave, rejectLeave, getRemainingPaidLeave } = useLeave(tenantId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
-  // Loop I (2026-05-18): ShiftPayrollPreview の集計対象を「自店舗の従業員のみ」に絞るための member_id 集合
   const storeMemberIds = useStoreMemberIds(storeId);
   const payrollMembers = useMemo(() => {
-    // storeId NULL (全店舗モード) または取得待ち = 全 members を維持（現状互換）
     if (storeMemberIds === null) return members;
     return members.filter((m) => storeMemberIds.has(m.id));
   }, [members, storeMemberIds]);
@@ -70,29 +64,7 @@ export function ShiftPage() {
   const { showToast } = useToast();
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialActiveTab = useMemo<TabId>(() => {
-    const t = searchParams.get('tab');
-    return (t === 'shift' || t === 'preference' || t === 'leave') ? t : 'shift';
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const [activeTab, setActiveTabState] = useState<TabId>(initialActiveTab);
-  const setActiveTab = useCallback((tab: TabId) => {
-    setActiveTabState(tab);
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.set('tab', tab);
-      return next;
-    }, { replace: true });
-  }, [setSearchParams]);
-  const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
-  const [selectedShiftDate, setSelectedShiftDate] = useState<string | null>(null);
-  const [showLeaveForm, setShowLeaveForm] = useState(false);
-  const [remainingPaidLeave, setRemainingPaidLeave] = useState<number>(0);
-  const [rejectingLeaveId, setRejectingLeaveId] = useState<string | null>(null);
-  const [approveLeaveConfirm, setApproveLeaveConfirm] = useState<{ leaveId: string; userId: string } | null>(null);
-  const [selectedPrefDate, setSelectedPrefDate] = useState<string | null>(null);
-  const [showAllMembersPrefs, setShowAllMembersPrefs] = useState(false);
-  const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
+
   const initialShiftMonth = useMemo(() => {
     const monthParam = searchParams.get('month');
     if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
@@ -100,16 +72,12 @@ export function ShiftPage() {
       if (y && m && m >= 1 && m <= 12) return new Date(y, m - 1, 1);
     }
     return getInitialShiftMonth();
-  }, []); // 初回のみ
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [shiftViewMonth, setShiftViewMonth] = useState<Date>(initialShiftMonth);
 
   useEffect(() => {
     const ym = format(shiftViewMonth, 'yyyy-MM');
     if (searchParams.get('month') !== ym) {
-      // 規律: setSearchParams は functional updater 形式で prev を複製してから set すること。
-      // オブジェクトリテラル直接渡し (setSearchParams({ key: value })) は他クエリを破壊するため禁止。
-      // 詳細: .company/engineering/docs/2026-04-28-kintai-loop15-techdesign.md L15-2 セクション参照
-      // (Loop 14 Phase 2 L14-6 で確立した規律 + Track C で functional updater 化)
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev);
         next.set('month', ym);
@@ -117,14 +85,33 @@ export function ShiftPage() {
       }, { replace: true });
     }
   }, [shiftViewMonth, searchParams, setSearchParams]);
-  const [allMemberPrefDate, setAllMemberPrefDate] = useState<string | null>(null);
+
+  const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [showAllMembersPrefs, setShowAllMembersPrefs] = useState(false);
+  const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
   const [showBulkApplyModal, setShowBulkApplyModal] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<Set<StatusFilterValue>>(() => readStatusFilter());
 
   // 一括シフト申請 (Engineer C / §4): 選択モード on/off, 選択 Set, ダイアログ表示
   const [isBulkMode, setIsBulkMode] = useState<boolean>(false);
   const [selectedBulkDates, setSelectedBulkDates] = useState<Set<string>>(() => new Set());
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState<boolean>(false);
   const BULK_MAX_DATES = 31;
+
+  useEffect(() => {
+    writeStatusFilter(statusFilter);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    if (searchParams.has('tab')) {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('tab');
+        return next;
+      }, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pendingPreferenceCount = useMemo(
     () => allPreferences.filter(p => p.status === 'pending').length,
@@ -192,13 +179,11 @@ export function ShiftPage() {
     const end = format(endOfMonth(addWeeks(now, 4)), 'yyyy-MM-dd');
     if (canManageTenant) {
       getAllShifts(start, end);
-      getAllLeaves(start, end);
       fetchMembers();
     } else {
       getMyShifts(start, end);
-      getMyLeaves(start, end);
     }
-  }, [canManageTenant, getAllShifts, getAllLeaves, getMyShifts, getMyLeaves, fetchMembers]);
+  }, [canManageTenant, getAllShifts, getMyShifts, fetchMembers]);
 
   // 役職マスタは ShiftPayrollPreview の人件費計算で使用 (props 経由配信)
   useEffect(() => {
@@ -227,13 +212,20 @@ export function ShiftPage() {
   }, [tenantId, fetchRange, fetchPresets]);
 
   useEffect(() => {
-    if (tenantId && activeTab === 'preference') {
+    if (tenantId) {
       fetchPreferenceRange();
     }
-  }, [tenantId, activeTab, fetchPreferenceRange]);
+  }, [tenantId, fetchPreferenceRange]);
 
   const shifts = canManageTenant ? allShifts : myShifts;
-  const leaves = canManageTenant ? allLeaves : myLeaves;
+  // self モード Sidebar 向け: admin が自分視点に切り替えた場合は allShifts を自分の user_id で
+  // フィルタしたものを表示する (P1-C3)。非 admin は myShifts そのまま。
+  const selfShifts = useMemo(() => {
+    if (!canManageTenant) return myShifts;
+    if (!currentUserId) return myShifts;
+    return allShifts.filter((s) => s.user_id === currentUserId);
+  }, [canManageTenant, allShifts, myShifts, currentUserId]);
+  const leaves = canManageTenant ? [] : []; // Leave removed, but keep variable if needed elsewhere or remove. Removing all leave logic.
 
   const memberNames = useMemo(() => {
     const map = new Map<string, string>();
@@ -261,69 +253,6 @@ export function ShiftPage() {
     return { deadline, targetMonth, remainingLabel, passed: false as const };
   }, [storeId, deadline, targetMonth]);
 
-  const handleLeaveSubmit = async (
-    dates: string[],
-    leaveType: LeaveType,
-    reason?: string,
-  ) => {
-    const result = await submitLeave(dates, leaveType, reason, currentStore?.id ?? null);
-    if (result.failedDates.length > 0) {
-      const msg = result.successCount > 0
-        ? `${result.successCount}件 申請しました。${result.failedDates.length}件 失敗（${result.failedDates.join(', ')}）`
-        : `休暇申請に失敗しました（${result.failedDates.join(', ')}）`;
-      throw new Error(msg);
-    }
-    setShowLeaveForm(false);
-    fetchRange();
-    if (tenantId) {
-      try {
-        const remaining = await getRemainingPaidLeave();
-        setRemainingPaidLeave(remaining);
-      } catch {
-        // ignore
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (!tenantId || canManageTenant) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const remaining = await getRemainingPaidLeave();
-        if (!cancelled) setRemainingPaidLeave(remaining);
-      } catch {
-        // ignore: 残日数取得失敗時は0表示のまま
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [tenantId, canManageTenant, getRemainingPaidLeave]);
-
-  const handleApproveLeaveWrapped = async (leaveId: string) => {
-    const leave = leaves.find(l => l.id === leaveId);
-    if (!leave) return;
-    if (leave.leave_type === 'paid' || leave.leave_type === 'half_am' || leave.leave_type === 'half_pm') {
-      const remaining = await getRemainingPaidLeave(leave.user_id);
-      const required = leave.leave_type === 'paid' ? 1 : 0.5;
-      if (remaining < required) {
-        setApproveLeaveConfirm({ leaveId, userId: leave.user_id });
-        return;
-      }
-    }
-    await approveLeave(leaveId);
-  };
-  const handleConfirmApproveLeave = async () => {
-    if (!approveLeaveConfirm) return;
-    await approveLeave(approveLeaveConfirm.leaveId);
-    setApproveLeaveConfirm(null);
-    fetchRange();
-  };
-  const handleRejectLeaveSubmit = async (note: string) => {
-    if (!rejectingLeaveId) return;
-    await rejectLeave(rejectingLeaveId, note);
-    fetchRange();
-  };
-
   const handlePrefSubmit = async (
     date: string,
     type: ShiftPreferenceType,
@@ -333,13 +262,13 @@ export function ShiftPage() {
     storeIdOverride?: string,
   ) => {
     await submitPreference(date, type, startTime, endTime, note, storeIdOverride);
-    setSelectedPrefDate(null);
+    setSelectedDate(null);
     fetchPreferenceRange();
   };
 
   const handlePrefDelete = async (id: string) => {
     await deletePreference(id);
-    setSelectedPrefDate(null);
+    setSelectedDate(null);
     fetchPreferenceRange();
   };
 
@@ -361,10 +290,9 @@ export function ShiftPage() {
   };
 
   // 一括選択モードの自動 OFF (§4.1 + P2-INT-2):
-  //   preference タブ外 / 管理者一覧 / storeId null / preferenceView !== 'current'
+  //   管理者一覧 / storeId null / preferenceView !== 'current'
   useEffect(() => {
     const shouldDisable =
-      activeTab !== 'preference' ||
       (canManageTenant && showAllMembersPrefs) ||
       !storeId ||
       preferenceView !== 'current';
@@ -373,7 +301,7 @@ export function ShiftPage() {
       setSelectedBulkDates((prev) => (prev.size > 0 ? new Set() : prev));
       setIsBulkDialogOpen((prev) => (prev ? false : prev));
     }
-  }, [activeTab, canManageTenant, showAllMembersPrefs, storeId, preferenceView]);
+  }, [canManageTenant, showAllMembersPrefs, storeId, preferenceView]);
 
   // 選択モード OFF 遷移時に Set クリア (§4.1)
   useEffect(() => {
@@ -394,7 +322,7 @@ export function ShiftPage() {
   }, [myPreferences, selectedBulkDates, storeId]);
 
   // ロック済み (approved & preferred) の日付集合 (P1-INT-1):
-  // Dialog のロック警告 (lockedDates) に配線。
+  // Dialog のロック警告に配線。
   const lockedBulkDates = useMemo(
     () =>
       new Set(
@@ -537,11 +465,6 @@ export function ShiftPage() {
 
   const pendingShifts = shifts.filter(s => s.status === 'pending');
 
-  const allMemberPrefsForDate = useMemo(
-    () => allPreferences.filter(p => p.date === allMemberPrefDate),
-    [allPreferences, allMemberPrefDate]
-  );
-
   if (!tenantId) return null;
 
   if (!storeId) {
@@ -558,11 +481,9 @@ export function ShiftPage() {
 
   // 初回ロード時 (各 hook の loading かつ初期データ未取得) はページ全体スケルトン
   const initialLoading =
-    (shiftLoading || leaveLoading || prefLoading) &&
+    shiftLoading && prefLoading &&
     myShifts.length === 0 &&
     allShifts.length === 0 &&
-    myLeaves.length === 0 &&
-    allLeaves.length === 0 &&
     myPreferences.length === 0 &&
     allPreferences.length === 0;
   if (initialLoading) {
@@ -575,492 +496,395 @@ export function ShiftPage() {
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-neutral-200 dark:border-neutral-700">
-        <nav className="flex space-x-8">
-          {([
-            { id: 'shift' as TabId, label: 'シフト' },
-            // hidden 2026-05-10: backlog で復活予定
-            // { id: 'leave' as TabId, label: '休暇' },
-            { id: 'preference' as TabId, label: 'シフト申請' },
-          ]).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap py-4 px-2 border-b-2 font-medium text-sm motion-safe:transition-colors duration-120 ease-out-expo ${
-                activeTab === tab.id
-                  ? 'border-primary-600 text-primary-600 dark:border-primary-400 dark:text-primary-400'
-                  : 'border-transparent text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200 hover:border-neutral-300 dark:hover:border-neutral-600'
-              }`}
-            >
-              {tab.label}
-              {tab.id === 'shift' && canManageTenant && pendingShifts.length > 0 && (
-                <Badge tone="warning" className="ml-2">{pendingShifts.length}</Badge>
-              )}
-              {tab.id === 'preference' && canManageTenant && pendingPreferenceCount > 0 && (
-                <Badge tone="warning" className="ml-2">{pendingPreferenceCount}</Badge>
-              )}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {activeTab === 'shift' && (
-        <div className="space-y-6">
-          <header className="flex items-end justify-between gap-3">
-            <div>
-              <Heading level={2}>シフト</Heading>
-              <p className="text-sm text-neutral-500 dark:text-neutral-300 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
-            </div>
-            {canManageTenant && pendingShifts.length > 0 && (
-              <Badge tone="warning" withDot>{pendingShifts.length} 件 承認待ち</Badge>
-            )}
-          </header>
-
-          {shiftLoading && (
-            <div className="flex items-center justify-center py-6">
-              <Spinner size="md" label="読み込み中" showLabel />
-            </div>
-          )}
-
-          <ShiftCalendar
-            shifts={shifts}
-            onDateClick={(date) => setSelectedShiftDate(date)}
-            onShiftClick={(shift) => setSelectedShift(shift)}
-            leaves={leaves}
-            memberNames={canManageTenant ? memberNames : undefined}
-            onViewMonthChange={setShiftViewMonth}
-          />
-
-          {selectedShift && canManageTenant && (
-            <ShiftEditModal
-              shift={selectedShift}
-              memberName={memberNames.get(selectedShift.user_id)}
-              canManageTenant={canManageTenant}
-              onModify={modifyShift}
-              onDelete={deleteShift}
-              onApprove={approveShift}
-              onReject={rejectShift}
-              onTentativeApprove={tentativeApproveShift}
-              onCancelTentative={cancelShiftTentative}
-              onRevertToTentative={async (id) => { await revertShiftToTentative(id); }}
-              onRestore={async (id) => { await restoreShift(id); }}
-              onClose={() => setSelectedShift(null)}
-              onRefresh={fetchRange}
-              selectableStores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
-              storeName={stores.find(s => s.id === selectedShift.store_id)?.name}
-              canManageStore={selectedShift.store_id ? isManagerOf(selectedShift.store_id) : false}
-            />
-          )}
-
-          <BottomSheet
-            isOpen={!!selectedShiftDate}
-            onClose={() => setSelectedShiftDate(null)}
-            title={selectedShiftDate ? `${selectedShiftDate} のシフト一覧` : ''}
-          >
-            <div className="space-y-2 p-4">
-              {shifts.filter(s => s.date === selectedShiftDate).map(s => (
-                <button
-                  key={s.id}
-                  onClick={() => { setSelectedShift(s); setSelectedShiftDate(null); }}
-                  className="w-full text-left p-3 bg-neutral-50 dark:bg-neutral-800 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
-                >
-                  <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">{memberNames.get(s.user_id) ?? '不明'}</div>
-                  <div className="text-xs text-neutral-600 dark:text-neutral-300 flex flex-wrap items-center gap-1.5">
-                    <span>{s.start_time && s.end_time ? formatTimeRange(s.start_time, s.end_time, { separator: '〜' }) : '--:--〜--:--'}</span>
-                    {s.status === 'tentative' && (
-                      <span className="inline-flex items-center gap-1 rounded bg-warning-50 dark:bg-warning-900/30 px-2 py-0.5 text-xs text-warning-700 dark:text-warning-300">
-                        仮承認 (まだ確定ではありません)
-                      </span>
-                    )}
-                    {s.status !== 'tentative' && s.status !== 'approved' && (
-                      <span className="text-neutral-400 dark:text-neutral-500">/ {s.status}</span>
-                    )}
-                  </div>
-                </button>
-              ))}
-              {shifts.filter(s => s.date === selectedShiftDate).length === 0 && (
-                <EmptyState
-                  size="sm"
-                  title={messages.empty.shiftDay.title}
-                />
-              )}
-            </div>
-          </BottomSheet>
-
-          {canManageTenant && (
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr,360px] gap-4">
-              <div className="min-w-0 flex flex-col gap-4">
-                <ShiftAdminPanel
-                  shifts={shifts.filter(s => s.status !== 'cancelled')}
-                  members={members}
-                  onApprove={approveShift}
-                  onReject={rejectShift}
-                  onModify={modifyShift}
-                  onTentativeApprove={tentativeApproveShift}
-                  onCancelTentative={cancelShiftTentative}
-                  onRevertToTentative={async (id) => { await revertShiftToTentative(id); }}
-                  onRestore={async (id) => { await restoreShift(id); }}
-                  onFinalApproveStore={async (tid, sid) => {
-                    const r = await finalApproveStoreShifts(tid, sid);
-                    return { approved_count: r.approvedCount, approved_ids: r.approvedIds };
-                  }}
-                  tenantId={tenantId}
-                  onToast={showToast}
-                  onDelete={deleteShift}
-                  onRefresh={fetchRange}
-                  stores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
-                  canManageStore={(sid) => sid ? isManagerOf(sid) : false}
-                />
-
-                <LaborCostSummary tentativeEstimates={laborEstimates.tentative} allEstimates={laborEstimates.all} members={payrollMembers} roles={roles} targetMonth={shiftViewMonth} />
-              </div>
-
-              <aside className="min-w-0 lg:sticky lg:top-4 self-start rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 shadow-sm">
-                <ShiftPayrollPreview
-                  tenantId={tenantId}
-                  storeId={storeId}
-                  currentMonth={shiftViewMonth}
-                  allShifts={allShifts}
-                  members={payrollMembers}
-                  roles={roles}
-                />
-              </aside>
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'preference' && (
-        <div className="flex flex-col gap-4 pb-24">
-          {prefLoading && (
-            <div className="flex items-center justify-center py-6">
-              <Spinner size="md" label="読み込み中" showLabel />
-            </div>
-          )}
-
-          {/* 表示切替: 現在 / 履歴 (両ビュー共通) */}
-          <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-md self-start">
-            <button
-              type="button"
-              onClick={() => setPreferenceView('current')}
-              aria-pressed={preferenceView === 'current'}
-              className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
-                preferenceView === 'current'
-                  ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
-                  : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5" />
-              現在
-            </button>
-            <button
-              type="button"
-              onClick={() => setPreferenceView('history')}
-              aria-pressed={preferenceView === 'history'}
-              className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
-                preferenceView === 'history'
-                  ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
-                  : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
-              }`}
-            >
-              <History className="w-3.5 h-3.5" />
-              履歴
-            </button>
+      <div className="flex flex-col gap-4 pb-24">
+        {/* ヘッダー: 「シフト」見出し + 月表示 + pending 件数バッジ */}
+        <header className="flex items-end justify-between gap-3">
+          <div>
+            <Heading level={2}>シフト</Heading>
+            <p className="text-sm text-neutral-500 dark:text-neutral-300 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
           </div>
+          {canManageTenant && (pendingShifts.length > 0 || pendingPreferenceCount > 0) && (
+            <Badge tone="warning" withDot>{pendingShifts.length + pendingPreferenceCount} 件 承認待ち</Badge>
+          )}
+        </header>
 
-          {preferenceView === 'current' && (
-            <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-6 lg:items-start">
-              <div className="flex flex-col gap-4">
-                {deadlineInfo && !deadlineInfo.passed && (
-                  <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-warning-500 dark:border-warning-400 bg-warning-50 dark:bg-warning-900/30">
-                    <Card.Body className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-400 mt-0.5 shrink-0" aria-hidden="true" />
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-warning-800 dark:text-warning-200">
-                          シフト申請の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })}
-                        </p>
-                        <p className="text-xs text-warning-700 dark:text-warning-300 mt-1 tabular-nums">
-                          残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
-                        </p>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                )}
-                {deadlineInfo && deadlineInfo.passed && (
-                  <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-danger-500 dark:border-danger-400 bg-danger-50 dark:bg-danger-900/30">
-                    <Card.Body className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-danger-600 dark:text-danger-400 mt-0.5 shrink-0" aria-hidden="true" />
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-danger-800 dark:text-danger-200">
-                          締切過ぎ — 提出には管理者承認が必要です
-                        </p>
-                        <p className="text-xs text-danger-700 dark:text-danger-300 mt-1 tabular-nums">
-                          {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })} に締め切られました（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
-                        </p>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                )}
+        {/* 表示切替: 現在 / 履歴 (両ビュー共通) */}
+        <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-md self-start">
+          <button
+            type="button"
+            onClick={() => setPreferenceView('current')}
+            aria-pressed={preferenceView === 'current'}
+            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
+              preferenceView === 'current'
+                ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
+                : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            現在
+          </button>
+          <button
+            type="button"
+            onClick={() => setPreferenceView('history')}
+            aria-pressed={preferenceView === 'history'}
+            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
+              preferenceView === 'history'
+                ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
+                : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
+            }`}
+          >
+            <History className="w-3.5 h-3.5" />
+            履歴
+          </button>
+        </div>
 
-                {canManageTenant && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-300 tracking-wider">カレンダー表示:</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowAllMembersPrefs(false)}
-                      aria-pressed={!showAllMembersPrefs}
-                      className={`px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
-                        !showAllMembersPrefs
-                          ? 'bg-primary-600 text-white'
-                          : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
-                      }`}
-                    >
-                      自分のシフト申請
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAllMembersPrefs(true)}
-                      aria-pressed={showAllMembersPrefs}
-                      className={`px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
-                        showAllMembersPrefs
-                          ? 'bg-primary-600 text-white'
-                          : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
-                      }`}
-                    >
-                      全員のシフト申請
-                    </button>
-                    {storeId && (
-                      <button
-                        type="button"
-                        onClick={() => setShowBulkApplyModal(true)}
-                        className="px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring bg-white dark:bg-neutral-800 border border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30"
-                      >
-                        プリセット一括適用
-                      </button>
-                    )}
-                  </div>
-                )}
+        {preferenceView === 'current' && (
+          <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-6 lg:items-start">
+            <div className="flex flex-col gap-4">
+              {prefLoading && (
+                <div className="flex items-center justify-center py-6">
+                  <Spinner size="md" label="読み込み中" showLabel />
+                </div>
+              )}
 
-                {/* 一括シフト申請 — エントリー / 選択モード操作 UI (§5.1 / §5.5)
-                    self view (= !showAllMembersPrefs) かつ storeId 有り の時のみ表示 */}
-                {!(canManageTenant && showAllMembersPrefs) && storeId && (
-                  isBulkMode ? (
-                    <div
-                      role="region"
-                      aria-label="一括シフト申請 選択モード"
-                      className="flex items-center justify-between gap-2 flex-wrap rounded-md border border-info-200 dark:border-info-700 bg-info-50 dark:bg-info-900/30 px-3 py-2"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-info-700 dark:text-info-200 tabular-nums">
-                          {messages.shiftPreference.bulk.selectedCount(selectedBulkDates.size)}
-                        </span>
-                        {selectedBulkDates.size > 0 && (
-                          <button
-                            type="button"
-                            onClick={handleClearAllBulkDates}
-                            className="text-xs font-semibold text-info-700 dark:text-info-300 hover:underline focus-ring"
-                          >
-                            {messages.shiftPreference.bulk.clearAll}
-                          </button>
-                        )}
-                      </div>
-                      <div className="hidden md:flex items-center gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          iconLeft={<X className="w-4 h-4" />}
-                          onClick={handleCancelBulkMode}
-                        >
-                          {messages.shiftPreference.bulk.cancelMode}
-                        </Button>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={handleProceedBulkDialog}
-                          disabled={selectedBulkDates.size === 0}
-                        >
-                          {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
-                        </Button>
-                      </div>
+              {/* Deadline Banner */}
+              {deadlineInfo && !deadlineInfo.passed && (
+                <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-warning-500 dark:border-warning-400 bg-warning-50 dark:bg-warning-900/30">
+                  <Card.Body className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-400 mt-0.5 shrink-0" aria-hidden="true" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-warning-800 dark:text-warning-200">
+                        シフト申請の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })}
+                      </p>
+                      <p className="text-xs text-warning-700 dark:text-warning-300 mt-1 tabular-nums">
+                        残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
+                      </p>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-2 flex-wrap">
+                  </Card.Body>
+                </Card>
+              )}
+              {deadlineInfo && deadlineInfo.passed && (
+                <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-danger-500 dark:border-danger-400 bg-danger-50 dark:bg-danger-900/30">
+                  <Card.Body className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-danger-600 dark:text-danger-400 mt-0.5 shrink-0" aria-hidden="true" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-danger-800 dark:text-danger-200">
+                        締切過ぎ — 提出には管理者承認が必要です
+                      </p>
+                      <p className="text-xs text-danger-700 dark:text-danger-300 mt-1 tabular-nums">
+                        {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })} に締め切られました（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
+                      </p>
+                    </div>
+                  </Card.Body>
+                </Card>
+              )}
+
+              {/* Admin View Toggle (自分/全員) */}
+              {canManageTenant && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-300 tracking-wider">カレンダー表示:</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowAllMembersPrefs(false)}
+                    aria-pressed={!showAllMembersPrefs}
+                    className={`px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
+                      !showAllMembersPrefs
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                    }`}
+                  >
+                    自分のシフト申請
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowAllMembersPrefs(true)}
+                    aria-pressed={showAllMembersPrefs}
+                    className={`px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
+                      showAllMembersPrefs
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                    }`}
+                  >
+                    全員のシフト申請
+                  </button>
+                  {storeId && (
+                    <button
+                      type="button"
+                      onClick={() => setShowBulkApplyModal(true)}
+                      className="px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring bg-white dark:bg-neutral-800 border border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30"
+                    >
+                      プリセット一括適用
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* ShiftStatusFilter — 常時表示。pending_preference は admin 全員モード時のみ表示 */}
+              <ShiftStatusFilter
+                value={statusFilter}
+                onChange={setStatusFilter}
+                showPreferenceStatus={canManageTenant && showAllMembersPrefs}
+              />
+
+
+              {/* Bulk Toolbar */}
+              {!(canManageTenant && showAllMembersPrefs) && storeId && (
+                isBulkMode ? (
+                  <div
+                    role="region"
+                    aria-label="一括シフト申請 選択モード"
+                    className="flex items-center justify-between gap-2 flex-wrap rounded-md border border-info-200 dark:border-info-700 bg-info-50 dark:bg-info-900/30 px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-info-700 dark:text-info-200 tabular-nums">
+                        {messages.shiftPreference.bulk.selectedCount(selectedBulkDates.size)}
+                      </span>
+                      {selectedBulkDates.size > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleClearAllBulkDates}
+                          className="text-xs font-semibold text-info-700 dark:text-info-300 hover:underline focus-ring"
+                        >
+                          {messages.shiftPreference.bulk.clearAll}
+                        </button>
+                      )}
+                    </div>
+                    <div className="hidden md:flex items-center gap-2">
                       <Button
                         variant="secondary"
                         size="sm"
-                        iconLeft={<CalendarPlus className="w-4 h-4" />}
-                        onClick={handleEnterBulkMode}
-                        disabled={isDeadlinePassed && !canEditDeadline}
-                        aria-pressed={isBulkMode}
-                        aria-label={messages.shiftPreference.bulk.entryButtonAria}
+                        iconLeft={<X className="w-4 h-4" />}
+                        onClick={handleCancelBulkMode}
                       >
-                        {messages.shiftPreference.bulk.entryButton}
+                        {messages.shiftPreference.bulk.cancelMode}
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={handleProceedBulkDialog}
+                        disabled={selectedBulkDates.size === 0}
+                      >
+                        {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
                       </Button>
                     </div>
-                  )
-                )}
-
-                <ShiftPreferenceCalendar
-                  preferences={preferencesForCalendar}
-                  onDateClick={(date) => {
-                    if (canManageTenant && showAllMembersPrefs) {
-                      setAllMemberPrefDate(date);
-                    } else {
-                      setSelectedPrefDate(date);
-                    }
-                  }}
-                  memberNames={canManageTenant && showAllMembersPrefs ? memberNames : undefined}
-                  canManageTenant={canManageTenant && showAllMembersPrefs}
-                  onApprovePreference={canManageTenant && showAllMembersPrefs ? handleApprovePreference : undefined}
-                  onRejectPreference={canManageTenant && showAllMembersPrefs ? handleRejectPreference : undefined}
-                  canManageStore={(sid) => sid ? isManagerOf(sid) : false}
-                  onMutated={fetchPreferenceRange}
-                  bulkSelectionMode={isBulkMode && !(canManageTenant && showAllMembersPrefs)}
-                  selectedDates={selectedBulkDates}
-                  onToggleBulkDate={handleToggleBulkDate}
-                  shifts={canManageTenant && showAllMembersPrefs ? allShifts : undefined}
-                />
-
-                {/* Loop J (2026-05-19): 全員のシフト申請ビュー (admin × current) で想定人件費を表示。
-                    Loop H の shift タブ aside と同じ ShiftPayrollPreview を再利用、
-                    集計ソースは allShifts(tentative+approved)。希望ベースは未対応。 */}
-                {canManageTenant && showAllMembersPrefs && (
-                  <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 shadow-sm">
-                    <ShiftPayrollPreview
-                      tenantId={tenantId}
-                      storeId={storeId}
-                      currentMonth={shiftViewMonth}
-                      allShifts={allShifts}
-                      members={payrollMembers}
-                      roles={roles}
-                    />
                   </div>
-                )}
-
-                {/* 提出予定サマリ（自分視点のみ） */}
-                {!(canManageTenant && showAllMembersPrefs) && (
-                  <div className="lg:hidden">
-                    <Card padding="md">
-                      <Card.Body className="grid grid-cols-2 gap-3 text-center">
-                        <div>
-                          <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
-                            {preferenceSummary.preferred}
-                          </p>
-                          <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">申請日</p>
-                        </div>
-                        <div className="border-l border-neutral-100 dark:border-neutral-700">
-                          <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
-                            {preferenceSummary.unavailable}
-                          </p>
-                          <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">出勤不可</p>
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  </div>
-                )}
-
-                {/* 時間指定の詳細リスト */}
-                {!(canManageTenant && showAllMembersPrefs) && timedPreferences.length > 0 && (
-                  <div className="lg:hidden">
-                    <Card padding="none">
-                      <Card.Header className="border-b border-neutral-100 dark:border-neutral-700 mb-0 pb-3 px-4 pt-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                        時間指定の詳細
-                      </Card.Header>
-                      <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
-                        {timedPreferences.map((p) => {
-                          const theme = getPreferenceTheme(p.preference_type);
-                          return (
-                            <li key={p.id}>
-                              <button
-                                type="button"
-                                onClick={() => setSelectedPrefDate(p.date)}
-                                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left focus-ring"
-                              >
-                                <div className={`w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0 ${theme.iconBoxClass}`}>
-                                  <span className="text-[10px] font-semibold leading-none">{p.date.slice(5, 7)}/</span>
-                                  <span className="text-[14px] font-bold tabular-nums leading-none">{p.date.slice(8, 10)}</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{theme.label}</p>
-                                  {p.start_time && p.end_time && (
-                                    <p className="text-xs text-neutral-500 dark:text-neutral-300 tabular-nums">
-                                      {formatTimeRange(p.start_time, p.end_time, { separator: ' - ' })}
-                                    </p>
-                                  )}
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </Card>
-                  </div>
-                )}
-
-                {/* Loop7 / 要望 X: SP のみで BottomSheet をマウント。
-                    PC では JS レベルで unmount し、useBodyScrollLock の発火を防ぐ。 */}
-                {!isDesktop && (
-                  <>
-                    <BottomSheet
-                      isOpen={!!selectedPrefDate}
-                      onClose={() => setSelectedPrefDate(null)}
-                      title={selectedPrefDate ? `${selectedPrefDate} のシフト申請` : undefined}
+                ) : (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      iconLeft={<CalendarPlus className="w-4 h-4" />}
+                      onClick={handleEnterBulkMode}
+                      disabled={isDeadlinePassed && !canEditDeadline}
+                      aria-pressed={isBulkMode}
+                      aria-label={messages.shiftPreference.bulk.entryButtonAria}
                     >
-                      {selectedPrefDate && (
-                        <ShiftPreferenceForm
-                          date={selectedPrefDate}
-                          existingPreference={myPreferences.find((p) => p.date === selectedPrefDate && p.store_id === storeId) ?? myPreferences.find((p) => p.date === selectedPrefDate)}
-                          onSubmit={handlePrefSubmit}
-                          onDelete={handlePrefDelete}
-                          onCancel={() => setSelectedPrefDate(null)}
-                          presets={presets}
-                          selectableStores={stores}
-                          defaultStoreId={storeId}
-                          isDeadlinePassed={isDeadlinePassed}
-                          canBypassDeadline={canEditDeadline}
-                        />
-                      )}
-                    </BottomSheet>
+                      {messages.shiftPreference.bulk.entryButton}
+                    </Button>
+                  </div>
+                )
+              )}
 
-                    <BottomSheet
-                      isOpen={!!allMemberPrefDate}
-                      onClose={() => setAllMemberPrefDate(null)}
-                      title={allMemberPrefDate ? `${allMemberPrefDate} のシフト申請一覧` : undefined}
-                    >
-                      <ul className="divide-y divide-neutral-100 dark:divide-neutral-700 p-2 space-y-2">
-                        {allMemberPrefsForDate.length === 0 && (
-                          <li>
-                            <EmptyState
-                              size="sm"
-                              title={messages.empty.shiftPreferenceDay.title}
-                            />
-                          </li>
-                        )}
-                        {allMemberPrefsForDate.map(p => (
+              {/* Grid Content: ShiftCalendar */}
+              {shiftLoading && (
+                <div className="flex items-center justify-center py-6">
+                  <Spinner size="md" label="読み込み中" showLabel />
+                </div>
+              )}
+
+              <ShiftCalendar
+                shifts={shifts}
+                preferences={preferencesForCalendar}
+                onDateClick={(date) => {
+                  if (isBulkMode && !(canManageTenant && showAllMembersPrefs)) {
+                    handleToggleBulkDate(date);
+                  } else {
+                    setSelectedDate(date);
+                  }
+                }}
+                onShiftClick={(shift) => setSelectedShift(shift)}
+                onPreferenceClick={(p) => setSelectedDate(p.date)}
+                memberNames={canManageTenant ? memberNames : undefined}
+                statusFilter={statusFilter}
+                showPreferenceStatus={canManageTenant && showAllMembersPrefs}
+                leaves={leaves}
+                onViewMonthChange={setShiftViewMonth}
+              />
+
+              {/* Admin 補助パネル (collapsible / 全員モード時のみ) */}
+              {canManageTenant && showAllMembersPrefs && (
+                <>
+                  <details className="mt-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
+                    <summary className="px-4 py-3 cursor-pointer text-sm font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                      シフト一覧（管理者向け）
+                    </summary>
+                    <div className="p-4 pt-2">
+                      <ShiftAdminPanel
+                        shifts={shifts.filter(s => s.status !== 'cancelled')}
+                        members={members}
+                        onApprove={approveShift}
+                        onReject={rejectShift}
+                        onModify={modifyShift}
+                        onTentativeApprove={tentativeApproveShift}
+                        onCancelTentative={cancelShiftTentative}
+                        onRevertToTentative={async (id) => { await revertShiftToTentative(id); }}
+                        onRestore={async (id) => { await restoreShift(id); }}
+                        onFinalApproveStore={async (tid, sid) => {
+                          const r = await finalApproveStoreShifts(tid, sid);
+                          return { approved_count: r.approvedCount, approved_ids: r.approvedIds };
+                        }}
+                        tenantId={tenantId}
+                        onToast={showToast}
+                        onDelete={deleteShift}
+                        onRefresh={fetchRange}
+                        stores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
+                        canManageStore={(sid) => sid ? isManagerOf(sid) : false}
+                      />
+                    </div>
+                  </details>
+
+                  <details className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
+                    <summary className="px-4 py-3 cursor-pointer text-sm font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                      人件費サマリ
+                    </summary>
+                    <div className="p-4 pt-2">
+                      <LaborCostSummary
+                        tentativeEstimates={laborEstimates.tentative}
+                        allEstimates={laborEstimates.all}
+                        members={payrollMembers}
+                        roles={roles}
+                        targetMonth={shiftViewMonth}
+                      />
+                    </div>
+                  </details>
+
+                  <details className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
+                    <summary className="px-4 py-3 cursor-pointer text-sm font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                      想定人件費プレビュー
+                    </summary>
+                    <div className="p-4 pt-2">
+                      <ShiftPayrollPreview
+                        tenantId={tenantId}
+                        storeId={storeId}
+                        currentMonth={shiftViewMonth}
+                        allShifts={allShifts}
+                        members={payrollMembers}
+                        roles={roles}
+                      />
+                    </div>
+                  </details>
+                </>
+              )}
+
+              {/* 提出予定サマリ（自分視点のみ） */}
+              {!(canManageTenant && showAllMembersPrefs) && (
+                <div className="lg:hidden">
+                  <Card padding="md">
+                    <Card.Body className="grid grid-cols-2 gap-3 text-center">
+                      <div>
+                        <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
+                          {preferenceSummary.preferred}
+                        </p>
+                        <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">申請日</p>
+                      </div>
+                      <div className="border-l border-neutral-100 dark:border-neutral-700">
+                        <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
+                          {preferenceSummary.unavailable}
+                        </p>
+                        <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">出勤不可</p>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </div>
+              )}
+
+              {/* 時間指定の詳細リスト */}
+              {!(canManageTenant && showAllMembersPrefs) && timedPreferences.length > 0 && (
+                <div className="lg:hidden">
+                  <Card padding="none">
+                    <Card.Header className="border-b border-neutral-100 dark:border-neutral-700 mb-0 pb-3 px-4 pt-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                      時間指定の詳細
+                    </Card.Header>
+                    <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
+                      {timedPreferences.map((p) => {
+                        const theme = getPreferenceTheme(p.preference_type);
+                        return (
                           <li key={p.id}>
-                            <PreferenceActionRow
-                              preference={p}
-                              memberName={memberNames.get(p.user_id)}
-                              onApprove={handleApprovePreference}
-                              onReject={handleRejectPreference}
-                              canManage={p.store_id ? isManagerOf(p.store_id) : false}
-                              variant="full"
-                              onMutated={fetchPreferenceRange}
-                              onRevert={handleRevertPreference}
-                              storeName={adminListStores.find(s => s.id === p.store_id)?.name}
-                              showStoreBadge={adminListStores.length >= 2}
-                            />
+                            <button
+                              type="button"
+                              onClick={() => setSelectedDate(p.date)}
+                              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left focus-ring"
+                            >
+                              <div className={`w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0 ${theme.iconBoxClass}`}>
+                                <span className="text-[10px] font-semibold leading-none">{p.date.slice(5, 7)}/</span>
+                                <span className="text-[14px] font-bold tabular-nums leading-none">{p.date.slice(8, 10)}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{theme.label}</p>
+                                {p.start_time && p.end_time && (
+                                  <p className="text-xs text-neutral-500 dark:text-neutral-300 tabular-nums">
+                                    {formatTimeRange(p.start_time, p.end_time, { separator: ' - ' })}
+                                  </p>
+                                )}
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                            </button>
                           </li>
-                        ))}
-                      </ul>
-                    </BottomSheet>
-                  </>
-                )}
+                        );
+                      })}
+                    </ul>
+                  </Card>
+                </div>
+              )}
 
-                {/* sticky 追加ボタン（自分視点のみ） — bulk モード中は「次へ / キャンセル」に差し替え (§5.5) */}
-                {!(canManageTenant && showAllMembersPrefs) && (
-                  <div className="lg:hidden sticky bottom-16 md:bottom-0 -mx-4 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-700 z-20">
+              {/* SP BottomSheet: Unified Sidebar inline component */}
+              {!isDesktop && (
+                <BottomSheet
+                  isOpen={!!selectedDate}
+                  onClose={() => setSelectedDate(null)}
+                  title={selectedDate ? `${selectedDate} のシフト・申請` : undefined}
+                >
+                  {selectedDate && (
+                    <UnifiedShiftSidebar
+                      mode={canManageTenant && showAllMembersPrefs ? "admin" : "self"}
+                      selectedDate={selectedDate}
+                      onSelectedDateChange={setSelectedDate}
+                      shifts={canManageTenant && showAllMembersPrefs ? allShifts : selfShifts}
+                      preferences={canManageTenant && showAllMembersPrefs ? allPreferences : myPreferences}
+                      myPreferences={myPreferences}
+                      memberNames={memberNames}
+                      storeNames={storeNames}
+                      onApproveShift={approveShift}
+                      onRejectShift={rejectShift}
+                      onTentativeApproveShift={tentativeApproveShift}
+                      onCancelShiftTentative={cancelShiftTentative}
+                      onRevertShiftToTentative={async(id)=>{await revertShiftToTentative(id);}}
+                      onRestoreShift={async(id)=>{await restoreShift(id);}}
+                      onModifyShift={(s)=>setSelectedShift(s)}
+                      onDeleteShift={deleteShift}
+                      onApprovePreference={handleApprovePreference}
+                      onRejectPreference={handleRejectPreference}
+                      onRevertPreference={handleRevertPreference}
+                      onSubmitPreference={handlePrefSubmit}
+                      onDeletePreference={handlePrefDelete}
+                      canManageStore={(sid)=>sid?isManagerOf(sid):false}
+                      presets={presets}
+                      stores={stores}
+                      defaultStoreId={storeId}
+                      onMutated={() => { fetchPreferenceRange(); fetchRange(); }}
+                      adminSummary={adminSummary}
+                      preferenceSummary={preferenceSummary}
+                      pendingPreferenceCount={pendingPreferenceCount}
+                      isDeadlinePassed={isDeadlinePassed}
+                      canBypassDeadline={canEditDeadline}
+                    />
+                  )}
+                </BottomSheet>
+              )}
+
+              {/* sticky 追加ボタン（自分視点のみ） — bulk モード中は「次へ / キャンセル」に差し替え (§5.5) */}
+              {!(canManageTenant && showAllMembersPrefs) && (
+                <div className="lg:hidden sticky bottom-16 md:bottom-0 -mx-4 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-700 z-20">
                     {isBulkMode ? (
                       <div className="flex items-center gap-2">
                         <Button
@@ -1087,7 +911,7 @@ export function ShiftPage() {
                         size="lg"
                         fullWidth
                         iconLeft={<Plus className="w-4 h-4" />}
-                        onClick={() => setSelectedPrefDate(format(new Date(), 'yyyy-MM-dd'))}
+                        onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
                       >
                         本日のシフト申請を追加・編集
                       </Button>
@@ -1096,31 +920,39 @@ export function ShiftPage() {
                 )}
               </div>
 
-              {/* Loop7 / 要望 X: PC でのみ Sidebar をマウント。
-                  CSS の hidden lg:block を JS 制御に変更し、SP では完全 unmount する。 */}
               {isDesktop && (
-                <ShiftPreferenceSidebar
+                <UnifiedShiftSidebar
                   mode={canManageTenant && showAllMembersPrefs ? "admin" : "self"}
-                  selectedDate={canManageTenant && showAllMembersPrefs ? allMemberPrefDate : selectedPrefDate}
-                  onSelectedDateChange={canManageTenant && showAllMembersPrefs ? setAllMemberPrefDate : setSelectedPrefDate}
-                  preferences={allPreferences}
+                  selectedDate={selectedDate}
+                  onSelectedDateChange={setSelectedDate}
+                  shifts={canManageTenant && showAllMembersPrefs ? allShifts : selfShifts}
+                  preferences={canManageTenant && showAllMembersPrefs ? allPreferences : myPreferences}
                   myPreferences={myPreferences}
                   memberNames={memberNames}
-                  pendingPreferenceCount={pendingPreferenceCount}
-                  preferenceSummary={preferenceSummary}
-                  adminSummary={adminSummary}
-                  timedPreferences={timedPreferences}
+                  storeNames={storeNames}
+                  onApproveShift={approveShift}
+                  onRejectShift={rejectShift}
+                  onTentativeApproveShift={tentativeApproveShift}
+                  onCancelShiftTentative={cancelShiftTentative}
+                  onRevertShiftToTentative={async(id)=>{await revertShiftToTentative(id);}}
+                  onRestoreShift={async(id)=>{await restoreShift(id);}}
+                  onModifyShift={(s)=>setSelectedShift(s)}
+                  onDeleteShift={deleteShift}
                   onApprovePreference={handleApprovePreference}
                   onRejectPreference={handleRejectPreference}
                   onRevertPreference={handleRevertPreference}
-                  canManageStore={(sid) => sid ? isManagerOf(sid) : false}
                   onSubmitPreference={handlePrefSubmit}
                   onDeletePreference={handlePrefDelete}
+                  canManageStore={(sid)=>sid?isManagerOf(sid):false}
                   presets={presets}
                   stores={stores}
                   defaultStoreId={storeId}
-                  onMutated={fetchPreferenceRange}
-                  shifts={canManageTenant && showAllMembersPrefs ? allShifts : undefined}
+                  onMutated={() => { fetchPreferenceRange(); fetchRange(); }}
+                  adminSummary={adminSummary}
+                  preferenceSummary={preferenceSummary}
+                  pendingPreferenceCount={pendingPreferenceCount}
+                  isDeadlinePassed={isDeadlinePassed}
+                  canBypassDeadline={canEditDeadline}
                 />
               )}
             </div>
@@ -1196,70 +1028,6 @@ export function ShiftPage() {
             </>
           )}
         </div>
-      )}
-      {activeTab === 'leave' && (
-        <div className="space-y-6">
-          {leaveLoading && (
-            <div className="flex items-center justify-center py-6">
-              <Spinner size="md" label="読み込み中" showLabel />
-            </div>
-          )}
-
-          {!canManageTenant && (
-            <div>
-              {showLeaveForm ? (
-                <LeaveForm
-                  onSubmit={handleLeaveSubmit}
-                  onCancel={() => setShowLeaveForm(false)}
-                  remainingPaidLeave={remainingPaidLeave}
-                />
-              ) : (
-                <button
-                  onClick={() => setShowLeaveForm(true)}
-                  className="w-full px-4 py-3 text-sm font-medium text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
-                >
-                  + 休暇申請
-                </button>
-              )}
-            </div>
-          )}
-
-          <LeaveList
-            leaves={leaves}
-            memberNames={canManageTenant ? memberNames : undefined}
-            storeNames={storeNames}
-            canManageTenant={canManageTenant}
-            onApprove={handleApproveLeaveWrapped}
-            onReject={async (leaveId) => { setRejectingLeaveId(leaveId); }}
-            onCancel={cancelLeave}
-            onRefresh={fetchRange}
-          />
-        </div>
-      )}
-      <RejectLeaveModal
-        isOpen={!!rejectingLeaveId}
-        leaveId={rejectingLeaveId}
-        onClose={() => setRejectingLeaveId(null)}
-        onSubmit={handleRejectLeaveSubmit}
-      />
-      <BottomSheet
-        isOpen={!!approveLeaveConfirm}
-        onClose={() => setApproveLeaveConfirm(null)}
-        title="有給残が不足しています"
-        description="対象メンバーの有給残が不足していますが、承認しますか？"
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setApproveLeaveConfirm(null)}>
-              キャンセル
-            </Button>
-            <Button variant="primary" size="sm" onClick={handleConfirmApproveLeave}>
-              承認する
-            </Button>
-          </div>
-        }
-      >
-        <div />
-      </BottomSheet>
       {storeId && canManageTenant && (
         <BulkApplyPresetModal
           isOpen={showBulkApplyModal}
@@ -1274,7 +1042,6 @@ export function ShiftPage() {
         />
       )}
 
-      {/* 一括シフト申請ダイアログ (Engineer C 配線): self view 限定 */}
       {storeId && !(canManageTenant && showAllMembersPrefs) && (
         <BulkShiftPreferenceDialog
           isOpen={isBulkDialogOpen}
@@ -1286,6 +1053,27 @@ export function ShiftPage() {
           onSubmit={handleBulkPreferenceSubmit}
           isDeadlinePassed={isDeadlinePassed}
           canBypassDeadline={canEditDeadline}
+        />
+      )}
+
+      {selectedShift && canManageTenant && (
+        <ShiftEditModal
+          shift={selectedShift}
+          memberName={memberNames.get(selectedShift.user_id)}
+          canManageTenant={canManageTenant}
+          onModify={modifyShift}
+          onDelete={deleteShift}
+          onApprove={approveShift}
+          onReject={rejectShift}
+          onTentativeApprove={tentativeApproveShift}
+          onCancelTentative={cancelShiftTentative}
+          onRevertToTentative={async (id) => { await revertShiftToTentative(id); }}
+          onRestore={async (id) => { await restoreShift(id); }}
+          onClose={() => setSelectedShift(null)}
+          onRefresh={fetchRange}
+          selectableStores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
+          storeName={stores.find(s => s.id === selectedShift.store_id)?.name}
+          canManageStore={selectedShift.store_id ? isManagerOf(selectedShift.store_id) : false}
         />
       )}
     </div>
