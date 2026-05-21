@@ -3,180 +3,23 @@ import {
   Heading,
   Button,
   Select,
-  Input,
-  Textarea,
   EmptyState,
   BottomSheet,
   StatusPill,
 } from '../components/ui';
-import type { Project, ProjectStatus, Store } from '../types';
+import type { Project, ProjectStatus } from '../types';
+import { ProjectDialog } from '../components/Project';
+import type { ProjectInput, ProjectStoreOption } from '../components/Project';
 import { useProjects, useProjectMutations } from '../hooks/useProjects';
 import { useStore } from '../hooks/useStore';
 import { useTenant } from '../contexts/TenantContext';
 
-// === 2026-05-22 タスク管理 Phase 1 Loop 4 ===
+// === 2026-05-22 タスク管理 Phase 1 Loop 6 ===
 // プロジェクト管理画面 (一覧 + フィルタ + ダイアログ)
 // 権限:
 //   - isParttime: 閲覧のみ (アクション全非表示)
 //   - managerial (owner / manager): 全権 (新規/編集/アーカイブ/復活/削除/全社プロジェクト可)
 //   - staff: 自店舗プロジェクト編集/アーカイブ可、削除不可、全社プロジェクトは閲覧のみ
-// 注: ProjectDialog / DeleteConfirmDialog は Engineer C が後で components/Project/ に差し替え可能な構造とする
-
-const COMPANY_SCOPE_TOKEN = '__company__'; // store_id IS NULL を Select で扱うための sentinel
-
-interface ProjectFormData {
-  name: string;
-  description: string;
-  storeId: string | null;
-  status: ProjectStatus;
-}
-
-const EMPTY_FORM: ProjectFormData = {
-  name: '',
-  description: '',
-  storeId: null,
-  status: 'active',
-};
-
-interface ProjectDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (data: ProjectFormData) => Promise<void>;
-  project?: Project;
-  stores: Store[];
-  managerial: boolean;
-}
-
-// 2026-05-22 Loop 4 P1-4: staff の新規作成は RLS で不可のため、
-// defaultStoreIdForStaff / hideCompanyOption / staff 新規分岐は死にコードとして削除。
-// ProjectsPage 側で managerial = true のときのみ「新規」ボタンを表示している前提。
-function ProjectDialog({
-  isOpen,
-  onClose,
-  onSave,
-  project,
-  stores,
-  managerial,
-}: ProjectDialogProps) {
-  const [form, setForm] = useState<ProjectFormData>(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const isEditing = !!project;
-
-  useEffect(() => {
-    if (!isOpen) return;
-    if (project) {
-      setForm({
-        name: project.name,
-        description: project.description ?? '',
-        storeId: project.store_id,
-        status: project.status,
-      });
-    } else {
-      // 新規は managerial 専用経路 (staff は INSERT 不可)。
-      // managerial の default は「全社」(storeId: null)。
-      setForm({ ...EMPTY_FORM, storeId: null });
-    }
-    setError(null);
-    setSaving(false);
-  }, [isOpen, project]);
-
-  const handleSave = useCallback(async () => {
-    if (!form.name.trim()) {
-      setError('プロジェクト名は必須です');
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      await onSave(form);
-      onClose();
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : '保存に失敗しました';
-      setError(msg);
-      setSaving(false);
-    }
-  }, [form, onSave, onClose]);
-
-  // staff が既存プロジェクトの店舗を変更することは禁止 (新規は managerial のみ呼ばれる前提)
-  const storeLocked = isEditing && !managerial;
-
-  // 「全社」option は常に表示 (managerial 編集 / managerial 新規 / staff 編集すべてで意味を持つ)。
-  // staff 編集は storeLocked=true により Select が disabled なので option 内容には影響しない。
-  const storeOptions = useMemo(() => {
-    const opts: { value: string; label: string }[] = [{ value: COMPANY_SCOPE_TOKEN, label: '全社' }];
-    for (const s of stores) {
-      opts.push({ value: s.id, label: s.name });
-    }
-    return opts;
-  }, [stores]);
-
-  return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={onClose}
-      title={isEditing ? 'プロジェクトを編集' : '新規プロジェクト'}
-      footer={
-        <div className="flex justify-end gap-2 px-4 py-3">
-          <Button variant="secondary" onClick={onClose} disabled={saving}>
-            キャンセル
-          </Button>
-          <Button variant="primary" onClick={() => void handleSave()} disabled={saving}>
-            {saving ? '保存中…' : '保存'}
-          </Button>
-        </div>
-      }
-    >
-      <div className="px-4 py-4 space-y-4">
-        {error && (
-          <div className="rounded-md border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700 dark:bg-danger-900/20 dark:text-danger-300">
-            {error}
-          </div>
-        )}
-        <Input
-          label="プロジェクト名"
-          value={form.name}
-          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          placeholder="例: 新人研修プログラム"
-          disabled={saving}
-          required
-        />
-        <Textarea
-          label="説明"
-          value={form.description}
-          onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          rows={3}
-          disabled={saving}
-          placeholder="任意"
-        />
-        <Select
-          label="店舗"
-          options={storeOptions}
-          value={form.storeId ?? COMPANY_SCOPE_TOKEN}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              storeId: e.target.value === COMPANY_SCOPE_TOKEN ? null : e.target.value,
-            }))
-          }
-          disabled={saving || storeLocked}
-          hint={storeLocked ? '店舗を変更するには管理者権限が必要です' : undefined}
-        />
-        <Select
-          label="ステータス"
-          options={[
-            { value: 'active', label: '有効' },
-            { value: 'archived', label: 'アーカイブ' },
-          ]}
-          value={form.status}
-          onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as ProjectStatus }))}
-          disabled={saving}
-        />
-      </div>
-    </BottomSheet>
-  );
-}
 
 interface DeleteConfirmDialogProps {
   isOpen: boolean;
@@ -301,7 +144,6 @@ export function ProjectsPage() {
   // 権限判定 ----
   // 2026-05-22 Loop 4 P0-2 fix:
   //   staff の編集権限を「自店舗 (myStoreIds に含まれる) のみ」に厳密化。
-  //   以前は `project.store_id !== null` のみで判定しており、他店舗の店舗付きプロジェクトまで編集可能だった。
   const canEdit = useCallback(
     (project: Project): boolean => {
       if (readonly) return false;
@@ -344,25 +186,31 @@ export function ProjectsPage() {
     setDialogOpen(true);
   }, []);
 
+  // C 部品の ProjectStoreOption 形式に adapter
+  const storeOptionsForDialog: ProjectStoreOption[] = useMemo(
+    () => stores.map((s) => ({ id: s.id, name: s.name })),
+    [stores],
+  );
+
   const handleSave = useCallback(
-    async (data: ProjectFormData) => {
+    async (input: ProjectInput) => {
       setMutationBusy(true);
       setMutationError(null);
       try {
         if (editingProject) {
           await updateProject(editingProject.id, {
-            name: data.name,
-            description: data.description || null,
-            status: data.status,
-            store_id: data.storeId,
+            name: input.name,
+            description: input.description ?? null,
+            status: input.status ?? 'active',
+            store_id: input.storeId ?? null,
           });
         } else {
           await createProject({
             tenantId,
-            storeId: data.storeId,
-            name: data.name,
-            description: data.description || null,
-            status: data.status,
+            storeId: input.storeId ?? null,
+            name: input.name,
+            description: input.description ?? null,
+            status: input.status ?? 'active',
           });
         }
         await refetch();
@@ -571,12 +419,14 @@ export function ProjectsPage() {
       )}
 
       <ProjectDialog
-        isOpen={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSave={handleSave}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        mode={editingProject ? 'edit' : 'create'}
         project={editingProject}
-        stores={stores}
-        managerial={managerial}
+        stores={storeOptionsForDialog}
+        tenantId={tenantId}
+        canCreateGlobal={managerial}
+        onSave={handleSave}
       />
 
       <DeleteConfirmDialog
