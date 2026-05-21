@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { format, parseISO } from 'date-fns';
+import { differenceInSeconds, format, parseISO } from 'date-fns';
+import { ChevronRight } from 'lucide-react';
 import { AttendanceRecord, Break } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
+import { useNow } from '../../hooks/useNow';
+import { Button } from '../ui';
 import { Spinner } from '../ui/Spinner';
 
 interface BreakButtonProps {
@@ -16,11 +19,19 @@ interface BreakButtonProps {
 export function BreakButton({ status, breakStart, breakEnd, activeRecord, activeBreak }: BreakButtonProps) {
   const { showToast } = useToast();
   const [processing, setProcessing] = useState(false);
+  const currentTime = useNow(1000);
 
   if (status !== 'working' && status !== 'on_break') return null;
   if (!activeRecord) return null;
 
   const formatTime = (iso: string | null | undefined) => iso ? format(parseISO(iso), 'HH:mm') : null;
+  const formatBreakDuration = (startTime: string) => {
+    const totalSeconds = Math.max(0, differenceInSeconds(currentTime, parseISO(startTime)));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return [hours, minutes, seconds].map((value) => String(value).padStart(2, '0')).join(':');
+  };
 
   const handleBreakStart = async () => {
     if (processing) return;
@@ -46,41 +57,55 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
     }
   };
 
+  const completedBreaks = (activeRecord.breaks ?? []).filter((b) => b.end_time !== null);
+
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex w-full flex-col items-center gap-2">
       {status === 'working' && (
         <button
           onClick={handleBreakStart}
           disabled={processing}
           aria-label="休憩開始"
-          aria-pressed={false}
-          className="bg-neutral-600 hover:bg-neutral-700 dark:bg-neutral-500 dark:hover:bg-neutral-400 text-white font-bold py-3 px-8 rounded-lg motion-safe:transition-colors duration-180 ease-out-expo active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+          className="group inline-flex min-h-[44px] items-center gap-1 rounded-md px-3 py-2 text-warning-700 underline-offset-4 hover:text-warning-800 hover:underline focus-ring disabled:cursor-not-allowed disabled:opacity-50 dark:text-warning-300 dark:hover:text-warning-200"
         >
-          {processing && <Spinner size="sm" inline className="mr-2" />}休憩開始
+          {processing && <Spinner size="sm" inline className="mr-1" />}
+          <span>休憩開始</span>
+          <ChevronRight
+            className="h-4 w-4 motion-safe:transition-transform motion-safe:group-hover:translate-x-0.5"
+            aria-hidden="true"
+          />
         </button>
       )}
       {status === 'on_break' && (
         <>
-          <button
+          <Button
+            variant="warning"
+            size="lg"
+            fullWidth
             onClick={handleBreakEnd}
             disabled={processing}
             aria-label="休憩終了"
-            aria-pressed={true}
-            className="bg-warning-600 hover:bg-warning-700 dark:bg-warning-500 dark:hover:bg-warning-400 text-white font-bold py-3 px-8 rounded-lg motion-safe:transition-colors duration-180 ease-out-expo active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+            loading={processing}
+            className="min-h-[64px] motion-safe:active:scale-[0.97]"
           >
-            {processing && <Spinner size="sm" inline className="mr-2" />}休憩終了
-          </button>
+            休憩終了
+          </Button>
           {activeBreak?.start_time && (
-            <p className="text-sm text-neutral-500 dark:text-neutral-300">休憩開始: {formatTime(activeBreak.start_time)}</p>
+            <>
+              <p className="text-sm text-neutral-600 dark:text-neutral-200" aria-live="off">
+                休憩継続 <span className="font-num tabular-nums">{formatBreakDuration(activeBreak.start_time)}</span>
+              </p>
+              <p className="text-sm text-neutral-500 dark:text-neutral-300">休憩開始: {formatTime(activeBreak.start_time)}</p>
+            </>
           )}
         </>
       )}
 
-      {activeRecord?.breaks && activeRecord.breaks.filter(b => b.end_time !== null).length > 0 && (
-        <div className="mt-2 w-full max-w-xs">
+      {completedBreaks.length > 0 && (
+        <div className="mt-2 w-full max-w-md">
           <p className="text-xs text-neutral-400 dark:text-neutral-500 mb-1 text-center">休憩履歴</p>
           <div className="space-y-1">
-            {activeRecord.breaks.filter(b => b.end_time !== null).map((brk, index) => (
+            {completedBreaks.map((brk, index) => (
               <div key={brk.id} className="flex items-center justify-between text-xs bg-neutral-50 dark:bg-neutral-700 rounded px-2 py-1">
                 <span className="text-neutral-500 dark:text-neutral-300">休憩{index + 1}</span>
                 <div className="flex gap-2">

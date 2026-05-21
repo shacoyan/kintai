@@ -54,7 +54,7 @@ export function DashboardPage() {
   useEffect(() => {
     if (status !== 'working' && status !== 'on_break') return;
     setNow(new Date()); // ステータス変更時に即座に更新
-    const timer = setInterval(() => setNow(new Date()), 60_000);
+    const timer = setInterval(() => setNow(new Date()), 10_000);
     return () => clearInterval(timer);
   }, [status]);
 
@@ -183,22 +183,23 @@ export function DashboardPage() {
             </div>
           </Card>
         ) : (
-          <>
+          <div className="w-full max-w-md md:max-w-lg">
             <ClockButton
               status={status}
               clockIn={clockIn}
               clockOut={clockOut}
               todayRecords={todayRecords}
               activeRecord={activeRecord}
-            />
-            <BreakButton
-              status={status}
-              breakStart={breakStart}
-              breakEnd={breakEnd}
-              activeRecord={activeRecord}
-              activeBreak={activeBreak}
-            />
-          </>
+            >
+              <BreakButton
+                status={status}
+                breakStart={breakStart}
+                breakEnd={breakEnd}
+                activeRecord={activeRecord}
+                activeBreak={activeBreak}
+              />
+            </ClockButton>
+          </div>
         )}
       </div>
 

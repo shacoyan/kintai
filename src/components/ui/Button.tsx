@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'danger';
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'danger' | 'warning';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
@@ -21,6 +21,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   secondary: 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-100 dark:hover:bg-neutral-700',
   tertiary:  'bg-transparent text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/30',
   danger:    'bg-danger-500 text-white hover:bg-[#A53124] dark:bg-danger-500 dark:hover:bg-[#A53124]',
+  warning:   'bg-warning-100 text-warning-800 border border-warning-500 hover:bg-warning-200 dark:bg-warning-900/30 dark:text-warning-200 dark:border-warning-400 dark:hover:bg-warning-900/50',
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {

@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { differenceInMinutes, format, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { AttendanceRecord } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
-import { Badge, Button, Card } from '../ui';
+import { useNow } from '../../hooks/useNow';
+import { Badge, Button } from '../ui';
 
 interface ClockButtonProps {
   status: 'not_started' | 'working' | 'on_break';
@@ -12,33 +14,18 @@ interface ClockButtonProps {
   clockOut: () => Promise<void>;
   todayRecords: AttendanceRecord[];
   activeRecord: AttendanceRecord | null;
+  children?: ReactNode;
 }
 
-export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRecord }: ClockButtonProps) {
+export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRecord, children }: ClockButtonProps) {
   const { showToast } = useToast();
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const currentTime = useNow(1000);
   const [processing, setProcessing] = useState(false);
-  const [flashGreen, setFlashGreen] = useState(false);
-  const prevStatusRef = useRef(status);
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const prev = prevStatusRef.current;
-    if (
-      (prev === 'not_started' && status === 'working') ||
-      (prev === 'working' && status === 'not_started')
-    ) {
-      setFlashGreen(true);
-      const t = setTimeout(() => setFlashGreen(false), 600);
-      prevStatusRef.current = status;
-      return () => clearTimeout(t);
-    }
-    prevStatusRef.current = status;
-  }, [status]);
+  // TRANS-1 (Loop9): status 切替直後 300ms だけ animation を pause し、
+  // border-left-color の transition を確実に発火させるためのフラグ。
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const badgeWrapperRef = useRef<HTMLSpanElement | null>(null);
+  const prevStatusKeyRef = useRef<string>('');
 
   const triggerHaptic = () => {
     if ('vibrate' in navigator) {
@@ -77,6 +64,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
             withDot: false,
             buttonVariant: 'primary' as const,
             borderColor: 'border-neutral-200 dark:border-neutral-700',
+            breathClass: '',
             disabled: false,
           };
         }
@@ -87,6 +75,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           withDot: false,
           buttonVariant: 'primary' as const,
           borderColor: 'border-neutral-200 dark:border-neutral-700',
+          breathClass: '',
           disabled: false,
         };
       case 'working':
@@ -97,6 +86,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           withDot: true,
           buttonVariant: 'danger' as const,
           borderColor: isCarryOver ? 'border-warning-500 dark:border-warning-400' : 'border-success-500 dark:border-success-400',
+          breathClass: isCarryOver ? 'motion-safe:animate-border-breathe-warning' : 'motion-safe:animate-border-breathe-success',
           disabled: false,
         };
       case 'on_break':
@@ -106,7 +96,8 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           badgeTone: 'warning' as const,
           withDot: true,
           buttonVariant: 'primary' as const,
-          borderColor: 'border-warning-400 dark:border-warning-300',
+          borderColor: 'border-warning-500 dark:border-warning-400',
+          breathClass: 'motion-safe:animate-border-breathe-warning',
           disabled: true,
         };
     }
@@ -115,45 +106,143 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
   const config = getButtonConfig();
   const formatTime = (iso: string | null | undefined) => iso ? format(parseISO(iso), 'HH:mm') : null;
   const elapsedMin = activeRecord?.clock_in ? differenceInMinutes(currentTime, parseISO(activeRecord.clock_in)) : 0;
+  const totalBreakMin = (() => {
+    if (!activeRecord) return 0;
+    let total = 0;
+    for (const brk of activeRecord.breaks ?? []) {
+      if (brk.start_time) {
+        const end = brk.end_time ? parseISO(brk.end_time) : currentTime;
+        total += Math.max(0, differenceInMinutes(end, parseISO(brk.start_time)));
+      }
+    }
+    return total;
+  })();
   const elapsedH = Math.floor(elapsedMin / 60);
   const elapsedM = elapsedMin % 60;
   const elapsedText = elapsedH > 0 ? `${elapsedH}時間${elapsedM}分` : `${elapsedM}分`;
+  const breakElapsedText = totalBreakMin > 0 ? `${totalBreakMin}分` : null;
+  const statusKey = `${status}-${isCarryOver ? 'carry' : 'same'}`;
+
+  useEffect(() => {
+    if (prevStatusKeyRef.current === '') {
+      prevStatusKeyRef.current = statusKey;
+      return;
+    }
+    if (prevStatusKeyRef.current === statusKey) return;
+    prevStatusKeyRef.current = statusKey;
+
+    // TRANS-1 (Loop9): 300ms だけ animation を pause し、
+    // border-left-color transition を発火させる。
+    setIsTransitioning(true);
+    const transTimer = window.setTimeout(() => {
+      setIsTransitioning(false);
+    }, 300);
+
+    const node = badgeWrapperRef.current;
+    if (!node) {
+      return () => window.clearTimeout(transTimer);
+    }
+    node.classList.remove('motion-safe:animate-badge-pop');
+    void node.offsetWidth;
+    node.classList.add('motion-safe:animate-badge-pop');
+    const popTimer = window.setTimeout(() => {
+      node.classList.remove('motion-safe:animate-badge-pop');
+    }, 360);
+    return () => {
+      window.clearTimeout(transTimer);
+      window.clearTimeout(popTimer);
+    };
+  }, [statusKey]);
 
   return (
-    <Card
-      padding="md"
-      className={`w-full border-l-4 motion-safe:transition-all duration-180 ease-out-expo ${config.borderColor} ${flashGreen ? 'border-l-[6px] bg-success-50/60 dark:bg-success-900/20' : ''}`}
+    <div
+      className={`relative w-full overflow-hidden rounded-lg border-l-4 bg-white p-6 shadow-sm dark:bg-neutral-800 md:p-8 motion-safe:transition-[border-left-color] motion-safe:duration-300 motion-safe:ease-out ${config.borderColor} ${isTransitioning ? '' : config.breathClass}`}
+      data-transitioning={isTransitioning || undefined}
       aria-busy={processing || undefined}
     >
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <Badge tone={config.badgeTone} withDot={config.withDot}>{config.badgeLabel}</Badge>
-        <div className="text-kpi-lg font-num tabular-nums text-neutral-900 dark:text-neutral-50 min-w-[8ch] text-right">
-          {format(currentTime, 'HH:mm')}
-          <span className="ml-1 text-body-sm font-num tabular-nums text-neutral-500 dark:text-neutral-400 align-baseline">
-            :{format(currentTime, 'ss')}
-          </span>
-        </div>
-      </div>
-
-      {activeRecord?.clock_in && (
-        <div className="mt-3 text-body-sm text-neutral-500 dark:text-neutral-300">
-          出勤 <span className="font-num tabular-nums">{formatTime(activeRecord.clock_in)}</span> ・ 経過 <span className="font-num tabular-nums">{elapsedText}</span>
+      {processing && (
+        <div className="absolute left-0 right-0 top-0 h-0.5 overflow-hidden rounded-t-lg">
+          <div className="h-full w-1/3 bg-primary-500 motion-safe:animate-progress-stripe" />
         </div>
       )}
 
-      <div className="mt-4">
-        <Button
-          variant={config.buttonVariant}
-          size="lg"
-          fullWidth
-          onClick={handleClick}
-          disabled={config.disabled || processing}
-          aria-label={config.label}
-          loading={processing}
-        >
-          {config.label}
-        </Button>
+      <div className="flex justify-center">
+        <span ref={badgeWrapperRef} className="inline-flex">
+          <Badge
+            tone={config.badgeTone}
+            withDot={config.withDot}
+            role="status"
+            aria-live="polite"
+          >
+            {config.badgeLabel}
+          </Badge>
+        </span>
       </div>
-    </Card>
+
+      <div className="mt-6 flex items-end justify-center gap-1 text-neutral-900 dark:text-neutral-50 md:mt-7">
+        <span className="sr-only">{format(currentTime, 'H時m分')}</span>
+        <span
+          aria-hidden="true"
+          className="font-num text-[64px] font-semibold leading-none tabular-nums md:text-[88px]"
+        >
+          {format(currentTime, 'HH')}
+          <span className="motion-safe:animate-colon-blink">:</span>
+          {format(currentTime, 'mm')}
+        </span>
+        <span
+          aria-hidden="true"
+          className="mb-1 font-num text-body-sm tabular-nums text-neutral-500 opacity-70 dark:text-neutral-400 md:mb-2"
+        >
+          :{format(currentTime, 'ss')}
+        </span>
+      </div>
+
+      {activeRecord?.clock_in && status !== 'not_started' && (
+        <div
+          key={`elapsed-${status}`}
+          className="mt-4 text-center text-body-sm text-neutral-500 motion-safe:animate-fade-in-soft dark:text-neutral-300"
+        >
+          {status === 'on_break' ? (
+            <div>
+              勤務時間 <span className="font-num tabular-nums">{elapsedText}</span>
+              {activeRecord.breaks && breakElapsedText && (
+                <>
+                  <span className="px-1" aria-hidden="true">（</span>
+                  休憩 <span className="font-num tabular-nums">{breakElapsedText}</span>
+                  <span aria-hidden="true">）</span>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              出勤 <span className="font-num tabular-nums">{formatTime(activeRecord.clock_in)}</span>
+              <span className="px-2" aria-hidden="true">
+                ・
+              </span>
+              経過 <span className="font-num tabular-nums">{elapsedText}</span>
+            </>
+          )}
+        </div>
+      )}
+
+      {(status === 'not_started' || status === 'working') && (
+        <div className="mt-6">
+          <Button
+            variant={config.buttonVariant}
+            size="lg"
+            fullWidth
+            onClick={handleClick}
+            disabled={config.disabled || processing}
+            aria-label={config.label}
+            loading={processing}
+            className="min-h-[64px] motion-safe:active:scale-[0.97]"
+          >
+            {config.label}
+          </Button>
+        </div>
+      )}
+
+      {children ? <div className="mt-3">{children}</div> : null}
+    </div>
   );
 }
