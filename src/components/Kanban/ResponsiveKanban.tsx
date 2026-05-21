@@ -47,7 +47,7 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
   });
 
   return (
-    <DndContext sensors={dnd.sensors} {...dnd.accessibility} onDragEnd={dnd.handleDragEnd}>
+    <DndContext sensors={dnd.sensors} accessibility={dnd.accessibility} onDragEnd={dnd.handleDragEnd}>
       <div className="md:hidden">
         <MobileKanban
           tasks={props.tasks}
