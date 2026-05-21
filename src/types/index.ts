@@ -279,3 +279,56 @@ export interface BulkSubmitResult {
   failedDates: string[];
   lockedDates: string[];   // 承認済 preferred で事前除外された日付
 }
+
+// === 2026-05-22 タスク管理 Phase 1 (Engineer C / Loop 3) ===
+// 設計書: .company/engineering/docs/2026-05-22-kintai-task-management-phase1-techdesign.md §7-Loop-3
+import type { Database } from './supabase';
+
+// --- Task ---
+// status は CHECK 制約 ('todo' | 'in_progress' | 'done' | 'cancelled') があるため
+// supabase 生成型 (`string`) より narrow な union 型を別途定義する
+export type TaskRow = Database['public']['Tables']['tasks']['Row'];
+export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'cancelled';
+// priority は SMALLINT (0=low / 1=normal / 2=high / 3=urgent) CHECK BETWEEN 0 AND 3
+export type TaskPriority = 0 | 1 | 2 | 3;
+
+export type Task = Omit<TaskRow, 'status' | 'priority'> & {
+  status: TaskStatus;
+  priority: TaskPriority;
+};
+export type TaskInsert = Omit<Database['public']['Tables']['tasks']['Insert'], 'status' | 'priority'> & {
+  status?: TaskStatus;
+  priority?: TaskPriority;
+};
+export type TaskUpdate = Omit<Database['public']['Tables']['tasks']['Update'], 'status' | 'priority'> & {
+  status?: TaskStatus;
+  priority?: TaskPriority;
+};
+
+// --- Project ---
+// status は CHECK 制約 ('active' | 'archived') があるため narrow 化
+export type ProjectRow = Database['public']['Tables']['projects']['Row'];
+export type ProjectStatus = 'active' | 'archived';
+
+export type Project = Omit<ProjectRow, 'status'> & { status: ProjectStatus };
+export type ProjectInsert = Omit<Database['public']['Tables']['projects']['Insert'], 'status'> & {
+  status?: ProjectStatus;
+};
+export type ProjectUpdate = Omit<Database['public']['Tables']['projects']['Update'], 'status'> & {
+  status?: ProjectStatus;
+};
+
+// --- ラベル定数 (UI 表示用) ---
+export const TASK_PRIORITY_LABELS: Record<TaskPriority, string> = {
+  0: '低',
+  1: '通常',
+  2: '高',
+  3: '緊急',
+};
+
+export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
+  todo: '未着手',
+  in_progress: '進行中',
+  done: '完了',
+  cancelled: 'キャンセル',
+};

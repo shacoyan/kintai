@@ -56,6 +56,10 @@ interface TenantContextType {
   isManager: boolean;
   isStaff: boolean;
   myMemberId: string | null;
+  // === 2026-05-22 タスク管理 Phase 1 (Loop 3) ===
+  // tenant_members.is_parttime (056_tenant_members_parttime.sql)
+  // staff のうち is_parttime=true の場合 Tasks の権限を厳密化 (§3-5)
+  isParttime: boolean;
   needsOnboarding: boolean;
   completeOnboarding: (legalName: string, displayName: string) => Promise<void>;
 }
@@ -77,6 +81,9 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [members, setMembers] = useState<TenantMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 2026-05-22 タスク管理 Phase 1 (Loop 3) — 自分の is_parttime を保持
+  // tenant_members_visible view は is_parttime 列を含まないため、本人 row を別途 fetch する
+  const [isParttime, setIsParttime] = useState<boolean>(false);
 
   const myRole = currentTenant
     ? tenants.find(t => t.id === currentTenant.id)?.role ?? null
@@ -110,6 +117,26 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setMembers(data || []);
     } catch (err: unknown) {
       logger.error('Failed to fetch members:', formatSupabaseError(err));
+    }
+  }, []);
+
+  // 2026-05-22 タスク管理 Phase 1 (Loop 3) — 自分の is_parttime を fetch
+  // tenant_members_visible view は is_parttime 列を含まないため tenant_members 直接 SELECT。
+  // 既存 RLS (017) で本人 row は SELECT 可。失敗時は false に倒す (デフォルト挙動)。
+  const fetchMyParttime = useCallback(async (tenantId: string, userId: string) => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('tenant_members')
+        .select('is_parttime')
+        .eq('tenant_id', tenantId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      setIsParttime(data?.is_parttime ?? false);
+    } catch (err: unknown) {
+      logger.error('Failed to fetch is_parttime:', formatSupabaseError(err));
+      setIsParttime(false);
     }
   }, []);
 
@@ -786,13 +813,18 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, authLoading, fetchTenants, fetchMembers]);
 
+  // 2026-05-13 Track B: 依存配列を user → user?.id に変更 (TOKEN_REFRESHED → state reset race 回避)。
   useEffect(() => {
     if (currentTenant) {
       fetchMembers(currentTenant.id);
+      if (user?.id) {
+        fetchMyParttime(currentTenant.id, user.id);
+      }
     } else {
       setMembers([]);
+      setIsParttime(false);
     }
-  }, [currentTenant, fetchMembers]);
+  }, [currentTenant?.id, user?.id, fetchMembers, fetchMyParttime]);
 
   const myMember = currentTenant && user
     ? members.find((m) => m.user_id === user.id && m.tenant_id === currentTenant.id) ?? null
@@ -826,6 +858,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       isManager,
       isStaff,
       myMemberId,
+      isParttime,
       needsOnboarding,
       completeOnboarding,
     }}>
