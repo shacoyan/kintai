@@ -1,8 +1,10 @@
 /**
- * TasksPage — kintai タスク管理 Phase 1 Loop 6 (Engineer A)
+ * TasksPage — kintai タスク管理 Phase 2 Loop 4 (Engineer A)
  *
- * 純粋リファクタ: 既存の inline 実装を Engineer C の components/Task/* に置換。
- * 機能変更は一切なし。挙動を完全維持。
+ * Kanban / List 切替トグル + StoreTabBar 統合 + localStorage persist。
+ * 既存 List 機能は完全維持。
+ *
+ * 設計書: .company/engineering/docs/2026-05-22-kintai-task-kanban-phase2-techdesign.md §3-6
  */
 
 import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
@@ -34,6 +36,15 @@ import {
   type MemberOption,
   type StoreOption,
 } from '../components/Task';
+import { ResponsiveKanban } from '../components/Kanban/ResponsiveKanban';
+import { StoreTabBar } from '../components/Kanban/StoreTabBar';
+import {
+  readViewMode,
+  writeViewMode,
+  readStoreTab,
+  writeStoreTab,
+} from '../lib/kanbanStorage';
+import type { ViewMode, StoreTabValue } from '../components/Kanban/types';
 
 // ─── ダイアログ状態 ──────────────────────────────────────────
 
@@ -46,24 +57,54 @@ interface DialogState {
 
 export function TasksPage(): JSX.Element {
   const { user } = useAuth();
-  const { myRole, members, isParttime, currentTenant } = useTenant();
+  const { myRole, members, isParttime, currentTenant, myStoreIds } = useTenant();
   const { stores, currentStore } = useStoreContext();
   const { showToast } = useToast();
 
   const tenantId = currentTenant?.id ?? '';
-  const storeId = currentStore?.id;
   const canManage = myRole === 'owner' || myRole === 'manager';
+
+  // ── View Mode ──
+  const [viewMode, setViewMode] = useState<ViewMode>(() => readViewMode());
+  const handleViewModeChange = (mode: ViewMode): void => {
+    setViewMode(mode);
+    writeViewMode(mode);
+  };
+
+  // ── Store Tab ──
+  const [storeTab, setStoreTab] = useState<StoreTabValue>(() => readStoreTab());
+  const handleStoreTabChange = (tab: StoreTabValue): void => {
+    setStoreTab(tab);
+    writeStoreTab(tab);
+  };
+
+  // ── バイト自動フィルタ ──
+  // isParttime===true の場合は自動的に「自分のタスクのみ」を強制 ON。
+  // 非バイトはチェックボックスで手動 ON/OFF。
+  const [mineOnlyManual, setMineOnlyManual] = useState<boolean>(false);
+  const effectiveMineOnly = isParttime || mineOnlyManual;
 
   // ── フィルタ状態 ──
   const [filter, setFilter] = useState<TaskFilterValue>({
     status: ['todo', 'in_progress'],
   });
-  const [mineOnly, setMineOnly] = useState<boolean>(false);
 
   const enabledStatuses = useMemo<TaskStatus[]>(
     () => filter.status?.length ? filter.status : ['todo', 'in_progress', 'done', 'cancelled'],
     [filter.status],
   );
+
+  // ── StoreId 解決 (storeTab → useTasks 引数) ──
+  //   all     → undefined (全件: tenant 配下全て)
+  //   company → null      (store_id IS NULL のみ)
+  //   store   → storeTab.storeId
+  // Loop 4.5 P2-6: UseTasksOptions.storeId が string | null | undefined に拡張されたため
+  // 「null as unknown as string | undefined」の hack を除去。
+  const storeIdForHook = useMemo<string | null | undefined>(() => {
+    if (storeTab.kind === 'all') return undefined;
+    if (storeTab.kind === 'company') return null;
+    return storeTab.storeId;
+  }, [storeTab]);
 
   // ── データ取得 ──
   const {
@@ -73,12 +114,12 @@ export function TasksPage(): JSX.Element {
     refetch,
   } = useTasks({
     tenantId,
-    storeId,
+    storeId: storeIdForHook,
     status: enabledStatuses,
-    assigneeUserId: mineOnly ? user?.id : filter.assigneeUserId,
+    assigneeUserId: effectiveMineOnly ? user?.id : filter.assigneeUserId,
   });
 
-  const { projects } = useProjects({ tenantId, storeId });
+  const { projects } = useProjects({ tenantId, storeId: currentStore?.id });
 
   const {
     createTask,
@@ -93,6 +134,40 @@ export function TasksPage(): JSX.Element {
     if (!filter.projectId) return tasks;
     return tasks.filter((t) => t.project_id === filter.projectId);
   }, [tasks, filter.projectId]);
+
+  // ── 件数バッジ (未完了タスク数を各タブで集計) ──
+  // Loop 4.5 P2-7: 元実装は Map<StoreTabValue, number> だったが、
+  // StoreTabValue は object のため参照同一性が一致せず lookup が常に miss していた。
+  // StoreTabBar 側の serializeKey 規約に合わせて Map<string, number> で渡す。キー規約:
+  //   'all'           → 全件未完了数
+  //   'company'       → store_id IS NULL の未完了数
+  //   `store:<id>`    → 当該店舗の未完了数 (StoreTabBar.serializeKey と一致)
+  // 集計対象は tasks (= storeTab で絞り込まれた現在表示分)。
+  // 'all' 選択中は全件、'store:xx' 選択中は当該店舗+全社が集計対象 → バッジは
+  // 「現在のスコープ内の未完了数」として機能する。Phase 3 で全件集計に拡張可。
+  const openTaskCountsByStore = useMemo<Map<string, number>>(() => {
+    const map = new Map<string, number>();
+    let allCount = 0;
+    let companyCount = 0;
+    const storeCounts = new Map<string, number>();
+
+    for (const task of tasks) {
+      if (task.status === 'done' || task.status === 'cancelled') continue;
+      allCount++;
+      if (task.store_id === null || task.store_id === undefined) {
+        companyCount++;
+      } else {
+        storeCounts.set(task.store_id, (storeCounts.get(task.store_id) ?? 0) + 1);
+      }
+    }
+
+    map.set('all', allCount);
+    map.set('company', companyCount);
+    for (const [storeId, count] of storeCounts) {
+      map.set(`store:${storeId}`, count);
+    }
+    return map;
+  }, [tasks]);
 
   // ── Adapter ──
   const memberOptions = useMemo<MemberOption[]>(
@@ -187,6 +262,13 @@ export function TasksPage(): JSX.Element {
     [canManage, user?.id],
   );
 
+  // ── Kanban myRole fallback (UserRole | null → 'owner' | 'manager' | 'staff') ──
+  const myRoleNarrow = useMemo<'owner' | 'manager' | 'staff'>(() => {
+    if (myRole === 'owner') return 'owner';
+    if (myRole === 'manager') return 'manager';
+    return 'staff';
+  }, [myRole]);
+
   // ────────────────────────────────────────────────────────────
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
@@ -198,34 +280,82 @@ export function TasksPage(): JSX.Element {
             タスクの進捗を管理します
           </p>
         </div>
-        {!isParttime && (
-          <Button
-            variant="primary"
-            iconLeft={<Plus size={16} />}
-            onClick={openCreate}
-          >
-            新規
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* View 切替トグル */}
+          <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-sm transition-colors ${
+                viewMode === 'kanban'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+              }`}
+              onClick={() => handleViewModeChange('kanban')}
+              aria-pressed={viewMode === 'kanban'}
+            >
+              ボード
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-sm transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-primary-500 text-white'
+                  : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+              }`}
+              onClick={() => handleViewModeChange('list')}
+              aria-pressed={viewMode === 'list'}
+            >
+              リスト
+            </button>
+          </div>
+          {!isParttime && (
+            <Button
+              variant="primary"
+              iconLeft={<Plus size={16} />}
+              onClick={openCreate}
+            >
+              新規
+            </Button>
+          )}
+        </div>
       </header>
 
-      {/* フィルタバー */}
-      <div className="space-y-2">
-        <TaskFilterBar
-          value={filter}
-          onChange={setFilter}
-          projects={projects}
-          members={memberOptions}
-          showStoreFilter={false}
-        />
-        <div className="flex items-center">
-          <Checkbox
-            label="自分のタスクのみ"
-            checked={mineOnly}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setMineOnly(e.target.checked)}
+      {/* バイト自動フィルタヒント */}
+      {isParttime && (
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          バイトのため自分のタスクのみ表示中
+        </p>
+      )}
+
+      {/* StoreTabBar */}
+      <StoreTabBar
+        stores={stores}
+        value={storeTab}
+        onChange={handleStoreTabChange}
+        counts={openTaskCountsByStore}
+      />
+
+      {/* フィルタバー (List時のみ表示。Kanban時は status 列で代替) */}
+      {viewMode === 'list' && (
+        <div className="space-y-2">
+          <TaskFilterBar
+            value={filter}
+            onChange={setFilter}
+            projects={projects}
+            members={memberOptions}
+            showStoreFilter={false}
           />
+          {!isParttime && (
+            <div className="flex items-center">
+              <Checkbox
+                label="自分のタスクのみ"
+                checked={mineOnlyManual}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setMineOnlyManual(e.target.checked)}
+              />
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* エラー */}
       {tasksError && (
@@ -246,8 +376,24 @@ export function TasksPage(): JSX.Element {
         </div>
       )}
 
-      {/* 一覧 */}
-      {!tasksLoading && !tasksError && (
+      {/* View別レンダリング: Kanban */}
+      {!tasksLoading && !tasksError && viewMode === 'kanban' && (
+        <ResponsiveKanban
+          tasks={filteredTasks}
+          onTaskClick={(task) => setDialog({ mode: 'edit', task })}
+          myRole={myRoleNarrow}
+          isParttime={isParttime}
+          currentUserId={user?.id}
+          myStoreIds={myStoreIds}
+          memberNames={memberNames}
+          projectNames={projectNames}
+          onSuccess={(m) => showToast(m, 'success')}
+          onError={(m) => showToast(m, 'error')}
+        />
+      )}
+
+      {/* View別レンダリング: List */}
+      {!tasksLoading && !tasksError && viewMode === 'list' && (
         <TaskList
           tasks={filteredTasks}
           memberNames={memberNames}
