@@ -620,11 +620,54 @@ export function ShiftPage() {
               )}
 
               {/* ShiftStatusFilter — 常時表示。pending_preference は admin 全員モード時のみ表示 */}
-              <ShiftStatusFilter
-                value={statusFilter}
-                onChange={setStatusFilter}
-                showPreferenceStatus={canManageTenant && showAllMembersPrefs}
-              />
+              {/* Loop10: admin 全員モードのみ「未承認を一括却下」ボタンを横並び表示 */}
+              <div className="flex flex-wrap items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <ShiftStatusFilter
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    showPreferenceStatus={canManageTenant && showAllMembersPrefs}
+                  />
+                </div>
+                {canManageTenant && showAllMembersPrefs && (() => {
+                  const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                  const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                  const pendingInRange = preferencesForCalendar.filter(
+                    p => p.status === 'pending' && p.date >= monthStart && p.date <= monthEnd
+                  );
+                  const count = pendingInRange.length;
+                  const handleBulkRejectInRange = async () => {
+                    if (count === 0) return;
+                    // eslint-disable-next-line no-alert
+                    if (!window.confirm(`${count}件却下します。よろしいですか？`)) return;
+                    let errors = 0;
+                    for (const p of pendingInRange) {
+                      try {
+                        await rejectPreference(p.id);
+                      } catch {
+                        errors += 1;
+                      }
+                    }
+                    fetchPreferenceRange();
+                    fetchRange();
+                    if (errors > 0) {
+                      // eslint-disable-next-line no-console
+                      console.warn(`[bulkRejectInRange] ${errors} 件で却下エラーが発生しました`);
+                    }
+                  };
+                  return (
+                    <button
+                      type="button"
+                      onClick={handleBulkRejectInRange}
+                      disabled={count === 0}
+                      className="shrink-0 px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring border border-danger-300 dark:border-danger-700 text-danger-700 dark:text-danger-300 bg-white dark:bg-neutral-800 hover:bg-danger-50 dark:hover:bg-danger-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
+                    >
+                      未承認を一括却下{count > 0 ? `（${count}）` : ''}
+                    </button>
+                  );
+                })()}
+              </div>
 
 
               {/* Bulk Toolbar */}

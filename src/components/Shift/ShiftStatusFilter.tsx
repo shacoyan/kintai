@@ -48,7 +48,6 @@ export function writeStatusFilter(set: Set<StatusFilterValue>): void {
  */
 const STATUS_CHIP_ON_CLASS: Record<StatusFilterValue, string> = {
   pending_preference: 'bg-warning-100 ring-2 ring-warning-500 text-warning-800 dark:bg-warning-900/40 dark:ring-warning-400 dark:text-warning-300',
-  pending: 'bg-warning-100 ring-2 ring-warning-500 text-warning-800 dark:bg-warning-900/40 dark:ring-warning-400 dark:text-warning-300',
   tentative: 'bg-info-100 ring-2 ring-info-500 text-info-800 dark:bg-info-900/40 dark:ring-info-400 dark:text-info-300',
   approved: 'bg-success-100 ring-2 ring-success-500 text-success-800 dark:bg-success-900/40 dark:ring-success-400 dark:text-success-300',
   modified: 'bg-primary-100 ring-2 ring-primary-500 text-primary-800 dark:bg-primary-900/40 dark:ring-primary-400 dark:text-primary-300',

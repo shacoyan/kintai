@@ -131,7 +131,13 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
   const shiftsByDate = useMemo(() => {
     const map = new Map<string, Shift[]>();
     for (const s of shifts) {
-      if (!statusFilter || statusFilter.has(s.status as StatusFilterValue)) {
+      // Loop10: shift.status='pending' は StatusFilter 対象外（chip 削除済）→ 常時表示扱い。
+      // それ以外のステータスはフィルタを通す。
+      const passesFilter =
+        s.status === 'pending' ||
+        !statusFilter ||
+        statusFilter.has(s.status as StatusFilterValue);
+      if (passesFilter) {
         const arr = map.get(s.date) || [];
         arr.push(s);
         map.set(s.date, arr);
