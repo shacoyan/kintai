@@ -17,6 +17,8 @@ import { ErrorBoundary, PageLoader } from './components/ui';
 
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
 const ShiftPage = lazy(() => import('./pages/ShiftPage').then(m => ({ default: m.ShiftPage })));
+const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: m.default })));
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then(m => ({ default: m.ProjectsPage })));
 
 const App: React.FC = () => {
   return (
@@ -112,6 +114,38 @@ const App: React.FC = () => {
                       <ErrorBoundary scope="route">
                         <Suspense fallback={<PageLoader variant="screen" />}>
                           <AdminPage />
+                        </Suspense>
+                      </ErrorBoundary>
+                    </Layout>
+                  </RequireTenant>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tasks"
+              element={
+                <ProtectedRoute>
+                  <RequireTenant>
+                    <Layout>
+                      <ErrorBoundary scope="route">
+                        <Suspense fallback={<PageLoader variant="screen" />}>
+                          <TasksPage />
+                        </Suspense>
+                      </ErrorBoundary>
+                    </Layout>
+                  </RequireTenant>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <ProtectedRoute>
+                  <RequireTenant>
+                    <Layout>
+                      <ErrorBoundary scope="route">
+                        <Suspense fallback={<PageLoader variant="screen" />}>
+                          <ProjectsPage />
                         </Suspense>
                       </ErrorBoundary>
                     </Layout>

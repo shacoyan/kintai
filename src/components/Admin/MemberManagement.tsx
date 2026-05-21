@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useTenantRoles } from '../../hooks/useTenantRoles';
 import { useTenant } from '../../hooks/useTenant';
+import { useAuth } from '../../hooks/useAuth';
 import type { TenantMember } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { useStoreContext } from '../../contexts/StoreContext';
@@ -30,8 +31,9 @@ const roleBadge: Record<string, { label: string; className: string }> = {
 export function MemberManagement({ tenantId }: MemberManagementProps) {
   const { showToast } = useToast();
   const { myRole } = useTenant();
+  const { user } = useAuth();
   const { currentStore } = useStoreContext();
-  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updatePayType, updateMonthlySalary, deleteMember, updateRole, updatePaidLeaveDays, updateRoleId } = useTenantAdmin(tenantId);
+  const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updateParttime, updatePayType, updateMonthlySalary, deleteMember, updateRole, updatePaidLeaveDays, updateRoleId } = useTenantAdmin(tenantId);
   const { roles, fetchRoles } = useTenantRoles(tenantId);
   const rolesMap = useMemo(() => {
     const m = new Map<string, typeof roles[number]>();
@@ -197,6 +199,15 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const handleNightShiftToggle = async (member: TenantMember) => {
     try {
       await updateNightShift(member.id, !(member.night_shift_enabled ?? true));
+    } catch (err) {
+      showToast(formatSupabaseError(err).message, 'error');
+    }
+  };
+
+  const handleParttimeToggle = async (member: TenantMember) => {
+    try {
+      await updateParttime(member.id, !(member.is_parttime ?? false));
+      showToast(messages.toast.updated('バイト判定'), 'success');
     } catch (err) {
       showToast(formatSupabaseError(err).message, 'error');
     }
@@ -527,6 +538,43 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           />
                           <span className="text-xs text-neutral-600 dark:text-neutral-300">深夜給 <span className="font-medium">1.25x</span></span>
                         </label>
+                      </div>
+
+                      {/* バイト判定 (migration 056) */}
+                      <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
+                        {(() => {
+                          const isSelf = member.user_id === user?.id;
+                          const isOwner = member.role === 'owner';
+                          // L226 で staff は早期 return 済だが、設計書要件として防御層を残す。
+                          const isStaffViewer = (myRole as string) === 'staff';
+                          const disabled = isStaffViewer || isSelf || isOwner;
+                          const title = isOwner
+                            ? 'オーナーはバイト判定の対象外です'
+                            : isSelf
+                              ? '自分自身のバイト判定は変更できません'
+                              : isStaffViewer
+                                ? '権限がありません'
+                                : undefined;
+                          return (
+                            <label
+                              className={`flex items-center gap-2 select-none ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                              title={title}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={member.is_parttime ?? false}
+                                disabled={disabled}
+                                onChange={() => {
+                                  if (disabled) return;
+                                  handleParttimeToggle(member);
+                                }}
+                                aria-label={`${member.display_name} のバイト判定`}
+                                className="h-4 w-4 text-primary-600 dark:text-primary-400 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer disabled:cursor-not-allowed"
+                              />
+                              <span className="text-xs text-neutral-600 dark:text-neutral-300">バイト</span>
+                            </label>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

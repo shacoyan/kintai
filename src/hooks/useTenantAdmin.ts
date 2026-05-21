@@ -232,6 +232,20 @@ export function useTenantAdmin(tenantId: string) {
     await fetchMembers();
   }, [fetchMembers]);
 
+  // バイト判定 (migration 056 で is_parttime BOOLEAN 追加)。
+  // RLS による 0 行除外を無音 success にしないため、.select() で RETURNING を取得し
+  // 結果配列が 0 件なら明示的にエラー化する (supabase-js mutate 落とし穴対策)。
+  const updateParttime = useCallback(async (memberId: string, isParttime: boolean) => {
+    const { data, error: e } = await supabase
+      .from('tenant_members')
+      .update({ is_parttime: isParttime })
+      .eq('id', memberId)
+      .select('id');
+    if (e) throw new Error(formatSupabaseError(e).message);
+    if (!data || data.length === 0) throw new Error('更新できる権限がありません');
+    await fetchMembers();
+  }, [fetchMembers]);
+
   const updateRoleId = useCallback(async (memberId: string, roleId: string | null) => {
     const { data, error: e } = await supabase
       .from('tenant_members')
@@ -261,6 +275,7 @@ export function useTenantAdmin(tenantId: string) {
     updateRole,
     deleteMember,
     updateNightShift,
+    updateParttime,
     updatePayType,
     updateMonthlySalary,
     updatePaidLeaveDays,

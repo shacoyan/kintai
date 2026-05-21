@@ -20,6 +20,7 @@ export interface TenantMember {
   onboarded_at: string | null;
   hourly_rate: number | null;
   night_shift_enabled: boolean | null;
+  is_parttime: boolean | null;
   pay_type: 'hourly' | 'monthly';
   monthly_salary: number | null;
   paid_leave_days: number | null;
