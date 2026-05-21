@@ -60,6 +60,11 @@ interface TenantContextType {
   // tenant_members.is_parttime (056_tenant_members_parttime.sql)
   // staff のうち is_parttime=true の場合 Tasks の権限を厳密化 (§3-5)
   isParttime: boolean;
+  // === 2026-05-22 タスク管理 Phase 1 Loop 4 P0-2 fix ===
+  // store_members から自分の所属店舗 ID 配列を保持。
+  // ProjectsPage.canEdit が「staff は自店舗のみ編集可」を厳密判定するために使用。
+  // 初期値 []、currentTenant 変更時に fetch。
+  myStoreIds: string[];
   needsOnboarding: boolean;
   completeOnboarding: (legalName: string, displayName: string) => Promise<void>;
 }
@@ -84,6 +89,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // 2026-05-22 タスク管理 Phase 1 (Loop 3) — 自分の is_parttime を保持
   // tenant_members_visible view は is_parttime 列を含まないため、本人 row を別途 fetch する
   const [isParttime, setIsParttime] = useState<boolean>(false);
+  // 2026-05-22 タスク管理 Phase 1 Loop 4 P0-2 fix — 自分の所属店舗 ID 配列
+  // store_members を myMemberId で SELECT して store_id 配列に変換して保持。
+  // ProjectsPage.canEdit (staff: 自店舗のみ編集可) で参照される。
+  const [myStoreIds, setMyStoreIds] = useState<string[]>([]);
 
   const myRole = currentTenant
     ? tenants.find(t => t.id === currentTenant.id)?.role ?? null
@@ -137,6 +146,26 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (err: unknown) {
       logger.error('Failed to fetch is_parttime:', formatSupabaseError(err));
       setIsParttime(false);
+    }
+  }, []);
+
+  // 2026-05-22 タスク管理 Phase 1 Loop 4 P0-2 fix — 自分の store_members を fetch
+  // store_members.member_id = tenant_members.id (= myMemberId) でフィルタし、
+  // store_id 配列を保持する。owner/manager でも staff でも同じ方式で取得。
+  // 失敗時は [] に倒す (フェイルクローズ = 編集権限を与えない)。
+  const fetchMyStoreIds = useCallback(async (memberId: string) => {
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('store_members')
+        .select('store_id')
+        .eq('member_id', memberId);
+
+      if (fetchError) throw fetchError;
+      const ids = (data ?? []).map((r: { store_id: string }) => r.store_id);
+      setMyStoreIds(ids);
+    } catch (err: unknown) {
+      logger.error('Failed to fetch my store_ids:', formatSupabaseError(err));
+      setMyStoreIds([]);
     }
   }, []);
 
@@ -814,17 +843,24 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [user?.id, authLoading, fetchTenants, fetchMembers]);
 
   // 2026-05-13 Track B: 依存配列を user → user?.id に変更 (TOKEN_REFRESHED → state reset race 回避)。
+  // 2026-05-22 Loop 4 P0-2: myStoreIds も同じタイミングで fetch (myMemberId が確定したら)。
   useEffect(() => {
     if (currentTenant) {
       fetchMembers(currentTenant.id);
       if (user?.id) {
         fetchMyParttime(currentTenant.id, user.id);
       }
+      if (myMemberId) {
+        fetchMyStoreIds(myMemberId);
+      } else {
+        setMyStoreIds([]);
+      }
     } else {
       setMembers([]);
       setIsParttime(false);
+      setMyStoreIds([]);
     }
-  }, [currentTenant?.id, user?.id, fetchMembers, fetchMyParttime]);
+  }, [currentTenant?.id, user?.id, myMemberId, fetchMembers, fetchMyParttime, fetchMyStoreIds]);
 
   const myMember = currentTenant && user
     ? members.find((m) => m.user_id === user.id && m.tenant_id === currentTenant.id) ?? null
@@ -859,6 +895,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       isStaff,
       myMemberId,
       isParttime,
+      myStoreIds,
       needsOnboarding,
       completeOnboarding,
     }}>
