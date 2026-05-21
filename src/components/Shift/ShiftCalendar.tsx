@@ -85,17 +85,6 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
 export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange, leaves = [], preferences, onPreferenceClick, statusFilter, showPreferenceStatus = false, currentUserId }: ShiftCalendarProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [baseDate, setBaseDate] = useState(getInitialShiftMonth);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mql = window.matchMedia('(max-width: 639px)');
-    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
-    handleChange(mql);
-    mql.addEventListener('change', handleChange);
-    return () => mql.removeEventListener('change', handleChange);
-  }, []);
-
   useEffect(() => { onViewMonthChange?.(baseDate); }, [baseDate, onViewMonthChange]);
 
   const dates = useMemo(() => {
@@ -253,32 +242,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
         </div>
       </div>
 
-      {/* Member Legend */}
-      {memberNames && (
-        <div className="flex items-center flex-wrap gap-x-4 gap-y-2 px-1 py-2 bg-neutral-50 dark:bg-neutral-800 rounded-md text-xs">
-          {(() => {
-            const entries = [...userColorMap.entries()];
-            const displayEntries = isExpanded ? entries : entries.slice(0, isMobile ? 3 : 5);
-            return displayEntries.map(([uid, colorClass]) => {
-              const bgClass = colorClass.split(' ')[0];
-              return (
-                <div key={uid} className="flex items-center gap-1">
-                  <div className={`w-2.5 h-2.5 rounded-full ${bgClass.replace('100', '400')}`} />
-                  <span className="text-neutral-600 dark:text-neutral-300">{memberNames.get(uid) || '不明'}</span>
-                </div>
-              );
-            });
-          })()}
-          {userColorMap.size > (isMobile ? 3 : 5) && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-primary-600 dark:text-primary-400 font-medium hover:underline focus:outline-none"
-            >
-              {isExpanded ? '閉じる' : `…(+${userColorMap.size - (isMobile ? 3 : 5)})`}
-            </button>
-          )}
-        </div>
-      )}
+      {/* Loop16-A: メンバー一覧凡例は削除。userColorMap はカレンダー内アイテムの色付けで継続利用。 */}
 
       {/* Empty state banner */}
       {isCurrentMonthEmpty && (

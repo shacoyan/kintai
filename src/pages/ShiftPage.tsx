@@ -18,6 +18,7 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
 import { PreferenceTimeEditModal } from '../components/Shift/PreferenceTimeEditModal';
+import { PreferenceAdminActionModal } from '../components/Shift/PreferenceAdminActionModal';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
 import { getInitialShiftMonth } from '../utils/initialShiftMonth';
 import { UnifiedShiftSidebar } from '../components/Shift/UnifiedShiftSidebar';
@@ -80,6 +81,10 @@ export function ShiftPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   // Loop15: カレンダーの自分の preference を直接押したときに開く時間変更モーダル用 state。
   const [selectedPreference, setSelectedPreference] = useState<import('../types').ShiftPreference | null>(null);
+  // Loop16-B: 他人の preference を直接押したときの管理アクションモーダル用 state。
+  const [adminTargetPreference, setAdminTargetPreference] = useState<import('../types').ShiftPreference | null>(null);
+  // Loop16-C: 空白セルクリックで開く「新規シフト申請モーダル」用の対象日付 state。
+  const [newPreferenceDate, setNewPreferenceDate] = useState<string | null>(null);
   const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
   const [showBulkApplyModal, setShowBulkApplyModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Set<StatusFilterValue>>(() => readStatusFilter());
@@ -682,17 +687,22 @@ export function ShiftPage() {
                   if (isBulkMode) {
                     handleToggleBulkDate(date);
                   } else {
-                    setSelectedDate(date);
+                    // Loop16-C: 空白セルクリックは直接「自分の新規申請モーダル」を開く。
+                    setNewPreferenceDate(date);
                   }
                 }}
                 onShiftClick={(shift) => setSelectedShift(shift)}
                 onPreferenceClick={(p) => {
-                  // Loop15: 自分の preference は直接「時間変更モーダル」を開く。
-                  // 他人の preference は従来通りサイドバー表示に流す。
+                  // Loop15 + Loop16-B (+ Reviewer P1 fix):
+                  // - 自分の preference は時間変更モーダル
+                  // - 他人 + 当該店舗の manager (= isManagerOf(p.store_id), owner は常に true) は管理アクションモーダル
+                  // - 他人 + 一般スタッフ or 他店舗 manager は何もしない
+                  //   ※ canManageTenant のみで判定すると店舗 A の manager が店舗 B の preference を承認可能になる。
+                  //   PreferenceActionRow と同じ canManageStore 相当のガードで揃える。
                   if (currentUserId && p.user_id === currentUserId) {
                     setSelectedPreference(p);
-                  } else {
-                    setSelectedDate(p.date);
+                  } else if (canManageTenant && p.store_id && isManagerOf(p.store_id)) {
+                    setAdminTargetPreference(p);
                   }
                 }}
                 memberNames={canManageTenant ? memberNames : undefined}
@@ -1024,6 +1034,45 @@ export function ShiftPage() {
             setSelectedPreference(null);
           }}
           onClose={() => setSelectedPreference(null)}
+        />
+      )}
+
+      {/* Loop16-B (+ Reviewer P1 fix): 他人の preference を admin が直押ししたときの管理アクションモーダル
+          - canManageTenant かつ当該店舗の manager (owner は全店舗 true) のときのみ render。
+          - state を直接いじってバイパスされても render guard で防御。 */}
+      {adminTargetPreference && canManageTenant && adminTargetPreference.store_id && isManagerOf(adminTargetPreference.store_id) && (
+        <PreferenceAdminActionModal
+          preference={adminTargetPreference}
+          memberName={memberNames.get(adminTargetPreference.user_id)}
+          storeName={adminTargetPreference.store_id ? storeNames.get(adminTargetPreference.store_id) : undefined}
+          onApprove={async (id, startTime, endTime) => {
+            await handleApprovePreference(id, startTime, endTime);
+          }}
+          onReject={async (id) => {
+            await handleRejectPreference(id);
+          }}
+          onClose={() => setAdminTargetPreference(null)}
+        />
+      )}
+
+      {/* Loop16-C: 空白セルクリックで開く「自分の新規シフト申請モーダル」 */}
+      {newPreferenceDate && (
+        <PreferenceTimeEditModal
+          newDate={newPreferenceDate}
+          presets={presets}
+          defaultStoreId={storeId}
+          selectableStores={stores}
+          isDeadlinePassed={isDeadlinePassed}
+          canBypassDeadline={canEditDeadline}
+          onSubmit={async (date, type, startTime, endTime, note, storeIdOverride) => {
+            await handlePrefSubmit(date, type, startTime, endTime, note, storeIdOverride);
+            setNewPreferenceDate(null);
+          }}
+          onDelete={async (id) => {
+            await handlePrefDelete(id);
+            setNewPreferenceDate(null);
+          }}
+          onClose={() => setNewPreferenceDate(null)}
         />
       )}
     </div>

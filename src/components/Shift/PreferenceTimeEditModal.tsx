@@ -4,13 +4,17 @@ import { ShiftPreferenceForm } from './ShiftPreferenceForm';
 
 /**
  * Loop15: カレンダーの preference アイテムを直接押したときに開く時間変更モーダル。
+ * Loop16-C: preference を optional 化し、新規申請モードでも再利用できるようにする。
  *
  * - 既存 ShiftPreferenceForm を BottomSheet 内で再利用するだけのラッパー。
  * - 呼び出し側 (ShiftPage) で「自分の preference か」を判定してから開く想定。
- *   他人の preference の場合は従来通り setSelectedDate でサイドバー表示に流す。
+ * - preference 未指定時は newDate を必ず渡すこと（新規申請モード）。
  */
 export interface PreferenceTimeEditModalProps {
-  preference: ShiftPreference;
+  /** 既存編集時の preference。新規申請時は undefined。 */
+  preference?: ShiftPreference;
+  /** 新規申請モード用の対象日付（preference 未指定時に使用）。 */
+  newDate?: string;
   presets: ShiftPreset[];
   defaultStoreId: string | null;
   selectableStores: Store[];
@@ -30,6 +34,7 @@ export interface PreferenceTimeEditModalProps {
 
 export function PreferenceTimeEditModal({
   preference,
+  newDate,
   presets,
   selectableStores,
   defaultStoreId,
@@ -39,14 +44,22 @@ export function PreferenceTimeEditModal({
   onDelete,
   onClose,
 }: PreferenceTimeEditModalProps) {
+  const targetDate = preference?.date ?? newDate;
+  if (!targetDate) {
+    // Loop16-C: 不正呼び出しを防ぐためのガード。preference / newDate のどちらも無い場合は何もしない。
+    return null;
+  }
+  const title = preference
+    ? `${targetDate} のシフト申請`
+    : `${targetDate} の新規シフト申請`;
   return (
     <BottomSheet
       isOpen={true}
       onClose={onClose}
-      title={`${preference.date} のシフト申請`}
+      title={title}
     >
       <ShiftPreferenceForm
-        date={preference.date}
+        date={targetDate}
         existingPreference={preference}
         presets={presets}
         selectableStores={selectableStores}
