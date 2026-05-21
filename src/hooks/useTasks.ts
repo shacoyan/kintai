@@ -39,13 +39,7 @@ export interface TaskInput {
 
 export interface UseTasksOptions {
   tenantId?: string;
-  /**
-   * 3 状態:
-   *   string    = 当該店舗 + 全社 (store_id IS NULL OR store_id = X)
-   *   null      = 全社のみ (store_id IS NULL)
-   *   undefined = 全件 (tenant 配下すべて)
-   */
-  storeId?: string | null;
+  storeId?: string;
   status?: TaskStatus[];
   assigneeUserId?: string;
 }
