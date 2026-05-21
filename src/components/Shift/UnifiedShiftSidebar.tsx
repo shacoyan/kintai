@@ -87,6 +87,19 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
   cancelled: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700/40 dark:text-neutral-300',
 };
 
+const MEMBER_COLORS = [
+  'bg-primary-100 border-primary-300 text-primary-800 dark:bg-primary-900/30 dark:border-primary-700 dark:text-primary-300',
+  'bg-member-3-100 border-member-3-300 text-member-3-800 dark:bg-member-3-100/20 dark:border-member-3-300/40 dark:text-member-3-100',
+  'bg-info-100 border-info-300 text-info-800 dark:bg-info-900/30 dark:border-info-700 dark:text-info-300',
+  'bg-member-4-100 border-member-4-300 text-member-4-800 dark:bg-member-4-100/20 dark:border-member-4-300/40 dark:text-member-4-100',
+  'bg-member-6-100 border-member-6-300 text-member-6-800 dark:bg-member-6-100/20 dark:border-member-6-300/40 dark:text-member-6-100',
+  'bg-member-2-100 border-member-2-300 text-member-2-800 dark:bg-member-2-100/20 dark:border-member-2-300/40 dark:text-member-2-100',
+  'bg-member-1-100 border-member-1-300 text-member-1-800 dark:bg-member-1-100/20 dark:border-member-1-300/40 dark:text-member-1-100',
+  'bg-member-9-100 border-member-9-300 text-member-9-800 dark:bg-member-9-100/20 dark:border-member-9-300/40 dark:text-member-9-100',
+  'bg-member-5-100 border-member-5-300 text-member-5-800 dark:bg-member-5-100/20 dark:border-member-5-300/40 dark:text-member-5-100',
+  'bg-member-8-100 border-member-8-300 text-member-8-800 dark:bg-member-8-100/20 dark:border-member-8-300/40 dark:text-member-8-100',
+];
+
 function ShiftStatusReadonly({ shift }: { shift: Shift }) {
   return (
     <div className="text-xs text-neutral-600 dark:text-neutral-300 flex items-center gap-2 px-3 py-2 bg-neutral-50 dark:bg-neutral-800 rounded">
@@ -134,7 +147,6 @@ export function UnifiedShiftSidebar({
   defaultStoreId,
   onMutated,
 
-  adminSummary,
   preferenceSummary,
   pendingPreferenceCount,
 
@@ -187,6 +199,16 @@ export function UnifiedShiftSidebar({
     if (!currentUserId) return dateFilteredPendingPreferences;
     return dateFilteredPendingPreferences.filter(p => p.user_id !== currentUserId);
   }, [dateFilteredPendingPreferences, currentUserId]);
+
+  const userColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const pendingPrefs = (preferences ?? []).filter(p => p.status === 'pending');
+    const uniqueUsers = [...new Set([...shifts.map(s => s.user_id), ...pendingPrefs.map(p => p.user_id)])];
+    uniqueUsers.forEach((uid, i) => {
+      map.set(uid, MEMBER_COLORS[i % MEMBER_COLORS.length]);
+    });
+    return map;
+  }, [shifts, preferences]);
 
   const handleFormSubmit = async (
     date: string,
@@ -246,37 +268,6 @@ export function UnifiedShiftSidebar({
         aria-label="統合シフトサイドバー"
         className="w-[360px] sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4"
       >
-        {/* 凡例 Card */}
-        <Card padding="sm">
-          <Card.Header>凡例</Card.Header>
-          <div className="flex flex-col gap-2 text-sm">
-            {PREFERENCE_THEME_LIST.map(t => (
-              <div key={t.type} className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${t.dotClass}`} />
-                <t.Icon className={`w-4 h-4 shrink-0 ${t.iconColorClass}`} aria-hidden="true" />
-                <span>{t.label}</span>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* adminSummary Card */}
-        {adminSummary && (
-          <Card padding="sm">
-            <Card.Header>{adminSummary.monthLabel}のシフト申請</Card.Header>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              {PREFERENCE_THEME_LIST.map(t => (
-                <div key={t.type}>
-                  <div className={`text-2xl font-bold tabular-nums ${t.countTextClass}`}>
-                    {adminSummary.counts[t.type] ?? 0}
-                  </div>
-                  <div className="text-xs text-neutral-500">{t.label}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
         {/* 選択日 Card (メイン) */}
         <Card padding="sm">
           <Card.Header className="flex justify-between items-center">
@@ -349,6 +340,7 @@ export function UnifiedShiftSidebar({
                             onModify={onModifyShift}
                             onDelete={onDeleteShift}
                             onMutated={onMutated}
+                            userColor={userColorMap.get(s.user_id)}
                           />
                         </li>
                       ))}

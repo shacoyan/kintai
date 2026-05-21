@@ -11,6 +11,7 @@ export interface ShiftActionRowProps {
   storeName?: string;
   showStoreBadge?: boolean;
   canManage: boolean;
+  userColor?: string;
   onApprove?: (id: string) => Promise<void>;
   onReject?: (id: string) => Promise<void>;
   onTentativeApprove?: (id: string) => Promise<void>;
@@ -31,6 +32,9 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   cancelled: { label: '取消',   className: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700/40 dark:text-neutral-300' },
 };
 
+const stripBorder = (cls: string) =>
+  cls.split(/\s+/).filter(c => !c.startsWith('border-') && !c.startsWith('dark:border-')).join(' ');
+
 export function ShiftActionRow(props: ShiftActionRowProps) {
   const {
     shift,
@@ -38,6 +42,7 @@ export function ShiftActionRow(props: ShiftActionRowProps) {
     storeName,
     showStoreBadge,
     canManage,
+    userColor,
     onApprove,
     onReject,
     onTentativeApprove,
@@ -114,59 +119,69 @@ export function ShiftActionRow(props: ShiftActionRowProps) {
   const hasOriginal = shift.original_start_time && shift.original_end_time;
   const originalTimeStr = hasOriginal ? formatTimeRange(shift.original_start_time!, shift.original_end_time!) : null;
 
+  const cardColorClass = userColor ? stripBorder(userColor) : 'bg-neutral-50 dark:bg-neutral-800/40 text-neutral-900 dark:text-neutral-100';
+
   return (
     <div>
-      <div className="flex items-center gap-2 text-sm py-2 px-2">
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${badge.className}`}>
-          {badge.label}
-        </span>
+      <div className={`rounded-lg p-3 shadow-sm ${cardColorClass}`}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-1 min-w-0">
+            {memberName && (
+              <span className="font-medium truncate">
+                {memberName}
+              </span>
+            )}
 
-        <span className="font-medium text-neutral-900 dark:text-neutral-100 truncate">
-          {memberName}
-        </span>
+            {showStoreBadge && storeName && (
+              <span className="inline-flex self-start px-1.5 py-0.5 rounded text-[10px] font-medium bg-info-50 text-info-700 dark:bg-info-900/30 dark:text-info-300">
+                {storeName}
+              </span>
+            )}
 
-        {showStoreBadge && storeName && (
-          <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-info-50 text-info-700 dark:bg-info-900/30 dark:text-info-300">
-            {storeName}
-          </span>
-        )}
+            <span className="tabular-nums text-xs">
+              {timeStr}
+            </span>
 
-        <span className="tabular-nums text-xs text-neutral-700 dark:text-neutral-300">
-          {timeStr}
-        </span>
+            {hasOriginal && originalTimeStr && (
+              <span className="text-[10px] opacity-75">
+                (元: {originalTimeStr})
+              </span>
+            )}
+          </div>
 
-        {hasOriginal && originalTimeStr && (
-          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 ml-1">
-            (元: {originalTimeStr})
-          </span>
-        )}
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${badge.className}`}>
+              {badge.label}
+            </span>
 
-        <span className="flex-1" />
+            <div className="flex items-center gap-2">
+              {canManage && processing && (
+                <Spinner size="sm" />
+              )}
 
-        {canManage && processing && (
-          <Spinner size="sm" />
-        )}
+              {canManage && !processing && shift.status === 'pending' && onTentativeApprove && (
+                renderInlineButton('仮承認', () => handleAction(() => onTentativeApprove(shift.id)))
+              )}
 
-        {canManage && !processing && shift.status === 'pending' && onTentativeApprove && (
-          renderInlineButton('仮承認', () => handleAction(() => onTentativeApprove(shift.id)))
-        )}
+              {canManage && !processing && shift.status === 'tentative' && onApprove && (
+                renderInlineButton('本承認', () => handleAction(() => onApprove(shift.id)))
+              )}
 
-        {canManage && !processing && shift.status === 'tentative' && onApprove && (
-          renderInlineButton('本承認', () => handleAction(() => onApprove(shift.id)))
-        )}
-
-        {canManage && actionMenuItems.length > 0 && (
-          <ActionMenu
-            items={actionMenuItems}
-            align="end"
-            bottomSheetTitle={`${memberName ?? '不明'} ${shift.date}`}
-            disabled={processing}
-          />
-        )}
+              {canManage && actionMenuItems.length > 0 && (
+                <ActionMenu
+                  items={actionMenuItems}
+                  align="end"
+                  bottomSheetTitle={`${memberName ?? '不明'} ${shift.date}`}
+                  disabled={processing}
+                />
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {error && (
-        <div className="text-[11px] text-danger-600 dark:text-danger-400 px-2">
+        <div className="text-[11px] text-danger-600 dark:text-danger-400 px-2 pt-1">
           {error}
         </div>
       )}
