@@ -22,6 +22,13 @@ interface ShiftEditModalProps {
   onRestore?: (shiftId: string) => Promise<void>;
   onClose: () => void;
   onRefresh: () => void;
+  /**
+   * Loop15: モーダルの初期モード。
+   * - 'view' (default): 従来通り。カレンダー以外（履歴一覧など）からの呼び出し向け。
+   * - 'edit': カレンダーアイテム直押し時、いきなり時間変更フォームを表示する。
+   *   キャンセル時は 'view' に戻り、各種アクションを行える。
+   */
+  initialMode?: 'view' | 'edit';
 }
 
 const TIME_OPTIONS: string[] = [];
@@ -56,12 +63,18 @@ export function ShiftEditModal({
   onReject,
   onRestore,
   onClose,
-  onRefresh
+  onRefresh,
+  initialMode = 'view',
 }: ShiftEditModalProps) {
   const [startTime, setStartTime] = useState(shift.start_time.slice(0, 5));
   const [endTime, setEndTime] = useState(shift.end_time.slice(0, 5));
   const [editStoreId, setEditStoreId] = useState<string | null>(shift.store_id ?? null);
-  const [mode, setMode] = useState<'view' | 'edit' | 'confirmDelete'>('view');
+  // Loop15: initialMode='edit' でカレンダーから直接時間変更モードに入る。
+  // ただし権限がない場合は view にフォールバック（renderFooter で edit 用 UI が出ないため）。
+  const canEditDirectly = canManageTenant && canManageStore;
+  const [mode, setMode] = useState<'view' | 'edit' | 'confirmDelete'>(
+    initialMode === 'edit' && canEditDirectly ? 'edit' : 'view',
+  );
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

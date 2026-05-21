@@ -17,6 +17,7 @@ import { useShiftSubmissionDeadline } from '../hooks/useShiftSubmissionDeadline'
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
+import { PreferenceTimeEditModal } from '../components/Shift/PreferenceTimeEditModal';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
 import { getInitialShiftMonth } from '../utils/initialShiftMonth';
 import { UnifiedShiftSidebar } from '../components/Shift/UnifiedShiftSidebar';
@@ -77,6 +78,8 @@ export function ShiftPage() {
 
   const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  // Loop15: カレンダーの自分の preference を直接押したときに開く時間変更モーダル用 state。
+  const [selectedPreference, setSelectedPreference] = useState<import('../types').ShiftPreference | null>(null);
   const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
   const [showBulkApplyModal, setShowBulkApplyModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Set<StatusFilterValue>>(() => readStatusFilter());
@@ -683,7 +686,15 @@ export function ShiftPage() {
                   }
                 }}
                 onShiftClick={(shift) => setSelectedShift(shift)}
-                onPreferenceClick={(p) => setSelectedDate(p.date)}
+                onPreferenceClick={(p) => {
+                  // Loop15: 自分の preference は直接「時間変更モーダル」を開く。
+                  // 他人の preference は従来通りサイドバー表示に流す。
+                  if (currentUserId && p.user_id === currentUserId) {
+                    setSelectedPreference(p);
+                  } else {
+                    setSelectedDate(p.date);
+                  }
+                }}
                 memberNames={canManageTenant ? memberNames : undefined}
                 statusFilter={statusFilter}
                 showPreferenceStatus={canManageTenant}
@@ -990,6 +1001,29 @@ export function ShiftPage() {
           selectableStores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
           storeName={stores.find(s => s.id === selectedShift.store_id)?.name}
           canManageStore={selectedShift.store_id ? isManagerOf(selectedShift.store_id) : false}
+          // Loop15: カレンダー直押し時はいきなり時間変更モードを開く。
+          initialMode="edit"
+        />
+      )}
+
+      {/* Loop15: 自分の preference をカレンダーから直押ししたときの時間変更モーダル */}
+      {selectedPreference && (
+        <PreferenceTimeEditModal
+          preference={selectedPreference}
+          presets={presets}
+          defaultStoreId={storeId}
+          selectableStores={stores}
+          isDeadlinePassed={isDeadlinePassed}
+          canBypassDeadline={canEditDeadline}
+          onSubmit={async (date, type, startTime, endTime, note, storeIdOverride) => {
+            await handlePrefSubmit(date, type, startTime, endTime, note, storeIdOverride);
+            setSelectedPreference(null);
+          }}
+          onDelete={async (id) => {
+            await handlePrefDelete(id);
+            setSelectedPreference(null);
+          }}
+          onClose={() => setSelectedPreference(null)}
         />
       )}
     </div>
