@@ -62,7 +62,7 @@ interface ShiftStatusFilterProps {
   value: Set<StatusFilterValue>;
   onChange: (next: Set<StatusFilterValue>) => void;
   /**
-   * true: pending_preference チェックボックスを表示 (admin 全員モード時)
+   * true: pending_preference チェックボックスを表示 (manager 表示時)
    * false (default): 非表示
    */
   showPreferenceStatus?: boolean;

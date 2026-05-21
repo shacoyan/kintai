@@ -11,17 +11,12 @@ import type { BadgeTone } from '../components/ui';
 import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
-import { useStoreMemberIds } from '../hooks/useStoreMemberIds';
-import { useTenantRoles } from '../hooks/useTenantRoles';
 import { useShiftPreset } from '../hooks/useShiftPreset';
 import { useShiftPreference } from '../hooks/useShiftPreference';
 import { useShiftSubmissionDeadline } from '../hooks/useShiftSubmissionDeadline';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
-import { ShiftAdminPanel } from '../components/Shift/ShiftAdminPanel';
-import { LaborCostSummary } from '../components/Shift/LaborCostSummary';
-import ShiftPayrollPreview from '../components/Admin/ShiftPayrollPreview';
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
 import { getInitialShiftMonth } from '../utils/initialShiftMonth';
 import { UnifiedShiftSidebar } from '../components/Shift/UnifiedShiftSidebar';
@@ -51,14 +46,8 @@ export function ShiftPage() {
   // 走ってしまう症状を根治する。Tailwind の lg ブレークポイントと一致させる。
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift, finalApproveStoreShifts, getLaborCostEstimate } = useShift(tenantId, storeId);
+  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift } = useShift(tenantId, storeId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
-  const storeMemberIds = useStoreMemberIds(storeId);
-  const payrollMembers = useMemo(() => {
-    if (storeMemberIds === null) return members;
-    return members.filter((m) => storeMemberIds.has(m.id));
-  }, [members, storeMemberIds]);
-  const { roles, fetchRoles } = useTenantRoles(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
   const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference, bulkSubmitPreferences } = useShiftPreference(tenantId, storeId);
   const { showToast } = useToast();
@@ -88,7 +77,6 @@ export function ShiftPage() {
 
   const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [showAllMembersPrefs, setShowAllMembersPrefs] = useState(false);
   const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
   const [showBulkApplyModal, setShowBulkApplyModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Set<StatusFilterValue>>(() => readStatusFilter());
@@ -119,9 +107,9 @@ export function ShiftPage() {
   );
 
   const preferencesForCalendar = useMemo(() => {
-    if (canManageTenant && showAllMembersPrefs) return allPreferences;
+    if (canManageTenant) return allPreferences;
     return myPreferences.filter(p => p.status !== 'rejected');
-  }, [canManageTenant, showAllMembersPrefs, allPreferences, myPreferences]);
+  }, [canManageTenant, allPreferences, myPreferences]);
 
   const preferencesForAdminList = useMemo(() => {
     if (preferenceView === 'current') {
@@ -185,13 +173,6 @@ export function ShiftPage() {
     }
   }, [canManageTenant, getAllShifts, getMyShifts, fetchMembers]);
 
-  // 役職マスタは ShiftPayrollPreview の人件費計算で使用 (props 経由配信)
-  useEffect(() => {
-    if (canManageTenant && tenantId) {
-      void fetchRoles();
-    }
-  }, [canManageTenant, tenantId, fetchRoles]);
-
   const fetchPreferenceRange = useCallback(() => {
     const now = new Date();
     const start = format(startOfMonth(now), 'yyyy-MM-dd');
@@ -218,13 +199,6 @@ export function ShiftPage() {
   }, [tenantId, fetchPreferenceRange]);
 
   const shifts = canManageTenant ? allShifts : myShifts;
-  // self モード Sidebar 向け: admin が自分視点に切り替えた場合は allShifts を自分の user_id で
-  // フィルタしたものを表示する (P1-C3)。非 admin は myShifts そのまま。
-  const selfShifts = useMemo(() => {
-    if (!canManageTenant) return myShifts;
-    if (!currentUserId) return myShifts;
-    return allShifts.filter((s) => s.user_id === currentUserId);
-  }, [canManageTenant, allShifts, myShifts, currentUserId]);
   const leaves = canManageTenant ? [] : []; // Leave removed, but keep variable if needed elsewhere or remove. Removing all leave logic.
 
   const memberNames = useMemo(() => {
@@ -290,10 +264,9 @@ export function ShiftPage() {
   };
 
   // 一括選択モードの自動 OFF (§4.1 + P2-INT-2):
-  //   管理者一覧 / storeId null / preferenceView !== 'current'
+  //   storeId null / preferenceView !== 'current'
   useEffect(() => {
     const shouldDisable =
-      (canManageTenant && showAllMembersPrefs) ||
       !storeId ||
       preferenceView !== 'current';
     if (shouldDisable) {
@@ -301,7 +274,7 @@ export function ShiftPage() {
       setSelectedBulkDates((prev) => (prev.size > 0 ? new Set() : prev));
       setIsBulkDialogOpen((prev) => (prev ? false : prev));
     }
-  }, [canManageTenant, showAllMembersPrefs, storeId, preferenceView]);
+  }, [storeId, preferenceView]);
 
   // 選択モード OFF 遷移時に Set クリア (§4.1)
   useEffect(() => {
@@ -449,20 +422,6 @@ export function ShiftPage() {
     }
   };
 
-  const laborEstimates = useMemo(() => {
-    if (!canManageTenant || members.length === 0) {
-      return { tentative: [], all: [] };
-    }
-    const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-    const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-    const monthShifts = shifts.filter(s => s.date >= monthStart && s.date <= monthEnd);
-    const tentativeShifts = monthShifts.filter(s => s.status === 'tentative');
-    return {
-      tentative: getLaborCostEstimate(tentativeShifts, members),
-      all: getLaborCostEstimate(monthShifts, members),
-    };
-  }, [canManageTenant, shifts, members, getLaborCostEstimate, shiftViewMonth]);
-
   const pendingShifts = shifts.filter(s => s.status === 'pending');
 
   if (!tenantId) return null;
@@ -548,6 +507,7 @@ export function ShiftPage() {
               )}
 
               {/* Deadline Banner */}
+              {/* 理由: Deadline 警告バナーの左ボーダー強調 (例外③) */}
               {deadlineInfo && !deadlineInfo.passed && (
                 <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-warning-500 dark:border-warning-400 bg-warning-50 dark:bg-warning-900/30">
                   <Card.Body className="flex items-start gap-3">
@@ -563,6 +523,7 @@ export function ShiftPage() {
                   </Card.Body>
                 </Card>
               )}
+              {/* 理由: Deadline エラーバナー（締切過ぎ）の左ボーダー強調 (例外③) */}
               {deadlineInfo && deadlineInfo.passed && (
                 <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-danger-500 dark:border-danger-400 bg-danger-50 dark:bg-danger-900/30">
                   <Card.Body className="flex items-start gap-3">
@@ -579,57 +540,31 @@ export function ShiftPage() {
                 </Card>
               )}
 
-              {/* Admin View Toggle (自分/全員) */}
-              {canManageTenant && (
+              {/* プリセット一括適用ボタン (manager のみ) */}
+              {canManageTenant && storeId && (
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-300 tracking-wider">カレンダー表示:</span>
+                  {/* 理由: アクションボタンの primary 縁取り強調 (例外③) */}
                   <button
                     type="button"
-                    onClick={() => setShowAllMembersPrefs(false)}
-                    aria-pressed={!showAllMembersPrefs}
-                    className={`px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
-                      !showAllMembersPrefs
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
-                    }`}
+                    onClick={() => setShowBulkApplyModal(true)}
+                    className="px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring bg-white dark:bg-neutral-800 border border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30"
                   >
-                    自分のシフト申請
+                    プリセット一括適用
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowAllMembersPrefs(true)}
-                    aria-pressed={showAllMembersPrefs}
-                    className={`px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
-                      showAllMembersPrefs
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
-                    }`}
-                  >
-                    全員のシフト申請
-                  </button>
-                  {storeId && (
-                    <button
-                      type="button"
-                      onClick={() => setShowBulkApplyModal(true)}
-                      className="px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring bg-white dark:bg-neutral-800 border border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30"
-                    >
-                      プリセット一括適用
-                    </button>
-                  )}
                 </div>
               )}
 
-              {/* ShiftStatusFilter — 常時表示。pending_preference は admin 全員モード時のみ表示 */}
-              {/* Loop10: admin 全員モードのみ「未承認を一括却下」ボタンを横並び表示 */}
+              {/* ShiftStatusFilter — 常時表示。pending_preference は manager のみ表示 */}
+              {/* Loop12: manager は常時「未承認を一括却下」ボタンを横並び表示 */}
               <div className="flex flex-wrap items-start gap-2">
                 <div className="flex-1 min-w-0">
                   <ShiftStatusFilter
                     value={statusFilter}
                     onChange={setStatusFilter}
-                    showPreferenceStatus={canManageTenant && showAllMembersPrefs}
+                    showPreferenceStatus={canManageTenant}
                   />
                 </div>
-                {canManageTenant && showAllMembersPrefs && (() => {
+                {canManageTenant && (() => {
                   const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
                   const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
                   const pendingInRange = preferencesForCalendar.filter(
@@ -656,6 +591,7 @@ export function ShiftPage() {
                     }
                   };
                   return (
+                    /* 理由: 危険アクション (danger) 識別のための縁取り強調 (例外③) */
                     <button
                       type="button"
                       onClick={handleBulkRejectInRange}
@@ -671,8 +607,9 @@ export function ShiftPage() {
 
 
               {/* Bulk Toolbar */}
-              {!(canManageTenant && showAllMembersPrefs) && storeId && (
+              {storeId && (
                 isBulkMode ? (
+                  /* 理由: 一括選択モード active 状態の枠線強調 (例外③) */
                   <div
                     role="region"
                     aria-label="一括シフト申請 選択モード"
@@ -739,7 +676,7 @@ export function ShiftPage() {
                 shifts={shifts}
                 preferences={preferencesForCalendar}
                 onDateClick={(date) => {
-                  if (isBulkMode && !(canManageTenant && showAllMembersPrefs)) {
+                  if (isBulkMode) {
                     handleToggleBulkDate(date);
                   } else {
                     setSelectedDate(date);
@@ -749,102 +686,37 @@ export function ShiftPage() {
                 onPreferenceClick={(p) => setSelectedDate(p.date)}
                 memberNames={canManageTenant ? memberNames : undefined}
                 statusFilter={statusFilter}
-                showPreferenceStatus={canManageTenant && showAllMembersPrefs}
+                showPreferenceStatus={canManageTenant}
                 leaves={leaves}
                 onViewMonthChange={setShiftViewMonth}
+                currentUserId={currentUserId}
               />
 
-              {/* Admin 補助パネル (collapsible / 全員モード時のみ) */}
-              {canManageTenant && showAllMembersPrefs && (
-                <>
-                  <details className="mt-4 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
-                    <summary className="px-4 py-3 cursor-pointer text-sm font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800">
-                      シフト一覧（管理者向け）
-                    </summary>
-                    <div className="p-4 pt-2">
-                      <ShiftAdminPanel
-                        shifts={shifts.filter(s => s.status !== 'cancelled')}
-                        members={members}
-                        onApprove={approveShift}
-                        onReject={rejectShift}
-                        onModify={modifyShift}
-                        onTentativeApprove={tentativeApproveShift}
-                        onCancelTentative={cancelShiftTentative}
-                        onRevertToTentative={async (id) => { await revertShiftToTentative(id); }}
-                        onRestore={async (id) => { await restoreShift(id); }}
-                        onFinalApproveStore={async (tid, sid) => {
-                          const r = await finalApproveStoreShifts(tid, sid);
-                          return { approved_count: r.approvedCount, approved_ids: r.approvedIds };
-                        }}
-                        tenantId={tenantId}
-                        onToast={showToast}
-                        onDelete={deleteShift}
-                        onRefresh={fetchRange}
-                        stores={isOwner ? stores : stores.filter(s => isManagerOf(s.id))}
-                        canManageStore={(sid) => sid ? isManagerOf(sid) : false}
-                      />
+              {/* 提出予定サマリ（自分の申請） */}
+              <div className="lg:hidden">
+                <Card padding="md">
+                  <Card.Body className="grid grid-cols-2 gap-3 text-center">
+                    <div>
+                      <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
+                        {preferenceSummary.preferred}
+                      </p>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">申請日</p>
                     </div>
-                  </details>
-
-                  <details className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
-                    <summary className="px-4 py-3 cursor-pointer text-sm font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800">
-                      人件費サマリ
-                    </summary>
-                    <div className="p-4 pt-2">
-                      <LaborCostSummary
-                        tentativeEstimates={laborEstimates.tentative}
-                        allEstimates={laborEstimates.all}
-                        members={payrollMembers}
-                        roles={roles}
-                        targetMonth={shiftViewMonth}
-                      />
+                    <div className="pl-3">
+                      <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
+                        {preferenceSummary.unavailable}
+                      </p>
+                      <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">出勤不可</p>
                     </div>
-                  </details>
-
-                  <details className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm">
-                    <summary className="px-4 py-3 cursor-pointer text-sm font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800">
-                      想定人件費プレビュー
-                    </summary>
-                    <div className="p-4 pt-2">
-                      <ShiftPayrollPreview
-                        tenantId={tenantId}
-                        storeId={storeId}
-                        currentMonth={shiftViewMonth}
-                        allShifts={allShifts}
-                        members={payrollMembers}
-                        roles={roles}
-                      />
-                    </div>
-                  </details>
-                </>
-              )}
-
-              {/* 提出予定サマリ（自分視点のみ） */}
-              {!(canManageTenant && showAllMembersPrefs) && (
-                <div className="lg:hidden">
-                  <Card padding="md">
-                    <Card.Body className="grid grid-cols-2 gap-3 text-center">
-                      <div>
-                        <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
-                          {preferenceSummary.preferred}
-                        </p>
-                        <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">申請日</p>
-                      </div>
-                      <div className="border-l border-neutral-100 dark:border-neutral-700">
-                        <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
-                          {preferenceSummary.unavailable}
-                        </p>
-                        <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">出勤不可</p>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </div>
-              )}
+                  </Card.Body>
+                </Card>
+              </div>
 
               {/* 時間指定の詳細リスト */}
-              {!(canManageTenant && showAllMembersPrefs) && timedPreferences.length > 0 && (
+              {timedPreferences.length > 0 && (
                 <div className="lg:hidden">
                   <Card padding="none">
+                    {/* 理由: Card ヘッダーとリスト本体の divider (例外④) */}
                     <Card.Header className="border-b border-neutral-100 dark:border-neutral-700 mb-0 pb-3 px-4 pt-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                       時間指定の詳細
                     </Card.Header>
@@ -889,11 +761,12 @@ export function ShiftPage() {
                 >
                   {selectedDate && (
                     <UnifiedShiftSidebar
-                      mode={canManageTenant && showAllMembersPrefs ? "admin" : "self"}
+                      mode={canManageTenant ? "manager" : "staff"}
+                      currentUserId={currentUserId}
                       selectedDate={selectedDate}
                       onSelectedDateChange={setSelectedDate}
-                      shifts={canManageTenant && showAllMembersPrefs ? allShifts : selfShifts}
-                      preferences={canManageTenant && showAllMembersPrefs ? allPreferences : myPreferences}
+                      shifts={canManageTenant ? allShifts : myShifts}
+                      preferences={canManageTenant ? allPreferences : myPreferences}
                       myPreferences={myPreferences}
                       memberNames={memberNames}
                       storeNames={storeNames}
@@ -925,51 +798,51 @@ export function ShiftPage() {
                 </BottomSheet>
               )}
 
-              {/* sticky 追加ボタン（自分視点のみ） — bulk モード中は「次へ / キャンセル」に差し替え (§5.5) */}
-              {!(canManageTenant && showAllMembersPrefs) && (
-                <div className="lg:hidden sticky bottom-16 md:bottom-0 -mx-4 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-700 z-20">
-                    {isBulkMode ? (
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="secondary"
-                          size="lg"
-                          onClick={handleCancelBulkMode}
-                          iconLeft={<X className="w-4 h-4" />}
-                        >
-                          {messages.shiftPreference.bulk.cancelMode}
-                        </Button>
-                        <Button
-                          variant="primary"
-                          size="lg"
-                          fullWidth
-                          onClick={handleProceedBulkDialog}
-                          disabled={selectedBulkDates.size === 0}
-                        >
-                          {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        fullWidth
-                        iconLeft={<Plus className="w-4 h-4" />}
-                        onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
-                      >
-                        本日のシフト申請を追加・編集
-                      </Button>
-                    )}
+              {/* sticky 追加ボタン — bulk モード中は「次へ / キャンセル」に差し替え (§5.5) */}
+              {/* 理由: sticky 追加ボタン領域と上のコンテンツの divider (例外④) */}
+              <div className="lg:hidden sticky bottom-16 md:bottom-0 -mx-4 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-700 z-20">
+                {isBulkMode ? (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="lg"
+                      onClick={handleCancelBulkMode}
+                      iconLeft={<X className="w-4 h-4" />}
+                    >
+                      {messages.shiftPreference.bulk.cancelMode}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      fullWidth
+                      onClick={handleProceedBulkDialog}
+                      disabled={selectedBulkDates.size === 0}
+                    >
+                      {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
+                    </Button>
                   </div>
+                ) : (
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    iconLeft={<Plus className="w-4 h-4" />}
+                    onClick={() => setSelectedDate(format(new Date(), 'yyyy-MM-dd'))}
+                  >
+                    本日のシフト申請を追加・編集
+                  </Button>
                 )}
               </div>
+            </div>
 
               {isDesktop && (
                 <UnifiedShiftSidebar
-                  mode={canManageTenant && showAllMembersPrefs ? "admin" : "self"}
+                  mode={canManageTenant ? "manager" : "staff"}
+                  currentUserId={currentUserId}
                   selectedDate={selectedDate}
                   onSelectedDateChange={setSelectedDate}
-                  shifts={canManageTenant && showAllMembersPrefs ? allShifts : selfShifts}
-                  preferences={canManageTenant && showAllMembersPrefs ? allPreferences : myPreferences}
+                  shifts={canManageTenant ? allShifts : myShifts}
+                  preferences={canManageTenant ? allPreferences : myPreferences}
                   myPreferences={myPreferences}
                   memberNames={memberNames}
                   storeNames={storeNames}
@@ -1085,7 +958,7 @@ export function ShiftPage() {
         />
       )}
 
-      {storeId && !(canManageTenant && showAllMembersPrefs) && (
+      {storeId && (
         <BulkShiftPreferenceDialog
           isOpen={isBulkDialogOpen}
           onClose={() => setIsBulkDialogOpen(false)}

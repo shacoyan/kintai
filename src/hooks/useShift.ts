@@ -1,17 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Shift, TenantMember, NotificationType } from '../types';
-import { getNightMinutesForShift } from '../utils/nightShift';
+import type { Shift, NotificationType } from '../types';
 import { formatSupabaseError, type FriendlyError } from '../lib/errors';
-
-interface LaborCostEstimate {
-  userId: string;
-  displayName: string;
-  payType: 'hourly' | 'monthly';
-  shiftMinutes: number;
-  nightMinutes: number;
-  estimatedCost: number;
-}
 
 async function notify(args: {
   tenantId: string;
@@ -245,66 +235,6 @@ export function useShift(tenantId: string, storeId: string | null) {
     return { approvedCount: row?.approved_count ?? 0, approvedIds: row?.approved_ids ?? [] as string[] };
   }, []);
 
-  const getLaborCostEstimate = useCallback((
-    shifts: Shift[],
-    members: TenantMember[]
-  ): LaborCostEstimate[] => {
-    const memberMap = new Map(members.map(m => [m.user_id, m]));
-    const userShifts = new Map<string, Shift[]>();
-
-    for (const s of shifts) {
-      if (s.status === 'rejected' || s.status === 'cancelled') continue;
-      const arr = userShifts.get(s.user_id) || [];
-      arr.push(s);
-      userShifts.set(s.user_id, arr);
-    }
-
-    const results: LaborCostEstimate[] = [];
-    for (const [userId, memberShifts] of userShifts) {
-      const member = memberMap.get(userId);
-      if (!member) continue;
-
-      let totalMinutes = 0;
-      let nightMinutes = 0;
-
-      for (const s of memberShifts) {
-        const startParts = s.start_time.split(':').map(Number);
-        const endParts = s.end_time.split(':').map(Number);
-        const startMin = startParts[0] * 60 + startParts[1];
-        const endMin = endParts[0] * 60 + endParts[1];
-        const shiftMins = endMin > startMin ? endMin - startMin : (24 * 60 - startMin) + endMin;
-        totalMinutes += shiftMins;
-
-        // 深夜帯の計算（共通ユーティリティ使用）
-        // migration 036: night_shift_enabled DEFAULT true + 既存 NULL を true に UPDATE のため、
-        // 未指定 (undefined/null) = ON 扱いで統一する。
-        if (member.night_shift_enabled !== false) {
-          nightMinutes += getNightMinutesForShift(s.date, s.start_time, s.end_time);
-        }
-      }
-
-      const payType = member.pay_type ?? 'hourly';
-      let estimatedCost: number;
-      if (payType === 'monthly') {
-        estimatedCost = member.monthly_salary ?? 0;
-      } else {
-        const rate = member.hourly_rate ?? 0;
-        const normalMin = totalMinutes - nightMinutes;
-        estimatedCost = Math.ceil((normalMin / 60) * rate + (nightMinutes / 60) * rate * 1.25);
-      }
-
-      results.push({
-        userId,
-        displayName: member.display_name,
-        payType,
-        shiftMinutes: totalMinutes,
-        nightMinutes,
-        estimatedCost,
-      });
-    }
-    return results;
-  }, []);
-
   return {
     myShifts,
     allShifts,
@@ -324,6 +254,5 @@ export function useShift(tenantId: string, storeId: string | null) {
     revertShiftToTentative,
     restoreShift,
     finalApproveStoreShifts,
-    getLaborCostEstimate,
   };
 }

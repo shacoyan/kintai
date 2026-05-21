@@ -2,17 +2,16 @@ import { useMemo, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Plus } from 'lucide-react';
-import { Card, Button, EmptyState } from '../ui';
+import { Card, Button } from '../ui';
 import { PreferenceActionRow } from './PreferenceActionRow';
 import { ShiftActionRow } from './ShiftActionRow';
 import { ShiftPreferenceForm } from './ShiftPreferenceForm';
 import { PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
 import { formatTimeRange } from '../../utils/formatTimeRange';
 import { buildTentativeShiftMap, getEffectiveTime } from '../../utils/preferenceEffectiveTime';
-import { messages } from '../../lib/messages';
 import type { Shift, ShiftPreference, ShiftPreset, Store, ShiftPreferenceType } from '../../types';
 
-export type UnifiedShiftSidebarMode = 'self' | 'admin';
+export type UnifiedShiftSidebarMode = 'manager' | 'staff';
 
 export interface UnifiedShiftSidebarProps {
   mode: UnifiedShiftSidebarMode;
@@ -26,7 +25,7 @@ export interface UnifiedShiftSidebarProps {
   memberNames: Map<string, string>;
   storeNames: Map<string, string>;
 
-  // shift アクション (admin)
+  // shift アクション (manager)
   onApproveShift?: (id: string) => Promise<void>;
   onRejectShift?: (id: string) => Promise<void>;
   onTentativeApproveShift?: (id: string) => Promise<void>;
@@ -36,12 +35,12 @@ export interface UnifiedShiftSidebarProps {
   onModifyShift?: (shift: Shift) => void;
   onDeleteShift?: (id: string) => Promise<void>;
 
-  // preference アクション (admin)
+  // preference アクション (manager)
   onApprovePreference?: (id: string, startTime?: string, endTime?: string) => Promise<void>;
   onRejectPreference?: (id: string) => Promise<void>;
   onRevertPreference?: (id: string) => Promise<void>;
 
-  // self アクション
+  // staff アクション
   onSubmitPreference?: (
     date: string,
     type: ShiftPreferenceType,
@@ -54,6 +53,7 @@ export interface UnifiedShiftSidebarProps {
 
   // 補助
   canManageStore: (storeId: string | null) => boolean;
+  currentUserId: string | null;
   presets: ShiftPreset[];
   stores: Store[];
   defaultStoreId: string;
@@ -64,7 +64,7 @@ export interface UnifiedShiftSidebarProps {
   preferenceSummary?: Record<ShiftPreferenceType, number>;
   pendingPreferenceCount?: number;
 
-  // 締切ガード (self モードのみ / 旧 ShiftPreferenceSidebar 互換)
+  // 締切ガード (staff モードのみ)
   isDeadlinePassed?: boolean;
   canBypassDeadline?: boolean;
 }
@@ -128,6 +128,7 @@ export function UnifiedShiftSidebar({
   onDeletePreference,
 
   canManageStore,
+  currentUserId,
   presets,
   stores,
   defaultStoreId,
@@ -171,6 +172,22 @@ export function UnifiedShiftSidebar({
     }
   }, [selectedDate]);
 
+  // 理由: currentUserId=null のとき s.user_id === null が全件 false になり、自分の shift が「他メンバー」に紛れる事故を防ぐ defensive guard
+  const myShifts = useMemo(() => {
+    if (!currentUserId) return [];
+    return dateFilteredShifts.filter(s => s.user_id === currentUserId);
+  }, [dateFilteredShifts, currentUserId]);
+
+  const otherShifts = useMemo(() => {
+    if (!currentUserId) return dateFilteredShifts;
+    return dateFilteredShifts.filter(s => s.user_id !== currentUserId);
+  }, [dateFilteredShifts, currentUserId]);
+
+  const otherPendingPreferences = useMemo(() => {
+    if (!currentUserId) return dateFilteredPendingPreferences;
+    return dateFilteredPendingPreferences.filter(p => p.user_id !== currentUserId);
+  }, [dateFilteredPendingPreferences, currentUserId]);
+
   const handleFormSubmit = async (
     date: string,
     type: ShiftPreferenceType,
@@ -196,10 +213,9 @@ export function UnifiedShiftSidebar({
     onSelectedDateChange(null);
   };
 
-  // click outside listener (admin mode のみ)
-  // ShiftPreferenceSidebar L132-150 を完全コピペ移植
+  // click outside listener (manager mode のみ)
   useEffect(() => {
-    if (mode !== 'admin') return;
+    if (mode !== 'manager') return;
     if (!selectedDate) return;
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -217,8 +233,12 @@ export function UnifiedShiftSidebar({
     };
   }, [mode, selectedDate, onSelectedDateChange]);
 
-  if (mode === 'admin') {
+  if (mode === 'manager') {
     const canShowPreferenceList = !!onApprovePreference && !!onRejectPreference;
+
+    const otherSectionShifts = otherShifts;
+    const otherSectionPending = canShowPreferenceList ? otherPendingPreferences : [];
+    const showOtherSection = otherSectionShifts.length > 0 || otherSectionPending.length > 0;
 
     return (
       <aside
@@ -271,87 +291,108 @@ export function UnifiedShiftSidebar({
             <div className="text-sm text-neutral-500">
               カレンダーで日付を選択すると、その日のシフト・申請が表示されます。
             </div>
-          ) : (dateFilteredShifts.length === 0 && (dateFilteredPendingPreferences.length === 0 || !canShowPreferenceList)) ? (
-            <EmptyState
-              size="sm"
-              title={messages.empty.shiftPreferenceDay.title}
-            />
           ) : (
             <>
-              {/* 上段「シフト (実体)」 */}
-              {dateFilteredShifts.length > 0 && (
-                <>
-                  <h4 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1.5 px-1">
-                    シフト
-                  </h4>
-                  <ul className="space-y-1">
-                    {dateFilteredShifts.map(s => (
-                      <li key={s.id}>
-                        <ShiftActionRow
-                          shift={s}
-                          memberName={memberNames.get(s.user_id)}
-                          storeName={s.store_id ? storeNames.get(s.store_id) : undefined}
-                          showStoreBadge={stores.length >= 2}
-                          canManage={canManageStore(s.store_id)}
-                          onApprove={onApproveShift}
-                          onReject={onRejectShift}
-                          onTentativeApprove={onTentativeApproveShift}
-                          onCancelTentative={onCancelShiftTentative}
-                          onRevertToTentative={onRevertShiftToTentative}
-                          onRestore={onRestoreShift}
-                          onModify={onModifyShift}
-                          onDelete={onDeleteShift}
-                          onMutated={onMutated}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                </>
+              {/* 上段「あなたの申請」セクション */}
+              <h4 className="text-xs font-semibold text-primary-600 dark:text-primary-300 mb-1.5 px-1">
+                あなたの申請
+              </h4>
+              {myShifts.length > 0 && (
+                <ul className="space-y-1 mb-2">
+                  {myShifts.map(s => (
+                    <li key={s.id}>
+                      <ShiftStatusReadonly shift={s} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <ShiftPreferenceForm
+                date={selectedDate}
+                existingPreference={existingPreference}
+                onSubmit={handleFormSubmit}
+                onDelete={handleFormDelete}
+                onCancel={handleFormCancel}
+                presets={presets}
+                selectableStores={stores}
+                defaultStoreId={defaultStoreId}
+                isDeadlinePassed={isDeadlinePassed}
+                canBypassDeadline={canBypassDeadline}
+              />
+
+              {/* 理由: 「あなたの申請」と「他メンバー」セクションの divider */}
+              {showOtherSection && (
+                <div className="border-t border-neutral-200 dark:border-neutral-700 my-3" />
               )}
 
-              {/* 下段「未承認の申請」 */}
-              {canShowPreferenceList && dateFilteredPendingPreferences.length > 0 && (
+              {/* 下段「他メンバー」セクション */}
+              {showOtherSection && (
                 <>
-                  <h4 className={`text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1.5 px-1 ${dateFilteredShifts.length > 0 ? 'mt-3' : ''}`}>
-                    未承認の申請
+                  <h4 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1.5 px-1">
+                    他メンバー
                   </h4>
-                  <ul className="space-y-2">
-                    {dateFilteredPendingPreferences.map(p => {
-                      const eff = getEffectiveTime(p, tentativeShiftMap);
-                      const showOverrideRow =
-                        eff.isOverridden && !!p.start_time && !!p.end_time && !!eff.start && !!eff.end;
-                      return (
-                        <li key={p.id} className="space-y-1">
-                          <PreferenceActionRow
-                            preference={p}
-                            memberName={memberNames.get(p.user_id)}
-                            onApprove={onApprovePreference!}
-                            onReject={onRejectPreference!}
-                            onRevert={onRevertPreference}
-                            canManage={canManageStore(p.store_id)}
-                            variant="full"
+                  {otherSectionShifts.length > 0 && (
+                    <ul className="space-y-1">
+                      {otherSectionShifts.map(s => (
+                        <li key={s.id}>
+                          <ShiftActionRow
+                            shift={s}
+                            memberName={memberNames.get(s.user_id)}
+                            storeName={s.store_id ? storeNames.get(s.store_id) : undefined}
+                            showStoreBadge={stores.length >= 2}
+                            canManage={canManageStore(s.store_id)}
+                            onApprove={onApproveShift}
+                            onReject={onRejectShift}
+                            onTentativeApprove={onTentativeApproveShift}
+                            onCancelTentative={onCancelShiftTentative}
+                            onRevertToTentative={onRevertShiftToTentative}
+                            onRestore={onRestoreShift}
+                            onModify={onModifyShift}
+                            onDelete={onDeleteShift}
                             onMutated={onMutated}
                           />
-                          {showOverrideRow && (
-                            <div className="text-[11px] text-neutral-500 dark:text-neutral-300 px-2 leading-relaxed">
-                              <div>
-                                申請:{' '}
-                                <span className="tabular-nums">
-                                  {formatTimeRange(p.start_time!, p.end_time!, { separator: ' 〜 ' })}
-                                </span>
-                              </div>
-                              <div>
-                                承認:{' '}
-                                <span className="tabular-nums font-semibold text-success-600 dark:text-success-300">
-                                  {formatTimeRange(eff.start!, eff.end!, { separator: ' 〜 ' })}
-                                </span>
-                              </div>
-                            </div>
-                          )}
                         </li>
-                      );
-                    })}
-                  </ul>
+                      ))}
+                    </ul>
+                  )}
+                  {otherSectionPending.length > 0 && (
+                    <ul className={`space-y-2 ${otherSectionShifts.length > 0 ? 'mt-3' : ''}`}>
+                      {otherSectionPending.map(p => {
+                        const eff = getEffectiveTime(p, tentativeShiftMap);
+                        const showOverrideRow =
+                          eff.isOverridden && !!p.start_time && !!p.end_time && !!eff.start && !!eff.end;
+                        return (
+                          <li key={p.id} className="space-y-1">
+                            <PreferenceActionRow
+                              preference={p}
+                              memberName={memberNames.get(p.user_id)}
+                              onApprove={onApprovePreference!}
+                              onReject={onRejectPreference!}
+                              onRevert={onRevertPreference}
+                              canManage={canManageStore(p.store_id)}
+                              variant="full"
+                              onMutated={onMutated}
+                            />
+                            {showOverrideRow && (
+                              <div className="text-[11px] text-neutral-500 dark:text-neutral-300 px-2 leading-relaxed">
+                                <div>
+                                  申請:{' '}
+                                  <span className="tabular-nums">
+                                    {formatTimeRange(p.start_time!, p.end_time!, { separator: ' 〜 ' })}
+                                  </span>
+                                </div>
+                                <div>
+                                  承認:{' '}
+                                  <span className="tabular-nums font-semibold text-success-600 dark:text-success-300">
+                                    {formatTimeRange(eff.start!, eff.end!, { separator: ' 〜 ' })}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </>
               )}
             </>
@@ -369,11 +410,28 @@ export function UnifiedShiftSidebar({
             </div>
           </div>
         </Card>
+
+        {/* preferenceSummary Card (新規・staff と同じ仕様。manager にも表示) */}
+        {preferenceSummary && (
+          <Card padding="sm">
+            <Card.Header>サマリ</Card.Header>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              {PREFERENCE_THEME_LIST.map(t => (
+                <div key={t.type} className="space-y-1">
+                  <div className={`text-3xl font-bold tabular-nums ${t.countTextClass}`}>
+                    {preferenceSummary[t.type] ?? 0}
+                  </div>
+                  <div className="text-xs text-neutral-500">{t.label}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </aside>
     );
   }
 
-  // mode === 'self'
+  // mode === 'staff'
   return (
     <aside
       ref={sidebarRef}

@@ -31,6 +31,7 @@ interface ShiftCalendarProps {
    *   pending_preference 設定を無視し、常に pending 申請を表示する。
    */
   showPreferenceStatus?: boolean;
+  currentUserId?: string | null;
 }
 
 const MEMBER_COLORS = [
@@ -81,7 +82,7 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
   other: 'その他',
 };
 
-export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange, leaves = [], preferences, onPreferenceClick, statusFilter, showPreferenceStatus = false }: ShiftCalendarProps) {
+export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange, leaves = [], preferences, onPreferenceClick, statusFilter, showPreferenceStatus = false, currentUserId }: ShiftCalendarProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [baseDate, setBaseDate] = useState(getInitialShiftMonth);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -131,8 +132,6 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
   const shiftsByDate = useMemo(() => {
     const map = new Map<string, Shift[]>();
     for (const s of shifts) {
-      // Loop10: shift.status='pending' は StatusFilter 対象外（chip 削除済）→ 常時表示扱い。
-      // それ以外のステータスはフィルタを通す。
       const passesFilter =
         s.status === 'pending' ||
         !statusFilter ||
@@ -149,8 +148,6 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
   const preferencesByDate = useMemo(() => {
     const map = new Map<string, ShiftPreference[]>();
     if (!preferences) return map;
-    // showPreferenceStatus=false の場合は UI に control が無いため statusFilter の
-    // pending_preference 設定を無視し、常に pending 申請を表示する (P2-C2)。
     for (const p of preferences) {
       if (p.status !== 'pending') continue;
       const showByFilter = !showPreferenceStatus || !statusFilter || statusFilter.has('pending_preference');
@@ -236,7 +233,8 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
           </button>
         </div>
 
-        <div className="flex rounded-md overflow-hidden border border-neutral-300 dark:border-neutral-600" role="tablist">
+        {/* 理由: ViewMode タブ切替の装飾。border 削除し shadow で枠を表現 */}
+        <div className="flex rounded-md overflow-hidden shadow-sm" role="tablist">
           {(['week', '2week', 'month'] as ViewMode[]).map((mode) => (
             <button
               key={mode}
@@ -255,7 +253,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
         </div>
       </div>
 
-      {/* Member Legend (status legend は ShiftStatusFilter に移行) */}
+      {/* Member Legend */}
       {memberNames && (
         <div className="flex items-center flex-wrap gap-x-4 gap-y-2 px-1 py-2 bg-neutral-50 dark:bg-neutral-800 rounded-md text-xs">
           {(() => {
@@ -293,6 +291,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
 
       {/* Calendar grid */}
       <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
+        {/* 理由: 曜日ヘッダーとセル領域の divider */}
         {/* Header */}
         <div className="grid grid-cols-7 bg-neutral-50 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700">
           {weekDays.map((d, i) => (
@@ -305,6 +304,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
         </div>
 
         {/* Cells */}
+        {/* 理由: カレンダーセル間の divider grid */}
         <div className="grid grid-cols-7" role="grid" aria-label="シフトカレンダー">
           {dates.map((d) => {
             const dateStr = format(d, 'yyyy-MM-dd');
@@ -362,6 +362,8 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     const colorClass = memberNames
                       ? userColorMap.get(s.user_id) || MEMBER_COLORS[0]
                       : STATUS_COLORS[s.status];
+                    const isMine = !!currentUserId && !!memberNames && s.user_id === currentUserId;
+                    // 理由: shift バーの rounded border は member 色チップの枠線（MEMBER_COLORS の border 色とセット）
                     return (
                       <div
                         key={s.id}
@@ -375,7 +377,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                             onShiftClick?.(s);
                           }
                         }}
-                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-120 ease-out-expo ${colorClass}`}
+                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-120 ease-out-expo ${colorClass} ${isMine ? 'border-l-4 border-l-primary-600 dark:border-l-primary-400 font-semibold' : ''}`}
                       >
                         {memberNames ? (
                           <span title={memberNames.get(s.user_id) ?? ''}>
@@ -383,6 +385,10 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                           </span>
                         ) : (
                           <span>{formatTimeRange(s.start_time, s.end_time, { compactNextDay: true })}</span>
+                        )}
+                        {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
+                        {isMine && (
+                          <span className="ml-1 inline-block bg-primary-600 text-white text-[8px] px-1 rounded" aria-label="自分のシフト">あなた</span>
                         )}
                       </div>
                     );
@@ -392,6 +398,8 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     const timeDisplay = (p.start_time && p.end_time)
                       ? formatTimeRange(p.start_time, p.end_time, { compactNextDay: true })
                       : '終日';
+                    const isMine = !!currentUserId && !!memberNames && p.user_id === currentUserId;
+                    // 理由: preference バーの border border-dashed は申請の視覚識別（pending）に使用
                     return (
                       <div
                         key={'pref-' + p.id}
@@ -405,7 +413,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                             onPreferenceClick?.(p);
                           }
                         }}
-                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border border-dashed truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-120 ease-out-expo ${colorBase}`}
+                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border border-dashed truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-120 ease-out-expo ${colorBase} ${isMine ? 'border-l-4 border-l-primary-600 dark:border-l-primary-400 font-semibold' : ''}`}
                       >
                         {memberNames ? (
                           <span title={memberNames.get(p.user_id) ?? ''}>
@@ -413,6 +421,10 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                           </span>
                         ) : (
                           <span>{timeDisplay}</span>
+                        )}
+                        {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
+                        {isMine && (
+                          <span className="ml-1 inline-block bg-primary-600 text-white text-[8px] px-1 rounded" aria-label="自分の申請">あなた</span>
                         )}
                         <span className="ml-1 inline-block bg-warning-50 text-warning-700 dark:bg-warning-900/40 dark:text-warning-300 text-[8px] px-1 rounded">申請</span>
                       </div>
