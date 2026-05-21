@@ -132,8 +132,14 @@ export function useTasks(opts?: UseTasksOptions): UseTasksResult {
         .select('*')
         .eq('tenant_id', opts.tenantId);
 
-      if (opts.storeId) {
-        query = query.eq('store_id', opts.storeId);
+      // storeId の 3 状態:
+      //   string: 指定店舗 OR 全社タスク (store_id IS NULL) を表示
+      //   null:   全社タスクのみ (store_id IS NULL)
+      //   undefined: 全件 (フィルタなし)
+      if (typeof opts.storeId === 'string') {
+        query = query.or(`store_id.is.null,store_id.eq.${opts.storeId}`);
+      } else if (opts.storeId === null) {
+        query = query.is('store_id', null);
       }
       if (opts.assigneeUserId) {
         query = query.eq('assignee_user_id', opts.assigneeUserId);

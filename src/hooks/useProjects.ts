@@ -82,12 +82,15 @@ export function useProjects(opts?: UseProjectsOptions): UseProjectsResult {
         .select('*')
         .eq('tenant_id', tid);
 
-      // storeId: 明示的 null = 全社プロジェクト、undefined = 全件、string = 一致
+      // storeId の 3 状態:
+      //   string: 指定店舗 OR 全社プロジェクト (store_id IS NULL) を表示
+      //   null:   全社プロジェクトのみ (store_id IS NULL)
+      //   undefined: 全件 (フィルタなし)
       if (current && 'storeId' in current) {
         if (current.storeId === null) {
           query = query.is('store_id', null);
         } else if (typeof current.storeId === 'string') {
-          query = query.eq('store_id', current.storeId);
+          query = query.or(`store_id.is.null,store_id.eq.${current.storeId}`);
         }
       }
 
