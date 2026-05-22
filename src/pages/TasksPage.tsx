@@ -91,8 +91,15 @@ export function TasksPage(): JSX.Element {
   });
 
   const enabledStatuses = useMemo<TaskStatus[]>(
-    () => filter.status?.length ? filter.status : ['todo', 'in_progress', 'done', 'cancelled'],
-    [filter.status],
+    () => {
+      // Kanban view は 4 列すべて表示するため全 status 取得
+      // (List view では filter.status を尊重 / 空なら全件)
+      if (viewMode === 'kanban') {
+        return ['todo', 'in_progress', 'done', 'cancelled'];
+      }
+      return filter.status?.length ? filter.status : ['todo', 'in_progress', 'done', 'cancelled'];
+    },
+    [filter.status, viewMode],
   );
 
   // ── StoreId 解決 (storeTab → useTasks 引数) ──
