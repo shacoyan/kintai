@@ -616,6 +616,7 @@ export function ShiftPage() {
 
               {/* ShiftStatusFilter — 常時表示。pending_preference は manager のみ表示 */}
               {/* Loop12: manager は常時「未承認を一括却下」ボタンを横並び表示 */}
+              {/* オーナー要望: 「まとめてシフト申請」→「未承認を一括却下」→「仮承認を一括本承認」の順に横並び */}
               <div className="flex flex-wrap items-start gap-2">
                 <div className="flex-1 min-w-0">
                   <ShiftStatusFilter
@@ -624,6 +625,20 @@ export function ShiftPage() {
                     showPreferenceStatus={canManageTenant}
                   />
                 </div>
+                {storeId && !isBulkMode && (
+                  <Button
+                    variant="success"
+                    size="sm"
+                    iconLeft={<CalendarPlus className="w-4 h-4" />}
+                    onClick={handleEnterBulkMode}
+                    disabled={isDeadlinePassed && !canEditDeadline}
+                    className="shrink-0"
+                    aria-pressed={isBulkMode}
+                    aria-label={messages.shiftPreference.bulk.entryButtonAria}
+                  >
+                    {messages.shiftPreference.bulk.entryButton}
+                  </Button>
+                )}
                 {canManageTenant && (() => {
                   const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
                   const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
@@ -708,63 +723,47 @@ export function ShiftPage() {
               </div>
 
 
-              {/* Bulk Toolbar */}
-              {storeId && (
-                isBulkMode ? (
-                  /* 理由: 一括選択モード active 状態の枠線強調 (例外③) */
-                  <div
-                    role="region"
-                    aria-label="一括シフト申請 選択モード"
-                    className="flex items-center justify-between gap-2 flex-wrap rounded-md border border-blue-100 dark:border-blue-700 bg-blue-50 dark:bg-blue-800/30 px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-blue-700 dark:text-blue-100 tabular-nums">
-                        {messages.shiftPreference.bulk.selectedCount(selectedBulkDates.size)}
-                      </span>
-                      {selectedBulkDates.size > 0 && (
-                        <button
-                          type="button"
-                          onClick={handleClearAllBulkDates}
-                          className="text-xs font-semibold text-blue-700 dark:text-blue-200 hover:underline focus-ring"
-                        >
-                          {messages.shiftPreference.bulk.clearAll}
-                        </button>
-                      )}
-                    </div>
-                    <div className="hidden md:flex items-center gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        iconLeft={<X className="w-4 h-4" />}
-                        onClick={handleCancelBulkMode}
+              {/* Bulk Toolbar — エントリーボタンは上の StatusFilter 行に移動。ここには isBulkMode 選択中のバーのみ残す */}
+              {storeId && isBulkMode && (
+                /* 理由: 一括選択モード active 状態の枠線強調 (例外③) */
+                <div
+                  role="region"
+                  aria-label="一括シフト申請 選択モード"
+                  className="flex items-center justify-between gap-2 flex-wrap rounded-md border border-blue-100 dark:border-blue-700 bg-blue-50 dark:bg-blue-800/30 px-3 py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-blue-700 dark:text-blue-100 tabular-nums">
+                      {messages.shiftPreference.bulk.selectedCount(selectedBulkDates.size)}
+                    </span>
+                    {selectedBulkDates.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAllBulkDates}
+                        className="text-xs font-semibold text-blue-700 dark:text-blue-200 hover:underline focus-ring"
                       >
-                        {messages.shiftPreference.bulk.cancelMode}
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={handleProceedBulkDialog}
-                        disabled={selectedBulkDates.size === 0}
-                      >
-                        {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
-                      </Button>
-                    </div>
+                        {messages.shiftPreference.bulk.clearAll}
+                      </button>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="hidden md:flex items-center gap-2">
                     <Button
-                      variant="success"
+                      variant="secondary"
                       size="sm"
-                      iconLeft={<CalendarPlus className="w-4 h-4" />}
-                      onClick={handleEnterBulkMode}
-                      disabled={isDeadlinePassed && !canEditDeadline}
-                      aria-pressed={isBulkMode}
-                      aria-label={messages.shiftPreference.bulk.entryButtonAria}
+                      iconLeft={<X className="w-4 h-4" />}
+                      onClick={handleCancelBulkMode}
                     >
-                      {messages.shiftPreference.bulk.entryButton}
+                      {messages.shiftPreference.bulk.cancelMode}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleProceedBulkDialog}
+                      disabled={selectedBulkDates.size === 0}
+                    >
+                      {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
                     </Button>
                   </div>
-                )
+                </div>
               )}
 
               {/* Grid Content: ShiftCalendar */}

@@ -45,6 +45,12 @@ export function LaborCostCard({
     return { monthlyTotal, tentativeHourlyTotal, allHourlyTotal };
   }, [members, rolesMap, tentativeLaborEstimates, allLaborEstimates]);
 
+  const monthlyEstimatesMap = useMemo(() => {
+    const map = new Map<string, LaborCostEstimate>();
+    (allLaborEstimates ?? []).filter(e => e.payType === 'monthly').forEach(e => map.set(e.userId, e));
+    return map;
+  }, [allLaborEstimates]);
+
   const monthlyMembers = useMemo(() => {
     return (members ?? [])
       .filter(m => (m.pay_type ?? 'hourly') === 'monthly')
@@ -61,13 +67,32 @@ export function LaborCostCard({
 
   const detailTotals = useMemo(() => {
     if (!showDetailTable) return { normal: 0, night: 0, total: 0, cost: 0 };
-    const normal = hourlyEstimates.reduce((s, e) => s + (e.shiftMinutes - e.nightMinutes), 0);
-    const night = hourlyEstimates.reduce((s, e) => s + e.nightMinutes, 0);
-    const total = hourlyEstimates.reduce((s, e) => s + e.shiftMinutes, 0);
+    
+    const hourlyNormal = hourlyEstimates.reduce((s, e) => s + (e.shiftMinutes - e.nightMinutes), 0);
+    const hourlyNight = hourlyEstimates.reduce((s, e) => s + e.nightMinutes, 0);
+    const hourlyTotal = hourlyEstimates.reduce((s, e) => s + e.shiftMinutes, 0);
     const hourlyCost = hourlyEstimates.reduce((s, e) => s + e.estimatedCost, 0);
+    
+    let monthlyNormal = 0;
+    let monthlyNight = 0;
+    let monthlyTotal = 0;
+    monthlyMembers.forEach(m => {
+      const est = monthlyEstimatesMap.get(m.user_id);
+      if (est) {
+        monthlyNormal += est.shiftMinutes - est.nightMinutes;
+        monthlyNight += est.nightMinutes;
+        monthlyTotal += est.shiftMinutes;
+      }
+    });
+
     const cost = laborCost.monthlyTotal + hourlyCost;
-    return { normal, night, total, cost };
-  }, [showDetailTable, hourlyEstimates, laborCost.monthlyTotal]);
+    return { 
+      normal: hourlyNormal + monthlyNormal, 
+      night: hourlyNight + monthlyNight, 
+      total: hourlyTotal + monthlyTotal, 
+      cost 
+    };
+  }, [showDetailTable, hourlyEstimates, monthlyMembers, monthlyEstimatesMap, laborCost.monthlyTotal]);
 
   if ((members?.length ?? 0) === 0) return null;
 
@@ -76,14 +101,14 @@ export function LaborCostCard({
       <div className="text-sm font-bold mb-3">
         {targetMonth ? `${format(targetMonth, 'yyyy年M月', { locale: ja })} の想定人件費` : '想定人件費'}
       </div>
-      <div className="space-y-2">
-        <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-md p-3">
+      <div className="flex flex-wrap gap-2">
+        <div className="flex-1 min-w-[150px] bg-indigo-50 dark:bg-indigo-900/30 rounded-md p-3">
           <div className="text-xs text-indigo-900 dark:text-indigo-100">月給合計 (固定費)</div>
           <div className="text-indigo-900 dark:text-indigo-100 tabular-nums font-bold text-lg">
             ¥{laborCost.monthlyTotal.toLocaleString()}
           </div>
         </div>
-        <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-md p-3">
+        <div className="flex-1 min-w-[150px] bg-emerald-50 dark:bg-emerald-900/30 rounded-md p-3">
           <div className="text-xs text-emerald-900 dark:text-emerald-100">時給合計</div>
           <div className="text-emerald-900 dark:text-emerald-100 tabular-nums font-bold text-lg">
             ¥{laborCost.allHourlyTotal.toLocaleString()}
@@ -92,7 +117,7 @@ export function LaborCostCard({
             仮承認分 ¥{laborCost.tentativeHourlyTotal.toLocaleString()}
           </div>
         </div>
-        <div className="bg-stone-50 dark:bg-stone-700/40 rounded-md p-3">
+        <div className="flex-1 min-w-[150px] bg-stone-50 dark:bg-stone-700/40 rounded-md p-3">
           <div className="text-xs text-stone-900 dark:text-stone-50">総計</div>
           <div className="text-stone-900 dark:text-stone-50 tabular-nums font-extrabold text-xl">
             ¥{(laborCost.monthlyTotal + laborCost.allHourlyTotal).toLocaleString()}
@@ -122,15 +147,18 @@ export function LaborCostCard({
                   <tr>
                     <td colSpan={5} className="px-3 py-2 bg-stone-50 dark:bg-stone-700/40 text-xs font-semibold text-stone-700 dark:text-stone-300">月給メンバー</td>
                   </tr>
-                  {monthlyMembers.map(m => (
-                    <tr key={m.id}>
-                      <td className="px-3 py-2 text-left">{m.display_name}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">-</td>
-                      <td className="px-3 py-2 text-right tabular-nums">-</td>
-                      <td className="px-3 py-2 text-right tabular-nums">-</td>
-                      <td className="px-3 py-2 text-right tabular-nums">¥{getEffectiveMonthlySalary(m, rolesMap).toLocaleString()}</td>
-                    </tr>
-                  ))}
+                  {monthlyMembers.map(m => {
+                    const estimate = monthlyEstimatesMap.get(m.user_id);
+                    return (
+                      <tr key={m.id}>
+                        <td className="px-3 py-2 text-left">{m.display_name}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{estimate ? fmtTime(estimate.shiftMinutes - estimate.nightMinutes) : '-'}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{estimate ? fmtTime(estimate.nightMinutes) : '-'}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{estimate ? fmtTime(estimate.shiftMinutes) : '-'}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">¥{getEffectiveMonthlySalary(m, rolesMap).toLocaleString()}</td>
+                      </tr>
+                    );
+                  })}
                 </>
               )}
               {hourlyEstimates.length > 0 && (
