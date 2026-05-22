@@ -529,12 +529,10 @@ export function ShiftPage() {
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       <div className="flex flex-col gap-4 pb-24">
         {/* ヘッダー: 「シフト」見出し + 月表示 + pending 件数バッジ */}
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <Heading level={1}>シフト</Heading>
-            <p className="text-sm text-stone-500 dark:text-stone-300 mt-1 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
-          </div>
-          <div className="flex items-center gap-2">
+        <header className="flex flex-col gap-1">
+          <Heading level={1}>シフト</Heading>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-stone-500 dark:text-stone-300 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
             {canManageTenant && (pendingShifts.length > 0 || pendingPreferenceCount > 0) && (
               <Badge tone="warning" withDot>{pendingShifts.length + pendingPreferenceCount} 件 承認待ち</Badge>
             )}

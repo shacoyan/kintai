@@ -18,7 +18,7 @@ export function AppShell({ children, sidebar, topbar, mobileHeader, bottomNav, e
       {sidebar && (
         <aside
           aria-label="グローバルナビゲーション"
-          className="hidden md:flex md:flex-col md:w-[240px] md:shrink-0 md:bg-white md:dark:bg-stone-900 md:border-r md:border-stone-200 md:dark:border-stone-800"
+          className="hidden md:flex md:flex-col md:w-[240px] md:shrink-0 md:bg-white md:dark:bg-stone-900 md:border-r md:border-stone-200 md:dark:border-stone-800 md:sticky md:top-0 md:h-screen md:overflow-y-auto md:z-20"
         >
           {sidebar}
         </aside>
