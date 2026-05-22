@@ -146,7 +146,7 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
         )}
 
         {!canEdit && (
-          <div className="text-warning-700 bg-warning-50 dark:bg-warning-900/20 p-3 rounded-md text-sm">
+          <div className="text-orange-700 bg-orange-50 dark:bg-orange-800/20 p-3 rounded-md text-sm">
             権限がありません。この設定を編集するには管理者権限が必要です。
           </div>
         )}

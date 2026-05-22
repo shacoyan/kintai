@@ -81,7 +81,7 @@ function DeleteConfirmDialog({
           を削除します。この操作は取り消せません。
         </p>
         {error && (
-          <div className="rounded-md border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700 dark:bg-danger-900/20 dark:text-danger-300">
+          <div className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-800/20 dark:text-red-200">
             {error}
           </div>
         )}
@@ -300,7 +300,7 @@ export function ProjectsPage() {
       {mutationError && (
         <div
           role="alert"
-          className="rounded-md border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700 dark:bg-danger-900/20 dark:text-danger-300"
+          className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-800/20 dark:text-red-200"
         >
           {mutationError}
         </div>
@@ -308,7 +308,7 @@ export function ProjectsPage() {
       {error && (
         <div
           role="alert"
-          className="rounded-md border border-danger-200 bg-danger-50 px-3 py-2 text-sm text-danger-700 dark:bg-danger-900/20 dark:text-danger-300"
+          className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-800/20 dark:text-red-200"
         >
           プロジェクトの取得に失敗しました: {error.message}
         </div>

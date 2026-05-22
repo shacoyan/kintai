@@ -39,10 +39,10 @@ for (let h = 0; h < 24; h++) {
 }
 
 const STATUS_LABEL: Record<string, { text: string; className: string }> = {
-  pending: { text: '申請中', className: 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300' },
+  pending: { text: '申請中', className: 'bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-200' },
   tentative: { text: '仮承認', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
-  approved: { text: '承認済', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
-  rejected: { text: '却下', className: 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300' },
+  approved: { text: '承認済', className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-800/30 dark:text-emerald-200' },
+  rejected: { text: '却下', className: 'bg-red-50 text-red-700 dark:bg-red-800/30 dark:text-red-200' },
   modified: { text: '修正済', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
   cancelled: { text: '取消', className: 'bg-stone-100 text-stone-500 dark:bg-stone-700/30 dark:text-stone-300' },
 };
@@ -103,7 +103,7 @@ export function ShiftEditModal({
               onClick={() => handleAction(() => onTentativeApprove(shift.id))}
               disabled={processing}
               variant="primary"
-              className="bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400"
+              className="bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400"
             >
               仮承認
             </Button>
@@ -122,7 +122,7 @@ export function ShiftEditModal({
               onClick={() => handleAction(() => onApprove(shift.id))}
               disabled={processing}
               variant="primary"
-              className="bg-success-700 dark:bg-success-600 hover:bg-success-800 dark:hover:bg-success-500"
+              className="bg-emerald-700 dark:bg-emerald-600 hover:bg-emerald-700 dark:hover:bg-emerald-500"
             >
               本承認
             </Button>
@@ -158,7 +158,7 @@ export function ShiftEditModal({
               onClick={() => handleAction(() => onRevertToTentative(shift.id))}
               disabled={processing}
               variant="tertiary"
-              className="bg-warning-100 hover:bg-warning-200 text-warning-800 dark:bg-warning-900/30 dark:hover:bg-warning-900/50 dark:text-warning-300"
+              className="bg-orange-50 hover:bg-orange-100 text-orange-700 dark:bg-orange-800/30 dark:hover:bg-orange-800/50 dark:text-orange-200"
             >
               仮承認に戻す
             </Button>
@@ -176,7 +176,7 @@ export function ShiftEditModal({
               onClick={() => handleAction(() => onRestore(shift.id))}
               disabled={processing}
               variant="primary"
-              className="bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400"
+              className="bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400"
             >
               復活承認
             </Button>
@@ -194,7 +194,7 @@ export function ShiftEditModal({
               onClick={() => handleAction(() => onTentativeApprove(shift.id))}
               disabled={processing}
               variant="primary"
-              className="bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400"
+              className="bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400"
             >
               仮承認
             </Button>

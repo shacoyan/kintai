@@ -227,7 +227,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
                           </div>
                           <div>
                             承認:{' '}
-                            <span className="tabular-nums font-semibold text-success-600 dark:text-success-300">
+                            <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-200">
                               {formatTimeRange(eff.start!, eff.end!, { separator: ' 〜 ' })}
                             </span>
                           </div>

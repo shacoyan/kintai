@@ -65,8 +65,8 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
       <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
         <div className="w-full max-w-md bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-md border border-neutral-100 dark:border-neutral-700">
           <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-success-100 dark:bg-success-900/30 mb-4">
-              <CheckCircle2 className="h-6 w-6 text-success-600 dark:text-success-400" />
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-50 dark:bg-emerald-800/30 mb-4">
+              <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             </div>
             <Heading level={2}>ワークスペースを作成しました</Heading>
             <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">以下の招待コードをチームメンバーに共有してください</p>
@@ -80,7 +80,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
               </p>
               <button
                 onClick={handleCopy}
-                className="px-3 py-2 text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors duration-120 ease-out-expo inline-flex items-center"
+                className="px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-800/30 rounded hover:bg-blue-50 dark:hover:bg-blue-800/50 motion-safe:transition-colors duration-150 ease-out inline-flex items-center"
               >
                 {copied ? <Check className="w-4 h-4 mr-1" /> : <Copy className="w-4 h-4 mr-1" />}
                 {copied ? 'コピー済' : 'コピー'}

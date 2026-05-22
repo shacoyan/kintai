@@ -72,15 +72,15 @@ export const PersistentErrorBanner: FC<PersistentErrorBannerProps> = ({
       aria-atomic="true"
       className={`rounded border-l-4 p-4 shadow-sm ${
         isCritical
-          ? 'border-l-danger-500 bg-danger-50 dark:bg-danger-900/20'
-          : 'border-l-warning-500 bg-warning-50 dark:bg-warning-900/20'
+          ? 'border-l-red-500 bg-red-50 dark:bg-red-800/20'
+          : 'border-l-orange-500 bg-orange-50 dark:bg-orange-800/20'
       }`}
     >
       <div className="flex items-start gap-3">
         <AlertCircle
           aria-hidden="true"
           className={`mt-0.5 h-5 w-5 flex-shrink-0 ${
-            isCritical ? 'text-danger-500' : 'text-warning-500'
+            isCritical ? 'text-red-500' : 'text-orange-500'
           }`}
         />
         <div className="min-w-0 flex-1">
@@ -90,7 +90,7 @@ export const PersistentErrorBanner: FC<PersistentErrorBannerProps> = ({
               {displayTitle}
             </h4>
             {error.count >= 2 && (
-              <span className="ml-2 rounded bg-danger-100 px-2 py-0.5 text-xs font-medium text-danger-700 dark:bg-danger-800 dark:text-danger-300">
+              <span className="ml-2 rounded bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-700 dark:text-red-200">
                 ×{error.count}
               </span>
             )}
@@ -103,7 +103,7 @@ export const PersistentErrorBanner: FC<PersistentErrorBannerProps> = ({
 
           {/* 再試行複数回失敗時の訴求 */}
           {error.retryAttempts >= 3 && (
-            <p className="mt-2 text-sm font-medium text-danger-600 dark:text-danger-400">
+            <p className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">
               再試行が複数回失敗しています。サポートに連絡してください
             </p>
           )}
@@ -117,7 +117,7 @@ export const PersistentErrorBanner: FC<PersistentErrorBannerProps> = ({
                   void onRetry(error.id);
                 }}
                 disabled={error.isRetrying}
-                className="inline-flex items-center gap-1.5 rounded bg-danger-100 px-3 py-1 text-xs font-medium text-danger-700 hover:bg-danger-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-danger-800 dark:text-danger-300 dark:hover:bg-danger-700"
+                className="inline-flex items-center gap-1.5 rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-700 dark:text-red-200 dark:hover:bg-red-700"
               >
                 {error.isRetrying ? (
                   <Spinner size="sm" />

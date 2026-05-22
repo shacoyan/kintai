@@ -147,7 +147,7 @@ export const OnboardingDialog: React.FC = () => {
           </div>
 
           {errorMsg && (
-            <p className="text-sm text-danger-600 dark:text-danger-400" role="alert">
+            <p className="text-sm text-red-600 dark:text-red-400" role="alert">
               {errorMsg}
             </p>
           )}

@@ -384,12 +384,12 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <Card padding="md">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <UserX className="w-5 h-5 text-warning-600" aria-hidden="true" />
+                    <UserX className="w-5 h-5 text-orange-600" aria-hidden="true" />
                     <Heading level={3} as="h2">
                       シフト申請 未提出メンバー
                     </Heading>
                   </div>
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
                     {unsubmittedMembers.length}名
                   </span>
                 </div>
@@ -475,7 +475,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-700 flex items-center justify-between">
                 <Heading level={2}>修正申請（承認待ち）</Heading>
                 {pendingRequests.length > 0 && (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
                     {pendingRequests.length}件
                   </span>
                 )}
@@ -640,17 +640,17 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
             >
               {tab.label}
               {tab.id === 'leaves' && pendingLeaves.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
                   {pendingLeaves.length}
                 </span>
               )}
               {tab.id === 'corrections' && pendingRequests.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
                   {pendingRequests.length}
                 </span>
               )}
               {tab.id === 'mismatch' && mismatches.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-800/30 dark:text-red-400">
                   {mismatches.length}
                 </span>
               )}
@@ -700,17 +700,17 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                           <span>{tab.label}</span>
                         </span>
                         {tab.id === 'leaves' && pendingLeaves.length > 0 && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
                             {pendingLeaves.length}
                           </span>
                         )}
                         {tab.id === 'corrections' && pendingRequests.length > 0 && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
                             {pendingRequests.length}
                           </span>
                         )}
                         {tab.id === 'mismatch' && mismatches.length > 0 && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-800/30 dark:text-red-400">
                             {mismatches.length}
                           </span>
                         )}

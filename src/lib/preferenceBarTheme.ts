@@ -12,19 +12,19 @@ export function getPreferenceBarTheme(status: 'pending' | 'approved' | 'rejected
       return {
         tone: 'success',
         statusLabelJa: '承認済',
-        containerClass: 'bg-success-100 text-success-800 ring-1 ring-success-300 dark:bg-success-900/40 dark:text-success-200 dark:ring-success-700',
+        containerClass: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-800/40 dark:text-emerald-100 dark:ring-emerald-700',
       };
     case 'pending':
       return {
         tone: 'info',
         statusLabelJa: '申請中',
-        containerClass: 'bg-info-100 text-info-800 ring-1 ring-info-300 dark:bg-info-900/40 dark:text-info-200 dark:ring-info-700',
+        containerClass: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-800/40 dark:text-blue-100 dark:ring-blue-700',
       };
     case 'rejected':
       return {
         tone: 'danger',
         statusLabelJa: '却下',
-        containerClass: 'bg-danger-50 text-danger-700 ring-1 ring-danger-200 opacity-70 line-through decoration-from-font dark:bg-danger-900/30 dark:text-danger-200 dark:ring-danger-700',
+        containerClass: 'bg-red-50 text-red-700 ring-1 ring-red-100 opacity-70 line-through decoration-from-font dark:bg-red-800/30 dark:text-red-100 dark:ring-red-700',
       };
   }
 }

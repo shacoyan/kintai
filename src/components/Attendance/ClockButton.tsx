@@ -85,7 +85,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           badgeTone: isCarryOver ? 'warning' as const : 'success' as const,
           withDot: true,
           buttonVariant: 'danger' as const,
-          borderColor: isCarryOver ? 'border-warning-500 dark:border-warning-400' : 'border-success-500 dark:border-success-400',
+          borderColor: isCarryOver ? 'border-orange-500 dark:border-orange-400' : 'border-emerald-500 dark:border-emerald-400',
           breathClass: isCarryOver ? 'motion-safe:animate-border-breathe-warning' : 'motion-safe:animate-border-breathe-success',
           disabled: false,
         };
@@ -96,7 +96,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           badgeTone: 'warning' as const,
           withDot: true,
           buttonVariant: 'primary' as const,
-          borderColor: 'border-warning-500 dark:border-warning-400',
+          borderColor: 'border-orange-500 dark:border-orange-400',
           breathClass: 'motion-safe:animate-border-breathe-warning',
           disabled: true,
         };
@@ -162,7 +162,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
     >
       {processing && (
         <div className="absolute left-0 right-0 top-0 h-0.5 overflow-hidden rounded-t-lg">
-          <div className="h-full w-1/3 bg-primary-500 motion-safe:animate-progress-stripe" />
+          <div className="h-full w-1/3 bg-blue-500 motion-safe:animate-progress-stripe" />
         </div>
       )}
 

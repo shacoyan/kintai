@@ -115,7 +115,7 @@ export function PreferenceAdminActionModal({
         </div>
 
         {error && (
-          <div className="text-sm text-danger-700 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded-md px-3 py-2">
+          <div className="text-sm text-red-700 dark:text-red-200 bg-red-50 dark:bg-red-800/30 rounded-md px-3 py-2">
             {error}
           </div>
         )}

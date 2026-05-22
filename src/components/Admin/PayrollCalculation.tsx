@@ -612,7 +612,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
       </div>
 
       {isFinalized && (
-        <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-700 bg-success-50 dark:bg-success-900/20">
+        <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-700 bg-emerald-50 dark:bg-emerald-800/20">
           <Badge tone="success">
             確定済（{run.confirmedAt} 確定 / 確定者: {run.confirmedBy}）
           </Badge>
@@ -675,7 +675,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                       <div>
                         <div className="text-xs text-stone-500 dark:text-stone-300">深夜時間</div>
                         {row.nightMinutes > 0 ? (
-                          <div className="font-medium text-warning-700 dark:text-warning-300">{fmtTime(row.nightMinutes)}</div>
+                          <div className="font-medium text-orange-700 dark:text-orange-200">{fmtTime(row.nightMinutes)}</div>
                         ) : (
                           <div className="font-medium text-stone-400 dark:text-stone-500">-</div>
                         )}
@@ -701,7 +701,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                     </div>
                     <div>
                       <div className="text-xs text-stone-500 dark:text-stone-300">深夜時間合計</div>
-                      <div className="font-medium text-warning-700 dark:text-warning-300">{totalNightMinutes > 0 ? fmtTime(totalNightMinutes) : '-'}</div>
+                      <div className="font-medium text-orange-700 dark:text-orange-200">{totalNightMinutes > 0 ? fmtTime(totalNightMinutes) : '-'}</div>
                     </div>
                   </div>
                 </div>
@@ -729,7 +729,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-700 dark:text-stone-300 text-right" title="休憩を除く">{fmtTime(row.normalMinutes)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right" title="22:00〜翌5:00 は 1.25 倍">
                           {row.nightMinutes > 0 ? (
-                            <span className="text-warning-700 dark:text-warning-300 font-medium">{fmtTime(row.nightMinutes)}</span>
+                            <span className="text-orange-700 dark:text-orange-200 font-medium">{fmtTime(row.nightMinutes)}</span>
                           ) : (
                             <span className="text-stone-400 dark:text-stone-500">-</span>
                           )}
@@ -748,7 +748,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                       <td className="px-6 py-4 text-sm font-bold text-stone-900 dark:text-stone-100">合計</td>
                       <td className="px-6 py-4 text-sm font-bold text-stone-900 dark:text-stone-100 text-right">-</td>
                       <td className="px-6 py-4 text-sm font-bold text-stone-900 dark:text-stone-100 text-right" title="休憩を除く">{fmtTime(grandTotalMinutes - totalNightMinutes)}</td>
-                      <td className="px-6 py-4 text-sm font-bold text-warning-700 dark:text-warning-300 text-right" title="22:00〜翌5:00 は 1.25 倍">{totalNightMinutes > 0 ? fmtTime(totalNightMinutes) : '-'}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-orange-700 dark:text-orange-200 text-right" title="22:00〜翌5:00 は 1.25 倍">{totalNightMinutes > 0 ? fmtTime(totalNightMinutes) : '-'}</td>
                       <td className="px-6 py-4 text-right">-</td>
                       <td className="px-6 py-4 text-base font-bold text-stone-900 dark:text-stone-100 text-right">¥{totalPayment.toLocaleString()}</td>
                     </tr>

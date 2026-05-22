@@ -62,7 +62,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
     }
   }
   const pendingBadge = (count: number) => (
-    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300">
+    <span className="ml-2 inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-200">
       修正申請中 {count}
     </span>
   );
@@ -92,16 +92,16 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
           if (dayRecords.length === 0) {
             const pendingCount = pendingCountByDate.get(dateStr) ?? 0;
             return (
-              <div key={dateStr} className={`px-4 py-3 ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
+              <div key={dateStr} className={`px-4 py-3 ${isToday ? 'bg-blue-50 dark:bg-blue-800/20' : ''}`}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className={`text-sm ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : 'text-neutral-600 dark:text-neutral-300'}`}>
+                  <span className={`text-sm ${isToday ? 'font-bold text-blue-700 dark:text-blue-200' : 'text-neutral-600 dark:text-neutral-300'}`}>
                     {format(day, 'M/d(E)', { locale: ja })}
                     {pendingCount > 0 && pendingBadge(pendingCount)}
                   </span>
                   <span className="text-xs text-neutral-400 dark:text-neutral-500 tabular-nums">記録なし</span>
                   {onRequestCorrection && (
                     <button onClick={() => onRequestCorrection(dateStr)}
-                      className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
+                      className="px-2 py-1 text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 rounded hover:bg-blue-50 dark:hover:bg-blue-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                       修正申請
                     </button>
                   )}
@@ -114,9 +114,9 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
           return dayRecords.map((record, index) => {
             const breakMins = getBreakMinutes(record);
             return (
-              <div key={record.id} className={`px-4 py-3 space-y-2 ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}>
+              <div key={record.id} className={`px-4 py-3 space-y-2 ${isToday ? 'bg-blue-50 dark:bg-blue-800/20' : ''}`}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className={`text-sm ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : 'text-neutral-700 dark:text-neutral-200'}`}>
+                  <span className={`text-sm ${isToday ? 'font-bold text-blue-700 dark:text-blue-200' : 'text-neutral-700 dark:text-neutral-200'}`}>
                     {index === 0 ? format(day, 'M/d(E)', { locale: ja }) : <span className="text-neutral-400 dark:text-neutral-500">↳ 同日</span>}
                     {index === 0 && pendingCountSp > 0 && pendingBadge(pendingCountSp)}
                   </span>
@@ -131,13 +131,13 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                 <div className="flex gap-2">
                   {onRequestCorrection && (
                     <button onClick={() => onRequestCorrection(dateStr, record)}
-                      className="flex-1 px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
+                      className="flex-1 px-2 py-1 text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 rounded hover:bg-blue-50 dark:hover:bg-blue-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                       修正申請
                     </button>
                   )}
                   {onRequestDeletion && (
                     <button onClick={() => onRequestDeletion(dateStr, record)}
-                      className="flex-1 px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2">
+                      className="flex-1 px-2 py-1 text-xs text-red-600 dark:text-red-200 bg-red-50 dark:bg-red-800/30 rounded hover:bg-red-50 dark:hover:bg-red-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
                       削除依頼
                     </button>
                   )}
@@ -175,9 +175,9 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                 return (
                   <tr
                     key={dateStr}
-                    className={`border-b border-neutral-100 dark:border-neutral-800 ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}
+                    className={`border-b border-neutral-100 dark:border-neutral-800 ${isToday ? 'bg-blue-50 dark:bg-blue-800/20' : ''}`}
                   >
-                    <td className={`px-3 py-2 text-neutral-700 dark:text-neutral-200 ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : ''}`}>
+                    <td className={`px-3 py-2 text-neutral-700 dark:text-neutral-200 ${isToday ? 'font-bold text-blue-700 dark:text-blue-200' : ''}`}>
                       {format(day, 'M/d(E)', { locale: ja })}
                       {pendingCount > 0 && pendingBadge(pendingCount)}
                     </td>
@@ -189,7 +189,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                       {onRequestCorrection && (
                         <button
                           onClick={() => onRequestCorrection(dateStr)}
-                          className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                          className="px-2 py-1 text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 rounded hover:bg-blue-50 dark:hover:bg-blue-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                         >
                           修正申請
                         </button>
@@ -206,9 +206,9 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                 return (
                   <tr
                     key={record.id}
-                    className={`${isFirst ? 'border-t border-neutral-200 dark:border-neutral-700' : 'border-t border-neutral-100/50 dark:border-neutral-800/50'} border-b border-neutral-100 dark:border-neutral-800 ${isToday ? 'bg-primary-50 dark:bg-primary-900/20' : ''}`}
+                    className={`${isFirst ? 'border-t border-neutral-200 dark:border-neutral-700' : 'border-t border-neutral-100/50 dark:border-neutral-800/50'} border-b border-neutral-100 dark:border-neutral-800 ${isToday ? 'bg-blue-50 dark:bg-blue-800/20' : ''}`}
                   >
-                    <td className={`px-3 py-2 text-neutral-700 dark:text-neutral-200 ${isToday ? 'font-bold text-primary-700 dark:text-primary-300' : ''}`}>
+                    <td className={`px-3 py-2 text-neutral-700 dark:text-neutral-200 ${isToday ? 'font-bold text-blue-700 dark:text-blue-200' : ''}`}>
                       {index === 0 ? format(day, 'M/d(E)', { locale: ja }) : ''}
                       {index === 0 && pendingCountPc > 0 && pendingBadge(pendingCountPc)}
                     </td>
@@ -228,7 +228,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                       {onRequestCorrection && (
                         <button
                           onClick={() => onRequestCorrection(dateStr, record)}
-                          className="px-2 py-1 text-xs text-primary-600 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                          className="px-2 py-1 text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 rounded hover:bg-blue-50 dark:hover:bg-blue-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                         >
                           修正申請
                         </button>
@@ -236,7 +236,7 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                       {onRequestDeletion && (
                         <button
                           onClick={() => onRequestDeletion(dateStr, record)}
-                          className="px-2 py-1 text-xs text-danger-600 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded hover:bg-danger-100 dark:hover:bg-danger-900/50 motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                          className="px-2 py-1 text-xs text-red-600 dark:text-red-200 bg-red-50 dark:bg-red-800/30 rounded hover:bg-red-50 dark:hover:bg-red-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                         >
                           削除依頼
                         </button>

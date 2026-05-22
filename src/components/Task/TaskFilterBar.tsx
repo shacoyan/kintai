@@ -88,7 +88,7 @@ export function TaskFilterBar(props: TaskFilterBarProps): JSX.Element {
                 aria-pressed={active}
                 className={`px-3 h-9 rounded-md text-body-sm font-medium border motion-safe:transition-colors focus-ring ${
                   active
-                    ? 'bg-primary-600 text-white border-primary-600 dark:bg-primary-500 dark:border-primary-500'
+                    ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-500 dark:border-blue-500'
                     : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50 dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600 dark:hover:bg-neutral-700'
                 }`}
               >

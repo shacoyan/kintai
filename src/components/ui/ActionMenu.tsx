@@ -24,9 +24,9 @@ export interface ActionMenuProps {
 
 const toneStyles: Record<string, string> = {
   default: 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700',
-  danger: 'text-danger-600 dark:text-danger-400 hover:bg-danger-50 dark:hover:bg-danger-900/20',
-  primary: 'text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20',
-  success: 'text-success-600 dark:text-success-400 hover:bg-success-50 dark:hover:bg-success-900/20',
+  danger: 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-800/20',
+  primary: 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-800/20',
+  success: 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-800/20',
 };
 
 export const ActionMenu: React.FC<ActionMenuProps> = ({
@@ -134,7 +134,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
 
   const renderedItems = items.map((item) => {
     const tone = item.tone || 'default';
-    const baseClasses = 'w-full text-left px-3 py-2 text-sm min-h-[44px] flex items-center gap-2 motion-safe:transition-colors duration-120 ease-out-expo';
+    const baseClasses = 'w-full text-left px-3 py-2 text-sm min-h-[44px] flex items-center gap-2 motion-safe:transition-colors duration-150 ease-out';
     const toneClass = item.disabled
       ? 'text-neutral-700 dark:text-neutral-200 opacity-50 cursor-not-allowed'
       : toneStyles[tone];

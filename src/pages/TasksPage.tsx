@@ -357,7 +357,7 @@ export function TasksPage(): JSX.Element {
       {/* エラー */}
       {tasksError && (
         <Card padding="sm">
-          <div className="flex items-center gap-2 text-danger-600">
+          <div className="flex items-center gap-2 text-red-600">
             <AlertTriangle size={16} />
             <span className="text-sm">
               {tasksError.message ?? 'タスクの取得に失敗しました'}

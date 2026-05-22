@@ -29,7 +29,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton, HistorySkeleton, Heading } from '../components/ui';
 import { messages } from '../lib/messages';
 
-// safelist: bg-blue-500, bg-blue-400, bg-success-500, bg-success-400, bg-danger-500, bg-danger-400, text-blue-500, text-blue-400, text-danger-500, text-danger-400
+// safelist: bg-blue-500, bg-blue-400, bg-emerald-500, bg-emerald-400, bg-red-500, bg-red-400, text-blue-500, text-blue-400, text-red-500, text-red-400
 
 interface CorrectionModalState {
   isOpen: boolean;
@@ -89,7 +89,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
   }
 
   const legends: { color: string; label: string }[] = [
-    { color: 'bg-success-500 dark:bg-success-400', label: '通常勤務' },
+    { color: 'bg-emerald-500 dark:bg-emerald-400', label: '通常勤務' },
     { color: 'bg-blue-500 dark:bg-blue-400', label: '8時間以上' },
   ];
 
@@ -103,7 +103,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
               i === 5
                 ? 'text-blue-500 dark:text-blue-400'
                 : i === 6
-                ? 'text-danger-500 dark:text-danger-400'
+                ? 'text-red-500 dark:text-red-400'
                 : 'text-stone-500 dark:text-stone-300'
             }`}
           >
@@ -132,7 +132,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                     setSelectedDate(isSelected ? null : dateKey);
                   }}
                   disabled={isFuture && isCurrentMonth}
-                  className={`relative w-full min-h-[56px] p-1 text-left border-b border-r border-stone-100 dark:border-stone-700 motion-safe:transition-colors duration-120 ease-out-expo ${
+                  className={`relative w-full min-h-[56px] p-1 text-left border-b border-r border-stone-100 dark:border-stone-700 motion-safe:transition-colors duration-150 ease-out ${
                     !isCurrentMonth
                       ? 'bg-stone-50 dark:bg-stone-900/30 cursor-default'
                       : isFuture
@@ -149,7 +149,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                         : isFuture
                         ? 'text-stone-300 dark:text-stone-600'
                         : dayOfWeek === 0
-                        ? 'text-danger-500 dark:text-danger-400'
+                        ? 'text-red-500 dark:text-red-400'
                         : dayOfWeek === 6
                         ? 'text-blue-500 dark:text-blue-400'
                         : 'text-stone-700 dark:text-stone-300'
@@ -165,7 +165,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                           className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                             isOvertime
                               ? 'bg-blue-500 dark:bg-blue-400'
-                              : 'bg-success-500 dark:bg-success-400'
+                              : 'bg-emerald-500 dark:bg-emerald-400'
                           }`}
                         />
                         {workMins > 0 && (
@@ -179,7 +179,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
 
                   {isCurrentMonth && pendingDateSet.has(dateKey) && (
                     <span
-                      className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-warning-500 dark:bg-warning-400"
+                      className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-orange-400"
                       aria-label="修正申請中"
                     />
                   )}
@@ -377,7 +377,7 @@ export function HistoryPage() {
   }
 
   return (
-    <div className={`max-w-2xl mx-auto space-y-6 motion-safe:transition-opacity duration-180 ease-out-expo${isRefetching ? ' opacity-60 pointer-events-none' : ''}`}>
+    <div className={`max-w-2xl mx-auto space-y-6 motion-safe:transition-opacity duration-180 ease-out${isRefetching ? ' opacity-60 pointer-events-none' : ''}`}>
       {currentStore == null && (
         <Card padding="md">
           <div className="flex items-center justify-center gap-2 text-sm">
@@ -408,7 +408,7 @@ export function HistoryPage() {
           <div className="inline-flex items-center gap-1 p-1 bg-stone-100 dark:bg-stone-700 rounded-md">
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
+              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors duration-150 ease-out ${
                 viewMode === 'list'
                   ? 'bg-white dark:bg-stone-700 shadow-rest text-blue-700 dark:text-blue-300 font-medium'
                   : 'text-stone-600 dark:text-stone-300 hover:text-stone-700 dark:hover:text-stone-200'
@@ -418,7 +418,7 @@ export function HistoryPage() {
             </button>
             <button
               onClick={() => setViewMode('calendar')}
-              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
+              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors duration-150 ease-out ${
                 viewMode === 'calendar'
                   ? 'bg-white dark:bg-stone-700 shadow-rest text-blue-700 dark:text-blue-300 font-medium'
                   : 'text-stone-600 dark:text-stone-300 hover:text-stone-700 dark:hover:text-stone-200'

@@ -67,7 +67,7 @@ export function TaskCard({
   return (
     <div
       className={`bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm motion-safe:transition-shadow ${
-        isClickable ? 'cursor-pointer hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary-500 focus:outline-none' : ''
+        isClickable ? 'cursor-pointer hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none' : ''
       }`}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
@@ -111,7 +111,7 @@ export function TaskCard({
             {task.due_date && (
               <span
                 className={`inline-flex items-center gap-1 ${
-                  isOverdue ? 'text-danger-600 dark:text-danger-300 font-semibold' : ''
+                  isOverdue ? 'text-red-600 dark:text-red-200 font-semibold' : ''
                 }`}
               >
                 <Calendar className="w-3.5 h-3.5" aria-hidden="true" />

@@ -157,7 +157,7 @@ export function ShiftPreferenceAdminList({
             <button 
               onClick={handleBulkApproveConfirm} 
               disabled={processing} 
-              className="px-3 py-2 text-xs font-medium text-white bg-success-700 dark:bg-success-300 rounded-md hover:bg-success-800 dark:hover:bg-success-200 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out flex items-center"
+              className="px-3 py-2 text-xs font-medium text-white bg-emerald-700 dark:bg-emerald-200 rounded-md hover:bg-emerald-700 dark:hover:bg-emerald-100 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out flex items-center"
             >
               {processing && <Spinner size="sm" inline className="mr-1" />}
               {selectedIds.size > 0 ? `選択 ${selectedIds.size}件 承認する` : `pending ${pendingCount}件 全て承認する`}
@@ -174,7 +174,7 @@ export function ShiftPreferenceAdminList({
             <button 
               onClick={handleBulkRejectConfirm} 
               disabled={processing} 
-              className="px-3 py-2 text-xs font-medium text-white bg-danger-700 dark:bg-danger-300 rounded-md hover:bg-danger-800 dark:hover:bg-danger-200 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out flex items-center"
+              className="px-3 py-2 text-xs font-medium text-white bg-red-700 dark:bg-red-200 rounded-md hover:bg-red-700 dark:hover:bg-red-100 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out flex items-center"
             >
               {processing && <Spinner size="sm" inline className="mr-1" />}
               {selectedIds.size > 0 ? `選択 ${selectedIds.size}件 却下する` : `pending ${pendingCount}件 全て却下する`}
@@ -191,14 +191,14 @@ export function ShiftPreferenceAdminList({
             <button 
               onClick={() => setBulkConfirming('approve')} 
               disabled={!canBulk} 
-              className="px-3 py-2 text-xs font-medium text-success-800 dark:text-success-300 bg-success-50 dark:bg-success-900/30 rounded-md hover:bg-success-100 dark:hover:bg-success-900/50 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out"
+              className="px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-800/30 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-800/50 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out"
             >
               一括承認
             </button>
             <button 
               onClick={() => setBulkConfirming('reject')} 
               disabled={!canBulk} 
-              className="px-3 py-2 text-xs font-medium text-danger-800 dark:text-danger-300 bg-danger-50 dark:bg-danger-900/30 rounded-md hover:bg-danger-100 dark:hover:bg-danger-900/50 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out"
+              className="px-3 py-2 text-xs font-medium text-red-700 dark:text-red-200 bg-red-50 dark:bg-red-800/30 rounded-md hover:bg-red-50 dark:hover:bg-red-800/50 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out"
             >
               一括却下
             </button>
@@ -252,7 +252,7 @@ export function ShiftPreferenceAdminList({
             </span>
           ) : (
             pendingCount > 0 && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900 dark:text-warning-200">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800 dark:text-orange-100">
                 {pendingCount}件 未対応
               </span>
             )

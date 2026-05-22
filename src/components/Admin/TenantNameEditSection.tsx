@@ -78,7 +78,7 @@ export const TenantNameEditSection: React.FC<TenantNameEditSectionProps> = ({
         </div>
 
         {error && (
-          <p className="text-sm text-danger-600 dark:text-danger-400">{error}</p>
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         )}
 
         <button

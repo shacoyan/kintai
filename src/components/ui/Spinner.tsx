@@ -23,7 +23,7 @@ const SIZE_PX: Record<SpinnerSize, number> = {
 };
 
 /**
- * 共通スピナー。色は currentColor（呼び出し側 `text-primary-500` 等で制御）。
+ * 共通スピナー。色は currentColor（呼び出し側 `text-blue-500` 等で制御）。
  * `role="status"` + `aria-label` で SR 対応。
  * `showLabel` を true にすると、アイコンの横に可視状態でラベルを表示します。
  */

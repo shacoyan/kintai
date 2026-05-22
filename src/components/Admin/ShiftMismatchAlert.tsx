@@ -49,11 +49,11 @@ function rowBgClass(type: ShiftMismatch['type']): string {
   switch (type) {
     case 'no_record':
     case 'absent':
-      return 'bg-danger-50 dark:bg-danger-900/20 border-danger-200 dark:border-danger-800';
+      return 'bg-red-50 dark:bg-red-800/20 border-red-100 dark:border-red-700';
     case 'late':
-      return 'bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800';
+      return 'bg-orange-50 dark:bg-orange-800/20 border-orange-100 dark:border-orange-700';
     case 'early_leave':
-      return 'bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800';
+      return 'bg-orange-50 dark:bg-orange-800/20 border-orange-100 dark:border-orange-700';
     default:
       return 'bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700';
   }

@@ -32,10 +32,10 @@ interface ShiftPreferenceCalendarProps {
 
 const MEMBER_TONE_CLASSES = [
   'bg-blue-50 text-blue-700',
-  'bg-success-50 text-success-500',
+  'bg-emerald-50 text-emerald-500',
   'bg-blue-50 text-blue-500',
-  'bg-warning-50 text-warning-500',
-  'bg-danger-50 text-danger-500',
+  'bg-orange-50 text-orange-500',
+  'bg-red-50 text-red-500',
   'bg-stone-100 text-stone-700',
 ];
 
@@ -208,7 +208,7 @@ export function ShiftPreferenceCalendar({
               (i === 5
                 ? 'text-blue-500'
                 : i === 6
-                ? 'text-danger-500'
+                ? 'text-red-500'
                 : 'text-stone-500 dark:text-stone-300')
             }
           >
@@ -269,7 +269,7 @@ export function ShiftPreferenceCalendar({
             !isCurrentMonth
               ? 'text-stone-500 dark:text-stone-500'
               : dayOfWeek === 6
-              ? 'text-danger-500'
+              ? 'text-red-500'
               : dayOfWeek === 5
               ? 'text-blue-500'
               : 'text-stone-700 dark:text-stone-300';
@@ -300,7 +300,7 @@ export function ShiftPreferenceCalendar({
                   {format(d, 'd')}
                 </span>
                 {isAdminView && pendingCount > 0 && (
-                  <span className="bg-warning-500 dark:bg-warning-400 text-white rounded-full w-4 h-4 inline-flex items-center justify-center text-[9px] font-semibold tabular-nums leading-none">
+                  <span className="bg-orange-500 dark:bg-orange-400 text-white rounded-full w-4 h-4 inline-flex items-center justify-center text-[9px] font-semibold tabular-nums leading-none">
                     {pendingCount}
                   </span>
                 )}
@@ -404,7 +404,7 @@ export function ShiftPreferenceCalendar({
             const pendingCount = prefs.filter((p) => p.status === 'pending').length;
             const dayColor =
               dayOfWeek === 6
-                ? 'text-danger-500'
+                ? 'text-red-500'
                 : dayOfWeek === 5
                 ? 'text-blue-500'
                 : 'text-stone-700 dark:text-stone-300';
@@ -436,7 +436,7 @@ export function ShiftPreferenceCalendar({
                   </span>
                   <span className="inline-flex items-center gap-2">
                     {pendingCount > 0 && (
-                      <span className="bg-warning-500 dark:bg-warning-400 text-white rounded-full px-1.5 h-4 inline-flex items-center text-[10px] font-semibold tabular-nums leading-none">
+                      <span className="bg-orange-500 dark:bg-orange-400 text-white rounded-full px-1.5 h-4 inline-flex items-center text-[10px] font-semibold tabular-nums leading-none">
                         未対応 {pendingCount}
                       </span>
                     )}

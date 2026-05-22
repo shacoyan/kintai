@@ -108,13 +108,13 @@ function NotificationBellInner({ userId }: { userId: string }) {
         key={notification.id}
         type="button"
         role="menuitem"
-        className="w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 flex items-start gap-2 motion-safe:transition-colors duration-120 ease-out-expo"
+        className="w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 flex items-start gap-2 motion-safe:transition-colors duration-150 ease-out"
         onClick={() => handleNotificationClick(notification)}
       >
         {isUnread ? (
           <span
             aria-hidden="true"
-            className="mt-1.5 flex-shrink-0 w-2 h-2 rounded-full bg-primary-500 dark:bg-primary-400"
+            className="mt-1.5 flex-shrink-0 w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400"
           />
         ) : (
           <span aria-hidden="true" className="mt-1.5 flex-shrink-0 w-2 h-2" />
@@ -142,7 +142,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        className="relative p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 motion-safe:transition-colors duration-120 ease-out-expo"
+        className="relative p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 motion-safe:transition-colors duration-150 ease-out"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={`通知 ${unreadCount}件未読`}
         aria-haspopup="menu"
@@ -151,7 +151,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
       >
         <Bell size={18} />
         {badgeText && (
-          <span className="absolute top-0 right-0 bg-danger-500 dark:bg-danger-400 text-white text-[10px] rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 font-medium leading-none">
+          <span className="absolute top-0 right-0 bg-red-500 dark:bg-red-400 text-white text-[10px] rounded-full min-w-[16px] h-4 flex items-center justify-center px-1 font-medium leading-none">
             {badgeText}
           </span>
         )}
@@ -172,7 +172,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
               <button
                 type="button"
                 onClick={handleMarkAllRead}
-                className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
               >
                 すべて既読にする
               </button>
@@ -196,7 +196,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
               <button
                 type="button"
                 onClick={handleViewAllClick}
-                className="w-full text-center text-sm text-primary-600 dark:text-primary-400 hover:underline py-2"
+                className="w-full text-center text-sm text-blue-600 dark:text-blue-400 hover:underline py-2"
               >
                 通知をすべて見る
               </button>

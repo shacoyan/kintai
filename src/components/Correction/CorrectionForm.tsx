@@ -174,7 +174,7 @@ export function CorrectionForm({
       <form id="correction-form" onSubmit={handleSubmit} className="space-y-4">
         {isDelete && (
           <div className="mb-4 p-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg">
-            <p className="text-sm text-danger-600 dark:text-danger-400 mt-1">
+            <p className="text-sm text-red-600 dark:text-red-400 mt-1">
               この勤怠記録の削除を店長 or オーナーに依頼します
             </p>
           </div>
@@ -218,9 +218,9 @@ export function CorrectionForm({
         )}
 
         {isOvernight && (
-          <div role="alert" className="flex items-start gap-2 p-3 rounded-lg bg-warning-50 dark:bg-warning-900/30 border border-warning-200 dark:border-warning-800">
-            <AlertTriangle className="w-4 h-4 text-warning-600 dark:text-warning-400 mt-0.5 shrink-0" />
-            <p className="text-xs text-warning-700 dark:text-warning-300">退勤時刻が出勤より前のため、<strong>翌日として扱います</strong>（夜勤シフト）</p>
+          <div role="alert" className="flex items-start gap-2 p-3 rounded-lg bg-orange-50 dark:bg-orange-800/30 border border-orange-100 dark:border-orange-700">
+            <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5 shrink-0" />
+            <p className="text-xs text-orange-700 dark:text-orange-200">退勤時刻が出勤より前のため、<strong>翌日として扱います</strong>（夜勤シフト）</p>
           </div>
         )}
       </form>

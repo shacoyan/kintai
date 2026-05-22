@@ -28,7 +28,7 @@ export function PageLoader(props: PageLoaderProps): JSX.Element {
         className,
       )}
     >
-      <Spinner size="lg" label={label} className="text-primary-600 dark:text-primary-400" />
+      <Spinner size="lg" label={label} className="text-blue-600 dark:text-blue-400" />
       <p className="text-sm text-neutral-600 dark:text-neutral-300">{label}</p>
     </div>
   );

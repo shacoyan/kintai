@@ -16,8 +16,8 @@ interface TenantSelectorProps {
 
 const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCreateNew, onJoin }) => {
   const roleColors: Record<string, string> = {
-    owner: 'bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200',
-    manager: 'bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200',
+    owner: 'bg-blue-50 text-blue-700 dark:bg-blue-800 dark:text-blue-100',
+    manager: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-100',
     staff: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-300',
   };
 
@@ -41,7 +41,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
               <button
                 key={tenant.id}
                 onClick={() => onSelect(tenant)}
-                className="w-full flex items-center justify-between p-4 bg-white dark:bg-neutral-800 shadow-sm rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-600 motion-safe:transition-colors duration-120 ease-out-expo text-left focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full flex items-center justify-between p-4 bg-white dark:bg-neutral-800 shadow-sm rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-blue-200 dark:hover:border-blue-600 motion-safe:transition-colors duration-150 ease-out text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <div className="min-w-0">
                   <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100 truncate">{tenant.name}</p>

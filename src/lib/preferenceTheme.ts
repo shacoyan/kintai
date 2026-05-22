@@ -37,16 +37,16 @@ export const PREFERENCE_THEME: Record<ShiftPreferenceType, PreferenceTheme> = {
     description: '希望して入りたい日',
     Icon: Star,
     cellClass:
-      'bg-primary-50 ring-1 ring-primary-300 text-primary-700 dark:bg-primary-900/30 dark:ring-primary-700 dark:text-primary-200',
-    countTextClass: 'text-primary-600 dark:text-primary-400',
-    dotClass: 'bg-primary-500 dark:bg-primary-400',
-    iconColorClass: 'text-primary-500 dark:text-primary-400',
+      'bg-blue-50 ring-1 ring-blue-200 text-blue-700 dark:bg-blue-800/30 dark:ring-blue-700 dark:text-blue-100',
+    countTextClass: 'text-blue-600 dark:text-blue-400',
+    dotClass: 'bg-blue-500 dark:bg-blue-400',
+    iconColorClass: 'text-blue-500 dark:text-blue-400',
     iconBoxClass:
-      'bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300',
+      'bg-blue-50 text-blue-700 dark:bg-blue-800/40 dark:text-blue-200',
     cardBorderBgClass:
-      'border-primary-200 bg-primary-50 dark:border-primary-700 dark:bg-primary-950',
+      'border-blue-100 bg-blue-50 dark:border-blue-700 dark:bg-blue-900',
     badgeClass:
-      'bg-primary-100 text-primary-700 dark:bg-primary-800 dark:text-primary-200',
+      'bg-blue-50 text-blue-700 dark:bg-blue-700 dark:text-blue-100',
   },
   unavailable: {
     type: 'unavailable',

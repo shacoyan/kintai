@@ -130,7 +130,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
         title="オーナー権限の移譲確認"
         footer={confirmFooter}
       >
-        <div className="p-4 text-sm bg-warning-50 dark:bg-warning-900/30 border-l-4 border-warning-400 dark:border-warning-600 text-stone-700 dark:text-stone-200">
+        <div className="p-4 text-sm bg-orange-50 dark:bg-orange-800/30 border-l-4 border-orange-400 dark:border-orange-600 text-stone-700 dark:text-stone-200">
           <p>
             権限を移譲すると、あなたは店長 (manager) に降格します。元に戻すには新オーナーの操作が必要です。本当に移譲しますか？
           </p>

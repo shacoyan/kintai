@@ -176,10 +176,10 @@ export function DashboardPage() {
 
       <div className="flex flex-col items-center gap-4 py-8 md:py-12">
         {currentStore == null ? (
-          <Card padding="md" className="w-full border-l-4 border-warning-400 dark:border-warning-300">
+          <Card padding="md" className="w-full border-l-4 border-orange-400 dark:border-orange-200">
             <div className="flex flex-col items-center gap-2 text-center">
               <Badge tone="warning" withDot>店舗未選択</Badge>
-              <p className="text-body-sm text-warning-800 dark:text-warning-300">打刻するには上部のセレクタから店舗を選択してください。</p>
+              <p className="text-body-sm text-orange-700 dark:text-orange-200">打刻するには上部のセレクタから店舗を選択してください。</p>
             </div>
           </Card>
         ) : (
@@ -206,14 +206,14 @@ export function DashboardPage() {
       {carryOverRecord ? (
         <Card
           padding="md"
-          className="border-l-[6px] border-danger-500 dark:border-danger-400 bg-danger-50/70 dark:bg-danger-900/30 shadow-sm ring-1 ring-danger-200/60 dark:ring-danger-800/40"
+          className="border-l-[6px] border-red-500 dark:border-red-400 bg-red-50/70 dark:bg-red-800/30 shadow-sm ring-1 ring-red-100/60 dark:ring-red-700/40"
         >
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-danger-600 dark:text-danger-400 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1.5">
                 <Badge tone="danger" withDot>未完了</Badge>
-                <span className="text-body-sm font-semibold text-danger-700 dark:text-danger-300">退勤打刻が未完了です</span>
+                <span className="text-body-sm font-semibold text-red-700 dark:text-red-200">退勤打刻が未完了です</span>
               </div>
               <p className="text-body-sm text-stone-700 dark:text-stone-200">
                 <span className="font-num tabular-nums">{carryOverRecord.date}</span> に出勤(<span className="font-num tabular-nums">{formatTime(carryOverRecord.clock_in)}</span>) したまま退勤打刻がされていません
@@ -225,9 +225,9 @@ export function DashboardPage() {
           </div>
         </Card>
       ) : (
-        <Card padding="md" className="border-l-4 border-success-500 dark:border-success-400 bg-success-50/40 dark:bg-success-900/20">
+        <Card padding="md" className="border-l-4 border-emerald-500 dark:border-emerald-400 bg-emerald-50/40 dark:bg-emerald-800/20">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-success-600 dark:text-success-400 flex-shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-body-sm text-stone-700 dark:text-stone-200">
                 今日は整っています。{nextShiftLine}

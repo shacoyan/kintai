@@ -66,7 +66,7 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
           onClick={handleBreakStart}
           disabled={processing}
           aria-label="休憩開始"
-          className="group inline-flex min-h-[44px] items-center gap-1 rounded-md px-3 py-2 text-warning-700 underline-offset-4 hover:text-warning-800 hover:underline focus-ring disabled:cursor-not-allowed disabled:opacity-50 dark:text-warning-300 dark:hover:text-warning-200"
+          className="group inline-flex min-h-[44px] items-center gap-1 rounded-md px-3 py-2 text-orange-700 underline-offset-4 hover:text-orange-700 hover:underline focus-ring disabled:cursor-not-allowed disabled:opacity-50 dark:text-orange-200 dark:hover:text-orange-100"
         >
           {processing && <Spinner size="sm" inline className="mr-1" />}
           <span>休憩開始</span>

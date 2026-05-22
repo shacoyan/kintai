@@ -48,16 +48,16 @@ const MEMBER_COLORS = [
 ];
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-warning-100 border-warning-300 text-warning-800 dark:bg-warning-900/30 dark:border-warning-700 dark:text-warning-300',
+  pending: 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-800/30 dark:border-orange-700 dark:text-orange-200',
   tentative: 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
-  approved: 'bg-success-100 border-success-300 text-success-800 dark:bg-success-900/30 dark:border-success-700 dark:text-success-300',
-  rejected: 'bg-danger-100 border-danger-300 text-danger-800 dark:bg-danger-900/30 dark:border-danger-700 dark:text-danger-300',
+  approved: 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-800/30 dark:border-emerald-700 dark:text-emerald-200',
+  rejected: 'bg-red-50 border-red-200 text-red-700 dark:bg-red-800/30 dark:border-red-700 dark:text-red-200',
   modified: 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
   cancelled: 'bg-stone-100 border-stone-300 text-stone-500 dark:bg-stone-700 dark:border-stone-600 dark:text-stone-300',
 };
 
 const LEAVE_TYPE_DOT: Record<string, string> = {
-  paid: 'bg-success-500',
+  paid: 'bg-emerald-500',
   half_am: 'bg-leave-type-half-am-500',
   half_pm: 'bg-leave-type-half-pm-500',
   special: 'bg-leave-type-special-500',
@@ -260,7 +260,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
         <div className="grid grid-cols-7 bg-stone-50 dark:bg-stone-700 border-b border-stone-200 dark:border-stone-700">
           {weekDays.map((d, i) => (
             <div key={i} className={`text-center py-2 text-xs font-medium ${
-              i === 5 ? 'text-blue-600 dark:text-blue-400' : i === 6 ? 'text-danger-600 dark:text-danger-400' : 'text-stone-500 dark:text-stone-300'
+              i === 5 ? 'text-blue-600 dark:text-blue-400' : i === 6 ? 'text-red-600 dark:text-red-400' : 'text-stone-500 dark:text-stone-300'
             }`}>
               {d}
             </div>
@@ -390,7 +390,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                         {isMine && (
                           <span className="ml-1 inline-block bg-blue-600 text-white text-[8px] px-1 rounded" aria-label="自分の申請">あなた</span>
                         )}
-                        <span className="ml-1 inline-block bg-warning-50 text-warning-700 dark:bg-warning-900/40 dark:text-warning-300 text-[8px] px-1 rounded">申請</span>
+                        <span className="ml-1 inline-block bg-orange-50 text-orange-700 dark:bg-orange-800/40 dark:text-orange-200 text-[8px] px-1 rounded">申請</span>
                       </div>
                     );
                   })}
@@ -401,7 +401,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                       <span
                         key={l.id}
                         className={`w-1.5 h-1.5 rounded-full ${LEAVE_TYPE_DOT[l.leave_type] || 'bg-blue-500'} ${
-                          l.status === 'pending' ? 'ring-1 ring-warning-400' : ''
+                          l.status === 'pending' ? 'ring-1 ring-orange-400' : ''
                         }`}
                       />
                     ))}

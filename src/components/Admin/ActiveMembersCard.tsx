@@ -39,7 +39,7 @@ export function ActiveMembersCard({ tenantId, storeId, memberNames }: ActiveMemb
           {active.map((row: ActiveAttendance) => (
             <li key={row.recordId} className="py-2 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="w-2 h-2 rounded-full bg-success-500 dark:bg-success-400 flex-shrink-0" aria-hidden="true" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 flex-shrink-0" aria-hidden="true" />
                 <span className="text-sm text-stone-900 dark:text-stone-100 truncate">
                   {memberNames.get(row.userId) ?? '（不明）'}
                 </span>

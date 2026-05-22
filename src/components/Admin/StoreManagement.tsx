@@ -199,7 +199,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                     disabled={!isOwner || togglingManagerId === member.id}
                     className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium motion-safe:transition-colors duration-150 ease-out disabled:opacity-50 disabled:cursor-not-allowed ${
                       is_manager
-                        ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300'
+                        ? 'bg-emerald-50 dark:bg-emerald-800/30 text-emerald-700 dark:text-emerald-200'
                         : 'bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300'
                     }`}
                     title={isOwner ? (is_manager ? '店長権限を外す' : '店長に任命') : 'オーナーのみ操作可能'}

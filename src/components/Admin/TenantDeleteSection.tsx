@@ -39,11 +39,11 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
 
   return (
     <>
-      <Card className="border-danger-300">
+      <Card className="border-red-200">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <AlertTriangle className="w-6 h-6 text-danger-700 dark:text-danger-300" />
-            <h3 className="text-heading-2 text-danger-700 dark:text-danger-300">
+            <AlertTriangle className="w-6 h-6 text-red-700 dark:text-red-200" />
+            <h3 className="text-heading-2 text-red-700 dark:text-red-200">
               テナントを削除する
             </h3>
           </div>
@@ -60,7 +60,7 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
 
           <Button
             variant="danger"
-            className="bg-danger-600 dark:bg-danger-500 text-white hover:bg-danger-700 dark:hover:bg-danger-400"
+            className="bg-red-600 dark:bg-red-500 text-white hover:bg-red-700 dark:hover:bg-red-400"
             disabled={!isOwner}
             onClick={() => setIsOpen(true)}
           >
@@ -79,14 +79,14 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
         title="テナント削除の確認"
       >
         <div className="p-4 space-y-4">
-          <div className="bg-danger-50 dark:bg-danger-900 border border-danger-200 dark:border-danger-800 rounded-lg p-4">
+          <div className="bg-red-50 dark:bg-red-800 border border-red-100 dark:border-red-700 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-danger-600 dark:text-danger-400 mt-0.5 shrink-0" />
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
               <div>
-                <p className="text-sm text-danger-800 dark:text-danger-300 font-medium mb-1">
+                <p className="text-sm text-red-700 dark:text-red-200 font-medium mb-1">
                   警告: この操作は取り消せません
                 </p>
-                <p className="text-sm text-danger-700 dark:text-danger-300">
+                <p className="text-sm text-red-700 dark:text-red-200">
                   テナント名 「{currentTenant?.name}」 を入力して確認してください。
                 </p>
               </div>
@@ -115,7 +115,7 @@ export const TenantDeleteSection: React.FC<TenantDeleteSectionProps> = ({ tenant
             </Button>
             <Button
               variant="danger"
-              className="bg-danger-600 dark:bg-danger-500 text-white hover:bg-danger-700 dark:hover:bg-danger-400 disabled:opacity-50"
+              className="bg-red-600 dark:bg-red-500 text-white hover:bg-red-700 dark:hover:bg-red-400 disabled:opacity-50"
               disabled={confirmText !== currentTenant?.name || submitting}
               onClick={handleDelete}
             >

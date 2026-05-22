@@ -199,7 +199,7 @@ export function BulkShiftPreferenceDialog({
         {lockedByDeadline && (
           <div
             role="alert"
-            className="rounded-md border border-danger-200 dark:border-danger-800 bg-danger-50 dark:bg-danger-900/30 px-3 py-2 text-xs text-danger-800 dark:text-danger-200"
+            className="rounded-md border border-red-100 dark:border-red-700 bg-red-50 dark:bg-red-800/30 px-3 py-2 text-xs text-red-700 dark:text-red-100"
           >
             {messages.shiftPreference.bulk.deadlinePassed}
           </div>
@@ -234,7 +234,7 @@ export function BulkShiftPreferenceDialog({
         {overwriteCount > 0 && (
           <div
             role="status"
-            className="rounded-md border border-warning-200 dark:border-warning-700 bg-warning-50 dark:bg-warning-900/30 px-3 py-2 text-xs text-warning-700 dark:text-warning-300"
+            className="rounded-md border border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800/30 px-3 py-2 text-xs text-orange-700 dark:text-orange-200"
           >
             {messages.shiftPreference.bulk.overwriteWarning(total, overwriteCount)}
           </div>
@@ -350,7 +350,7 @@ export function BulkShiftPreferenceDialog({
             )}
 
             {isCustomPreset && !customValidation.ok && (
-              <p role="alert" className="text-xs text-danger-700 dark:text-danger-300">
+              <p role="alert" className="text-xs text-red-700 dark:text-red-200">
                 {customValidation.message ?? messages.shiftPreference.bulk.validationError}
               </p>
             )}

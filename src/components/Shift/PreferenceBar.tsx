@@ -60,7 +60,7 @@ export function PreferenceBar(props: PreferenceBarProps): JSX.Element | null {
 
   const sizeClass = compact ? 'h-3 text-[9px] px-0.5' : 'h-4 text-[10px] px-1';
   const baseClass = 'rounded-sm font-semibold tabular-nums overflow-hidden whitespace-nowrap truncate leading-none flex items-center';
-  const overrideClass = isOverridden && displayStart && displayEnd ? ' border-l-2 border-warning-500' : '';
+  const overrideClass = isOverridden && displayStart && displayEnd ? ' border-l-2 border-orange-500' : '';
 
   return (
     <div

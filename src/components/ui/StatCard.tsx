@@ -21,8 +21,8 @@ export interface StatCardProps {
 }
 
 const TREND_TONE: Record<StatTrendDirection, string> = {
-  up: 'text-success-500 bg-success-50',
-  down: 'text-danger-500 bg-danger-50',
+  up: 'text-emerald-500 bg-emerald-50',
+  down: 'text-red-500 bg-red-50',
   flat: 'text-neutral-700 bg-neutral-100',
 };
 

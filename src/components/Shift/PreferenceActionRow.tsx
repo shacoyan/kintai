@@ -34,9 +34,9 @@ for (let h = 0; h < 24; h++) {
 }
 
 const STATUS_DOT_CLASS: Record<string, string> = {
-  pending: 'bg-warning-500 dark:bg-warning-400',
-  approved: 'bg-success-500 dark:bg-success-400',
-  rejected: 'bg-danger-500 dark:bg-danger-400',
+  pending: 'bg-orange-500 dark:bg-orange-400',
+  approved: 'bg-emerald-500 dark:bg-emerald-400',
+  rejected: 'bg-red-500 dark:bg-red-400',
   modified: 'bg-blue-500 dark:bg-blue-400',
   cancelled: 'bg-stone-400 dark:bg-stone-500',
 };
@@ -181,7 +181,7 @@ export function PreferenceActionRow({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleApprove(); }}
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-success-700 bg-success-50 hover:bg-success-100 dark:text-success-300 dark:bg-success-900 dark:hover:bg-success-800 motion-safe:transition-colors duration-150 ease-out"
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-emerald-700 bg-emerald-50 hover:bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-800 dark:hover:bg-emerald-700 motion-safe:transition-colors duration-150 ease-out"
                   aria-label="承認"
                 >
                   <Check className="w-3.5 h-3.5" />
@@ -189,7 +189,7 @@ export function PreferenceActionRow({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleReject(); }}
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:hover:bg-danger-800 motion-safe:transition-colors duration-150 ease-out"
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-red-700 bg-red-50 hover:bg-red-50 dark:text-red-200 dark:bg-red-800 dark:hover:bg-red-700 motion-safe:transition-colors duration-150 ease-out"
                   aria-label="却下"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -202,7 +202,7 @@ export function PreferenceActionRow({
         {!isPending && !isUnavailable && !state.loading && (
           <div className="flex items-center justify-end mt-0.5">
             {isApproved && (
-              <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-medium bg-success-100 text-success-700 dark:bg-success-800 dark:text-success-200">
+              <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-700 dark:text-emerald-100">
                 <CheckCircle2 className="w-2.5 h-2.5" />承認済
               </span>
             )}
@@ -224,9 +224,9 @@ export function PreferenceActionRow({
     <div
       className={`rounded-lg border p-3 space-y-2 motion-safe:transition-colors duration-150 ease-out ${
         isPending
-          ? 'border-warning-200 bg-warning-50 dark:border-warning-700 dark:bg-warning-950'
+          ? 'border-orange-100 bg-orange-50 dark:border-orange-700 dark:bg-orange-900'
           : isApproved
-          ? 'border-success-200 bg-success-50 dark:border-success-700 dark:bg-success-950'
+          ? 'border-emerald-100 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-900'
           : 'border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800'
       }`}
     >
@@ -278,7 +278,7 @@ export function PreferenceActionRow({
             <Badge tone="neutral">出勤不可（自動承認）</Badge>
           )}
           {isApproved && !isUnavailable && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-success-100 text-success-700 dark:bg-success-800 dark:text-success-200">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-700 dark:text-emerald-100">
               <CheckCircle2 className="w-3 h-3" />承認済
             </span>
           )}
@@ -288,14 +288,14 @@ export function PreferenceActionRow({
             </span>
           )}
           {isPending && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-700 dark:bg-warning-800 dark:text-warning-200">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-700 dark:text-orange-100">
               未対応
             </span>
           )}
         </div>
       </div>
 
-      {state.error && <p className="text-xs text-danger-600 dark:text-danger-400">{state.error}</p>}
+      {state.error && <p className="text-xs text-red-600 dark:text-red-400">{state.error}</p>}
 
       {isPending && isUnavailable && (
         <Badge tone="neutral">出勤不可（承認不要）</Badge>
@@ -349,7 +349,7 @@ export function PreferenceActionRow({
                 loading={state.loading}
                 onClick={(e) => { e.stopPropagation(); setConfirming('approve'); }}
                 variant="primary"
-                className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
+                className="h-auto px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
               >
                 仮承認
               </Button>
@@ -367,7 +367,7 @@ export function PreferenceActionRow({
                 loading={state.loading}
                 onClick={(e) => { e.stopPropagation(); setConfirming('reject'); }}
                 variant="danger"
-                className="h-auto px-3 py-1 text-xs text-danger-700 bg-danger-50 border border-danger-200 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:border-danger-700 dark:hover:bg-danger-800"
+                className="h-auto px-3 py-1 text-xs text-red-700 bg-red-50 border border-red-100 hover:bg-red-50 dark:text-red-200 dark:bg-red-800 dark:border-red-700 dark:hover:bg-red-700"
               >
                 却下
               </Button>
@@ -381,7 +381,7 @@ export function PreferenceActionRow({
                 loading={state.loading}
                 onClick={(e) => { e.stopPropagation(); setConfirming('approveWithTime'); }}
                 variant="primary"
-                className="h-auto px-3 py-1 text-xs bg-success-600 hover:bg-success-700 dark:bg-success-700 dark:hover:bg-success-600"
+                className="h-auto px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
               >
                 時間指定で仮承認
               </Button>
@@ -403,7 +403,7 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleApprove(); }}
-                className="h-auto px-3 py-1 text-xs rounded text-white bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400 disabled:opacity-50"
+                className="h-auto px-3 py-1 text-xs rounded text-white bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50"
               >
                 {state.loading && <Spinner size="sm" inline className="mr-1" />}仮承認する
               </button>
@@ -423,7 +423,7 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleReject(); }}
-                className="h-auto px-3 py-1 text-xs rounded text-white bg-danger-600 dark:bg-danger-500 hover:bg-danger-700 dark:hover:bg-danger-400 disabled:opacity-50"
+                className="h-auto px-3 py-1 text-xs rounded text-white bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-400 disabled:opacity-50"
               >
                 {state.loading && <Spinner size="sm" inline className="mr-1" />}却下する
               </button>
@@ -443,7 +443,7 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleApprove(true); }}
-                className="h-auto px-3 py-1 text-xs rounded text-white bg-success-600 dark:bg-success-500 hover:bg-success-700 dark:hover:bg-success-400 disabled:opacity-50"
+                className="h-auto px-3 py-1 text-xs rounded text-white bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50"
               >
                 {state.loading && <Spinner size="sm" inline className="mr-1" />}この時刻で仮承認する
               </button>
@@ -467,7 +467,7 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleRevertConfirm(); }}
-                className="px-2 py-1 text-xs rounded bg-warning-600 dark:bg-warning-500 text-white hover:bg-warning-700 dark:hover:bg-warning-400"
+                className="px-2 py-1 text-xs rounded bg-orange-600 dark:bg-orange-500 text-white hover:bg-orange-700 dark:hover:bg-orange-400"
               >
                 {state.loading && <Spinner size="sm" inline className="mr-1" />}未対応に戻す
               </button>
@@ -483,7 +483,7 @@ export function PreferenceActionRow({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setConfirming('revert'); }}
-              className="px-2 py-1 text-xs rounded text-warning-700 bg-warning-50 hover:bg-warning-100 dark:text-warning-300 dark:bg-warning-900 dark:hover:bg-warning-800 inline-flex items-center gap-1"
+              className="px-2 py-1 text-xs rounded text-orange-700 bg-orange-50 hover:bg-orange-50 dark:text-orange-200 dark:bg-orange-800 dark:hover:bg-orange-700 inline-flex items-center gap-1"
             >
               <RotateCcw className="w-3 h-3" />
               {isApproved ? '承認を取り消す' : '却下を取り消す'}

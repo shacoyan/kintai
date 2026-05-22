@@ -88,13 +88,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     container: 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800',
     text: 'text-blue-800 dark:text-blue-300',
     action: 'bg-blue-100 dark:bg-blue-800/40 text-blue-700 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800/60',
-    actionClass: 'flex-shrink-0 inline-flex items-center px-3 py-2 rounded-md text-sm font-medium motion-safe:transition-colors duration-120 ease-out-expo',
+    actionClass: 'flex-shrink-0 inline-flex items-center px-3 py-2 rounded-md text-sm font-medium motion-safe:transition-colors duration-150 ease-out',
     actionIconWrap: 'ml-1.5',
   } : {
     container: 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800',
     text: 'text-orange-800 dark:text-orange-200',
     action: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white',
-    actionClass: 'flex-shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded text-xs font-semibold motion-safe:transition-colors duration-120 ease-out-expo',
+    actionClass: 'flex-shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded text-xs font-semibold motion-safe:transition-colors duration-150 ease-out',
     actionIconWrap: '',
   };
 

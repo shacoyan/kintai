@@ -61,7 +61,7 @@ export function ProjectCard({
   return (
     <div
       className={`bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm motion-safe:transition-shadow ${
-        isClickable ? 'cursor-pointer hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary-500 focus:outline-none' : ''
+        isClickable ? 'cursor-pointer hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none' : ''
       }`}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}

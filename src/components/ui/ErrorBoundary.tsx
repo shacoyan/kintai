@@ -61,8 +61,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return (
       <div className="min-h-[60vh] w-full flex items-center justify-center p-4 bg-neutral-50 dark:bg-neutral-900">
         <Card padding="lg" className="w-full max-w-md text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-danger-100 dark:bg-danger-900/30 mb-4">
-            <AlertTriangle className="h-6 w-6 text-danger-600 dark:text-danger-400" aria-hidden="true" />
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-50 dark:bg-red-800/30 mb-4">
+            <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />
           </div>
           <Heading level={3} as="h2" className="mb-2">
             予期しないエラーが発生しました

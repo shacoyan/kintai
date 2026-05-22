@@ -24,7 +24,7 @@ interface MemberManagementProps {
 
 const roleBadge: Record<string, { label: string; className: string }> = {
   owner: { label: 'オーナー', className: 'bg-blue-100 text-blue-700 dark:bg-blue-700/30 dark:text-blue-300' },
-  manager: { label: '店長', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
+  manager: { label: '店長', className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-800/30 dark:text-emerald-200' },
   staff: { label: 'スタッフ', className: 'bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-200' },
 };
 
@@ -225,8 +225,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
 
   if (myRole !== 'owner' && myRole !== 'manager') {
     return (
-      <div className="bg-warning-50 border border-warning-200 rounded-lg p-4 text-center dark:bg-warning-900/20 dark:border-warning-800">
-        <p className="text-warning-700 dark:text-warning-300">この機能を使用する権限がありません</p>
+      <div className="bg-orange-50 border border-orange-100 rounded-lg p-4 text-center dark:bg-orange-800/20 dark:border-orange-700">
+        <p className="text-orange-700 dark:text-orange-200">この機能を使用する権限がありません</p>
       </div>
     );
   }
@@ -285,7 +285,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           className={`px-2 py-0.5 text-xs font-medium rounded motion-safe:transition-colors duration-150 ease-out min-h-[44px] ${
                             member.role === 'manager'
                               ? 'text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600'
-                              : 'text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-900/30 hover:bg-success-100 dark:hover:bg-success-900/50'
+                              : 'text-emerald-700 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-800/30 hover:bg-emerald-50 dark:hover:bg-emerald-800/50'
                           } disabled:opacity-50`}
                           title={member.role === 'manager' ? 'スタッフに変更' : '店長に変更'}
                         >
@@ -295,7 +295,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       {member.role !== 'owner' && (
                         <button
                           onClick={() => setDeletingId(member.id)}
-                          className="p-2 text-stone-400 dark:text-stone-500 hover:text-danger-500 dark:hover:text-danger-400 motion-safe:transition-colors duration-150 ease-out min-h-[44px] min-w-[44px]"
+                          className="p-2 text-stone-400 dark:text-stone-500 hover:text-red-500 dark:hover:text-red-400 motion-safe:transition-colors duration-150 ease-out min-h-[44px] min-w-[44px]"
                           title="メンバーを削除"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -407,7 +407,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-150 ease-out ${
                                 rate > 0
                                   ? 'text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
-                                  : 'text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900 hover:bg-warning-100 dark:hover:bg-warning-800'
+                                  : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
                               }`}
                             >
                               {rate > 0 ? (
@@ -462,7 +462,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-150 ease-out ${
                                 (member.monthly_salary ?? 0) > 0
                                   ? 'text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
-                                  : 'text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900 hover:bg-warning-100 dark:hover:bg-warning-800'
+                                  : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
                               }`}
                             >
                               {(member.monthly_salary ?? 0) > 0 ? (
@@ -514,7 +514,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-150 ease-out ${
                               (member.paid_leave_days ?? 0) > 0
                                 ? 'text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
-                                : 'text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900 hover:bg-warning-100 dark:hover:bg-warning-800'
+                                : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
                             }`}
                           >
                             {(member.paid_leave_days ?? 0) > 0 ? (

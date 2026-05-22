@@ -334,7 +334,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
         {/* 凡例 */}
         <div className="mt-3 flex flex-wrap gap-3 text-[11px] md:text-xs text-stone-600 dark:text-stone-300">
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded bg-success-50 dark:bg-success-900/30 border border-success-300 dark:border-success-700" />
+            <span className="inline-block w-3 h-3 rounded bg-emerald-50 dark:bg-emerald-800/30 border border-emerald-200 dark:border-emerald-700" />
             出勤（〜8h）
           </span>
           <span className="flex items-center gap-1">
@@ -342,7 +342,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
             残業（8h超）
           </span>
           <span className="flex items-center gap-1">
-            <AlertTriangle className="w-4 h-4 text-danger-500 dark:text-danger-400" aria-hidden="true" />
+            <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400" aria-hidden="true" />
             シフトあり・勤怠なし
           </span>
           <span className="flex items-center gap-1">
@@ -373,7 +373,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                         key={day}
                         className={`sticky top-0 z-[5] border-b border-r border-stone-200 dark:border-stone-600 py-1 font-medium text-center whitespace-nowrap ${
                           weekend
-                            ? 'text-danger-500 dark:text-danger-400 bg-danger-50/50 dark:bg-danger-900/10'
+                            ? 'text-red-500 dark:text-red-400 bg-red-50/50 dark:bg-red-800/10'
                             : 'text-stone-600 dark:text-stone-300 bg-stone-50 dark:bg-stone-700'
                         }`}
                         style={{ minWidth: '48px', width: '48px' }}
@@ -414,7 +414,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
                         let cellContent: React.ReactNode = null;
                         let cellBg = weekend
-                          ? 'bg-danger-50/50 dark:bg-danger-900/10'
+                          ? 'bg-red-50/50 dark:bg-red-800/10'
                           : 'bg-white dark:bg-stone-800';
                         let textColor = '';
 
@@ -423,16 +423,16 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                           const isOvertime = workMin > OVERTIME_THRESHOLD_MINUTES;
                           cellBg = isOvertime
                             ? 'bg-blue-50 dark:bg-blue-700/30'
-                            : 'bg-success-50 dark:bg-success-900/30';
+                            : 'bg-emerald-50 dark:bg-emerald-800/30';
                           textColor = isOvertime
                             ? 'text-blue-700 dark:text-blue-300 font-semibold'
-                            : 'text-success-700 dark:text-success-300 font-semibold';
+                            : 'text-emerald-700 dark:text-emerald-200 font-semibold';
                           cellContent = (
                             <span className={textColor}>{fmtMinutes(workMin)}</span>
                           );
                         } else if (hasShift) {
-                          cellContent = <AlertTriangle className="w-4 h-4 text-danger-500 dark:text-danger-400 mx-auto" aria-label="シフトあり・勤怠なし" />;
-                          cellBg = 'bg-danger-50 dark:bg-danger-900/20';
+                          cellContent = <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400 mx-auto" aria-label="シフトあり・勤怠なし" />;
+                          cellBg = 'bg-red-50 dark:bg-red-800/20';
                         }
 
                         return (

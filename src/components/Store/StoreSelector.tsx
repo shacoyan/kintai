@@ -88,19 +88,19 @@ export function StoreSelector() {
 
   if (stores.length === 0) {
     return (
-      <div className="flex items-center gap-2 text-xs text-warning-700 dark:text-warning-300">
+      <div className="flex items-center gap-2 text-xs text-orange-700 dark:text-orange-200">
         <AlertCircle className="w-4 h-4 shrink-0" />
         <div className="flex flex-col">
           <span>店舗が割り当てられていません</span>
           {isOwner ? (
             <a
               href="/admin?adminTab=stores"
-              className="text-primary-600 dark:text-primary-400 hover:underline mt-0.5"
+              className="text-blue-600 dark:text-blue-400 hover:underline mt-0.5"
             >
               店舗を作成してください →
             </a>
           ) : (
-            <span className="text-warning-700 dark:text-warning-300 mt-0.5">
+            <span className="text-orange-700 dark:text-orange-200 mt-0.5">
               オーナー or 店長に連絡してください
             </span>
           )}
@@ -130,7 +130,7 @@ export function StoreSelector() {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         title={currentStore?.name || '店舗を選択'}
-        className="flex items-center gap-2 max-w-[160px] min-h-9 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-medium border border-neutral-300 dark:border-neutral-700 rounded-md px-3 py-1 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 motion-safe:transition-colors duration-120 ease-out-expo"
+        className="flex items-center gap-2 max-w-[160px] min-h-9 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-medium border border-neutral-300 dark:border-neutral-700 rounded-md px-3 py-1 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 motion-safe:transition-colors duration-150 ease-out"
       >
         <Store className="w-4 h-4 text-neutral-500 dark:text-neutral-300 shrink-0" />
         <span className="truncate">{currentStore?.name || '店舗を選択'}</span>
@@ -157,10 +157,10 @@ export function StoreSelector() {
                   triggerRef.current?.focus();
                 }}
                 onKeyDown={(e) => onItemKeyDown(e, idx, store)}
-                className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus:bg-neutral-100 dark:focus:bg-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo"
+                className="flex items-center gap-2 w-full text-left px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus:bg-neutral-100 dark:focus:bg-neutral-700 motion-safe:transition-colors duration-150 ease-out"
               >
                 <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                  {isSelected && <Check className="w-4 h-4 text-primary-600 dark:text-primary-400" />}
+                  {isSelected && <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
                 </span>
                 <span className="flex-1 truncate text-neutral-900 dark:text-neutral-100">
                   {store.name}

@@ -33,7 +33,7 @@ const LEAVE_TYPE_LABEL: Record<LeaveType, string> = {
 };
 
 const LEAVE_TYPE_COLOR: Record<LeaveType, string> = {
-  paid:          'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300',
+  paid:          'bg-emerald-50 text-emerald-700 dark:bg-emerald-800/30 dark:text-emerald-200',
   half_am:       'bg-leave-type-half-am-100 text-leave-type-half-am-800 dark:bg-leave-type-half-am-100/20 dark:text-leave-type-half-am-100',
   half_pm:       'bg-leave-type-half-pm-100 text-leave-type-half-pm-800 dark:bg-leave-type-half-pm-100/20 dark:text-leave-type-half-pm-100',
   special:       'bg-leave-type-special-100 text-leave-type-special-800 dark:bg-leave-type-special-100/20 dark:text-leave-type-special-100',
@@ -46,9 +46,9 @@ const LEAVE_TYPE_COLOR: Record<LeaveType, string> = {
 };
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  pending: { label: '申請中', className: 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300' },
-  approved: { label: '承認済', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
-  rejected: { label: '却下', className: 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300' },
+  pending: { label: '申請中', className: 'bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-200' },
+  approved: { label: '承認済', className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-800/30 dark:text-emerald-200' },
+  rejected: { label: '却下', className: 'bg-red-50 text-red-700 dark:bg-red-800/30 dark:text-red-200' },
   cancelled: { label: '取消', className: 'bg-stone-100 text-stone-500 dark:bg-stone-700 dark:text-stone-300' },
 };
 
@@ -130,7 +130,7 @@ export function LeaveList({ leaves, memberNames, storeNames, canManageTenant, on
                   )}
 
                   {leave.status === 'rejected' && leave.review_note && (
-                    <p className="text-xs text-danger-600 dark:text-danger-400">却下理由: {leave.review_note}</p>
+                    <p className="text-xs text-red-600 dark:text-red-400">却下理由: {leave.review_note}</p>
                   )}
 
                   {/* 4段目 */}
@@ -198,7 +198,7 @@ export function LeaveList({ leaves, memberNames, storeNames, canManageTenant, on
                   )}
 
                   {leave.status === 'rejected' && leave.review_note && (
-                    <p className="text-xs text-danger-600 dark:text-danger-400 mb-1">却下理由: {leave.review_note}</p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mb-1">却下理由: {leave.review_note}</p>
                   )}
 
                   {leave.status === 'pending' && (

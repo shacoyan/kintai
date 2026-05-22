@@ -481,7 +481,7 @@ export function ShiftPage() {
             type="button"
             onClick={() => setPreferenceView('current')}
             aria-pressed={preferenceView === 'current'}
-            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
+            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-150 ease-out focus-ring ${
               preferenceView === 'current'
                 ? 'bg-white text-blue-700 shadow-sm dark:bg-stone-700 dark:text-blue-300'
                 : 'bg-transparent text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
@@ -494,7 +494,7 @@ export function ShiftPage() {
             type="button"
             onClick={() => setPreferenceView('history')}
             aria-pressed={preferenceView === 'history'}
-            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
+            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-150 ease-out focus-ring ${
               preferenceView === 'history'
                 ? 'bg-white text-blue-700 shadow-sm dark:bg-stone-700 dark:text-blue-300'
                 : 'bg-transparent text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
@@ -517,14 +517,14 @@ export function ShiftPage() {
               {/* Deadline Banner */}
               {/* 理由: Deadline 警告バナーの左ボーダー強調 (例外③) */}
               {deadlineInfo && !deadlineInfo.passed && (
-                <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-warning-500 dark:border-warning-400 bg-warning-50 dark:bg-warning-900/30">
+                <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-orange-500 dark:border-orange-400 bg-orange-50 dark:bg-orange-800/30">
                   <Card.Body className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-warning-600 dark:text-warning-400 mt-0.5 shrink-0" aria-hidden="true" />
+                    <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5 shrink-0" aria-hidden="true" />
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-warning-800 dark:text-warning-200">
+                      <p className="text-sm font-semibold text-orange-700 dark:text-orange-100">
                         シフト申請の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })}
                       </p>
-                      <p className="text-xs text-warning-700 dark:text-warning-300 mt-1 tabular-nums">
+                      <p className="text-xs text-orange-700 dark:text-orange-200 mt-1 tabular-nums">
                         残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
                       </p>
                     </div>
@@ -533,14 +533,14 @@ export function ShiftPage() {
               )}
               {/* 理由: Deadline エラーバナー（締切過ぎ）の左ボーダー強調 (例外③) */}
               {deadlineInfo && deadlineInfo.passed && (
-                <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-danger-500 dark:border-danger-400 bg-danger-50 dark:bg-danger-900/30">
+                <Card padding="md" role="status" aria-live="polite" className="border-l-4 border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-800/30">
                   <Card.Body className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-danger-600 dark:text-danger-400 mt-0.5 shrink-0" aria-hidden="true" />
+                    <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 shrink-0" aria-hidden="true" />
                     <div className="flex-1">
-                      <p className="text-sm font-semibold text-danger-800 dark:text-danger-200">
+                      <p className="text-sm font-semibold text-red-700 dark:text-red-100">
                         締切過ぎ — 提出には管理者承認が必要です
                       </p>
-                      <p className="text-xs text-danger-700 dark:text-danger-300 mt-1 tabular-nums">
+                      <p className="text-xs text-red-700 dark:text-red-200 mt-1 tabular-nums">
                         {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })} に締め切られました（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
                       </p>
                     </div>
@@ -555,7 +555,7 @@ export function ShiftPage() {
                   <button
                     type="button"
                     onClick={() => setShowBulkApplyModal(true)}
-                    className="px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring bg-white dark:bg-stone-800 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                    className="px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-150 ease-out focus-ring bg-white dark:bg-stone-800 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                   >
                     プリセット一括適用
                   </button>
@@ -604,7 +604,7 @@ export function ShiftPage() {
                       type="button"
                       onClick={handleBulkRejectInRange}
                       disabled={count === 0}
-                      className="shrink-0 px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring border border-danger-300 dark:border-danger-700 text-danger-700 dark:text-danger-300 bg-white dark:bg-stone-800 hover:bg-danger-50 dark:hover:bg-danger-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="shrink-0 px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-150 ease-out focus-ring border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 bg-white dark:bg-stone-800 hover:bg-red-50 dark:hover:bg-red-800/30 disabled:opacity-50 disabled:cursor-not-allowed"
                       aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
                     >
                       未承認を一括却下{count > 0 ? `（${count}）` : ''}
@@ -621,17 +621,17 @@ export function ShiftPage() {
                   <div
                     role="region"
                     aria-label="一括シフト申請 選択モード"
-                    className="flex items-center justify-between gap-2 flex-wrap rounded-md border border-info-200 dark:border-info-700 bg-info-50 dark:bg-info-900/30 px-3 py-2"
+                    className="flex items-center justify-between gap-2 flex-wrap rounded-md border border-blue-100 dark:border-blue-700 bg-blue-50 dark:bg-blue-800/30 px-3 py-2"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-info-700 dark:text-info-200 tabular-nums">
+                      <span className="text-sm font-semibold text-blue-700 dark:text-blue-100 tabular-nums">
                         {messages.shiftPreference.bulk.selectedCount(selectedBulkDates.size)}
                       </span>
                       {selectedBulkDates.size > 0 && (
                         <button
                           type="button"
                           onClick={handleClearAllBulkDates}
-                          className="text-xs font-semibold text-info-700 dark:text-info-300 hover:underline focus-ring"
+                          className="text-xs font-semibold text-blue-700 dark:text-blue-200 hover:underline focus-ring"
                         >
                           {messages.shiftPreference.bulk.clearAll}
                         </button>

@@ -174,7 +174,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
         type="button"
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
-        className={`inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 motion-safe:transition-colors duration-120 ease-out-expo ${widthClass}`}
+        className={`inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-safe:transition-colors duration-150 ease-out ${widthClass}`}
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={`ワークスペース切替: 現在 ${currentTenant.name}`}
@@ -183,7 +183,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
         <span className="truncate">{currentTenant.name}</span>
         <ChevronDown
           size={14}
-          className={`shrink-0 text-neutral-400 dark:text-neutral-500 motion-safe:transition-transform duration-120 ease-out-expo ${isOpen ? 'rotate-180' : ''}`}
+          className={`shrink-0 text-neutral-400 dark:text-neutral-500 motion-safe:transition-transform duration-150 ease-out ${isOpen ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>
@@ -217,16 +217,16 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
                   if (!isCurrent) handleSelect(tenant);
                 }}
                 onKeyDown={(e) => onItemKeyDown(e, index)}
-                className={`flex items-center gap-3 px-3 py-2 text-sm cursor-pointer outline-none motion-safe:transition-colors duration-120 ease-out-expo ${
+                className={`flex items-center gap-3 px-3 py-2 text-sm cursor-pointer outline-none motion-safe:transition-colors duration-150 ease-out ${
                   isCurrent
-                    ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 font-semibold'
+                    ? 'bg-blue-50 dark:bg-blue-800/20 text-blue-700 dark:text-blue-200 font-semibold'
                     : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 focus:bg-neutral-50 dark:focus:bg-neutral-800/50'
                 }`}
                 aria-current={isCurrent ? 'true' : undefined}
               >
                 <div className="w-4 h-4 flex items-center justify-center shrink-0">
                   {isCurrent ? (
-                    <Check size={16} className="text-primary-600 dark:text-primary-400" aria-hidden="true" />
+                    <Check size={16} className="text-blue-600 dark:text-blue-400" aria-hidden="true" />
                   ) : (
                     <Building2 size={16} className="text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
                   )}
@@ -256,7 +256,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
             }}
             onClick={handleNavigateToNewWorkspace}
             onKeyDown={(e) => onItemKeyDown(e, tenants.length)}
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-primary-600 dark:text-primary-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 focus:bg-neutral-50 dark:focus:bg-neutral-800/50 focus-visible:outline-none motion-safe:transition-colors duration-120 ease-out-expo"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 focus:bg-neutral-50 dark:focus:bg-neutral-800/50 focus-visible:outline-none motion-safe:transition-colors duration-150 ease-out"
           >
             <Plus size={16} aria-hidden="true" />
             新しいワークスペース / 招待コードで参加
