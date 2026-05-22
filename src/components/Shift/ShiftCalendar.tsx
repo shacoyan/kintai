@@ -32,6 +32,11 @@ interface ShiftCalendarProps {
    */
   showPreferenceStatus?: boolean;
   currentUserId?: string | null;
+  /**
+   * 一括選択モードで選択中の日付集合 (yyyy-MM-dd)。
+   * 未指定または空のとき、ハイライトは付かない（通常モード互換）。
+   */
+  selectedBulkDates?: Set<string>;
 }
 
 const MEMBER_COLORS = [
@@ -82,7 +87,7 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
   other: 'その他',
 };
 
-export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange, leaves = [], preferences, onPreferenceClick, statusFilter, showPreferenceStatus = false, currentUserId }: ShiftCalendarProps) {
+export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange, leaves = [], preferences, onPreferenceClick, statusFilter, showPreferenceStatus = false, currentUserId, selectedBulkDates }: ShiftCalendarProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [baseDate, setBaseDate] = useState(getInitialShiftMonth);
   useEffect(() => { onViewMonthChange?.(baseDate); }, [baseDate, onViewMonthChange]);
@@ -297,12 +302,21 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
               return name ? `${typeLabel} - ${name}` : typeLabel;
             }).join('\n');
 
+            // 一括選択モード: selectedBulkDates が渡されている場合、選択中の日付セルに
+            //   ring-2 + bg-blue を付与して視認性を上げる。aria-pressed/aria-selected も併設。
+            const isBulkSelected = !!selectedBulkDates && selectedBulkDates.has(dateStr);
+            const bulkSelectedClass = isBulkSelected
+              ? 'ring-2 ring-blue-500 ring-inset bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100'
+              : '';
+
             return (
               <div
                 key={dateStr}
                 role="button"
                 tabIndex={0}
                 aria-label={`${dateStr} の詳細${holidayName ? ` (${holidayName})` : ''}`}
+                aria-pressed={selectedBulkDates ? isBulkSelected : undefined}
+                aria-selected={selectedBulkDates ? isBulkSelected : undefined}
                 onClick={() => onDateClick(dateStr)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -320,7 +334,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                   isCurrentMonth && !isHoliday && dayOfWeek === 0 ? 'bg-weekend-sunday-50 dark:bg-weekend-sunday-900/30' : ''
                 } ${
                   isCurrentMonth ? 'hover:bg-stone-50 dark:hover:bg-stone-700' : ''
-                }`}
+                } ${bulkSelectedClass}`}
               >
                 <div className={`text-xs font-medium mb-0.5 ${
                   isToday

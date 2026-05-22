@@ -574,7 +574,7 @@ export function ShiftPage() {
         </div>
 
         {preferenceView === 'current' && (
-          <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-6 lg:items-start">
+          <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:items-start">
             <div className="flex flex-col gap-4">
               {prefLoading && (
                 <div className="flex items-center justify-center py-6">
@@ -672,6 +672,47 @@ export function ShiftPage() {
                       aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
                     >
                       未承認を一括却下{count > 0 ? `（${count}）` : ''}
+                    </Button>
+                  );
+                })()}
+                {canManageTenant && (() => {
+                  // 「仮承認を一括本承認」: 表示中の月に含まれる shift.status === 'tentative' を一括で本承認する。
+                  // - approveShift (RPC approve_shift_final) を 1 件ずつ呼ぶ。エラー件数は console.warn でログ出力。
+                  // - 「未承認を一括却下」と同じパターン (filter → confirm → for ループ → fetchRange)。
+                  const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                  const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                  const tentativeInRange = shifts.filter(
+                    s => s.status === 'tentative' && s.date >= monthStart && s.date <= monthEnd
+                  );
+                  const tCount = tentativeInRange.length;
+                  const handleBulkApproveTentative = async () => {
+                    if (tCount === 0) return;
+                    // eslint-disable-next-line no-alert
+                    if (!window.confirm(`${tCount}件を本承認します。よろしいですか？`)) return;
+                    let errors = 0;
+                    for (const s of tentativeInRange) {
+                      try {
+                        await approveShift(s.id);
+                      } catch {
+                        errors += 1;
+                      }
+                    }
+                    fetchRange();
+                    if (errors > 0) {
+                      // eslint-disable-next-line no-console
+                      console.warn(`[bulkApproveTentative] ${errors} 件で承認エラーが発生しました`);
+                    }
+                  };
+                  return (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleBulkApproveTentative}
+                      disabled={tCount === 0}
+                      className="shrink-0"
+                      aria-label={`表示中の期間の仮承認シフトを一括本承認（${tCount}件）`}
+                    >
+                      仮承認を一括本承認{tCount > 0 ? `（${tCount}）` : ''}
                     </Button>
                   );
                 })()}
@@ -775,6 +816,7 @@ export function ShiftPage() {
                 leaves={leaves}
                 onViewMonthChange={setShiftViewMonth}
                 currentUserId={currentUserId}
+                selectedBulkDates={isBulkMode ? selectedBulkDates : undefined}
               />
 
               {/* 想定人件費 Card — カレンダー直下に配置 (Loop17 改: サイドバーから移動)。

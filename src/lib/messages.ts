@@ -261,7 +261,7 @@ export const messages = {
     /** @i18n-namespace shiftPreference.bulk */
     bulk: {
       /** @i18n-key shiftPreference.bulk.entryButton */
-      entryButton: 'まとめて申請',
+      entryButton: 'まとめてシフト申請',
       /** @i18n-key shiftPreference.bulk.entryButtonAria */
       entryButtonAria: '複数の日付にまとめてシフト申請を行う',
       /** @i18n-key shiftPreference.bulk.cancelMode */

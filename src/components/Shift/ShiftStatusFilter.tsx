@@ -119,8 +119,19 @@ export function ShiftStatusFilter({
     [value, onChange]
   );
 
+  // オーナー要望: 「修正」「却下」「取消」chip は表示しない。
+  //   - 型 (StatusFilterValue) と localStorage 永続化キーは互換維持。
+  //   - ShiftCalendar 側で modified/rejected/cancelled が statusFilter に
+  //     含まれていれば従来通り表示されるが、UI でトグルする手段は無い。
+  const HIDDEN_STATUSES: ReadonlySet<StatusFilterValue> = new Set([
+    'modified',
+    'rejected',
+    'cancelled',
+  ]);
   const displayedStatuses = ALL_STATUS_FILTER_VALUES.filter(
-    (s) => showPreferenceStatus || s !== 'pending_preference'
+    (s) =>
+      !HIDDEN_STATUSES.has(s) &&
+      (showPreferenceStatus || s !== 'pending_preference')
   );
 
   const activeStatusLabels = displayedStatuses
