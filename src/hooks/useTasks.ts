@@ -41,7 +41,7 @@ export interface UseTasksOptions {
   tenantId?: string;
   /**
    * 3 状態:
-   *   string    = 当該店舗 + 全社 (store_id IS NULL OR store_id = X)
+   *   string    = 当該店舗のみ (store_id = X) — 全社は含まない
    *   null      = 全社のみ (store_id IS NULL)
    *   undefined = 全件 (tenant 配下すべて)
    */
@@ -139,11 +139,11 @@ export function useTasks(opts?: UseTasksOptions): UseTasksResult {
         .eq('tenant_id', opts.tenantId);
 
       // storeId の 3 状態:
-      //   string: 指定店舗 OR 全社タスク (store_id IS NULL) を表示
+      //   string: 指定店舗タスクのみ (store_id = X) — 全社は含まない
       //   null:   全社タスクのみ (store_id IS NULL)
       //   undefined: 全件 (フィルタなし)
       if (typeof opts.storeId === 'string') {
-        query = query.or(`store_id.is.null,store_id.eq.${opts.storeId}`);
+        query = query.eq('store_id', opts.storeId);
       } else if (opts.storeId === null) {
         query = query.is('store_id', null);
       }

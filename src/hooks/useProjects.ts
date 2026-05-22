@@ -19,7 +19,7 @@ export interface UseProjectsOptions {
   /**
    * storeId === null (明示的 null): 全社プロジェクト (store_id IS NULL) のみ取得
    * storeId === undefined: 全件
-   * string: 該当 store_id のプロジェクトのみ
+   * string: 該当店舗のプロジェクトのみ (store_id = X) — 全社は含まない
    */
   storeId?: string | null;
   status?: ProjectStatus[];
@@ -83,14 +83,14 @@ export function useProjects(opts?: UseProjectsOptions): UseProjectsResult {
         .eq('tenant_id', tid);
 
       // storeId の 3 状態:
-      //   string: 指定店舗 OR 全社プロジェクト (store_id IS NULL) を表示
+      //   string: 指定店舗プロジェクトのみ (store_id = X) — 全社は含まない
       //   null:   全社プロジェクトのみ (store_id IS NULL)
       //   undefined: 全件 (フィルタなし)
       if (current && 'storeId' in current) {
         if (current.storeId === null) {
           query = query.is('store_id', null);
         } else if (typeof current.storeId === 'string') {
-          query = query.or(`store_id.is.null,store_id.eq.${current.storeId}`);
+          query = query.eq('store_id', current.storeId);
         }
       }
 

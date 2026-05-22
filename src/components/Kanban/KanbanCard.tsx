@@ -5,6 +5,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Task, TaskPriority } from '../../types';
 import { TASK_PRIORITY_LABELS } from '../../types';
+import { getProjectColor } from '../../lib/projectColor';
 
 export interface KanbanCardProps {
   task: Task;
@@ -65,6 +66,9 @@ export function KanbanCard({
 
   const isClickable = !!onClick;
 
+  // プロジェクトごとの色 (左 border + chip)。projectId なしは neutral。
+  const projectColor = getProjectColor(task.project_id);
+
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // ドラッグ後のクリック誤発火を避ける
     if (isDragging) return;
@@ -97,6 +101,7 @@ export function KanbanCard({
         bg-white dark:bg-stone-800
         rounded-[10px]
         border ${isDragging ? 'border-stone-300/80 dark:border-stone-600' : 'border-stone-300/80 dark:border-stone-700/60'}
+        border-l-[3px] ${projectColor.border}
         ${isDragging ? 'shadow-[0_12px_28px_rgba(0,0,0,0.16)]' : 'shadow-[0_1px_2px_rgba(0,0,0,0.04)]'}
         p-3
         select-none
@@ -121,11 +126,16 @@ export function KanbanCard({
         </div>
       </div>
 
-      {/* プロジェクト名 (任意) */}
+      {/* プロジェクト名 chip (任意): プロジェクトごとの色付きで視認性を強化 */}
       {projectName && (
-        <p className="text-[11px] text-stone-500 dark:text-stone-400 truncate mt-1.5">
-          {projectName}
-        </p>
+        <div className="mt-1.5 flex">
+          <span
+            className={`inline-block max-w-full truncate rounded px-1.5 py-0.5 text-[10px] font-medium leading-none ${projectColor.bg} ${projectColor.text}`}
+            title={projectName}
+          >
+            {projectName}
+          </span>
+        </div>
       )}
 
       {/* メタ情報: 期限 / 担当者 */}
