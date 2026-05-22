@@ -27,7 +27,6 @@ import { UnifiedShiftSidebar } from '../components/Shift/UnifiedShiftSidebar';
 import { LaborCostCard } from '../components/Shift/LaborCostCard';
 import { ShiftStatusFilter, readStatusFilter, writeStatusFilter } from '../components/Shift/ShiftStatusFilter';
 import type { StatusFilterValue } from '../components/Shift/unifiedShiftTypes';
-import { BulkApplyPresetModal } from '../components/Shift/BulkApplyPresetModal';
 import { BulkShiftPreferenceDialog } from '../components/Shift/BulkShiftPreferenceDialog';
 import { formatTimeRange } from '../utils/formatTimeRange';
 import { useStoreContext } from '../contexts/StoreContext';
@@ -90,7 +89,6 @@ export function ShiftPage() {
   // Loop16-C: 空白セルクリックで開く「新規シフト申請モーダル」用の対象日付 state。
   const [newPreferenceDate, setNewPreferenceDate] = useState<string | null>(null);
   const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
-  const [showBulkApplyModal, setShowBulkApplyModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Set<StatusFilterValue>>(() => readStatusFilter());
 
   // 一括シフト申請 (Engineer C / §4): 選択モード on/off, 選択 Set, ダイアログ表示
@@ -616,15 +614,6 @@ export function ShiftPage() {
                 </Card>
               )}
 
-              {/* プリセット一括適用ボタン (manager のみ) — Button component に統一 */}
-              {canManageTenant && storeId && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Button variant="secondary" size="sm" onClick={() => setShowBulkApplyModal(true)}>
-                    プリセット一括適用
-                  </Button>
-                </div>
-              )}
-
               {/* ShiftStatusFilter — 常時表示。pending_preference は manager のみ表示 */}
               {/* Loop12: manager は常時「未承認を一括却下」ボタンを横並び表示 */}
               <div className="flex flex-wrap items-start gap-2">
@@ -764,7 +753,7 @@ export function ShiftPage() {
                 ) : (
                   <div className="flex items-center gap-2 flex-wrap">
                     <Button
-                      variant="secondary"
+                      variant="success"
                       size="sm"
                       iconLeft={<CalendarPlus className="w-4 h-4" />}
                       onClick={handleEnterBulkMode}
@@ -1083,20 +1072,6 @@ export function ShiftPage() {
             </>
           )}
         </div>
-      {storeId && canManageTenant && (
-        <BulkApplyPresetModal
-          isOpen={showBulkApplyModal}
-          onClose={() => setShowBulkApplyModal(false)}
-          tenantId={tenantId}
-          storeId={storeId}
-          presets={presets}
-          members={members}
-          onApplied={() => {
-            fetchPreferenceRange();
-          }}
-        />
-      )}
-
       {storeId && (
         <BulkShiftPreferenceDialog
           isOpen={isBulkDialogOpen}

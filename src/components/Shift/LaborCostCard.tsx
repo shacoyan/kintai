@@ -38,7 +38,7 @@ export function LaborCostCard({
 
   const laborCost = useMemo(() => {
     const ms = members ?? [];
-    const isMonthly = (m: TenantMember) => (m.pay_type ?? 'hourly') === 'monthly' && getEffectiveMonthlySalary(m, rolesMap) > 0;
+    const isMonthly = (m: TenantMember) => (m.pay_type ?? 'hourly') === 'monthly';
     const monthlyTotal = ms.filter(isMonthly).reduce((s, m) => s + getEffectiveMonthlySalary(m, rolesMap), 0);
     const tentativeHourlyTotal = (tentativeLaborEstimates ?? []).filter(e => e.payType === 'hourly').reduce((s, e) => s + e.estimatedCost, 0);
     const allHourlyTotal = (allLaborEstimates ?? []).filter(e => e.payType === 'hourly').reduce((s, e) => s + e.estimatedCost, 0);
@@ -47,7 +47,7 @@ export function LaborCostCard({
 
   const monthlyMembers = useMemo(() => {
     return (members ?? [])
-      .filter(m => (m.pay_type ?? 'hourly') === 'monthly' && getEffectiveMonthlySalary(m, rolesMap) > 0)
+      .filter(m => (m.pay_type ?? 'hourly') === 'monthly')
       .sort((a, b) => a.display_name.localeCompare(b.display_name, 'ja'));
   }, [members, rolesMap]);
 
