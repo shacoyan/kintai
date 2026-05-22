@@ -86,9 +86,10 @@ export function TasksPage(): JSX.Element {
   const effectiveMineOnly = isParttime || mineOnlyManual;
 
   // ── フィルタ状態 ──
-  const [filter, setFilter] = useState<TaskFilterValue>({
-    status: ['todo', 'in_progress'],
-  });
+  // 初期値: 全 status 表示 (filter.status を空にすると enabledStatuses が全件にフォールバック)。
+  // 旧実装は ['todo','in_progress'] 固定で「完了タスクが見えない」と誤解される報告があったため、
+  // 既定で全件表示とし、ユーザーが必要に応じて絞り込む UX に変更。
+  const [filter, setFilter] = useState<TaskFilterValue>({});
 
   const enabledStatuses = useMemo<TaskStatus[]>(
     () => {

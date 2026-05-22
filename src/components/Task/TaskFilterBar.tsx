@@ -29,6 +29,7 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
 export function TaskFilterBar(props: TaskFilterBarProps): JSX.Element {
   const { value, onChange, projects, members, stores = [], showStoreFilter = true } = props;
   const selectedStatuses = value.status ?? [];
+  const selectedStatusCount = selectedStatuses.length;
 
   const toggleStatus = (s: TaskStatus) => {
     const has = selectedStatuses.includes(s);
@@ -76,6 +77,9 @@ export function TaskFilterBar(props: TaskFilterBarProps): JSX.Element {
       <div>
         <span className="block text-sm font-semibold text-stone-700 dark:text-stone-200 mb-1">
           ステータス
+          <span className="ml-2 text-xs font-normal text-stone-500 dark:text-stone-400">
+            {selectedStatusCount} / 4 選択中
+          </span>
         </span>
         <div className="flex flex-wrap gap-2" role="group" aria-label="ステータス">
           {STATUS_OPTIONS.map((opt) => {
@@ -97,6 +101,9 @@ export function TaskFilterBar(props: TaskFilterBarProps): JSX.Element {
             );
           })}
         </div>
+        <p className="text-xs text-stone-500 dark:text-stone-400 mt-2">
+          未選択時は全件表示されます
+        </p>
       </div>
 
       {/* セレクト群 */}
