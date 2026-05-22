@@ -52,7 +52,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
     <div className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 motion-safe:transition-opacity duration-180 ease-out-expo"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm motion-safe:transition-opacity duration-150 ease-out"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -62,34 +62,34 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
         role="dialog"
         aria-modal="true"
         {...ariaProps}
-        className="relative w-full md:max-w-lg bg-white dark:bg-neutral-800 rounded-t-2xl md:rounded-2xl shadow-xl max-h-[85vh] overflow-y-auto motion-safe:animate-slide-up md:animate-none"
+        className="relative w-full md:max-w-lg bg-white dark:bg-stone-900 rounded-t-2xl md:rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] max-h-[90vh] overflow-hidden motion-safe:animate-slide-up md:animate-none motion-safe:transition-transform duration-200 ease-out"
       >
         {/* Handle bar (mobile only) */}
-        <div className="md:hidden flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 bg-neutral-300 dark:bg-neutral-600 rounded-full" />
+        <div className="md:hidden flex justify-center">
+          <div className="mx-auto w-12 h-1 rounded-full bg-stone-300 dark:bg-stone-600 my-2" />
         </div>
         {title && (
-          <div className="border-b border-neutral-200 dark:border-neutral-700">
+          <div className="border-b border-stone-200 dark:border-stone-700">
             <div className="flex items-center justify-between px-4 py-3">
-              <h2 id={titleId} className="text-heading-2 text-neutral-900 dark:text-neutral-50">{title}</h2>
+              <h2 id={titleId} className="text-base font-semibold text-stone-900 dark:text-stone-50">{title}</h2>
               <button
                 onClick={onClose}
-                className="text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 p-1"
+                className="text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 p-1 rounded transition-colors duration-150 ease-out"
                 aria-label="閉じる"
               >
                 ✕
               </button>
             </div>
             {description && (
-              <p id={descId} className="text-sm text-neutral-500 dark:text-neutral-300 mt-1 px-4 pb-3">
+              <p id={descId} className="text-sm text-stone-500 dark:text-stone-400 mt-1 px-4 pb-3">
                 {description}
               </p>
             )}
           </div>
         )}
-        <div className="p-4">{children}</div>
+        <div className="p-4 overflow-y-auto">{children}</div>
         {footer && (
-          <div className="px-4 py-3 border-t border-neutral-200 dark:border-neutral-700">
+          <div className="px-4 py-3 border-t border-stone-200 dark:border-stone-700">
             {footer}
           </div>
         )}

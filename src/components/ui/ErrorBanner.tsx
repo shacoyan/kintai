@@ -8,11 +8,11 @@ interface ErrorBannerProps {
 
 export function ErrorBanner({ message, onRetry, className = '' }: ErrorBannerProps) {
   return (
-    <div role="alert" className={`flex items-start gap-3 bg-danger-50 dark:bg-danger-900/20 border-l-4 border-danger-500 rounded p-4 ${className}`}>
-      <AlertCircle className="w-5 h-5 text-danger-600 dark:text-danger-400 flex-shrink-0 mt-0.5" />
-      <div className="flex-1 text-danger-800 dark:text-danger-200 text-sm">{message}</div>
+    <div role="alert" className={`flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 text-red-800 dark:text-red-200 ${className}`}>
+      <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+      <div className="flex-1 text-sm">{message}</div>
       {onRetry && (
-        <button onClick={onRetry} className="inline-flex items-center gap-1 text-danger-700 dark:text-danger-300 hover:text-danger-900 dark:hover:text-danger-100 text-sm font-medium">
+        <button onClick={onRetry} className="ml-auto inline-flex items-center gap-1 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-100">
           <RefreshCw className="w-4 h-4" />再試行
         </button>
       )}

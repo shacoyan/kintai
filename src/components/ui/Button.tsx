@@ -17,23 +17,23 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
 }
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary:   'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-400',
-  secondary: 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-100 dark:hover:bg-neutral-700',
-  tertiary:  'bg-transparent text-primary-600 hover:bg-primary-50 dark:text-primary-400 dark:hover:bg-primary-900/30',
-  danger:    'bg-danger-500 text-white hover:bg-[#A53124] dark:bg-danger-500 dark:hover:bg-[#A53124]',
-  warning:   'bg-warning-100 text-warning-800 border border-warning-500 hover:bg-warning-200 dark:bg-warning-900/30 dark:text-warning-200 dark:border-warning-400 dark:hover:bg-warning-900/50',
+  primary:   'bg-blue-600 text-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-blue-700 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] motion-safe:hover:-translate-y-px active:scale-[0.98] dark:bg-blue-500 dark:hover:bg-blue-400',
+  secondary: 'bg-stone-100 text-stone-900 hover:bg-stone-200 dark:bg-stone-800 dark:text-stone-100 dark:hover:bg-stone-700',
+  tertiary:  'bg-transparent text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800',
+  danger:    'bg-red-600 text-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-red-700 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] motion-safe:hover:-translate-y-px active:scale-[0.98]',
+  warning:   'bg-transparent border border-stone-300 text-stone-700 hover:bg-stone-50 hover:border-stone-400 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800',
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  sm: 'h-9 px-3 text-body-sm',
-  md: 'h-10 px-4 text-body',
-  lg: 'h-12 px-5 text-body',
+  sm: 'h-8 px-3 text-xs',
+  md: 'h-9 px-4 text-sm',
+  lg: 'h-10 px-5 text-sm',
 };
 
 const BASE_CLASSES =
-  'rounded-md font-semibold inline-flex items-center justify-center gap-2 ' +
-  'motion-safe:transition-colors duration-120 ease-out-expo focus-ring ' +
-  'disabled:opacity-50 disabled:cursor-not-allowed';
+  'rounded-lg font-medium inline-flex items-center justify-center gap-2 ' +
+  'motion-safe:transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-900 ' +
+  'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {

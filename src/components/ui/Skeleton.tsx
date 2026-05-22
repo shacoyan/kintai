@@ -15,11 +15,11 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   height,
   count = 1,
 }) => {
-  const baseClass = 'motion-safe:animate-pulse bg-neutral-200 dark:bg-neutral-700';
+  const baseClass = 'motion-safe:animate-pulse bg-stone-200 dark:bg-stone-800';
   const variantClass = {
-    text: 'rounded h-4',
+    text: 'rounded-md h-4',
     circular: 'rounded-full',
-    rectangular: 'rounded-lg',
+    rectangular: 'rounded-md',
   }[variant];
 
   const style: React.CSSProperties = {};
@@ -41,7 +41,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
 
 // Pre-built skeleton patterns
 export const CardSkeleton: React.FC = () => (
-  <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-800 dark:shadow-neutral-700/20 space-y-3">
+  <div className="rounded-[10px] border border-stone-200 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:border-stone-700 dark:bg-stone-900 space-y-3">
     <Skeleton variant="text" width="60%" height={20} />
     <Skeleton variant="text" count={3} />
     <Skeleton variant="rectangular" height={40} />
@@ -69,7 +69,7 @@ export const PageSkeleton: React.FC = () => (
 );
 
 export const ListRowSkeleton: React.FC = () => (
-  <div className="py-3 px-4 border-b border-neutral-100 dark:border-neutral-800 space-y-2">
+  <div className="py-3 px-4 border-b border-stone-200 dark:border-stone-700 space-y-2">
     <Skeleton variant="text" width="70%" height={16} />
     <Skeleton variant="text" width="40%" height={12} />
   </div>

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useCallback } from 'react';
 import {
-  AlertCircle,
   AlertTriangle,
   CheckCircle,
   Info,
   X,
+  XCircle,
 } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
@@ -28,27 +28,19 @@ export interface ToastViewportProps {
   position?: 'top-center' | 'bottom-right';
 }
 
-const TONE_BORDER: Record<ToastTone, string> = {
-  neutral: '',
-  success: 'border-l-4 border-success-500',
-  warning: 'border-l-4 border-warning-500',
-  danger: 'border-l-4 border-danger-500',
-  info: 'border-l-4 border-info-500',
-};
-
 const TONE_ICON_COLOR: Record<ToastTone, string> = {
   neutral: 'text-white',
-  success: 'text-success-500',
-  warning: 'text-warning-500',
-  danger: 'text-danger-500',
-  info: 'text-info-500',
+  success: 'text-emerald-500',
+  warning: 'text-orange-500',
+  danger: 'text-red-500',
+  info: 'text-blue-500',
 };
 
 function ToneIcon({ tone }: { tone: ToastTone }): JSX.Element | null {
   const props = { size: 18, 'aria-hidden': true } as const;
   if (tone === 'success') return <CheckCircle {...props} />;
   if (tone === 'warning') return <AlertTriangle {...props} />;
-  if (tone === 'danger') return <AlertCircle {...props} />;
+  if (tone === 'danger') return <XCircle {...props} />;
   if (tone === 'info') return <Info {...props} />;
   return null;
 }
@@ -136,8 +128,7 @@ export function Toast(props: ToastProps): JSX.Element {
       onFocus={handleFocus}
       onBlur={handleBlur}
       className={cn(
-        'pointer-events-auto flex max-w-sm items-start gap-3 rounded-md bg-neutral-900 px-4 py-3 text-body-sm text-white shadow-lg motion-safe:animate-fade-in',
-        TONE_BORDER[tone],
+        'pointer-events-auto flex max-w-sm items-start gap-3 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 px-4 py-3 text-sm shadow-[0_4px_12px_rgba(0,0,0,0.08)] motion-safe:animate-fade-in',
       )}
     >
       {tone !== 'neutral' ? (
@@ -148,9 +139,9 @@ export function Toast(props: ToastProps): JSX.Element {
 
       <div className="min-w-0 flex-1">
         {title ? (
-          <p className="font-semibold leading-snug">{title}</p>
+          <p className="font-semibold text-stone-900 dark:text-stone-100 leading-snug">{title}</p>
         ) : null}
-        <p className={cn('leading-snug', title ? 'mt-0.5 opacity-90' : '')}>
+        <p className={cn('text-stone-700 dark:text-stone-300 leading-snug', title ? 'mt-0.5' : '')}>
           {message}
         </p>
       </div>
@@ -159,7 +150,7 @@ export function Toast(props: ToastProps): JSX.Element {
         type="button"
         aria-label="閉じる"
         onClick={() => onDismiss(id)}
-        className="-mr-1 -mt-1 shrink-0 rounded p-1 text-white/70 motion-safe:transition-colors duration-120 ease-out-expo hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/40"
+        className="-mr-1 -mt-1 shrink-0 rounded p-1 text-stone-400 dark:text-stone-500 motion-safe:transition-colors duration-150 ease-out hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-600 dark:hover:text-stone-300 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
       >
         <X size={14} aria-hidden="true" />
       </button>

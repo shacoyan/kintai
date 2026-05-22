@@ -9,24 +9,31 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
   error?: string;
   leftIcon?: ReactNode;
   rightSlot?: ReactNode;
+  size?: Size;
 }
 
+type Size = 'sm' | 'md' | 'lg';
+
+const SIZE_CLASSES: Record<Size, string> = {
+  sm: 'h-8 px-2.5 text-xs',
+  md: 'h-9 px-3 text-sm',
+  lg: 'h-10 px-3.5 text-sm',
+};
+
 const FIELD_BASE =
-  'w-full h-12 md:h-10 border rounded-md bg-white px-3.5 text-body ' +
-  'placeholder:text-neutral-300 motion-safe:transition-colors duration-120 ease-out-expo ' +
-  'focus:outline-none focus-visible:ring-2 ' +
-  'disabled:bg-neutral-50 disabled:cursor-not-allowed ' +
-  'dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:disabled:bg-neutral-900';
+  'w-full rounded-md border border-stone-300 bg-white text-stone-900 placeholder:text-stone-400 ' +
+  'motion-safe:transition-colors duration-150 ease-out focus:outline-none ' +
+  'disabled:bg-stone-50 disabled:text-stone-400 disabled:cursor-not-allowed ' +
+  'dark:bg-stone-900 dark:border-stone-700 dark:text-stone-100 dark:placeholder:text-stone-500 dark:disabled:bg-stone-950';
 
 const FIELD_NORMAL =
-  'border-neutral-300 focus-visible:border-primary-500 dark:focus-visible:border-primary-400 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400 ' +
-  'focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 ' +
-  'dark:border-neutral-600 dark:focus-visible:ring-offset-neutral-900';
+  'enabled:hover:border-stone-400 dark:enabled:hover:border-stone-600 ' +
+  'focus-visible:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500/20 ' +
+  'dark:focus-visible:border-blue-400 dark:focus-visible:ring-blue-400/30';
 
 const FIELD_ERROR =
-  'border-danger-500 focus-visible:border-danger-500 dark:focus-visible:border-danger-400 focus-visible:ring-danger-500 dark:focus-visible:ring-danger-400 ' +
-  'focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 ' +
-  'dark:focus-visible:ring-offset-neutral-900';
+  'border-red-500 dark:border-red-500 focus-visible:border-red-500 focus-visible:ring-2 focus-visible:ring-red-500/20 ' +
+  'dark:focus-visible:border-red-400 dark:focus-visible:ring-red-400/30';
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   {
@@ -35,6 +42,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     error,
     leftIcon,
     rightSlot,
+    size = 'md',
     required,
     id,
     className,
@@ -54,12 +62,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       .join(' ') || undefined;
 
   return (
-    <div className="w-full">
+    <div className="relative w-full">
       {label ? (
-        <label htmlFor={inputId} className="block text-label text-neutral-700 mb-2 dark:text-neutral-300">
+        <label htmlFor={inputId} className="block text-xs font-medium text-stone-700 mb-1.5 dark:text-stone-300">
           {label}
           {required ? (
-            <span aria-hidden="true" className="text-danger-500 dark:text-danger-400 ml-0.5">
+            <span aria-hidden="true" className="text-red-500 dark:text-red-400 ml-0.5">
               *
             </span>
           ) : null}
@@ -69,7 +77,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {leftIcon ? (
           <span
             aria-hidden="true"
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 dark:text-neutral-300 inline-flex"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-500 inline-flex"
           >
             {leftIcon}
           </span>
@@ -84,6 +92,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           disabled={disabled}
           className={cn(
             FIELD_BASE,
+            SIZE_CLASSES[size],
             error ? FIELD_ERROR : FIELD_NORMAL,
             leftIcon ? 'pl-10' : null,
             rightSlot ? 'pr-10' : null,
@@ -101,16 +110,18 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         <p
           id={errId}
           role="alert"
-          className="mt-1.5 text-body-sm text-danger-500 dark:text-danger-400 flex items-start gap-1"
+          className="mt-1.5 text-xs text-red-600 dark:text-red-400 flex items-start gap-1"
         >
           <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden="true" />
           <span>{error}</span>
         </p>
       ) : hint ? (
-        <p id={hintId} className="mt-1.5 text-body-sm text-neutral-500 dark:text-neutral-300">
+        <p id={hintId} className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
           {hint}
         </p>
       ) : null}
     </div>
   );
 });
+
+Input.displayName = 'Input';

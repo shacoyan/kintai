@@ -17,12 +17,12 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const toneMap: Record<BadgeTone, string> = {
-  neutral: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-100',
-  primary: 'bg-primary-50 text-primary-700 dark:bg-primary-900/40 dark:text-primary-200',
-  success: 'bg-success-50 text-success-700 dark:bg-success-900/40 dark:text-success-200',
-  warning: 'bg-warning-50 text-warning-700 dark:bg-warning-900/40 dark:text-warning-100',
-  danger:  'bg-danger-50 text-danger-700 dark:bg-danger-900/40 dark:text-danger-100',
-  info:    'bg-info-50 text-info-700 dark:bg-info-900/40 dark:text-info-200',
+  neutral: 'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-300',
+  primary: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  success: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  warning: 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+  danger:  'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+  info:    'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
 };
 
 export function Badge(props: BadgeProps): JSX.Element {
@@ -38,7 +38,7 @@ export function Badge(props: BadgeProps): JSX.Element {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold',
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium tabular-nums',
         toneMap[tone],
         className,
       )}

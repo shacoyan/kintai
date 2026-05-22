@@ -38,17 +38,21 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
         aria-invalid={error ? true : undefined}
         aria-describedby={ariaDescribedBy}
         className={cn(
-          'h-4 w-4 mt-1 rounded border-neutral-300 text-primary-600',
-          error && 'border-danger-500',
-          'focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-50 dark:focus-visible:ring-offset-neutral-900',
+          'h-4 w-4 mt-1 rounded-[4px] border border-stone-300 bg-white text-blue-600 ' +
+            'motion-safe:transition-colors duration-150 ease-out checked:bg-blue-600 checked:border-blue-600 ' +
+            'hover:border-stone-400 focus-visible:ring-2 focus-visible:ring-blue-500 ' +
+            'focus-visible:ring-offset-2 focus-visible:ring-offset-stone-50 ' +
+            'dark:bg-stone-900 dark:border-stone-600 dark:checked:bg-blue-500 dark:checked:border-blue-500 ' +
+            'dark:focus-visible:ring-blue-400 dark:focus-visible:ring-offset-stone-900',
+          error && 'border-red-500 dark:border-red-500',
           className,
         )}
         {...restProps}
       />
       <span className="block">
-        <span className="block text-body text-neutral-900 dark:text-neutral-100">{label}</span>
+        <span className="block text-sm text-stone-900 dark:text-stone-100">{label}</span>
         {description && !hint ? (
-          <span className="block text-body-sm text-neutral-500 dark:text-neutral-300 mt-0.5">{description}</span>
+          <span className="block text-xs text-stone-500 dark:text-stone-400 mt-0.5">{description}</span>
         ) : null}
       </span>
     </label>
@@ -58,16 +62,18 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
     <p
       id={errId}
       role="alert"
-      className="mt-1.5 text-body-sm text-danger-500 dark:text-danger-400 flex items-start gap-1"
+      className="mt-1.5 text-xs text-red-600 dark:text-red-400 flex items-start gap-1"
     >
       <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden="true" />
       <span>{error}</span>
     </p>
   ) : hint ? (
-    <p id={hintId} className="mt-1.5 text-body-sm text-neutral-500 dark:text-neutral-300">
+    <p id={hintId} className="mt-1.5 text-xs text-stone-500 dark:text-stone-400">
       {hint}
     </p>
   ) : null;
 
   return <div className="flex flex-col w-full">{fieldset}{message}</div>;
 });
+
+Checkbox.displayName = 'Checkbox';
