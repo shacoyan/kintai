@@ -91,15 +91,15 @@ export function TopBar({
       <TenantSwitcher />
       {currentStore?.name && (
         <span
-          className="hidden md:inline-flex items-center gap-1 text-sm text-neutral-600 dark:text-neutral-300 max-w-[20ch] min-w-0"
+          className="hidden md:inline-flex items-center gap-1 text-sm text-stone-600 dark:text-stone-300 max-w-[20ch] min-w-0"
           data-testid="topbar-current-store"
         >
-          <span aria-hidden="true" className="text-neutral-400 dark:text-neutral-500">/</span>
+          <span aria-hidden="true" className="text-stone-400 dark:text-stone-500">/</span>
           <span className="truncate" title={currentStore.name}>{currentStore.name}</span>
         </span>
       )}
       {title && (
-        <h1 className="text-heading-2 text-neutral-900 dark:text-neutral-50 truncate">
+        <h1 className="text-heading-2 text-stone-900 dark:text-stone-100 truncate">
           {title}
         </h1>
       )}
@@ -122,7 +122,7 @@ export function TopBar({
           aria-label={`テーマ切替（現在: ${THEME_CURRENT_LABELS[theme as ThemeValue]} / クリックで ${THEME_CURRENT_LABELS[nextTheme]}）`}
           title={`現在: ${THEME_CURRENT_LABELS[theme as ThemeValue]} → クリックで ${THEME_CURRENT_LABELS[nextTheme]}`}
           onClick={() => setTheme(nextTheme)}
-          className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          className="p-2 rounded-md text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 motion-safe:transition-colors duration-150 ease-out"
         >
           <ThemeIcon size={18} aria-hidden="true" />
         </button>
@@ -133,7 +133,7 @@ export function TopBar({
             ref={triggerRef}
             type="button"
             aria-label="ユーザーメニュー"
-            className="p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            className="p-2 rounded-md text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 motion-safe:transition-colors duration-150 ease-out"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}
@@ -145,19 +145,19 @@ export function TopBar({
             <div
               id="user-menu-popover"
               role="menu"
-              className="absolute right-0 top-full mt-2 w-56 rounded-md bg-white shadow-lg border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-800 py-2 z-50"
+              className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-white shadow-[0_12px_28px_rgba(0,0,0,0.16)] border border-stone-200 dark:bg-stone-900 dark:border-stone-800 py-2 z-50"
             >
               {user?.email && (
-                <div className="px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 truncate" role="menuitem">
+                <div className="px-4 py-2 text-sm text-stone-700 dark:text-stone-300 truncate" role="menuitem">
                   {user.email}
                 </div>
               )}
-              <div className="border-t border-neutral-200 dark:border-neutral-800 my-1" aria-hidden="true" />
+              <div className="border-t border-stone-200 dark:border-stone-800 my-1" aria-hidden="true" />
               <Link
                 to="/tenant"
                 role="menuitem"
                 onClick={() => setIsMenuOpen(false)}
-                className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
+                className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 motion-safe:transition-colors duration-150 ease-out"
               >
                 <ArrowLeftRight size={16} aria-hidden="true" />
                 ワークスペースを切替
@@ -165,7 +165,7 @@ export function TopBar({
               <div className="px-4 py-2" role="menuitem">
                 <LeaveTenantButton />
               </div>
-              <div className="border-t border-neutral-200 dark:border-neutral-800 my-1" aria-hidden="true" />
+              <div className="border-t border-stone-200 dark:border-stone-800 my-1" aria-hidden="true" />
               <div className="px-4 py-2" role="menuitem">
                 <Button
                   variant="tertiary"

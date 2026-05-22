@@ -61,9 +61,11 @@ export function BottomNav() {
               <Link
                 to={item.to}
                 aria-current={active ? 'page' : undefined}
-                className={`flex flex-col items-center justify-center gap-0.5 h-full min-h-[44px] ${
-                  active ? 'text-primary-600' : 'text-neutral-500'
-                } hover:text-primary-600 dark:hover:text-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400`}
+                className={`flex flex-col items-center justify-center gap-0.5 h-full min-h-[44px] motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 focus-visible:ring-inset ${
+                  active
+                    ? 'text-blue-600 dark:text-blue-400'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+                }`}
               >
                 <Icon size={20} aria-hidden="true" />
                 <span className="text-[10px] font-medium">{item.label}</span>
@@ -78,9 +80,11 @@ export function BottomNav() {
             aria-haspopup="dialog"
             aria-expanded={isMoreOpen}
             aria-label="もっと"
-            className={`flex flex-col items-center justify-center gap-0.5 h-full min-h-[44px] w-full ${
-              isMoreActive ? 'text-primary-600' : 'text-neutral-500'
-            } hover:text-primary-600 dark:hover:text-primary-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400`}
+            className={`flex flex-col items-center justify-center gap-0.5 h-full min-h-[44px] w-full motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 focus-visible:ring-inset ${
+              isMoreActive
+                ? 'text-blue-600 dark:text-blue-400'
+                : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100'
+            }`}
           >
             <MoreHorizontal size={20} aria-hidden="true" />
             <span className="text-[10px] font-medium">もっと</span>
@@ -104,10 +108,10 @@ export function BottomNav() {
                     to={item.to}
                     onClick={() => setIsMoreOpen(false)}
                     aria-current={active ? 'page' : undefined}
-                    className={`flex items-center gap-3 px-3 h-11 rounded-lg text-sm motion-safe:transition-colors duration-120 ease-out-expo focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400 ${
+                    className={`flex items-center gap-3 px-3 h-11 rounded-md text-sm motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-900 ${
                       active
-                        ? 'bg-primary-50 text-primary-700'
-                        : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-medium'
+                        : 'text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800'
                     }`}
                   >
                     <Icon size={18} aria-hidden="true" />

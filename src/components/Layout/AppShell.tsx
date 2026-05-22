@@ -14,11 +14,11 @@ export interface AppShellProps {
 
 export function AppShell({ children, sidebar, topbar, mobileHeader, bottomNav, errorSlot }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 flex">
+    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-stone-950 dark:text-stone-100 flex">
       {sidebar && (
         <aside
           aria-label="グローバルナビゲーション"
-          className="hidden md:flex md:flex-col md:w-[240px] md:shrink-0 md:border-r md:border-neutral-200 md:bg-white md:dark:border-neutral-800 md:dark:bg-neutral-900"
+          className="hidden md:flex md:flex-col md:w-[240px] md:shrink-0 md:bg-white md:dark:bg-stone-900 md:border-r md:border-stone-200 md:dark:border-stone-800"
         >
           {sidebar}
         </aside>
@@ -26,13 +26,13 @@ export function AppShell({ children, sidebar, topbar, mobileHeader, bottomNav, e
 
       <div className="flex-1 flex flex-col min-w-0">
         {topbar && (
-          <header className="hidden md:flex md:items-center md:h-16 md:px-6 md:border-b md:border-neutral-200 md:bg-white md:dark:border-neutral-800 md:dark:bg-neutral-900 md:sticky md:top-0 md:z-30">
+          <header className="hidden md:flex md:items-center md:h-14 md:px-6 md:bg-white md:dark:bg-stone-900 md:border-b md:border-stone-200 md:dark:border-stone-800 md:shadow-[0_1px_2px_rgba(0,0,0,0.04)] md:sticky md:top-0 md:z-30">
             {topbar}
           </header>
         )}
 
         {mobileHeader && (
-          <header className="flex md:hidden items-center h-14 px-4 border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 sticky top-0 z-30">
+          <header className="flex md:hidden items-center h-12 px-4 bg-white dark:bg-stone-900 border-b border-stone-200 dark:border-stone-800 sticky top-0 z-30">
             {mobileHeader}
           </header>
         )}
@@ -46,7 +46,7 @@ export function AppShell({ children, sidebar, topbar, mobileHeader, bottomNav, e
         {bottomNav && (
           <nav
             aria-label="メインナビゲーション"
-            className="md:hidden fixed bottom-0 inset-x-0 h-16 border-t border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 z-30"
+            className="md:hidden fixed bottom-0 inset-x-0 h-16 border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 z-30"
           >
             {bottomNav}
           </nav>

@@ -21,7 +21,7 @@ export function Layout({ children }: LayoutProps) {
       errorSlot={<PersistentErrorStack />}
     >
       <OnboardingDialog />
-      {children}
+      <div className="mx-auto w-full max-w-7xl">{children}</div>
     </AppShell>
   );
 }
