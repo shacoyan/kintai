@@ -263,7 +263,7 @@ export function JoinPage(): JSX.Element {
     return (
       <CenteredCard>
         <Heading level={2}>{messages.invite.codeNotFound}</Heading>
-        <p className="text-sm text-neutral-500 dark:text-neutral-300">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           有効な招待リンクからアクセスしてください。
         </p>
         <BackHomeLink />
@@ -283,7 +283,7 @@ export function JoinPage(): JSX.Element {
     return (
       <CenteredCard>
         <Heading level={2}>{messages.invite.codeExpired}</Heading>
-        <p className="text-sm text-neutral-500 dark:text-neutral-300">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           招待元の管理者にお問い合わせください。
         </p>
         <BackHomeLink />
@@ -295,7 +295,7 @@ export function JoinPage(): JSX.Element {
     return (
       <CenteredCard>
         <Heading level={2}>{messages.invite.codeMaxUsesReached}</Heading>
-        <p className="text-sm text-neutral-500 dark:text-neutral-300">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           招待元の管理者にお問い合わせください。
         </p>
         <BackHomeLink />
@@ -307,10 +307,10 @@ export function JoinPage(): JSX.Element {
     return (
       <CenteredCard>
         <Heading level={2}>{messages.invite.codeInvalid}</Heading>
-        <p className="text-sm text-neutral-500 dark:text-neutral-300">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           招待リンクが無効か、有効期限が切れている可能性があります。
         </p>
-        <p className="font-mono text-xs text-neutral-400 dark:text-neutral-500">
+        <p className="font-mono text-xs text-stone-400 dark:text-stone-500">
           コード: {code}
         </p>
         <BackHomeLink />
@@ -334,12 +334,12 @@ export function JoinPage(): JSX.Element {
     return (
       <CenteredCard>
         <Heading level={2}>{messages.invite.alreadyMember}</Heading>
-        <p className="text-sm text-neutral-500 dark:text-neutral-300">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           {tenant.name}
         </p>
         <Link
           to="/"
-          className="inline-flex w-full items-center justify-center rounded-lg bg-primary-600 dark:bg-primary-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700 dark:hover:bg-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
+          className="inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-[0_1px_2px_rgb(0_0_0/0.04)] motion-safe:transition-all duration-150 ease-out hover:bg-blue-700 hover:shadow-[0_4px_12px_rgb(0_0_0/0.08)] hover:-translate-y-px active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-400"
         >
           {messages.invite.goDashboardButton}
         </Link>
@@ -352,7 +352,7 @@ export function JoinPage(): JSX.Element {
   return (
     <CenteredCard>
       <Heading level={2}>{messages.invite.joinTitle(tenant.name)}</Heading>
-      <p className="text-sm text-neutral-500 dark:text-neutral-300">
+      <p className="text-sm text-stone-500 dark:text-stone-400">
         {messages.invite.joinDescription}
       </p>
 
@@ -376,17 +376,17 @@ export function JoinPage(): JSX.Element {
         />
 
         {stores.length > 0 ? (
-          <section className="rounded-md border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/40 p-3">
-            <div className="mb-1 text-sm font-medium text-neutral-700 dark:text-neutral-200">
+          <section className="rounded-md border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900/60 p-3">
+            <div className="mb-1 text-sm font-medium text-stone-700 dark:text-stone-200">
               {messages.invite.assignedStoresLabel}
             </div>
-            <ul className="text-sm text-neutral-700 dark:text-neutral-200 space-y-0.5">
+            <ul className="text-sm text-stone-700 dark:text-stone-200 space-y-0.5">
               {stores.map((s, idx) => (
                 <li key={s.id} className="flex items-center gap-1.5">
                   <span aria-hidden="true">・</span>
                   <span>{s.name}</span>
                   {idx === 0 && (
-                    <span className="text-xs text-neutral-500 dark:text-neutral-300">
+                    <span className="text-xs text-stone-500 dark:text-stone-400">
                       {messages.invite.primaryStoreSuffix}
                     </span>
                   )}
@@ -403,7 +403,7 @@ export function JoinPage(): JSX.Element {
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-6 py-2.5 text-sm font-medium text-neutral-700 dark:text-neutral-200 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
+            className="inline-flex items-center justify-center rounded-md border border-stone-300 bg-white px-6 py-2.5 text-sm font-medium text-stone-700 motion-safe:transition-colors duration-150 ease-out hover:bg-stone-50 hover:border-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200 dark:hover:bg-stone-800"
           >
             {messages.invite.cancelButton}
           </Link>
@@ -418,8 +418,8 @@ export function JoinPage(): JSX.Element {
 
 function CenteredCard({ children }: { children: React.ReactNode }): JSX.Element {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
-      <div className="w-full max-w-md rounded-lg border border-neutral-100 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-8 shadow-md flex flex-col items-stretch gap-5">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 p-6 sm:p-8 shadow-[0_12px_28px_rgba(0,0,0,0.08)] flex flex-col items-stretch gap-5">
         {children}
       </div>
     </div>
@@ -430,7 +430,7 @@ function BackHomeLink(): JSX.Element {
   return (
     <Link
       to="/"
-      className="inline-flex w-full items-center justify-center rounded-lg bg-primary-600 dark:bg-primary-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700 dark:hover:bg-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
+      className="inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-[0_1px_2px_rgb(0_0_0/0.04)] motion-safe:transition-all duration-150 ease-out hover:bg-blue-700 hover:shadow-[0_4px_12px_rgb(0_0_0/0.08)] hover:-translate-y-px active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-400"
     >
       {messages.invite.backHomeButton}
     </Link>

@@ -29,7 +29,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton, HistorySkeleton, Heading } from '../components/ui';
 import { messages } from '../lib/messages';
 
-// safelist: bg-info-500, bg-info-400, bg-success-500, bg-success-400, bg-danger-500, bg-danger-400, text-info-500, text-info-400, text-danger-500, text-danger-400
+// safelist: bg-blue-500, bg-blue-400, bg-success-500, bg-success-400, bg-danger-500, bg-danger-400, text-blue-500, text-blue-400, text-danger-500, text-danger-400
 
 interface CorrectionModalState {
   isOpen: boolean;
@@ -90,21 +90,21 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
 
   const legends: { color: string; label: string }[] = [
     { color: 'bg-success-500 dark:bg-success-400', label: '通常勤務' },
-    { color: 'bg-info-500 dark:bg-info-400', label: '8時間以上' },
+    { color: 'bg-blue-500 dark:bg-blue-400', label: '8時間以上' },
   ];
 
   return (
     <Card padding="none">
-      <div className="grid grid-cols-7 border-b border-neutral-200 dark:border-neutral-700">
+      <div className="grid grid-cols-7 border-b border-stone-200 dark:border-stone-700">
         {weekDayLabels.map((day, i) => (
           <div
             key={day}
             className={`py-2 text-center text-xs font-semibold ${
               i === 5
-                ? 'text-info-500 dark:text-info-400'
+                ? 'text-blue-500 dark:text-blue-400'
                 : i === 6
                 ? 'text-danger-500 dark:text-danger-400'
-                : 'text-neutral-500 dark:text-neutral-300'
+                : 'text-stone-500 dark:text-stone-300'
             }`}
           >
             {day}
@@ -132,27 +132,27 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                     setSelectedDate(isSelected ? null : dateKey);
                   }}
                   disabled={isFuture && isCurrentMonth}
-                  className={`relative w-full min-h-[56px] p-1 text-left border-b border-r border-neutral-100 dark:border-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo ${
+                  className={`relative w-full min-h-[56px] p-1 text-left border-b border-r border-stone-100 dark:border-stone-700 motion-safe:transition-colors duration-120 ease-out-expo ${
                     !isCurrentMonth
-                      ? 'bg-neutral-50 dark:bg-neutral-900/30 cursor-default'
+                      ? 'bg-stone-50 dark:bg-stone-900/30 cursor-default'
                       : isFuture
                       ? 'cursor-default'
                       : isSelected
-                      ? 'bg-primary-50 dark:bg-primary-900/20'
-                      : 'hover:bg-neutral-50 dark:hover:bg-neutral-700/50'
-                  } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400`}
+                      ? 'bg-blue-50 dark:bg-blue-900/20'
+                      : 'hover:bg-stone-50 dark:hover:bg-stone-700/50'
+                  } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400`}
                 >
                   <span
                     className={`text-xs font-medium block mb-0.5 ${
                       !isCurrentMonth
-                        ? 'text-neutral-300 dark:text-neutral-600'
+                        ? 'text-stone-300 dark:text-stone-600'
                         : isFuture
-                        ? 'text-neutral-300 dark:text-neutral-600'
+                        ? 'text-stone-300 dark:text-stone-600'
                         : dayOfWeek === 0
                         ? 'text-danger-500 dark:text-danger-400'
                         : dayOfWeek === 6
-                        ? 'text-info-500 dark:text-info-400'
-                        : 'text-neutral-700 dark:text-neutral-300'
+                        ? 'text-blue-500 dark:text-blue-400'
+                        : 'text-stone-700 dark:text-stone-300'
                     }`}
                   >
                     {format(day, 'd')}
@@ -164,12 +164,12 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                         <span
                           className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                             isOvertime
-                              ? 'bg-info-500 dark:bg-info-400'
+                              ? 'bg-blue-500 dark:bg-blue-400'
                               : 'bg-success-500 dark:bg-success-400'
                           }`}
                         />
                         {workMins > 0 && (
-                          <span className="text-xs text-neutral-500 dark:text-neutral-300 leading-none">
+                          <span className="text-xs text-stone-500 dark:text-stone-300 leading-none">
                             {formatWorkHours(workMins)}
                           </span>
                         )}
@@ -186,16 +186,16 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                 </button>
 
                 {isSelected && isCurrentMonth && !isFuture && (
-                  <div className="col-span-7 bg-primary-50 dark:bg-primary-900/20 border-b border-primary-200 dark:border-primary-800 px-3 py-2 text-xs text-neutral-700 dark:text-neutral-300 space-y-1">
-                    <p className="font-semibold text-primary-700 dark:text-primary-300">{dateKey}</p>
+                  <div className="col-span-7 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-3 py-2 text-xs text-stone-700 dark:text-stone-300 space-y-1">
+                    <p className="font-semibold text-blue-700 dark:text-blue-300">{dateKey}</p>
                     {record?.clock_in && <p>出勤: {format(parseISO(record.clock_in), 'HH:mm')}</p>}
                     {record?.clock_out && <p>退勤: {format(parseISO(record.clock_out), 'HH:mm')}</p>}
                     {record && workMins > 0 && <p>勤務時間: {formatWorkHours(workMins)}</p>}
-                    {!record && <p className="text-neutral-500 dark:text-neutral-300">記録なし</p>}
+                    {!record && <p className="text-stone-500 dark:text-stone-300">記録なし</p>}
                     {onRequestCorrection && (
                       <div className="pt-1">
                         <button onClick={(e) => { e.stopPropagation(); onRequestCorrection?.(dateKey, record ?? undefined); }}
-                          className="text-xs text-primary-700 dark:text-primary-300 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400">
+                          className="text-xs text-blue-700 dark:text-blue-300 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400">
                           この日を修正申請する
                         </button>
                       </div>
@@ -207,7 +207,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
           })}
         </div>
 
-        <div className="px-4 py-2 border-t border-neutral-100 dark:border-neutral-700 flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-300">
+        <div className="px-4 py-2 border-t border-stone-100 dark:border-stone-700 flex items-center gap-4 text-xs text-stone-500 dark:text-stone-300">
           {legends.map((legend) => (
             <div key={legend.label} className="flex items-center gap-1">
               <span className={`w-2 h-2 rounded-full ${legend.color}`} />
@@ -389,7 +389,7 @@ export function HistoryPage() {
       
       <Card padding="md">
         <div className="flex items-center justify-between gap-2">
-          <Button variant="tertiary" size="md" iconLeft={<ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />} onClick={handlePrevMonth} aria-label="前月"><></></Button>
+          <Button variant="tertiary" size="md" iconLeft={<ChevronLeft className="w-5 h-5 text-stone-600 dark:text-stone-300" />} onClick={handlePrevMonth} aria-label="前月"><></></Button>
           <div className="flex items-center gap-2">
             <Heading level={2}>
               {format(currentDate, 'yyyy年M月', { locale: ja })}
@@ -399,20 +399,20 @@ export function HistoryPage() {
                 今月へ
               </Button>
             )}
-            <button onClick={handleDownloadCsv} className="px-3 py-2 text-sm font-medium rounded bg-info-600 text-white hover:bg-info-700 dark:bg-info-500 dark:hover:bg-info-600">CSV ダウンロード</button>
+            <button onClick={handleDownloadCsv} className="px-3 py-2 text-sm font-medium rounded-md shadow-rest bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">CSV ダウンロード</button>
           </div>
-          <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
+          <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-stone-600 dark:text-stone-300" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
         </div>
 
         <div className="flex justify-center mt-2">
-          <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-700 rounded-md">
+          <div className="inline-flex items-center gap-1 p-1 bg-stone-100 dark:bg-stone-700 rounded-md">
             <button
               onClick={() => setViewMode('list')}
               className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
                 viewMode === 'list'
-                  ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
-                  : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200'
-              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400`}
+                  ? 'bg-white dark:bg-stone-700 shadow-rest text-blue-700 dark:text-blue-300 font-medium'
+                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-700 dark:hover:text-stone-200'
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400`}
             >
               リスト
             </button>
@@ -420,9 +420,9 @@ export function HistoryPage() {
               onClick={() => setViewMode('calendar')}
               className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors duration-120 ease-out-expo ${
                 viewMode === 'calendar'
-                  ? 'bg-white dark:bg-neutral-600 shadow-xs text-primary-700 dark:text-primary-300'
-                  : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200'
-              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400`}
+                  ? 'bg-white dark:bg-stone-700 shadow-rest text-blue-700 dark:text-blue-300 font-medium'
+                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-700 dark:hover:text-stone-200'
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400`}
             >
               カレンダー
             </button>
@@ -431,9 +431,9 @@ export function HistoryPage() {
 
         {canSwitchUser && currentStore != null && (
           <div className="flex items-center gap-2 pt-2 justify-center">
-            <label className="text-sm text-neutral-500 dark:text-neutral-300">対象メンバー:</label>
+            <label className="text-sm text-stone-500 dark:text-stone-300">対象メンバー:</label>
             <select value={effectiveUserId ?? ''} onChange={(e) => setSelectedUserId(e.target.value || null)}
-              className="px-2 py-1 text-sm border rounded bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100">
+              className="px-2 py-1 text-sm border border-stone-300 rounded-md bg-white dark:bg-stone-900 dark:border-stone-700 text-stone-900 dark:text-stone-100">
               {myUserId && <option value={myUserId}>自分</option>}
               {members.filter(m => m.user_id !== myUserId).map(m => (
                 <option key={m.user_id} value={m.user_id}>{m.display_name}</option>
@@ -468,14 +468,14 @@ export function HistoryPage() {
         viewMode === 'list' ? (
           showEmpty ? (
             <EmptyState
-              icon={<CalendarX className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
+              icon={<CalendarX className="w-12 h-12 text-stone-400 dark:text-stone-500" />}
               title={messages.empty.historyMonth.title}
               description="ダッシュボードから打刻すると、ここに記録が表示されます。"
             />
           ) : (
             <Card padding="none">
               <Card.Header>
-                <h3 className="text-label text-neutral-500 dark:text-neutral-300">日別勤怠記録</h3>
+                <h3 className="text-label text-stone-500 dark:text-stone-300">日別勤怠記録</h3>
               </Card.Header>
               <DailyList
                 records={monthlyRecords}

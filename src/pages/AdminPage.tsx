@@ -30,7 +30,7 @@ export function AdminPage() {
         <Heading level={1}>
           店舗ダッシュボード
         </Heading>
-        <p className="text-sm text-neutral-500 tabular-nums mt-1">{format(currentMonth, 'yyyy年M月', { locale: ja })}</p>
+        <p className="text-sm text-stone-500 tabular-nums mt-1">{format(currentMonth, 'yyyy年M月', { locale: ja })}</p>
       </header>
       <AdminDashboard tenantId={tenantId} />
     </div>

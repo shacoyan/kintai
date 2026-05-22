@@ -438,7 +438,7 @@ export function ShiftPage() {
     return (
       <div className="p-6">
         <Card padding="md">
-          <Card.Body className="text-center text-sm text-neutral-700 dark:text-neutral-300">
+          <Card.Body className="text-center text-sm text-stone-700 dark:text-stone-300">
             店舗を選択してください。ヘッダーの店舗セレクターから操作対象の店舗を選ぶと、シフト・シフト申請が表示されます。
           </Card.Body>
         </Card>
@@ -468,7 +468,7 @@ export function ShiftPage() {
         <header className="flex items-end justify-between gap-3">
           <div>
             <Heading level={2}>シフト</Heading>
-            <p className="text-sm text-neutral-500 dark:text-neutral-300 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
+            <p className="text-sm text-stone-500 dark:text-stone-300 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
           </div>
           {canManageTenant && (pendingShifts.length > 0 || pendingPreferenceCount > 0) && (
             <Badge tone="warning" withDot>{pendingShifts.length + pendingPreferenceCount} 件 承認待ち</Badge>
@@ -476,15 +476,15 @@ export function ShiftPage() {
         </header>
 
         {/* 表示切替: 現在 / 履歴 (両ビュー共通) */}
-        <div className="inline-flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-md self-start">
+        <div className="inline-flex items-center gap-1 p-1 bg-stone-100 dark:bg-stone-800 rounded-md self-start">
           <button
             type="button"
             onClick={() => setPreferenceView('current')}
             aria-pressed={preferenceView === 'current'}
             className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
               preferenceView === 'current'
-                ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
-                : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
+                ? 'bg-white text-blue-700 shadow-sm dark:bg-stone-700 dark:text-blue-300'
+                : 'bg-transparent text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
@@ -496,8 +496,8 @@ export function ShiftPage() {
             aria-pressed={preferenceView === 'history'}
             className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-120 ease-out-expo focus-ring ${
               preferenceView === 'history'
-                ? 'bg-white text-primary-700 shadow-xs dark:bg-neutral-700 dark:text-primary-300'
-                : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white'
+                ? 'bg-white text-blue-700 shadow-sm dark:bg-stone-700 dark:text-blue-300'
+                : 'bg-transparent text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
             <History className="w-3.5 h-3.5" />
@@ -555,7 +555,7 @@ export function ShiftPage() {
                   <button
                     type="button"
                     onClick={() => setShowBulkApplyModal(true)}
-                    className="px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring bg-white dark:bg-neutral-800 border border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/30"
+                    className="px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring bg-white dark:bg-stone-800 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                   >
                     プリセット一括適用
                   </button>
@@ -604,7 +604,7 @@ export function ShiftPage() {
                       type="button"
                       onClick={handleBulkRejectInRange}
                       disabled={count === 0}
-                      className="shrink-0 px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring border border-danger-300 dark:border-danger-700 text-danger-700 dark:text-danger-300 bg-white dark:bg-neutral-800 hover:bg-danger-50 dark:hover:bg-danger-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="shrink-0 px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-120 ease-out-expo focus-ring border border-danger-300 dark:border-danger-700 text-danger-700 dark:text-danger-300 bg-white dark:bg-stone-800 hover:bg-danger-50 dark:hover:bg-danger-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
                       aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
                     >
                       未承認を一括却下{count > 0 ? `（${count}）` : ''}
@@ -718,16 +718,16 @@ export function ShiftPage() {
                 <Card padding="md">
                   <Card.Body className="grid grid-cols-2 gap-3 text-center">
                     <div>
-                      <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
+                      <p className="text-2xl font-semibold text-stone-900 dark:text-stone-100 tabular-nums">
                         {preferenceSummary.preferred}
                       </p>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">申請日</p>
+                      <p className="text-[11px] text-stone-500 dark:text-stone-300 mt-0.5">申請日</p>
                     </div>
                     <div className="pl-3">
-                      <p className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
+                      <p className="text-2xl font-semibold text-stone-900 dark:text-stone-100 tabular-nums">
                         {preferenceSummary.unavailable}
                       </p>
-                      <p className="text-[11px] text-neutral-500 dark:text-neutral-300 mt-0.5">出勤不可</p>
+                      <p className="text-[11px] text-stone-500 dark:text-stone-300 mt-0.5">出勤不可</p>
                     </div>
                   </Card.Body>
                 </Card>
@@ -738,10 +738,10 @@ export function ShiftPage() {
                 <div className="lg:hidden">
                   <Card padding="none">
                     {/* 理由: Card ヘッダーとリスト本体の divider (例外④) */}
-                    <Card.Header className="border-b border-neutral-100 dark:border-neutral-700 mb-0 pb-3 px-4 pt-4 text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                    <Card.Header className="border-b border-stone-100 dark:border-stone-700 mb-0 pb-3 px-4 pt-4 text-sm font-semibold text-stone-700 dark:text-stone-300">
                       時間指定の詳細
                     </Card.Header>
-                    <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
+                    <ul className="divide-y divide-stone-100 dark:divide-stone-700">
                       {timedPreferences.map((p) => {
                         const theme = getPreferenceTheme(p.preference_type);
                         return (
@@ -749,21 +749,21 @@ export function ShiftPage() {
                             <button
                               type="button"
                               onClick={() => setSelectedDate(p.date)}
-                              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left focus-ring"
+                              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-stone-50 dark:hover:bg-stone-800 text-left focus-ring"
                             >
                               <div className={`w-10 h-10 rounded-md flex flex-col items-center justify-center shrink-0 ${theme.iconBoxClass}`}>
                                 <span className="text-[10px] font-semibold leading-none">{p.date.slice(5, 7)}/</span>
                                 <span className="text-[14px] font-bold tabular-nums leading-none">{p.date.slice(8, 10)}</span>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{theme.label}</p>
+                                <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{theme.label}</p>
                                 {p.start_time && p.end_time && (
-                                  <p className="text-xs text-neutral-500 dark:text-neutral-300 tabular-nums">
+                                  <p className="text-xs text-stone-500 dark:text-stone-300 tabular-nums">
                                     {formatTimeRange(p.start_time, p.end_time, { separator: ' - ' })}
                                   </p>
                                 )}
                               </div>
-                              <ChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                              <ChevronRight className="w-4 h-4 text-stone-400 dark:text-stone-500" aria-hidden="true" />
                             </button>
                           </li>
                         );
@@ -821,7 +821,7 @@ export function ShiftPage() {
 
               {/* sticky 追加ボタン — bulk モード中は「次へ / キャンセル」に差し替え (§5.5) */}
               {/* 理由: sticky 追加ボタン領域と上のコンテンツの divider (例外④) */}
-              <div className="lg:hidden sticky bottom-16 md:bottom-0 -mx-4 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-white/95 dark:bg-neutral-900/95 backdrop-blur border-t border-neutral-200 dark:border-neutral-700 z-20">
+              <div className="lg:hidden sticky bottom-16 md:bottom-0 -mx-4 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-white/95 dark:bg-stone-900/95 backdrop-blur border-t border-stone-200 dark:border-stone-700 z-20">
                 {isBulkMode ? (
                   <div className="flex items-center gap-2">
                     <Button
@@ -939,7 +939,7 @@ export function ShiftPage() {
                       <Card key={pref.id} padding="md">
                         <Card.Body className="flex flex-col gap-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{pref.date}</span>
+                            <span className="text-sm font-semibold text-stone-900 dark:text-stone-100 tabular-nums">{pref.date}</span>
                             <Badge tone={statusTone} withDot>{statusLabel}</Badge>
                           </div>
                           <div className="flex items-center gap-2">
@@ -948,13 +948,13 @@ export function ShiftPage() {
                               {theme.label}
                             </span>
                             {pref.start_time && pref.end_time && (
-                              <span className="text-xs text-neutral-500 dark:text-neutral-300 tabular-nums">
+                              <span className="text-xs text-stone-500 dark:text-stone-300 tabular-nums">
                                 {formatTimeRange(pref.start_time, pref.end_time, { separator: ' - ' })}
                               </span>
                             )}
                           </div>
                           {pref.note && (
-                            <p className="text-xs text-neutral-500 dark:text-neutral-300">{pref.note}</p>
+                            <p className="text-xs text-stone-500 dark:text-stone-300">{pref.note}</p>
                           )}
                         </Card.Body>
                       </Card>

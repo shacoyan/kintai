@@ -7,7 +7,7 @@ import { getPendingJoinCode } from '../lib/inviteUrl';
 function HeroSection() {
   return (
     <section
-      className="hidden lg:flex relative flex-col justify-between bg-primary-900 text-white overflow-hidden"
+      className="hidden lg:flex relative flex-col justify-between bg-stone-900 text-white overflow-hidden"
       aria-hidden="true"
     >
       <div
@@ -22,15 +22,15 @@ function HeroSection() {
 
       <div className="relative z-10 p-10 xl:p-14">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-md bg-white dark:bg-neutral-900 flex items-center justify-center">
-            <BrandMark size="md" color="#2F4585" />
+          <div className="w-9 h-9 rounded-md bg-white dark:bg-stone-900 flex items-center justify-center">
+            <BrandMark size="md" color="#2563EB" />
           </div>
           <span className="text-[15px] font-semibold tracking-wide">kintai</span>
         </div>
       </div>
 
       <div className="relative z-10 px-10 xl:px-14 max-w-xl">
-        <p className="text-[12px] font-semibold tracking-[0.16em] text-primary-300 uppercase mb-6">
+        <p className="text-[12px] font-semibold tracking-[0.16em] text-blue-300 uppercase mb-6">
           Workforce Operations
         </p>
         <h1 className="font-serif text-[44px] xl:text-[52px] leading-tight font-bold mb-6">
@@ -78,28 +78,28 @@ export const LoginPage = function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen grid-cols-1 lg:grid-cols-[52%_48%] bg-neutral-50 dark:bg-neutral-800">
+    <main className="grid min-h-screen grid-cols-1 lg:grid-cols-[52%_48%] bg-stone-50 dark:bg-stone-950">
       <HeroSection />
 
       <section className="flex flex-col items-center justify-center px-6 py-12 lg:px-12">
         <div className="w-full max-w-[400px]">
           <div className="lg:hidden mb-10 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-md bg-primary-600 dark:bg-primary-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
               <BrandMark size="sm" color="#ffffff" />
             </div>
-            <span className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">kintai</span>
+            <span className="text-[15px] font-semibold text-stone-900 dark:text-stone-100">kintai</span>
           </div>
 
           <Heading level={1} className="leading-tight mb-2">
             ログイン
           </Heading>
-          <p className="text-sm text-neutral-500 dark:text-neutral-300 mb-8">
+          <p className="text-sm text-stone-500 dark:text-stone-300 mb-8">
             登録済みのメールアドレスでサインインしてください。
           </p>
 
           <LoginForm />
 
-          <div className="mt-12 pt-6 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-300">
+          <div className="mt-12 pt-6 border-t border-stone-200 dark:border-stone-700 flex items-center justify-between text-[11px] text-stone-500 dark:text-stone-300">
             <div className="flex items-center gap-2">
               <svg
                 width="14"

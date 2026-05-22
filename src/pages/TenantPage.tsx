@@ -49,7 +49,7 @@ const TenantPage: React.FC = () => {
 
   if (error && pageState === 'select') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-900 p-4">
         <div className="w-full max-w-md space-y-4">
           <ErrorBanner message={messages.error.withRetry(error)} onRetry={() => fetchTenants()} />
         </div>

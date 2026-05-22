@@ -70,20 +70,20 @@ export const ResetPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
-      <div className="bg-neutral-0 dark:bg-neutral-800 rounded-xl shadow-lg p-8 sm:p-10 max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-950 px-4 py-12">
+      <div className="w-full max-w-md bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl shadow-[0_12px_28px_rgba(0,0,0,0.08)] p-6 sm:p-8">
         <div className="text-center mb-8">
           <Heading level={1} className="mb-2">
             パスワード再設定
           </Heading>
-          <p className="text-sm text-neutral-500 dark:text-neutral-300 m-0">
+          <p className="text-sm text-stone-500 dark:text-stone-300 m-0">
             新しいパスワードを入力してください
           </p>
         </div>
 
         {success ? (
           <div className="text-center py-6">
-            <div className="w-12 h-12 rounded-full bg-success-50 dark:bg-success-900/30 text-success-600 dark:text-success-400 flex items-center justify-center mx-auto mb-4">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-4">
               <svg
                 width="24"
                 height="24"
@@ -97,10 +97,10 @@ export const ResetPasswordPage = () => {
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+            <p className="text-base font-semibold text-stone-900 dark:text-stone-100 mb-2">
               パスワードを更新しました
             </p>
-            <p className="text-sm text-neutral-500 dark:text-neutral-300">
+            <p className="text-sm text-stone-500 dark:text-stone-300">
               ログイン画面に戻ります。
             </p>
           </div>
