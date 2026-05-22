@@ -87,7 +87,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   return (
     /* DndContext は親 ResponsiveKanban で巻いている。ここではレイアウトのみ。 */
-    <div className="flex overflow-x-auto md:overflow-visible md:grid md:grid-cols-4 gap-4 p-4">
+    <div className="flex overflow-x-auto md:overflow-visible md:grid md:grid-cols-4 gap-5 p-5 bg-stone-50 dark:bg-stone-900 rounded-xl">
       {COLUMN_DEFINITIONS.map(({ status, label }) => {
         const columnTasks = columnMap[status] || [];
         const taskIds = columnTasks.map((task) => `task-${task.id}`);

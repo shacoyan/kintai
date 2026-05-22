@@ -15,6 +15,7 @@
  */
 import { useMemo, useState } from 'react';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { ChevronDown } from 'lucide-react';
 
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
@@ -42,11 +43,11 @@ const COLUMN_DEFINITIONS: { status: TaskStatus; label: string }[] = [
   { status: 'cancelled', label: 'キャンセル' },
 ];
 
-const statusBorderColor: Record<TaskStatus, string> = {
-  todo: 'border-neutral-400',
-  in_progress: 'border-blue-500',
-  done: 'border-emerald-500',
-  cancelled: 'border-neutral-300',
+const statusDotColor: Record<TaskStatus, string> = {
+  todo: 'bg-slate-400',
+  in_progress: 'bg-blue-500',
+  done: 'bg-emerald-500',
+  cancelled: 'bg-stone-400',
 };
 
 export function MobileKanban({
@@ -118,34 +119,29 @@ export function MobileKanban({
         return (
           <div
             key={status}
-            className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 overflow-hidden"
+            className="rounded-xl border border-stone-200/60 dark:border-stone-700/60 bg-white dark:bg-stone-800 overflow-hidden motion-safe:transition-colors duration-150"
           >
             {/* Accordion Header */}
             <button
               type="button"
-              className={`w-full flex items-center justify-between border-l-4 ${statusBorderColor[status]} px-4 py-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}
+              className="w-full flex items-center justify-between px-4 py-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               onClick={() => toggleAccordion(status)}
               aria-expanded={isOpen}
               aria-controls={accordionId}
             >
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-sm text-neutral-700 dark:text-neutral-200">
+                <span aria-hidden="true" className={`inline-block w-2 h-2 rounded-full ${statusDotColor[status]}`} />
+                <span className="font-semibold text-[13px] tracking-tight text-stone-700 dark:text-stone-200">
                   {label}
                 </span>
-                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-2 rounded-full bg-stone-100 dark:bg-stone-700 text-[11px] font-medium tabular-nums text-stone-600 dark:text-stone-300">
                   {columnTasks.length}
                 </span>
               </div>
-              <svg
-                className={`w-4 h-4 text-neutral-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
+              <ChevronDown
+                className={`w-4 h-4 text-stone-500 motion-safe:transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`}
                 aria-hidden="true"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              />
             </button>
 
             {/*
@@ -160,7 +156,7 @@ export function MobileKanban({
               aria-hidden={!isOpen}
               className={
                 isOpen
-                  ? 'block transition-all duration-200 ease-in-out'
+                  ? 'block motion-safe:transition-all duration-200'
                   : 'h-0 overflow-hidden pointer-events-none'
               }
             >

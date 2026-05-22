@@ -8,7 +8,7 @@ import type { Task, TaskStatus } from '../../types';
  * 設計書: .company/engineering/docs/2026-05-22-kintai-task-kanban-phase2-techdesign.md §3-2
  *
  * - dnd-kit `useDroppable` でドロップ受領
- * - ステータス別ボーダー色 (左 border-l-4)
+ * - ステータス別ドット
  * - 件数バッジ + 空状態
  * - children (KanbanCard 群) を優先、なければ renderCard を tasks に適用
  */
@@ -21,11 +21,11 @@ export type KanbanColumnProps = {
   isDroppable?: boolean;
 };
 
-const statusBorderColor: Record<TaskStatus, string> = {
-  todo: 'border-neutral-400',
-  in_progress: 'border-blue-500',
-  done: 'border-emerald-500',
-  cancelled: 'border-neutral-300',
+const statusDotColor: Record<TaskStatus, string> = {
+  todo: 'bg-slate-400',
+  in_progress: 'bg-blue-500',
+  done: 'bg-emerald-500',
+  cancelled: 'bg-stone-400',
 };
 
 export function KanbanColumn({
@@ -44,15 +44,14 @@ export function KanbanColumn({
   const hasChildren = React.Children.count(children) > 0;
 
   return (
-    <div className="rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 flex flex-col min-h-[200px]">
+    <div className="rounded-xl border border-stone-200/60 dark:border-stone-700/60 bg-white dark:bg-stone-800 flex flex-col min-h-[400px] motion-safe:transition-colors duration-150">
       {/* カラムヘッダー */}
-      <div
-        className={`border-l-4 ${statusBorderColor[status]} px-3 py-2 flex items-center gap-2`}
-      >
-        <span className="font-semibold text-sm text-neutral-700 dark:text-neutral-200">
+      <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+        <span aria-hidden="true" className={`inline-block w-2 h-2 rounded-full ${statusDotColor[status]}`} />
+        <span className="font-semibold text-[13px] tracking-tight text-stone-700 dark:text-stone-200">
           {label}
         </span>
-        <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-xs font-medium text-neutral-600 dark:text-neutral-300">
+        <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-2 rounded-full bg-stone-100 dark:bg-stone-700 text-[11px] font-medium tabular-nums text-stone-600 dark:text-stone-300">
           {tasks.length}
         </span>
       </div>
@@ -60,16 +59,16 @@ export function KanbanColumn({
       {/* カラム本体 (droppable) */}
       <div
         ref={setNodeRef}
-        className={`flex-1 p-2 transition-colors ${
+        className={`flex-1 px-2 pb-2 motion-safe:transition-all duration-150 focus-within:ring-2 focus-within:ring-blue-500/40 ${
           isOver
-            ? 'bg-neutral-50 dark:bg-neutral-800/50 ring-2 ring-inset ring-blue-400'
+            ? 'ring-2 ring-inset ring-blue-500/30 bg-blue-50/40 dark:bg-blue-950/20'
             : ''
         }`}
       >
         {hasChildren ? (
           <div className="flex flex-col gap-2">{children}</div>
         ) : tasks.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-neutral-400 text-sm select-none">
+          <div className="flex items-center justify-center h-full text-stone-400 dark:text-stone-500 text-xs select-none">
             タスクなし
           </div>
         ) : (

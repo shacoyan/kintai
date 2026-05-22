@@ -38,6 +38,7 @@ import {
 } from '../components/Task';
 import { ResponsiveKanban } from '../components/Kanban/ResponsiveKanban';
 import { StoreTabBar } from '../components/Kanban/StoreTabBar';
+import { PrimaryActionButton } from '../components/Kanban/PrimaryActionButton';
 import {
   readViewMode,
   writeViewMode,
@@ -276,19 +277,19 @@ export function TasksPage(): JSX.Element {
       <header className="flex items-start justify-between gap-4">
         <div>
           <Heading level={1}>タスク</Heading>
-          <p className="text-sm text-neutral-500 mt-1">
+          <p className="text-sm text-stone-500 mt-1">
             タスクの進捗を管理します
           </p>
         </div>
         <div className="flex items-center gap-2">
           {/* View 切替トグル */}
-          <div className="inline-flex rounded-md border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+          <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-full p-1">
             <button
               type="button"
-              className={`px-3 py-1.5 text-sm transition-colors ${
+              className={`rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 viewMode === 'kanban'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                  ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
               }`}
               onClick={() => handleViewModeChange('kanban')}
               aria-pressed={viewMode === 'kanban'}
@@ -297,10 +298,10 @@ export function TasksPage(): JSX.Element {
             </button>
             <button
               type="button"
-              className={`px-3 py-1.5 text-sm transition-colors ${
+              className={`rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 viewMode === 'list'
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                  ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
               }`}
               onClick={() => handleViewModeChange('list')}
               aria-pressed={viewMode === 'list'}
@@ -309,20 +310,16 @@ export function TasksPage(): JSX.Element {
             </button>
           </div>
           {!isParttime && (
-            <Button
-              variant="primary"
-              iconLeft={<Plus size={16} />}
-              onClick={openCreate}
-            >
+            <PrimaryActionButton onClick={openCreate} icon={<Plus size={16} aria-hidden="true" />}>
               新規
-            </Button>
+            </PrimaryActionButton>
           )}
         </div>
       </header>
 
       {/* バイト自動フィルタヒント */}
       {isParttime && (
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="text-xs text-stone-500 dark:text-stone-400">
           バイトのため自分のタスクのみ表示中
         </p>
       )}
@@ -481,7 +478,7 @@ export function TasksPage(): JSX.Element {
             <Card>
               <Card.Header>タスクを削除しますか？</Card.Header>
               <Card.Body>
-                <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                <p className="text-sm text-stone-600 dark:text-stone-300">
                   この操作は取り消せません。本当に削除してもよろしいですか？
                 </p>
               </Card.Body>

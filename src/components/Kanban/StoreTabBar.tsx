@@ -9,7 +9,6 @@
  */
 import { useMemo } from 'react';
 import type { StoreTabValue } from './types';
-import { Badge } from '../ui/Badge';
 import { cn } from '../../lib/cn';
 
 /**
@@ -87,7 +86,7 @@ export function StoreTabBar(props: StoreTabBarProps): JSX.Element {
 
   return (
     <div
-      className="flex items-center gap-1 overflow-x-auto py-1 px-1"
+      className="flex items-center gap-2 overflow-x-auto py-1 px-1"
       role="tablist"
       aria-label="店舗タブ"
     >
@@ -103,20 +102,22 @@ export function StoreTabBar(props: StoreTabBarProps): JSX.Element {
             aria-selected={isActive}
             onClick={() => onChange(tabValue)}
             className={cn(
-              'shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap motion-safe:transition-colors duration-120 ease-out-expo focus-ring',
+              'shrink-0 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
               isActive
-                ? 'bg-primary-600 text-white dark:bg-primary-500'
-                : 'bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700',
+                ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700'
+                : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-700',
             )}
           >
             {label}
             {count !== undefined && count > 0 && (
               isActive ? (
-                <span className="bg-white/20 text-white px-2 py-0.5 rounded text-[11px] font-semibold">
+                <span className="bg-white/25 text-white px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums">
                   {count}
                 </span>
               ) : (
-                <Badge tone="neutral">{count}</Badge>
+                <span className="bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 px-2 py-0.5 rounded-full text-[11px] font-medium tabular-nums">
+                  {count}
+                </span>
               )
             )}
           </button>

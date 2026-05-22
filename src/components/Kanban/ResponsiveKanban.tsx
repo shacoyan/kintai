@@ -48,33 +48,35 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
 
   return (
     <DndContext sensors={dnd.sensors} accessibility={dnd.accessibility} onDragEnd={dnd.handleDragEnd}>
-      <div className="md:hidden">
-        <MobileKanban
-          tasks={props.tasks}
-          onTaskClick={props.onTaskClick}
-          myRole={props.myRole}
-          isParttime={props.isParttime}
-          currentUserId={props.currentUserId}
-          memberNames={props.memberNames}
-          projectNames={props.projectNames}
-          onSuccess={props.onSuccess}
-          onError={props.onError}
-          dnd={dnd}
-        />
-      </div>
-      <div className="hidden md:block">
-        <KanbanBoard
-          tasks={props.tasks}
-          onTaskClick={props.onTaskClick}
-          myRole={props.myRole}
-          isParttime={props.isParttime}
-          currentUserId={props.currentUserId}
-          memberNames={props.memberNames}
-          projectNames={props.projectNames}
-          onSuccess={props.onSuccess}
-          onError={props.onError}
-          dnd={dnd}
-        />
+      <div>
+        <div className="md:hidden">
+          <MobileKanban
+            tasks={props.tasks}
+            onTaskClick={props.onTaskClick}
+            myRole={props.myRole}
+            isParttime={props.isParttime}
+            currentUserId={props.currentUserId}
+            memberNames={props.memberNames}
+            projectNames={props.projectNames}
+            onSuccess={props.onSuccess}
+            onError={props.onError}
+            dnd={dnd}
+          />
+        </div>
+        <div className="hidden md:block">
+          <KanbanBoard
+            tasks={props.tasks}
+            onTaskClick={props.onTaskClick}
+            myRole={props.myRole}
+            isParttime={props.isParttime}
+            currentUserId={props.currentUserId}
+            memberNames={props.memberNames}
+            projectNames={props.projectNames}
+            onSuccess={props.onSuccess}
+            onError={props.onError}
+            dnd={dnd}
+          />
+        </div>
       </div>
     </DndContext>
   );
