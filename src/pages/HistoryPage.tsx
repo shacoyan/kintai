@@ -381,7 +381,7 @@ export function HistoryPage() {
   }
 
   return (
-    <div className={`max-w-2xl mx-auto space-y-6 motion-safe:transition-opacity duration-180 ease-out${isRefetching ? ' opacity-60 pointer-events-none' : ''}`}>
+    <div className={`max-w-6xl mx-auto px-4 py-6 space-y-6 motion-safe:transition-opacity duration-180 ease-out${isRefetching ? ' opacity-60 pointer-events-none' : ''}`}>
       {currentStore == null && (
         <Card padding="md">
           <div className="flex items-center justify-center gap-2 text-sm">
@@ -390,6 +390,41 @@ export function HistoryPage() {
           </div>
         </Card>
       )}
+
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <Heading level={1}>履歴</Heading>
+          <p className="text-sm text-stone-500 dark:text-stone-300 mt-1">勤怠の月次記録を確認します</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-full p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                viewMode === 'list'
+                  ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+              }`}
+              aria-pressed={viewMode === 'list'}
+            >
+              リスト
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('calendar')}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                viewMode === 'calendar'
+                  ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+              }`}
+              aria-pressed={viewMode === 'calendar'}
+            >
+              カレンダー
+            </button>
+          </div>
+        </div>
+      </header>
       
       <Card padding="md">
         <div className="flex items-center justify-between gap-2">
@@ -412,31 +447,6 @@ export function HistoryPage() {
             </Button>
           </div>
           <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-stone-600 dark:text-stone-300" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
-        </div>
-
-        <div className="flex justify-center mt-2">
-          <div className="inline-flex items-center gap-1 p-1 bg-stone-100 dark:bg-stone-700 rounded-md">
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors duration-150 ease-out ${
-                viewMode === 'list'
-                  ? 'bg-white dark:bg-stone-700 shadow-rest text-blue-700 dark:text-blue-300 font-medium'
-                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-700 dark:hover:text-stone-200'
-              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400`}
-            >
-              リスト
-            </button>
-            <button
-              onClick={() => setViewMode('calendar')}
-              className={`px-3 py-1 text-sm rounded-md motion-safe:transition-colors duration-150 ease-out ${
-                viewMode === 'calendar'
-                  ? 'bg-white dark:bg-stone-700 shadow-rest text-blue-700 dark:text-blue-300 font-medium'
-                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-700 dark:hover:text-stone-200'
-              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400`}
-            >
-              カレンダー
-            </button>
-          </div>
         </div>
 
         {canSwitchUser && currentStore != null && (

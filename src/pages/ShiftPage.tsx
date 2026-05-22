@@ -8,6 +8,7 @@ import { messages } from '../lib/messages';
 import { getPreferenceTheme } from '../lib/preferenceTheme';
 import { Spinner } from '../components/ui/Spinner';
 import type { BadgeTone } from '../components/ui';
+import { supabase } from '../lib/supabase';
 import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
@@ -247,10 +248,40 @@ export function ShiftPage() {
   // Loop17: 人件費サマリ Card 用の payrollMembers / laborEstimates 復活 (Loop2 配線)
   // Loop18 Reviewer P0: カレンダー表示月 (shiftViewMonth) に同期させる。
   //   targetMonth はシフト申請締切ターゲット用 (deadlineInfo) として別役割で残置。
+  // オーナー要望 (2026-05-23): 想定人件費は「現在選択中の店舗」のスタッフ分のみに絞る。
+  //   store_members を fetch して tenant_members.id ベースで filter する。
+  //   storeId=null (店舗未選択) or 取得前は null のままで members 全件 fallback (既存挙動維持)。
+  const [storeMemberIds, setStoreMemberIds] = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!storeId || !canManageTenant) {
+      setStoreMemberIds(null);
+      return;
+    }
+    (async () => {
+      const { data, error } = await supabase
+        .from('store_members')
+        .select('member_id')
+        .eq('store_id', storeId);
+      if (cancelled) return;
+      if (error) {
+        console.warn('[ShiftPage] store_members fetch failed:', error.message);
+        setStoreMemberIds(null);
+        return;
+      }
+      const ids = new Set<string>((data ?? []).map((r: { member_id: string }) => r.member_id));
+      setStoreMemberIds(ids);
+    })();
+    return () => { cancelled = true; };
+  }, [storeId, canManageTenant]);
+
   const payrollMembers = useMemo(() => {
     if (!canManageTenant) return [];
-    return members;
-  }, [members, canManageTenant]);
+    // storeMemberIds が null の場合 (店舗未選択 or 取得前) は members 全件で fallback
+    if (!storeMemberIds) return members;
+    return members.filter(m => storeMemberIds.has(m.id));
+  }, [members, canManageTenant, storeMemberIds]);
 
   // P2: 月給 fallback 用の rolesMap を共通 util (getEffectiveMonthlySalary) に渡す
   const rolesMap = useMemo(() => new Map(roles.map(r => [r.id, r])), [roles]);
@@ -496,29 +527,31 @@ export function ShiftPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       <div className="flex flex-col gap-4 pb-24">
         {/* ヘッダー: 「シフト」見出し + 月表示 + pending 件数バッジ */}
-        <header className="flex items-end justify-between gap-3">
+        <header className="flex items-start justify-between gap-4">
           <div>
-            <Heading level={2}>シフト</Heading>
-            <p className="text-sm text-stone-500 dark:text-stone-300 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
+            <Heading level={1}>シフト</Heading>
+            <p className="text-sm text-stone-500 dark:text-stone-300 mt-1 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
           </div>
-          {canManageTenant && (pendingShifts.length > 0 || pendingPreferenceCount > 0) && (
-            <Badge tone="warning" withDot>{pendingShifts.length + pendingPreferenceCount} 件 承認待ち</Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {canManageTenant && (pendingShifts.length > 0 || pendingPreferenceCount > 0) && (
+              <Badge tone="warning" withDot>{pendingShifts.length + pendingPreferenceCount} 件 承認待ち</Badge>
+            )}
+          </div>
         </header>
 
         {/* 表示切替: 現在 / 履歴 (両ビュー共通) */}
-        <div className="inline-flex items-center gap-1 p-1 bg-stone-100 dark:bg-stone-800 rounded-md self-start">
+        <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-full p-1 self-start">
           <button
             type="button"
             onClick={() => setPreferenceView('current')}
             aria-pressed={preferenceView === 'current'}
-            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded-md motion-safe:transition-colors duration-150 ease-out focus-ring ${
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               preferenceView === 'current'
-                ? 'bg-white text-blue-700 shadow-sm dark:bg-stone-700 dark:text-blue-300'
-                : 'bg-transparent text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
@@ -528,10 +561,10 @@ export function ShiftPage() {
             type="button"
             onClick={() => setPreferenceView('history')}
             aria-pressed={preferenceView === 'history'}
-            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded-md motion-safe:transition-colors duration-150 ease-out focus-ring ${
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               preferenceView === 'history'
-                ? 'bg-white text-blue-700 shadow-sm dark:bg-stone-700 dark:text-blue-300'
-                : 'bg-transparent text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
+                ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
             }`}
           >
             <History className="w-3.5 h-3.5" />

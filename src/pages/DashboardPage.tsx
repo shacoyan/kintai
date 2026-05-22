@@ -158,18 +158,21 @@ export function DashboardPage() {
     : '現在予定されている次のシフトはありません。';
 
   return (
-    <div className="max-w-md md:max-w-2xl mx-auto space-y-6">
-      <header>
-        {displayName ? (
-          <Heading level={1}>{greetingLine}</Heading>
-        ) : (
-          <Heading level={1}>{format(today, 'M月d日（E）', { locale: ja })}</Heading>
-        )}
-        {displayName && (
-          <p className="mt-1 text-sm text-stone-500 dark:text-stone-300">
-            {format(today, 'M月d日（E）', { locale: ja })}
-          </p>
-        )}
+    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          {displayName ? (
+            <Heading level={1}>{greetingLine}</Heading>
+          ) : (
+            <Heading level={1}>{format(today, 'M月d日（E）', { locale: ja })}</Heading>
+          )}
+          {displayName && (
+            <p className="text-sm text-stone-500 dark:text-stone-300 mt-1">
+              {format(today, 'M月d日（E）', { locale: ja })}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2" />
       </header>
 
       {dashboardError && <ErrorBanner message={messages.error.withRetry(dashboardError)} />}
