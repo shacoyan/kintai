@@ -330,7 +330,7 @@ export function BulkShiftPreferenceDialog({
                     type="time"
                     value={customStart}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="w-full h-12 md:h-10 border border-stone-300 dark:border-stone-600 rounded-md bg-white dark:bg-stone-800 dark:text-stone-100 px-3 text-body focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+                    className="w-full h-12 md:h-10 border border-stone-300 dark:border-stone-600 rounded-md bg-white dark:bg-stone-800 dark:text-stone-100 px-3 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
                     aria-label={messages.shiftPreference.bulk.customStartLabel}
                   />
                 </div>
@@ -342,7 +342,7 @@ export function BulkShiftPreferenceDialog({
                     type="time"
                     value={customEnd}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="w-full h-12 md:h-10 border border-stone-300 dark:border-stone-600 rounded-md bg-white dark:bg-stone-800 dark:text-stone-100 px-3 text-body focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+                    className="w-full h-12 md:h-10 border border-stone-300 dark:border-stone-600 rounded-md bg-white dark:bg-stone-800 dark:text-stone-100 px-3 text-base focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
                     aria-label={messages.shiftPreference.bulk.customEndLabel}
                   />
                 </div>

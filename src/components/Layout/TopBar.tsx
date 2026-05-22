@@ -99,7 +99,7 @@ export function TopBar({
         </span>
       )}
       {title && (
-        <h1 className="text-heading-2 text-stone-900 dark:text-stone-100 truncate">
+        <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-100 truncate">
           {title}
         </h1>
       )}

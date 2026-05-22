@@ -59,7 +59,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     const error = this.state.error;
 
     return (
-      <div className="min-h-[60vh] w-full flex items-center justify-center p-4 bg-neutral-50 dark:bg-neutral-900">
+      <div className="min-h-[60vh] w-full flex items-center justify-center p-4 bg-stone-50 dark:bg-stone-900">
         <Card padding="lg" className="w-full max-w-md text-center">
           <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-50 dark:bg-red-800/30 mb-4">
             <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />
@@ -67,7 +67,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <Heading level={3} as="h2" className="mb-2">
             予期しないエラーが発生しました
           </Heading>
-          <p className="text-body-sm text-neutral-600 dark:text-neutral-300 mb-6">
+          <p className="text-sm text-stone-600 dark:text-stone-300 mb-6">
             ページを再読込してください。問題が続く場合はサポートに連絡してください。
           </p>
           <div className="flex flex-col sm:flex-row gap-2 justify-center">
@@ -79,9 +79,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             </Button>
           </div>
           {isDev && (
-            <details className="mt-6 text-left text-xs text-neutral-500 dark:text-neutral-300">
+            <details className="mt-6 text-left text-xs text-stone-500 dark:text-stone-300">
               <summary className="cursor-pointer">エラー詳細 (dev)</summary>
-              <pre className="mt-2 p-2 bg-neutral-100 dark:bg-neutral-800 rounded overflow-auto whitespace-pre-wrap break-words">
+              <pre className="mt-2 p-2 bg-stone-100 dark:bg-stone-800 rounded-md overflow-auto whitespace-pre-wrap break-words">
                 {error.message}
                 {'\n\n'}
                 {error.stack}

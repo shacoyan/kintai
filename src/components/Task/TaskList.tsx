@@ -80,9 +80,9 @@ export function TaskList(props: TaskListProps): JSX.Element {
           if (items.length === 0) return null;
           return (
             <section key={status} aria-label={TASK_STATUS_LABELS[status]}>
-              <h3 className="text-body-sm font-semibold text-neutral-700 dark:text-neutral-200 mb-2">
+              <h3 className="text-sm font-semibold text-stone-700 dark:text-stone-200 mb-2">
                 {TASK_STATUS_LABELS[status]}
-                <span className="ml-2 text-neutral-400 dark:text-neutral-500 font-normal">
+                <span className="ml-2 text-stone-400 dark:text-stone-500 font-normal">
                   ({items.length})
                 </span>
               </h3>

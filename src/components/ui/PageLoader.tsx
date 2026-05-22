@@ -23,13 +23,13 @@ export function PageLoader(props: PageLoaderProps): JSX.Element {
       className={cn(
         'flex flex-col items-center justify-center gap-3',
         variant === 'screen'
-          ? 'min-h-screen w-full bg-neutral-50 dark:bg-neutral-900'
+          ? 'min-h-screen w-full bg-stone-50 dark:bg-stone-900'
           : 'py-12',
         className,
       )}
     >
       <Spinner size="lg" label={label} className="text-blue-600 dark:text-blue-400" />
-      <p className="text-sm text-neutral-600 dark:text-neutral-300">{label}</p>
+      <p className="text-sm text-stone-600 dark:text-stone-300">{label}</p>
     </div>
   );
 }

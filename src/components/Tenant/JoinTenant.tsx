@@ -52,8 +52,8 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
   const displayError = error;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-900 p-4">
-      <div className="w-full max-w-md bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-md border border-neutral-100 dark:border-neutral-700">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50 dark:bg-stone-900 p-4">
+      <div className="w-full max-w-md bg-white dark:bg-stone-800 p-8 rounded-lg shadow-md border border-stone-100 dark:border-stone-700">
         <Heading level={2} className="mb-6">招待コードで参加</Heading>
 
         {displayError && (

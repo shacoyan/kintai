@@ -216,7 +216,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
           </button>
           <button
             onClick={() => setBaseDate(new Date())}
-            className="px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 motion-safe:transition-colors duration-150 ease-out"
+            className="px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50 motion-safe:transition-colors duration-150 ease-out"
           >
             今日
           </button>
@@ -341,7 +341,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                             onShiftClick?.(s);
                           }
                         }}
-                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorClass} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
+                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded-md border truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorClass} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
                       >
                         {memberNames ? (
                           <span title={memberNames.get(s.user_id) ?? ''}>
@@ -352,7 +352,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                         )}
                         {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
                         {isMine && (
-                          <span className="ml-1 inline-block bg-blue-600 text-white text-[8px] px-1 rounded" aria-label="自分のシフト">あなた</span>
+                          <span className="ml-1 inline-block bg-blue-600 text-white text-[8px] px-1 rounded-md" aria-label="自分のシフト">あなた</span>
                         )}
                       </div>
                     );
@@ -377,7 +377,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                             onPreferenceClick?.(p);
                           }
                         }}
-                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border border-dashed truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorBase} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
+                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded-md border border-dashed truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorBase} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
                       >
                         {memberNames ? (
                           <span title={memberNames.get(p.user_id) ?? ''}>
@@ -388,9 +388,9 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                         )}
                         {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
                         {isMine && (
-                          <span className="ml-1 inline-block bg-blue-600 text-white text-[8px] px-1 rounded" aria-label="自分の申請">あなた</span>
+                          <span className="ml-1 inline-block bg-blue-600 text-white text-[8px] px-1 rounded-md" aria-label="自分の申請">あなた</span>
                         )}
-                        <span className="ml-1 inline-block bg-orange-50 text-orange-700 dark:bg-orange-800/40 dark:text-orange-200 text-[8px] px-1 rounded">申請</span>
+                        <span className="ml-1 inline-block bg-orange-50 text-orange-700 dark:bg-orange-800/40 dark:text-orange-200 text-[8px] px-1 rounded-md">申請</span>
                       </div>
                     );
                   })}

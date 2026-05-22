@@ -63,7 +63,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
             badgeTone: 'neutral' as const,
             withDot: false,
             buttonVariant: 'primary' as const,
-            borderColor: 'border-neutral-200 dark:border-neutral-700',
+            borderColor: 'border-stone-200 dark:border-stone-700',
             breathClass: '',
             disabled: false,
           };
@@ -74,7 +74,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           badgeTone: 'neutral' as const,
           withDot: false,
           buttonVariant: 'primary' as const,
-          borderColor: 'border-neutral-200 dark:border-neutral-700',
+          borderColor: 'border-stone-200 dark:border-stone-700',
           breathClass: '',
           disabled: false,
         };
@@ -156,7 +156,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
 
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-lg border-l-4 bg-white p-6 shadow-sm dark:bg-neutral-800 md:p-8 motion-safe:transition-[border-left-color] motion-safe:duration-300 motion-safe:ease-out ${config.borderColor} ${isTransitioning ? '' : config.breathClass}`}
+      className={`relative w-full overflow-hidden rounded-lg border-l-4 bg-white p-6 shadow-sm dark:bg-stone-800 md:p-8 motion-safe:transition-[border-left-color] motion-safe:duration-300 motion-safe:ease-out ${config.borderColor} ${isTransitioning ? '' : config.breathClass}`}
       data-transitioning={isTransitioning || undefined}
       aria-busy={processing || undefined}
     >
@@ -179,7 +179,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
         </span>
       </div>
 
-      <div className="mt-6 flex items-end justify-center gap-1 text-neutral-900 dark:text-neutral-50 md:mt-7">
+      <div className="mt-6 flex items-end justify-center gap-1 text-stone-900 dark:text-stone-50 md:mt-7">
         <span className="sr-only">{format(currentTime, 'H時m分')}</span>
         <span
           aria-hidden="true"
@@ -191,7 +191,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
         </span>
         <span
           aria-hidden="true"
-          className="mb-1 font-num text-body-sm tabular-nums text-neutral-500 opacity-70 dark:text-neutral-400 md:mb-2"
+          className="mb-1 font-num text-sm tabular-nums text-stone-500 opacity-70 dark:text-stone-400 md:mb-2"
         >
           :{format(currentTime, 'ss')}
         </span>
@@ -200,7 +200,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
       {activeRecord?.clock_in && status !== 'not_started' && (
         <div
           key={`elapsed-${status}`}
-          className="mt-4 text-center text-body-sm text-neutral-500 motion-safe:animate-fade-in-soft dark:text-neutral-300"
+          className="mt-4 text-center text-sm text-stone-500 motion-safe:animate-fade-in-soft dark:text-stone-300"
         >
           {status === 'on_break' ? (
             <div>

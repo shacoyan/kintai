@@ -94,7 +94,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     container: 'bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800',
     text: 'text-orange-800 dark:text-orange-200',
     action: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white',
-    actionClass: 'flex-shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded text-xs font-semibold motion-safe:transition-colors duration-150 ease-out',
+    actionClass: 'flex-shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-md text-xs font-semibold motion-safe:transition-colors duration-150 ease-out',
     actionIconWrap: '',
   };
 
@@ -107,7 +107,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       <div className="flex items-center gap-2">
         {icon && <span className="flex-shrink-0">{cloneIconWithAriaHidden(icon)}</span>}
         <div>
-          <h3 className={`text-heading-3 ${toneStyles.text}`}>{title}</h3>
+          <h3 className={`text-lg font-semibold ${toneStyles.text}`}>{title}</h3>
           {description && (
             <p className={`text-sm ${toneStyles.text}`}>{description}</p>
           )}

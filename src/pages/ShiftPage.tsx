@@ -481,7 +481,7 @@ export function ShiftPage() {
             type="button"
             onClick={() => setPreferenceView('current')}
             aria-pressed={preferenceView === 'current'}
-            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-150 ease-out focus-ring ${
+            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded-md motion-safe:transition-colors duration-150 ease-out focus-ring ${
               preferenceView === 'current'
                 ? 'bg-white text-blue-700 shadow-sm dark:bg-stone-700 dark:text-blue-300'
                 : 'bg-transparent text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
@@ -494,7 +494,7 @@ export function ShiftPage() {
             type="button"
             onClick={() => setPreferenceView('history')}
             aria-pressed={preferenceView === 'history'}
-            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded motion-safe:transition-colors duration-150 ease-out focus-ring ${
+            className={`inline-flex items-center gap-2 px-3 h-9 text-xs font-semibold rounded-md motion-safe:transition-colors duration-150 ease-out focus-ring ${
               preferenceView === 'history'
                 ? 'bg-white text-blue-700 shadow-sm dark:bg-stone-700 dark:text-blue-300'
                 : 'bg-transparent text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
@@ -943,7 +943,7 @@ export function ShiftPage() {
                             <Badge tone={statusTone} withDot>{statusLabel}</Badge>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold ${theme.iconBoxClass}`}>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${theme.iconBoxClass}`}>
                               <theme.Icon className="w-3 h-3" />
                               {theme.label}
                             </span>

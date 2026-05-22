@@ -149,7 +149,7 @@ export function TaskDialog({
   const dialogTitle = mode === 'create' ? 'タスク新規作成' : 'タスク編集';
 
   const footer = (
-    <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-neutral-200 dark:border-neutral-700">
+    <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-stone-200 dark:border-stone-700">
       <Button variant="secondary" onClick={handleClose} disabled={loading}>
         キャンセル
       </Button>

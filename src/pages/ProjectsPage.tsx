@@ -74,8 +74,8 @@ function DeleteConfirmDialog({
       }
     >
       <div className="px-4 py-4 space-y-3">
-        <p className="text-sm text-neutral-700 dark:text-neutral-300">
-          <span className="font-medium text-neutral-900 dark:text-neutral-100">
+        <p className="text-sm text-stone-700 dark:text-stone-300">
+          <span className="font-medium text-stone-900 dark:text-stone-100">
             {projectName}
           </span>{' '}
           を削除します。この操作は取り消せません。
@@ -285,7 +285,7 @@ export function ProjectsPage() {
       <header className="flex items-start justify-between gap-3">
         <div>
           <Heading level={1}>プロジェクト</Heading>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
             タスクをまとめる単位。店舗別 / 全社で管理できます。
           </p>
         </div>
@@ -336,7 +336,7 @@ export function ProjectsPage() {
 
       {/* 一覧 */}
       {isLoading ? (
-        <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
+        <div className="py-12 text-center text-sm text-stone-500 dark:text-stone-400">
           読み込み中…
         </div>
       ) : projects.length === 0 ? (
@@ -349,7 +349,7 @@ export function ProjectsPage() {
           }
         />
       ) : (
-        <div className="rounded-lg border border-neutral-200 bg-white divide-y divide-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 dark:divide-neutral-700">
+        <div className="rounded-lg border border-stone-200 bg-white divide-y divide-stone-200 dark:bg-stone-800 dark:border-stone-700 dark:divide-stone-700">
           {projects.map((project) => {
             const editable = canEdit(project);
             const archivable = canArchiveOrRestore(project);
@@ -361,18 +361,18 @@ export function ProjectsPage() {
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+                    <span className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">
                       {project.name}
                     </span>
                     <StatusPill tone={project.status === 'active' ? 'success' : 'neutral'}>
                       {project.status === 'active' ? '有効' : 'アーカイブ'}
                     </StatusPill>
-                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                    <span className="text-xs text-stone-500 dark:text-stone-400">
                       {getStoreLabel(project.store_id)}
                     </span>
                   </div>
                   {project.description && (
-                    <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400 line-clamp-2">
+                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-400 line-clamp-2">
                       {project.description}
                     </p>
                   )}

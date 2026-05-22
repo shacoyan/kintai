@@ -23,7 +23,7 @@ export interface ActionMenuProps {
 }
 
 const toneStyles: Record<string, string> = {
-  default: 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700',
+  default: 'text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-700',
   danger: 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-800/20',
   primary: 'text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-800/20',
   success: 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-800/20',
@@ -136,7 +136,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
     const tone = item.tone || 'default';
     const baseClasses = 'w-full text-left px-3 py-2 text-sm min-h-[44px] flex items-center gap-2 motion-safe:transition-colors duration-150 ease-out';
     const toneClass = item.disabled
-      ? 'text-neutral-700 dark:text-neutral-200 opacity-50 cursor-not-allowed'
+      ? 'text-stone-700 dark:text-stone-200 opacity-50 cursor-not-allowed'
       : toneStyles[tone];
     const hoverClass = item.disabled ? 'pointer-events-none' : '';
 
@@ -166,10 +166,10 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
           aria-label={triggerLabel}
           disabled={disabled}
           onClick={handleToggle}
-          className={`flex items-center justify-center rounded-md min-h-[44px] min-w-[44px] text-neutral-600 dark:text-neutral-300 ${
+          className={`flex items-center justify-center rounded-md min-h-[44px] min-w-[44px] text-stone-600 dark:text-stone-300 ${
             disabled
               ? 'opacity-50 cursor-not-allowed'
-              : 'hover:bg-neutral-100 dark:hover:bg-neutral-700'
+              : 'hover:bg-stone-100 dark:hover:bg-stone-700'
           }`}
         >
           <MoreVertical aria-hidden="true" size={iconSize} />
@@ -182,7 +182,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({
           id={menuId}
           role="menu"
           aria-orientation="vertical"
-          className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg min-w-[160px] py-1"
+          className="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-md shadow-lg min-w-[160px] py-1"
           style={{
             position: 'fixed',
             top: position?.top,

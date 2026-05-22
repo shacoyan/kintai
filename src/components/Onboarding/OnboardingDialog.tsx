@@ -111,13 +111,13 @@ export const OnboardingDialog: React.FC = () => {
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="relative w-full md:max-w-lg bg-white dark:bg-neutral-800 rounded-t-2xl md:rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto"
+        className="relative w-full md:max-w-lg bg-white dark:bg-stone-800 rounded-t-2xl md:rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto"
       >
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <Heading level={3} id={titleId} className="text-neutral-900 dark:text-neutral-50">
+          <Heading level={3} id={titleId} className="text-stone-900 dark:text-stone-50">
             {messages.onboarding.welcome(currentTenant?.name ?? '')}
           </Heading>
-          <p id={descId} className="text-sm text-neutral-600 dark:text-neutral-300">
+          <p id={descId} className="text-sm text-stone-600 dark:text-stone-300">
             {messages.onboarding.description}
           </p>
 

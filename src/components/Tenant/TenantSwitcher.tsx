@@ -134,10 +134,10 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
   if (tenants.length === 1) {
     return (
       <span
-        className={`inline-flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 ${widthClass}`}
+        className={`inline-flex items-center gap-2 text-sm text-stone-700 dark:text-stone-300 ${widthClass}`}
         aria-label={`現在のワークスペース: ${currentTenant.name}`}
       >
-        <Building2 size={16} className="shrink-0 text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+        <Building2 size={16} className="shrink-0 text-stone-400 dark:text-stone-500" aria-hidden="true" />
         <span className="truncate font-medium">{currentTenant.name}</span>
       </span>
     );
@@ -174,28 +174,28 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
         type="button"
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
-        className={`inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-safe:transition-colors duration-150 ease-out ${widthClass}`}
+        className={`inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-safe:transition-colors duration-150 ease-out ${widthClass}`}
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={`ワークスペース切替: 現在 ${currentTenant.name}`}
       >
-        <Building2 size={16} className="shrink-0 text-neutral-500 dark:text-neutral-300" aria-hidden="true" />
+        <Building2 size={16} className="shrink-0 text-stone-500 dark:text-stone-300" aria-hidden="true" />
         <span className="truncate">{currentTenant.name}</span>
         <ChevronDown
           size={14}
-          className={`shrink-0 text-neutral-400 dark:text-neutral-500 motion-safe:transition-transform duration-150 ease-out ${isOpen ? 'rotate-180' : ''}`}
+          className={`shrink-0 text-stone-400 dark:text-stone-500 motion-safe:transition-transform duration-150 ease-out ${isOpen ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>
 
       {isOpen && (
         <div
-          className="absolute left-0 z-50 mt-2 w-72 origin-top-left rounded-md bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 py-1 shadow-lg outline-none"
+          className="absolute left-0 z-50 mt-2 w-72 origin-top-left rounded-md bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 py-1 shadow-lg outline-none"
           role="menu"
           aria-orientation="vertical"
           aria-label="ワークスペース一覧"
         >
-          <div className="px-3 py-2 text-xs font-semibold text-neutral-500 dark:text-neutral-300 uppercase tracking-wider">
+          <div className="px-3 py-2 text-xs font-semibold text-stone-500 dark:text-stone-300 uppercase tracking-wider">
             ワークスペース
           </div>
 
@@ -220,7 +220,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
                 className={`flex items-center gap-3 px-3 py-2 text-sm cursor-pointer outline-none motion-safe:transition-colors duration-150 ease-out ${
                   isCurrent
                     ? 'bg-blue-50 dark:bg-blue-800/20 text-blue-700 dark:text-blue-200 font-semibold'
-                    : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 focus:bg-neutral-50 dark:focus:bg-neutral-800/50'
+                    : 'text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800/50 focus:bg-stone-50 dark:focus:bg-stone-800/50'
                 }`}
                 aria-current={isCurrent ? 'true' : undefined}
               >
@@ -228,13 +228,13 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
                   {isCurrent ? (
                     <Check size={16} className="text-blue-600 dark:text-blue-400" aria-hidden="true" />
                   ) : (
-                    <Building2 size={16} className="text-neutral-400 dark:text-neutral-500" aria-hidden="true" />
+                    <Building2 size={16} className="text-stone-400 dark:text-stone-500" aria-hidden="true" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="truncate font-medium">{tenant.name}</div>
                   {tenant.display_name && (
-                    <div className="text-xs text-neutral-500 dark:text-neutral-300 truncate mt-0.5">
+                    <div className="text-xs text-stone-500 dark:text-stone-300 truncate mt-0.5">
                       {tenant.display_name}
                     </div>
                   )}
@@ -246,7 +246,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
             );
           })}
 
-          <div className="my-1 h-px bg-neutral-200 dark:bg-neutral-800" role="separator" />
+          <div className="my-1 h-px bg-stone-200 dark:bg-stone-800" role="separator" />
 
           <button
             type="button"
@@ -256,7 +256,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
             }}
             onClick={handleNavigateToNewWorkspace}
             onKeyDown={(e) => onItemKeyDown(e, tenants.length)}
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 focus:bg-neutral-50 dark:focus:bg-neutral-800/50 focus-visible:outline-none motion-safe:transition-colors duration-150 ease-out"
+            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-stone-50 dark:hover:bg-stone-800/50 focus:bg-stone-50 dark:focus:bg-stone-800/50 focus-visible:outline-none motion-safe:transition-colors duration-150 ease-out"
           >
             <Plus size={16} aria-hidden="true" />
             新しいワークスペース / 招待コードで参加

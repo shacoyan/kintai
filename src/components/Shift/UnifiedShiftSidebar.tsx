@@ -102,7 +102,7 @@ const MEMBER_COLORS = [
 
 function ShiftStatusReadonly({ shift }: { shift: Shift }) {
   return (
-    <div className="text-xs text-stone-600 dark:text-stone-300 flex items-center gap-2 px-3 py-2 bg-stone-50 dark:bg-stone-800 rounded">
+    <div className="text-xs text-stone-600 dark:text-stone-300 flex items-center gap-2 px-3 py-2 bg-stone-50 dark:bg-stone-800 rounded-md">
       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${STATUS_BADGE_CLASS[shift.status] ?? 'bg-stone-100 text-stone-700'}`}>
         {STATUS_LABEL[shift.status] ?? shift.status}
       </span>

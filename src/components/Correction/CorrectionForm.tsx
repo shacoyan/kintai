@@ -173,7 +173,7 @@ export function CorrectionForm({
     >
       <form id="correction-form" onSubmit={handleSubmit} className="space-y-4">
         {isDelete && (
-          <div className="mb-4 p-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg">
+          <div className="mb-4 p-3 bg-stone-50 dark:bg-stone-900 rounded-lg">
             <p className="text-sm text-red-600 dark:text-red-400 mt-1">
               この勤怠記録の削除を店長 or オーナーに依頼します
             </p>
@@ -183,7 +183,7 @@ export function CorrectionForm({
         {!isDelete && (
           <>
             {existingClockIn && (
-              <div className="text-sm text-neutral-600 dark:text-neutral-300">
+              <div className="text-sm text-stone-600 dark:text-stone-300">
                 現在の打刻: {toTimeValue(existingClockIn)} - {toTimeValue(existingClockOut)}
               </div>
             )}

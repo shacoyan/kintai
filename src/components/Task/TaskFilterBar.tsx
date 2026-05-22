@@ -71,10 +71,10 @@ export function TaskFilterBar(props: TaskFilterBarProps): JSX.Element {
     value.storeId === undefined ? '' : value.storeId === null ? '__global__' : value.storeId;
 
   return (
-    <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-3 space-y-3">
+    <div className="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg p-3 space-y-3">
       {/* ステータス (multi) */}
       <div>
-        <span className="block text-body-sm font-semibold text-neutral-700 dark:text-neutral-200 mb-1">
+        <span className="block text-sm font-semibold text-stone-700 dark:text-stone-200 mb-1">
           ステータス
         </span>
         <div className="flex flex-wrap gap-2" role="group" aria-label="ステータス">
@@ -86,10 +86,10 @@ export function TaskFilterBar(props: TaskFilterBarProps): JSX.Element {
                 type="button"
                 onClick={() => toggleStatus(opt.value)}
                 aria-pressed={active}
-                className={`px-3 h-9 rounded-md text-body-sm font-medium border motion-safe:transition-colors focus-ring ${
+                className={`px-3 h-9 rounded-md text-sm font-medium border motion-safe:transition-colors focus-ring ${
                   active
                     ? 'bg-blue-600 text-white border-blue-600 dark:bg-blue-500 dark:border-blue-500'
-                    : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50 dark:bg-neutral-800 dark:text-neutral-100 dark:border-neutral-600 dark:hover:bg-neutral-700'
+                    : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-50 dark:bg-stone-800 dark:text-stone-100 dark:border-stone-600 dark:hover:bg-stone-700'
                 }`}
               >
                 {opt.label}

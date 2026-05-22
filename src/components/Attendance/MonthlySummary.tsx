@@ -16,7 +16,7 @@ export function MonthlySummary({ summary }: MonthlySummaryProps) {
   if (summary.workDays === 0 && summary.totalWorkMinutes === 0) {
     return (
       <EmptyState
-        icon={<Calendar className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
+        icon={<Calendar className="w-12 h-12 text-stone-400 dark:text-stone-500" />}
         title={messages.empty.attendanceMonth.title}
         description={messages.empty.attendanceMonth.description}
       />
@@ -42,7 +42,7 @@ export function MonthlySummary({ summary }: MonthlySummaryProps) {
         <Heading level={1} as="h2">
           今月労働時間
         </Heading>
-        <p className="text-3xl sm:text-4xl tabular-nums font-bold text-neutral-800 dark:text-neutral-200 mt-2">
+        <p className="text-3xl sm:text-4xl tabular-nums font-bold text-stone-800 dark:text-stone-200 mt-2">
           {formatMinutes(summary.totalWorkMinutes)}
         </p>
       </div>
@@ -51,13 +51,13 @@ export function MonthlySummary({ summary }: MonthlySummaryProps) {
         {subStats.map(({ label, value, Icon }) => (
           <div
             key={label}
-            className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 shadow-sm"
+            className="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl p-4 shadow-sm"
           >
-            <div className="flex items-center text-sm text-neutral-500 dark:text-neutral-300 mb-1">
-              <Icon className="h-4 w-4 mr-1.5 text-neutral-400 dark:text-neutral-500" />
+            <div className="flex items-center text-sm text-stone-500 dark:text-stone-300 mb-1">
+              <Icon className="h-4 w-4 mr-1.5 text-stone-400 dark:text-stone-500" />
               {label}
             </div>
-            <span className="text-xl sm:text-2xl font-bold tabular-nums text-neutral-800 dark:text-neutral-200">
+            <span className="text-xl sm:text-2xl font-bold tabular-nums text-stone-800 dark:text-stone-200">
               {value}
             </span>
           </div>

@@ -282,7 +282,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           aria-label={`${member.display_name} の店長権限`}
                           onClick={() => handleRoleToggle(member)}
                           disabled={togglingRoleId === member.id}
-                          className={`px-2 py-0.5 text-xs font-medium rounded motion-safe:transition-colors duration-150 ease-out min-h-[44px] ${
+                          className={`px-2 py-0.5 text-xs font-medium rounded-md motion-safe:transition-colors duration-150 ease-out min-h-[44px] ${
                             member.role === 'manager'
                               ? 'text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600'
                               : 'text-emerald-700 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-800/30 hover:bg-emerald-50 dark:hover:bg-emerald-800/50'
@@ -534,7 +534,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             type="checkbox"
                             checked={member.night_shift_enabled ?? true}
                             onChange={() => handleNightShiftToggle(member)}
-                            className="h-4 w-4 text-blue-600 dark:text-blue-400 border-stone-300 dark:border-stone-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer"
+                            className="h-4 w-4 text-blue-600 dark:text-blue-400 border-stone-300 dark:border-stone-600 rounded-md focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer"
                           />
                           <span className="text-xs text-stone-600 dark:text-stone-300">深夜給 <span className="font-medium">1.25x</span></span>
                         </label>
@@ -569,7 +569,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                                   handleParttimeToggle(member);
                                 }}
                                 aria-label={`${member.display_name} のバイト判定`}
-                                className="h-4 w-4 text-blue-600 dark:text-blue-400 border-stone-300 dark:border-stone-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer disabled:cursor-not-allowed"
+                                className="h-4 w-4 text-blue-600 dark:text-blue-400 border-stone-300 dark:border-stone-600 rounded-md focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer disabled:cursor-not-allowed"
                               />
                               <span className="text-xs text-stone-600 dark:text-stone-300">バイト</span>
                             </label>

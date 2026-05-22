@@ -334,11 +334,11 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
         {/* 凡例 */}
         <div className="mt-3 flex flex-wrap gap-3 text-[11px] md:text-xs text-stone-600 dark:text-stone-300">
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded bg-emerald-50 dark:bg-emerald-800/30 border border-emerald-200 dark:border-emerald-700" />
+            <span className="inline-block w-3 h-3 rounded-md bg-emerald-50 dark:bg-emerald-800/30 border border-emerald-200 dark:border-emerald-700" />
             出勤（〜8h）
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded bg-blue-50 dark:bg-blue-700/30 border border-blue-300 dark:border-blue-700" />
+            <span className="inline-block w-3 h-3 rounded-md bg-blue-50 dark:bg-blue-700/30 border border-blue-300 dark:border-blue-700" />
             残業（8h超）
           </span>
           <span className="flex items-center gap-1">
@@ -346,7 +346,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
             シフトあり・勤怠なし
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded bg-stone-100 dark:bg-stone-700 border border-stone-300 dark:border-stone-600" />
+            <span className="inline-block w-3 h-3 rounded-md bg-stone-100 dark:bg-stone-700 border border-stone-300 dark:border-stone-600" />
             記録なし
           </span>
         </div>

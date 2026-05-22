@@ -310,7 +310,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
                         <button
                           type="button"
                           onClick={() => void handleCopy(code)}
-                          className="inline-flex items-center gap-1 rounded border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+                          className="inline-flex items-center gap-1 rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
                           disabled={revokingId === code.id}
                         >
                           <Copy className="h-3.5 w-3.5" aria-hidden="true" />
@@ -319,7 +319,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleOpenEditDialog(code)}
-                          className="inline-flex items-center gap-1 rounded border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+                          className="inline-flex items-center gap-1 rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
                           disabled={revokingId === code.id}
                         >
                           <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
@@ -328,7 +328,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
                         <button
                           type="button"
                           onClick={() => void handleRevoke(code)}
-                          className="inline-flex items-center gap-1 rounded border border-red-200 dark:border-red-700 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-200 hover:bg-red-50 dark:hover:bg-red-800/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:focus-visible:ring-red-400 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-700 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-200 hover:bg-red-50 dark:hover:bg-red-800/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:focus-visible:ring-red-400 disabled:opacity-50"
                           disabled={revokingId === code.id}
                           aria-busy={revokingId === code.id || undefined}
                         >

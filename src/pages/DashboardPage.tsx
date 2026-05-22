@@ -166,7 +166,7 @@ export function DashboardPage() {
           <Heading level={1}>{format(today, 'M月d日（E）', { locale: ja })}</Heading>
         )}
         {displayName && (
-          <p className="mt-1 text-body-sm text-stone-500 dark:text-stone-300">
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-300">
             {format(today, 'M月d日（E）', { locale: ja })}
           </p>
         )}
@@ -179,7 +179,7 @@ export function DashboardPage() {
           <Card padding="md" className="w-full border-l-4 border-orange-400 dark:border-orange-200">
             <div className="flex flex-col items-center gap-2 text-center">
               <Badge tone="warning" withDot>店舗未選択</Badge>
-              <p className="text-body-sm text-orange-700 dark:text-orange-200">打刻するには上部のセレクタから店舗を選択してください。</p>
+              <p className="text-sm text-orange-700 dark:text-orange-200">打刻するには上部のセレクタから店舗を選択してください。</p>
             </div>
           </Card>
         ) : (
@@ -213,9 +213,9 @@ export function DashboardPage() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1.5">
                 <Badge tone="danger" withDot>未完了</Badge>
-                <span className="text-body-sm font-semibold text-red-700 dark:text-red-200">退勤打刻が未完了です</span>
+                <span className="text-sm font-semibold text-red-700 dark:text-red-200">退勤打刻が未完了です</span>
               </div>
-              <p className="text-body-sm text-stone-700 dark:text-stone-200">
+              <p className="text-sm text-stone-700 dark:text-stone-200">
                 <span className="font-num tabular-nums">{carryOverRecord.date}</span> に出勤(<span className="font-num tabular-nums">{formatTime(carryOverRecord.clock_in)}</span>) したまま退勤打刻がされていません
               </p>
               <div className="mt-3">
@@ -229,7 +229,7 @@ export function DashboardPage() {
           <div className="flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-body-sm text-stone-700 dark:text-stone-200">
+              <p className="text-sm text-stone-700 dark:text-stone-200">
                 今日は整っています。{nextShiftLine}
               </p>
             </div>
@@ -242,7 +242,7 @@ export function DashboardPage() {
           <Card.Header>本日の記録</Card.Header>
           <Card.Body>
             {todayRecords.length === 0 ? (
-              <p className="text-body-sm text-stone-500 dark:text-stone-400 text-center py-6">まだ今日の記録はありません。</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400 text-center py-6">まだ今日の記録はありません。</p>
             ) : (
               <div className="space-y-4">
                 <div className="grid grid-cols-3 gap-2">
@@ -260,19 +260,19 @@ export function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="border-t border-stone-200 dark:border-stone-700 pt-3 flex items-center justify-between text-body-sm">
+                <div className="border-t border-stone-200 dark:border-stone-700 pt-3 flex items-center justify-between text-sm">
                   <span className="text-stone-500 dark:text-stone-400">セッション数</span>
                   <span className="font-num tabular-nums text-stone-900 dark:text-stone-100">{todayRecords.filter(r => r.clock_in).length} 回</span>
                 </div>
 
                 {todayRecords.length > 0 && (
                   <details className="border-t border-stone-200 dark:border-stone-700 pt-3">
-                    <summary className="cursor-pointer text-body-sm text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 rounded">
+                    <summary className="cursor-pointer text-sm text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 rounded-md">
                       セッション履歴を表示
                     </summary>
                     <ul className="mt-2 space-y-1">
                       {todayRecords.map((r, i) => (
-                        <li key={r.id ?? i} className="flex items-center justify-between gap-3 text-body-sm bg-stone-50 dark:bg-stone-800/50 rounded-md px-3 py-2">
+                        <li key={r.id ?? i} className="flex items-center justify-between gap-3 text-sm bg-stone-50 dark:bg-stone-800/50 rounded-md px-3 py-2">
                           <span className="text-stone-500 dark:text-stone-400 font-num tabular-nums">#{i + 1}</span>
                           <span className="font-num tabular-nums text-stone-800 dark:text-stone-200">
                             {formatTime(r.clock_in)} 〜 {r.clock_out ? formatTime(r.clock_out) : '勤務中'}
@@ -302,7 +302,7 @@ export function DashboardPage() {
             ) : upcomingShifts.length > 0 ? (
               <div className="space-y-2">
                 {upcomingShifts.map((shift) => (
-                  <div key={shift.id} className="flex items-center justify-between gap-3 text-body-sm">
+                  <div key={shift.id} className="flex items-center justify-between gap-3 text-sm">
                     <span className="font-num tabular-nums text-stone-600 dark:text-stone-300">
                       {format(parseISO(shift.date), 'M/d(E)', { locale: ja })}
                     </span>
@@ -320,7 +320,7 @@ export function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-body-sm text-stone-500 dark:text-stone-400 text-center py-6">今週の予定はありません。</p>
+              <p className="text-sm text-stone-500 dark:text-stone-400 text-center py-6">今週の予定はありません。</p>
             )}
           </Card.Body>
         </Card>

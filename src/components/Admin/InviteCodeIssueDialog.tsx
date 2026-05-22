@@ -211,7 +211,7 @@ export const InviteCodeIssueDialog: React.FC<InviteCodeIssueDialogProps> = ({
                         checked={checked}
                         onChange={() => toggleStore(s.id)}
                         disabled={submitting}
-                        className="h-4 w-4 rounded text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
+                        className="h-4 w-4 rounded-md text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
                       />
                       <span className="text-sm text-stone-700 dark:text-stone-200 flex-1">
                         {s.name}

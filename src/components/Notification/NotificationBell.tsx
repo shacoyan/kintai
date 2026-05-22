@@ -108,7 +108,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
         key={notification.id}
         type="button"
         role="menuitem"
-        className="w-full text-left px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 flex items-start gap-2 motion-safe:transition-colors duration-150 ease-out"
+        className="w-full text-left px-4 py-3 hover:bg-stone-50 dark:hover:bg-stone-800 flex items-start gap-2 motion-safe:transition-colors duration-150 ease-out"
         onClick={() => handleNotificationClick(notification)}
       >
         {isUnread ? (
@@ -120,15 +120,15 @@ function NotificationBellInner({ userId }: { userId: string }) {
           <span aria-hidden="true" className="mt-1.5 flex-shrink-0 w-2 h-2" />
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm text-neutral-900 dark:text-neutral-100 truncate">
+          <p className="font-medium text-sm text-stone-900 dark:text-stone-100 truncate">
             {notification.title}
           </p>
           {notification.body && (
-            <p className="text-sm text-neutral-500 dark:text-neutral-300 mt-0.5 line-clamp-2">
+            <p className="text-sm text-stone-500 dark:text-stone-300 mt-0.5 line-clamp-2">
               {notification.body}
             </p>
           )}
-          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">
             {formatRelativeTime(notification.created_at)}
           </p>
         </div>
@@ -142,7 +142,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        className="relative p-2 rounded-md text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 motion-safe:transition-colors duration-150 ease-out"
+        className="relative p-2 rounded-md text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800 motion-safe:transition-colors duration-150 ease-out"
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={`通知 ${unreadCount}件未読`}
         aria-haspopup="menu"
@@ -162,9 +162,9 @@ function NotificationBellInner({ userId }: { userId: string }) {
           ref={popoverRef}
           id="notification-popover"
           role="menu"
-          className="absolute right-0 top-full mt-2 w-80 max-h-[480px] rounded-md bg-white shadow-lg border border-neutral-200 dark:bg-neutral-900 dark:border-neutral-800 py-2 z-50 overflow-y-auto"
+          className="absolute right-0 top-full mt-2 w-80 max-h-[480px] rounded-md bg-white shadow-lg border border-stone-200 dark:bg-stone-900 dark:border-stone-800 py-2 z-50 overflow-y-auto"
         >
-          <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-100 dark:border-neutral-800 mb-1">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-stone-100 dark:border-stone-800 mb-1">
             <Heading level={4}>
               通知
             </Heading>
@@ -185,14 +185,14 @@ function NotificationBellInner({ userId }: { userId: string }) {
                 <EmptyState title={messages.empty.notification.title} />
               </div>
             ) : (
-              <div className="divide-y divide-neutral-50 dark:divide-neutral-800">
+              <div className="divide-y divide-stone-50 dark:divide-stone-800">
                 {latestNotifications.map(renderNotificationItem)}
               </div>
             )}
           </div>
 
           {notifications.length > 0 && (
-            <div className="px-4 pt-2 mt-1 border-t border-neutral-100 dark:border-neutral-800">
+            <div className="px-4 pt-2 mt-1 border-t border-stone-100 dark:border-stone-800">
               <button
                 type="button"
                 onClick={handleViewAllClick}
@@ -216,7 +216,7 @@ function NotificationBellInner({ userId }: { userId: string }) {
               <EmptyState title={messages.empty.notification.title} />
             </div>
           ) : (
-            <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+            <div className="divide-y divide-stone-100 dark:divide-stone-800">
               {notifications.map(renderNotificationItem)}
             </div>
           )}

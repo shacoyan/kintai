@@ -242,14 +242,14 @@ export function PreferenceActionRow({
                   onToggleSelect?.(preference.id);
                 }}
                 aria-label={`${memberName ?? '不明'} のシフト申請を選択`}
-                className="mt-1 w-4 h-4 rounded border-stone-300 dark:border-stone-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-stone-800 cursor-pointer"
+                className="mt-1 w-4 h-4 rounded-md border-stone-300 dark:border-stone-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-stone-800 cursor-pointer"
               />
             )}
             <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">
               {memberName ?? '不明'}
             </span>
             {showStoreBadge && storeName && (
-              <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              <span className="inline-flex px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                 {storeName}
               </span>
             )}
@@ -403,14 +403,14 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleApprove(); }}
-                className="h-auto px-3 py-1 text-xs rounded text-white bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50"
+                className="h-auto px-3 py-1 text-xs rounded-md text-white bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50"
               >
                 {state.loading && <Spinner size="sm" inline className="mr-1" />}仮承認する
               </button>
               <button
                 type="button"
                 onClick={() => setConfirming(null)}
-                className="h-auto px-3 py-1 text-xs rounded text-stone-700 bg-stone-100 hover:bg-stone-200 dark:text-stone-200 dark:bg-stone-700 dark:hover:bg-stone-600"
+                className="h-auto px-3 py-1 text-xs rounded-md text-stone-700 bg-stone-100 hover:bg-stone-200 dark:text-stone-200 dark:bg-stone-700 dark:hover:bg-stone-600"
               >
                 戻す
               </button>
@@ -423,14 +423,14 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleReject(); }}
-                className="h-auto px-3 py-1 text-xs rounded text-white bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-400 disabled:opacity-50"
+                className="h-auto px-3 py-1 text-xs rounded-md text-white bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-400 disabled:opacity-50"
               >
                 {state.loading && <Spinner size="sm" inline className="mr-1" />}却下する
               </button>
               <button
                 type="button"
                 onClick={() => setConfirming(null)}
-                className="h-auto px-3 py-1 text-xs rounded text-stone-700 bg-stone-100 hover:bg-stone-200 dark:text-stone-200 dark:bg-stone-700 dark:hover:bg-stone-600"
+                className="h-auto px-3 py-1 text-xs rounded-md text-stone-700 bg-stone-100 hover:bg-stone-200 dark:text-stone-200 dark:bg-stone-700 dark:hover:bg-stone-600"
               >
                 戻す
               </button>
@@ -443,14 +443,14 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleApprove(true); }}
-                className="h-auto px-3 py-1 text-xs rounded text-white bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50"
+                className="h-auto px-3 py-1 text-xs rounded-md text-white bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-700 dark:hover:bg-emerald-400 disabled:opacity-50"
               >
                 {state.loading && <Spinner size="sm" inline className="mr-1" />}この時刻で仮承認する
               </button>
               <button
                 type="button"
                 onClick={() => setConfirming(null)}
-                className="h-auto px-3 py-1 text-xs rounded text-stone-700 bg-stone-100 hover:bg-stone-200 dark:text-stone-200 dark:bg-stone-700 dark:hover:bg-stone-600"
+                className="h-auto px-3 py-1 text-xs rounded-md text-stone-700 bg-stone-100 hover:bg-stone-200 dark:text-stone-200 dark:bg-stone-700 dark:hover:bg-stone-600"
               >
                 戻す
               </button>
@@ -467,14 +467,14 @@ export function PreferenceActionRow({
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); handleRevertConfirm(); }}
-                className="px-2 py-1 text-xs rounded bg-orange-600 dark:bg-orange-500 text-white hover:bg-orange-700 dark:hover:bg-orange-400"
+                className="px-2 py-1 text-xs rounded-md bg-orange-600 dark:bg-orange-500 text-white hover:bg-orange-700 dark:hover:bg-orange-400"
               >
                 {state.loading && <Spinner size="sm" inline className="mr-1" />}未対応に戻す
               </button>
               <button
                 type="button"
                 onClick={() => setConfirming(null)}
-                className="px-2 py-1 text-xs rounded bg-stone-100 dark:bg-stone-700"
+                className="px-2 py-1 text-xs rounded-md bg-stone-100 dark:bg-stone-700"
               >
                 戻す
               </button>
@@ -483,7 +483,7 @@ export function PreferenceActionRow({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setConfirming('revert'); }}
-              className="px-2 py-1 text-xs rounded text-orange-700 bg-orange-50 hover:bg-orange-50 dark:text-orange-200 dark:bg-orange-800 dark:hover:bg-orange-700 inline-flex items-center gap-1"
+              className="px-2 py-1 text-xs rounded-md text-orange-700 bg-orange-50 hover:bg-orange-50 dark:text-orange-200 dark:bg-orange-800 dark:hover:bg-orange-700 inline-flex items-center gap-1"
             >
               <RotateCcw className="w-3 h-3" />
               {isApproved ? '承認を取り消す' : '却下を取り消す'}

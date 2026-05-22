@@ -92,10 +92,10 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
           </Button>
           {activeBreak?.start_time && (
             <>
-              <p className="text-sm text-neutral-600 dark:text-neutral-200" aria-live="off">
+              <p className="text-sm text-stone-600 dark:text-stone-200" aria-live="off">
                 休憩継続 <span className="font-num tabular-nums">{formatBreakDuration(activeBreak.start_time)}</span>
               </p>
-              <p className="text-sm text-neutral-500 dark:text-neutral-300">休憩開始: {formatTime(activeBreak.start_time)}</p>
+              <p className="text-sm text-stone-500 dark:text-stone-300">休憩開始: {formatTime(activeBreak.start_time)}</p>
             </>
           )}
         </>
@@ -103,15 +103,15 @@ export function BreakButton({ status, breakStart, breakEnd, activeRecord, active
 
       {completedBreaks.length > 0 && (
         <div className="mt-2 w-full max-w-md">
-          <p className="text-xs text-neutral-400 dark:text-neutral-500 mb-1 text-center">休憩履歴</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mb-1 text-center">休憩履歴</p>
           <div className="space-y-1">
             {completedBreaks.map((brk, index) => (
-              <div key={brk.id} className="flex items-center justify-between text-xs bg-neutral-50 dark:bg-neutral-700 rounded px-2 py-1">
-                <span className="text-neutral-500 dark:text-neutral-300">休憩{index + 1}</span>
+              <div key={brk.id} className="flex items-center justify-between text-xs bg-stone-50 dark:bg-stone-700 rounded-md px-2 py-1">
+                <span className="text-stone-500 dark:text-stone-300">休憩{index + 1}</span>
                 <div className="flex gap-2">
-                  <span className="text-neutral-700 dark:text-neutral-300">{formatTime(brk.start_time)}</span>
-                  <span className="text-neutral-400 dark:text-neutral-500">〜</span>
-                  <span className="text-neutral-700 dark:text-neutral-300">{formatTime(brk.end_time)}</span>
+                  <span className="text-stone-700 dark:text-stone-300">{formatTime(brk.start_time)}</span>
+                  <span className="text-stone-400 dark:text-stone-500">〜</span>
+                  <span className="text-stone-700 dark:text-stone-300">{formatTime(brk.end_time)}</span>
                 </div>
               </div>
             ))}

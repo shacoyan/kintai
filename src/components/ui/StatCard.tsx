@@ -23,7 +23,7 @@ export interface StatCardProps {
 const TREND_TONE: Record<StatTrendDirection, string> = {
   up: 'text-emerald-500 bg-emerald-50',
   down: 'text-red-500 bg-red-50',
-  flat: 'text-neutral-700 bg-neutral-100',
+  flat: 'text-stone-700 bg-stone-100',
 };
 
 function TrendIcon({ direction }: { direction: StatTrendDirection }): JSX.Element {
@@ -39,18 +39,18 @@ export function StatCard(props: StatCardProps): JSX.Element {
   return (
     <Card padding="md" className={className}>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-label text-neutral-500">{label}</p>
+        <p className="text-label text-stone-500">{label}</p>
         {icon ? (
-          <span className="text-neutral-500" aria-hidden="true">
+          <span className="text-stone-500" aria-hidden="true">
             {icon}
           </span>
         ) : null}
       </div>
 
-      <p className="mt-2 text-kpi-lg num tabular-nums text-neutral-900">
+      <p className="mt-2 text-kpi-lg num tabular-nums text-stone-900">
         {value}
         {unit ? (
-          <span className="ml-1 text-[18px] font-semibold text-neutral-500">
+          <span className="ml-1 text-[18px] font-semibold text-stone-500">
             {unit}
           </span>
         ) : null}
@@ -61,7 +61,7 @@ export function StatCard(props: StatCardProps): JSX.Element {
           {trend ? (
             <span
               className={cn(
-                'inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-semibold num tabular-nums',
+                'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold num tabular-nums',
                 TREND_TONE[trend.direction],
               )}
             >
@@ -73,7 +73,7 @@ export function StatCard(props: StatCardProps): JSX.Element {
             </span>
           ) : null}
           {hint ? (
-            <span className="text-body-sm text-neutral-500">{hint}</span>
+            <span className="text-sm text-stone-500">{hint}</span>
           ) : null}
         </div>
       )}

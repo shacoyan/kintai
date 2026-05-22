@@ -34,7 +34,7 @@ const LeaveTenantButton: React.FC = () => {
 
   if (isOwner) {
     return (
-      <p className="text-xs text-neutral-500">オーナーは脱退できません</p>
+      <p className="text-xs text-stone-500">オーナーは脱退できません</p>
     );
   }
 

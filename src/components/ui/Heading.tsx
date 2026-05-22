@@ -25,10 +25,10 @@ export interface HeadingProps extends React.HTMLAttributes<HTMLHeadingElement> {
 }
 
 const levelClassMap: Record<HeadingLevel, string> = {
-  1: 'text-heading-1 text-neutral-900 dark:text-neutral-50',
-  2: 'text-heading-2 text-neutral-900 dark:text-neutral-50',
-  3: 'text-heading-3 text-neutral-800 dark:text-neutral-100',
-  4: 'text-body font-semibold text-neutral-800 dark:text-neutral-100',
+  1: 'text-2xl font-semibold text-stone-900 dark:text-stone-50',
+  2: 'text-xl font-semibold text-stone-900 dark:text-stone-50',
+  3: 'text-lg font-semibold text-stone-800 dark:text-stone-100',
+  4: 'text-base font-semibold text-stone-800 dark:text-stone-100',
 }
 
 export const Heading: React.FC<HeadingProps> = ({

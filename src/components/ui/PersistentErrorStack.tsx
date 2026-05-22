@@ -21,7 +21,7 @@ export const PersistentErrorStack: FC = () => {
           <button
             type="button"
             onClick={dismissAll}
-            className="text-xs text-neutral-600 underline hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+            className="text-xs text-stone-600 underline hover:text-stone-800 dark:text-stone-400 dark:hover:text-stone-200"
           >
             すべて閉じる ({errors.length})
           </button>

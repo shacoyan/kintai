@@ -60,7 +60,7 @@ export function ProjectCard({
 
   return (
     <div
-      className={`bg-white dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700 shadow-sm motion-safe:transition-shadow ${
+      className={`bg-white dark:bg-stone-800 rounded-lg border border-stone-200 dark:border-stone-700 shadow-sm motion-safe:transition-shadow ${
         isClickable ? 'cursor-pointer hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none' : ''
       }`}
       onClick={handleCardClick}
@@ -72,10 +72,10 @@ export function ProjectCard({
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h3 className="text-body font-semibold text-neutral-900 dark:text-neutral-50 leading-snug truncate">
+            <h3 className="text-base font-semibold text-stone-900 dark:text-stone-50 leading-snug truncate">
               {project.name}
             </h3>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-body-sm text-neutral-500 dark:text-neutral-400">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
               <span>{storeLabel}</span>
               <span aria-hidden="true">·</span>
               <Badge tone={STATUS_TONE[project.status]}>{STATUS_LABEL[project.status]}</Badge>
@@ -84,14 +84,14 @@ export function ProjectCard({
         </div>
 
         {project.description && (
-          <p className="mt-2 text-body-sm text-neutral-600 dark:text-neutral-300 whitespace-pre-line">
+          <p className="mt-2 text-sm text-stone-600 dark:text-stone-300 whitespace-pre-line">
             {truncate(project.description, MAX_DESC_LENGTH)}
           </p>
         )}
 
         {(canEdit || canDelete) && (
           <div
-            className="mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-700 flex items-center justify-end gap-2"
+            className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-700 flex items-center justify-end gap-2"
             onClick={(e) => e.stopPropagation()}
           >
             {canEdit && !isArchived && onArchive && (

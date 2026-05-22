@@ -558,7 +558,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                       onChange={(e) =>
                         setLocalCloseDay(Math.min(31, Math.max(1, Number(e.target.value))))
                       }
-                      className="w-20 px-2 py-1 border rounded text-sm bg-white dark:bg-stone-900 dark:border-stone-700 dark:text-stone-100"
+                      className="w-20 px-2 py-1 border rounded-md text-sm bg-white dark:bg-stone-900 dark:border-stone-700 dark:text-stone-100"
                     />
                     <label className="flex items-center gap-1 text-sm text-stone-700 dark:text-stone-300">
                       <input

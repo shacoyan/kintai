@@ -226,7 +226,7 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
           <div>
             <label className="block text-sm font-medium text-stone-700 dark:text-stone-200 mb-1">カラー</label>
             <div className="flex gap-2 items-center">
-              <input type="color" value={color || '#000000'} onChange={(e) => setColor(e.target.value)} className="w-10 h-10 rounded cursor-pointer border p-1" />
+              <input type="color" value={color || '#000000'} onChange={(e) => setColor(e.target.value)} className="w-10 h-10 rounded-md cursor-pointer border p-1" />
               <Input placeholder="#3b82f6" value={color} onChange={(e) => setColor(e.target.value)} />
             </div>
           </div>

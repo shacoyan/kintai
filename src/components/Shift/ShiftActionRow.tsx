@@ -102,7 +102,7 @@ export function ShiftActionRow(props: ShiftActionRowProps) {
     }
   }
 
-  const inlineButtonClass = 'px-2.5 py-1 min-h-[36px] text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700 dark:hover:bg-emerald-500 disabled:opacity-50 motion-safe:transition-colors duration-150';
+  const inlineButtonClass = 'px-2.5 py-1 min-h-[36px] text-xs font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 dark:hover:bg-emerald-500 disabled:opacity-50 motion-safe:transition-colors duration-150';
 
   const renderInlineButton = (label: string, onClick: () => void) => (
     <button
@@ -133,7 +133,7 @@ export function ShiftActionRow(props: ShiftActionRowProps) {
             )}
 
             {showStoreBadge && storeName && (
-              <span className="inline-flex self-start px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+              <span className="inline-flex self-start px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                 {storeName}
               </span>
             )}

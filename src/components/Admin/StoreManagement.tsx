@@ -170,7 +170,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                   checked={assigned}
                   disabled={toggling}
                   onChange={() => handleToggleMember(member.id)}
-                  className="h-4 w-4 text-blue-600 dark:text-blue-400 rounded border-stone-300 dark:border-stone-600 focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer disabled:opacity-50"
+                  className="h-4 w-4 text-blue-600 dark:text-blue-400 rounded-md border-stone-300 dark:border-stone-600 focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer disabled:opacity-50"
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">{member.display_name}</p>

@@ -56,16 +56,16 @@ export const PREFERENCE_THEME: Record<ShiftPreferenceType, PreferenceTheme> = {
     description: '出勤できない日',
     Icon: Ban,
     cellClass:
-      'bg-neutral-50 ring-1 ring-neutral-300 text-neutral-700 dark:bg-neutral-900/30 dark:ring-neutral-700 dark:text-neutral-200',
-    countTextClass: 'text-neutral-600 dark:text-neutral-300',
-    dotClass: 'bg-neutral-500 dark:bg-neutral-400',
-    iconColorClass: 'text-neutral-500 dark:text-neutral-300',
+      'bg-stone-50 ring-1 ring-stone-300 text-stone-700 dark:bg-stone-900/30 dark:ring-stone-700 dark:text-stone-200',
+    countTextClass: 'text-stone-600 dark:text-stone-300',
+    dotClass: 'bg-stone-500 dark:bg-stone-400',
+    iconColorClass: 'text-stone-500 dark:text-stone-300',
     iconBoxClass:
-      'bg-neutral-50 text-neutral-700 dark:bg-neutral-900/40 dark:text-neutral-300',
+      'bg-stone-50 text-stone-700 dark:bg-stone-900/40 dark:text-stone-300',
     cardBorderBgClass:
-      'border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950',
+      'border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-950',
     badgeClass:
-      'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200',
+      'bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-200',
   },
 };
 

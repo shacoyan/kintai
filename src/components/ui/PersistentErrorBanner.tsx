@@ -70,7 +70,7 @@ export const PersistentErrorBanner: FC<PersistentErrorBannerProps> = ({
       role="alert"
       aria-live="assertive"
       aria-atomic="true"
-      className={`rounded border-l-4 p-4 shadow-sm ${
+      className={`rounded-md border-l-4 p-4 shadow-sm ${
         isCritical
           ? 'border-l-red-500 bg-red-50 dark:bg-red-800/20'
           : 'border-l-orange-500 bg-orange-50 dark:bg-orange-800/20'
@@ -86,18 +86,18 @@ export const PersistentErrorBanner: FC<PersistentErrorBannerProps> = ({
         <div className="min-w-0 flex-1">
           {/* タイトル行 */}
           <div className="flex items-center">
-            <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            <h4 className="text-sm font-semibold text-stone-900 dark:text-stone-100">
               {displayTitle}
             </h4>
             {error.count >= 2 && (
-              <span className="ml-2 rounded bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-700 dark:text-red-200">
+              <span className="ml-2 rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-700 dark:text-red-200">
                 ×{error.count}
               </span>
             )}
           </div>
 
           {/* メッセージ本文 (短縮禁止) */}
-          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-neutral-700 dark:text-neutral-300">
+          <p className="mt-1 whitespace-pre-wrap break-words text-sm text-stone-700 dark:text-stone-300">
             {error.message}
           </p>
 
@@ -117,7 +117,7 @@ export const PersistentErrorBanner: FC<PersistentErrorBannerProps> = ({
                   void onRetry(error.id);
                 }}
                 disabled={error.isRetrying}
-                className="inline-flex items-center gap-1.5 rounded bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-700 dark:text-red-200 dark:hover:bg-red-700"
+                className="inline-flex items-center gap-1.5 rounded-md bg-red-50 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-700 dark:text-red-200 dark:hover:bg-red-700"
               >
                 {error.isRetrying ? (
                   <Spinner size="sm" />
@@ -131,7 +131,7 @@ export const PersistentErrorBanner: FC<PersistentErrorBannerProps> = ({
               type="button"
               onClick={() => setIsOpen((prev) => !prev)}
               aria-expanded={isOpen}
-              className="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+              className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
             >
               詳細を見る
               {isOpen ? (
@@ -144,41 +144,41 @@ export const PersistentErrorBanner: FC<PersistentErrorBannerProps> = ({
 
           {/* Accordion 詳細 */}
           {isOpen && (
-            <div className="mt-3 rounded bg-neutral-50 p-3 text-xs dark:bg-neutral-800 space-y-1">
+            <div className="mt-3 rounded-md bg-stone-50 p-3 text-xs dark:bg-stone-800 space-y-1">
               {error.errorCode && (
                 <p>
-                  <span className="font-medium text-neutral-600 dark:text-neutral-400">
+                  <span className="font-medium text-stone-600 dark:text-stone-400">
                     エラーコード:
                   </span>{' '}
-                  <span className="text-neutral-800 dark:text-neutral-200">{error.errorCode}</span>
+                  <span className="text-stone-800 dark:text-stone-200">{error.errorCode}</span>
                 </p>
               )}
               {error.operation && (
                 <p>
-                  <span className="font-medium text-neutral-600 dark:text-neutral-400">
+                  <span className="font-medium text-stone-600 dark:text-stone-400">
                     操作:
                   </span>{' '}
-                  <span className="text-neutral-800 dark:text-neutral-200">{error.operation}</span>
+                  <span className="text-stone-800 dark:text-stone-200">{error.operation}</span>
                 </p>
               )}
               <p>
-                <span className="font-medium text-neutral-600 dark:text-neutral-400">
+                <span className="font-medium text-stone-600 dark:text-stone-400">
                   発生時刻:
                 </span>{' '}
-                <span className="text-neutral-800 dark:text-neutral-200">{occurredTime}</span>
+                <span className="text-stone-800 dark:text-stone-200">{occurredTime}</span>
               </p>
               <p className="whitespace-pre-wrap break-words">
-                <span className="font-medium text-neutral-600 dark:text-neutral-400">
+                <span className="font-medium text-stone-600 dark:text-stone-400">
                   メッセージ:
                 </span>{' '}
-                <span className="text-neutral-800 dark:text-neutral-200">{error.message}</span>
+                <span className="text-stone-800 dark:text-stone-200">{error.message}</span>
               </p>
               {error.detail && (
                 <p className="whitespace-pre-wrap break-words">
-                  <span className="font-medium text-neutral-600 dark:text-neutral-400">
+                  <span className="font-medium text-stone-600 dark:text-stone-400">
                     詳細:
                   </span>{' '}
-                  <span className="text-neutral-800 dark:text-neutral-200">{error.detail}</span>
+                  <span className="text-stone-800 dark:text-stone-200">{error.detail}</span>
                 </p>
               )}
               <button
@@ -186,7 +186,7 @@ export const PersistentErrorBanner: FC<PersistentErrorBannerProps> = ({
                 onClick={() => {
                   void handleCopy();
                 }}
-                className="mt-2 inline-flex items-center gap-1 text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+                className="mt-2 inline-flex items-center gap-1 text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-200"
               >
                 <Copy aria-hidden="true" className="h-3 w-3" />
                 {copied ? 'コピーしました' : 'コピー'}
@@ -200,7 +200,7 @@ export const PersistentErrorBanner: FC<PersistentErrorBannerProps> = ({
           type="button"
           onClick={() => onDismiss(error.id)}
           aria-label="エラーバナーを閉じる"
-          className="flex-shrink-0 rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-700 dark:hover:text-neutral-300"
+          className="flex-shrink-0 rounded-md p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-600 dark:hover:bg-stone-700 dark:hover:text-stone-300"
         >
           <X className="h-4 w-4" />
         </button>

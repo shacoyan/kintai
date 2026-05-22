@@ -113,7 +113,7 @@ export const LoginForm = function LoginForm() {
           </div>
         ) : null}
 
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-stone-600">
           登録済みのメールアドレスを入力してください。パスワードリセット用のリンクをメールでお送りします。
         </p>
 
@@ -145,7 +145,7 @@ export const LoginForm = function LoginForm() {
             setError(null);
             setResetSuccess(false);
           }}
-          className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:hover:text-blue-200 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 rounded"
+          className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:hover:text-blue-200 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 rounded-md"
         >
           ログインに戻る
         </button>
@@ -186,7 +186,7 @@ export const LoginForm = function LoginForm() {
             type="button"
             aria-label={showPassword ? 'パスワードを隠す' : 'パスワードを表示'}
             onClick={() => setShowPassword((v) => !v)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-neutral-500 hover:text-neutral-700 dark:text-neutral-300 dark:hover:text-neutral-200 motion-safe:transition-colors duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-stone-500 hover:text-stone-700 dark:text-stone-300 dark:hover:text-stone-200 motion-safe:transition-colors duration-150 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
           >
             {showPassword ? (
               <EyeOff size={16} aria-hidden="true" />
@@ -222,10 +222,10 @@ export const LoginForm = function LoginForm() {
 
       <div className="relative my-2">
         <div className="absolute inset-0 flex items-center" aria-hidden="true">
-          <div className="w-full border-t border-neutral-200" />
+          <div className="w-full border-t border-stone-200" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-neutral-50 px-3 text-xs text-neutral-500">
+          <span className="bg-stone-50 px-3 text-xs text-stone-500">
             または
           </span>
         </div>
@@ -242,7 +242,7 @@ export const LoginForm = function LoginForm() {
         Google でログイン
       </Button>
 
-      <p className="mt-2 text-center text-sm text-neutral-600">
+      <p className="mt-2 text-center text-sm text-stone-600">
         {isLogin
           ? 'アカウントをお持ちでない方は'
           : 'すでにアカウントをお持ちの方は'}
@@ -252,7 +252,7 @@ export const LoginForm = function LoginForm() {
             setIsLogin((v) => !v);
             setError(null);
           }}
-          className="ml-1 font-semibold text-blue-600 hover:text-blue-700 dark:hover:text-blue-200 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 rounded"
+          className="ml-1 font-semibold text-blue-600 hover:text-blue-700 dark:hover:text-blue-200 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 rounded-md"
         >
           {isLogin ? '新規登録' : 'ログイン'}
         </button>

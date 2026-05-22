@@ -171,7 +171,7 @@ export function ShiftStatusFilter({
       {isAllOff && (
         <div
           role="status"
-          className="mt-2 px-3 py-2 bg-orange-50 dark:bg-orange-800/30 text-orange-700 dark:text-orange-200 text-xs rounded"
+          className="mt-2 px-3 py-2 bg-orange-50 dark:bg-orange-800/30 text-orange-700 dark:text-orange-200 text-xs rounded-md"
         >
           すべてのステータスが非表示です。少なくとも 1 つのステータスを選択してください。
         </div>
