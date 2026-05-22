@@ -24,6 +24,7 @@ import { PreferenceAdminActionModal } from '../components/Shift/PreferenceAdminA
 import { ShiftPreferenceAdminList } from '../components/Shift/ShiftPreferenceAdminList';
 import { getInitialShiftMonth } from '../utils/initialShiftMonth';
 import { UnifiedShiftSidebar } from '../components/Shift/UnifiedShiftSidebar';
+import { LaborCostCard } from '../components/Shift/LaborCostCard';
 import { ShiftStatusFilter, readStatusFilter, writeStatusFilter } from '../components/Shift/ShiftStatusFilter';
 import type { StatusFilterValue } from '../components/Shift/unifiedShiftTypes';
 import { BulkApplyPresetModal } from '../components/Shift/BulkApplyPresetModal';
@@ -615,17 +616,12 @@ export function ShiftPage() {
                 </Card>
               )}
 
-              {/* プリセット一括適用ボタン (manager のみ) */}
+              {/* プリセット一括適用ボタン (manager のみ) — Button component に統一 */}
               {canManageTenant && storeId && (
                 <div className="flex items-center gap-2 flex-wrap">
-                  {/* 理由: アクションボタンの primary 縁取り強調 (例外③) */}
-                  <button
-                    type="button"
-                    onClick={() => setShowBulkApplyModal(true)}
-                    className="px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-150 ease-out focus-ring bg-white dark:bg-stone-800 border border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30"
-                  >
+                  <Button variant="secondary" size="sm" onClick={() => setShowBulkApplyModal(true)}>
                     プリセット一括適用
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -666,16 +662,17 @@ export function ShiftPage() {
                     }
                   };
                   return (
-                    /* 理由: 危険アクション (danger) 識別のための縁取り強調 (例外③) */
-                    <button
-                      type="button"
+                    /* Button component (variant=danger) に統一 — aria-label・disabled・件数表示は完全保持 */
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={handleBulkRejectInRange}
                       disabled={count === 0}
-                      className="shrink-0 px-3 h-8 text-xs font-semibold rounded-md motion-safe:transition-colors duration-150 ease-out focus-ring border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 bg-white dark:bg-stone-800 hover:bg-red-50 dark:hover:bg-red-800/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="shrink-0"
                       aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
                     >
                       未承認を一括却下{count > 0 ? `（${count}）` : ''}
-                    </button>
+                    </Button>
                   );
                 })()}
               </div>
@@ -780,6 +777,18 @@ export function ShiftPage() {
                 currentUserId={currentUserId}
               />
 
+              {/* 想定人件費 Card — カレンダー直下に配置 (Loop17 改: サイドバーから移動)。
+                  manager 限定: canManageTenant ガード (給与情報セキュリティ)。 */}
+              {canManageTenant && payrollMembers.length > 0 && (
+                <LaborCostCard
+                  members={payrollMembers}
+                  roles={roles}
+                  tentativeLaborEstimates={laborEstimates.tentative}
+                  allLaborEstimates={laborEstimates.all}
+                  targetMonth={shiftViewMonth}
+                />
+              )}
+
               {/* 提出予定サマリ（自分の申請） */}
               <div className="lg:hidden">
                 <Card padding="md">
@@ -879,11 +888,6 @@ export function ShiftPage() {
                       adminSummary={adminSummary}
                       preferenceSummary={preferenceSummary}
                       pendingPreferenceCount={pendingPreferenceCount}
-                      members={payrollMembers}
-                      roles={roles}
-                      tentativeLaborEstimates={laborEstimates.tentative}
-                      allLaborEstimates={laborEstimates.all}
-                      targetMonth={shiftViewMonth}
                       isDeadlinePassed={isDeadlinePassed}
                       canBypassDeadline={canEditDeadline}
                     />
@@ -960,11 +964,6 @@ export function ShiftPage() {
                   adminSummary={adminSummary}
                   preferenceSummary={preferenceSummary}
                   pendingPreferenceCount={pendingPreferenceCount}
-                  members={payrollMembers}
-                  roles={roles}
-                  tentativeLaborEstimates={laborEstimates.tentative}
-                  allLaborEstimates={laborEstimates.all}
-                  targetMonth={shiftViewMonth}
                   isDeadlinePassed={isDeadlinePassed}
                   canBypassDeadline={canEditDeadline}
                 />
