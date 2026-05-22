@@ -494,8 +494,6 @@ export function ShiftPage() {
     }
   };
 
-  const pendingShifts = shifts.filter(s => s.status === 'pending');
-
   if (!tenantId) return null;
 
   if (!storeId) {
@@ -528,15 +526,9 @@ export function ShiftPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
       <div className="flex flex-col gap-4 pb-24">
-        {/* ヘッダー: 「シフト」見出し + 月表示 + pending 件数バッジ */}
+        {/* ヘッダー: 「シフト」見出しのみ (月表示 + pending 件数バッジ削除) */}
         <header className="flex flex-col gap-1">
           <Heading level={1}>シフト</Heading>
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-sm text-stone-500 dark:text-stone-300 tabular-nums">{format(shiftViewMonth, 'yyyy年M月', { locale: ja })}</p>
-            {canManageTenant && (pendingShifts.length > 0 || pendingPreferenceCount > 0) && (
-              <Badge tone="warning" withDot>{pendingShifts.length + pendingPreferenceCount} 件 承認待ち</Badge>
-            )}
-          </div>
         </header>
 
         {/* 表示切替: 現在 / 履歴 (両ビュー共通) */}
@@ -1135,6 +1127,7 @@ export function ShiftPage() {
           preference={adminTargetPreference}
           memberName={memberNames.get(adminTargetPreference.user_id)}
           storeName={adminTargetPreference.store_id ? storeNames.get(adminTargetPreference.store_id) : undefined}
+          presets={presets}
           onApprove={async (id, startTime, endTime) => {
             await handleApprovePreference(id, startTime, endTime);
           }}

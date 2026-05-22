@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, X, Clock } from 'lucide-react';
-import type { ShiftPreference } from '../../types';
+import type { ShiftPreference, ShiftPreset } from '../../types';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -14,11 +14,13 @@ import { formatTimeRange } from '../../utils/formatTimeRange';
  * - BottomSheet ベース。
  * - アクション: 仮承認 / 時間指定で仮承認 / 却下。
  * - 確認 → 実行の 2 段階フロー（PreferenceActionRow と同等）。
+ * - Loop追加: pickTime モードにプリセット一覧を表示し、「この時間で承認」でワンクリック承認可能。
  */
 export interface PreferenceAdminActionModalProps {
   preference: ShiftPreference;
   memberName?: string;
   storeName?: string;
+  presets?: ShiftPreset[];
   /** startTime/endTime 省略時は preference の希望時間そのまま、指定時はその時刻で仮承認。 */
   onApprove: (id: string, startTime?: string, endTime?: string) => Promise<void>;
   onReject: (id: string) => Promise<void>;
@@ -40,6 +42,7 @@ export function PreferenceAdminActionModal({
   preference,
   memberName,
   storeName,
+  presets,
   onApprove,
   onReject,
   onClose,
@@ -64,6 +67,18 @@ export function PreferenceAdminActionModal({
       } else {
         await onApprove(preference.id);
       }
+      onClose();
+    } catch (err) {
+      setError(formatSupabaseError(err).message);
+      setLoading(false);
+    }
+  };
+
+  const handlePresetApprove = async (startTime: string, endTime: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      await onApprove(preference.id, startTime, endTime);
       onClose();
     } catch (err) {
       setError(formatSupabaseError(err).message);
@@ -189,7 +204,8 @@ export function PreferenceAdminActionModal({
           </div>
         )}
 
-        {/* 時間指定 → 確認 (Reviewer P2: ここでは時刻入力のみ、実行は confirmApproveWithTime で確認後) */}
+        {/* 時間指定 → 確認 (Reviewer P2: ここでは時刻入力のみ、実行は confirmApproveWithTime で確認後)
+            プリセット拡張: presets が渡されていれば下部にプリセット一覧 + ワンクリック承認 (variant=success) を表示。 */}
         {mode === 'pickTime' && (
           <div className="space-y-3">
             <p className="text-sm text-stone-700 dark:text-stone-200">
@@ -233,6 +249,34 @@ export function PreferenceAdminActionModal({
                 戻す
               </Button>
             </div>
+
+            {presets && presets.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-stone-200 dark:border-stone-700">
+                <p className="text-xs font-medium text-stone-500 dark:text-stone-400 mb-2">プリセット</p>
+                <div className="space-y-2">
+                  {presets.map((preset) => {
+                    const startTime = preset.start_time.slice(0, 5);
+                    const endTime = preset.end_time.slice(0, 5);
+                    return (
+                      <div key={preset.id} className="flex items-center justify-between gap-2">
+                        <span className="text-sm text-stone-700 dark:text-stone-200">
+                          {preset.name} {startTime} - {endTime}
+                        </span>
+                        <Button
+                          variant="success"
+                          size="sm"
+                          onClick={() => handlePresetApprove(startTime, endTime)}
+                          disabled={loading}
+                          aria-label={`${preset.name} ${startTime}-${endTime} の時間で承認`}
+                        >
+                          {loading && <Spinner size="sm" inline className="mr-1" />}この時間で承認
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
