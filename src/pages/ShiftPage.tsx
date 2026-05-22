@@ -11,6 +11,7 @@ import type { BadgeTone } from '../components/ui';
 import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
+import { useTenantRoles } from '../hooks/useTenantRoles';
 import { useShiftPreset } from '../hooks/useShiftPreset';
 import { useShiftPreference } from '../hooks/useShiftPreference';
 import { useShiftSubmissionDeadline } from '../hooks/useShiftSubmissionDeadline';
@@ -48,8 +49,9 @@ export function ShiftPage() {
   // 走ってしまう症状を根治する。Tailwind の lg ブレークポイントと一致させる。
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift } = useShift(tenantId, storeId);
+  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift, getLaborCostEstimate } = useShift(tenantId, storeId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
+  const { roles, fetchRoles } = useTenantRoles(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
   const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference, bulkSubmitPreferences } = useShiftPreference(tenantId, storeId);
   const { showToast } = useToast();
@@ -206,6 +208,13 @@ export function ShiftPage() {
     }
   }, [tenantId, fetchPreferenceRange]);
 
+  // Loop17: roles を取得して人件費サマリ Card で role.default_monthly_salary を参照する
+  useEffect(() => {
+    if (tenantId && canManageTenant) {
+      void fetchRoles();
+    }
+  }, [tenantId, canManageTenant, fetchRoles]);
+
   const shifts = canManageTenant ? allShifts : myShifts;
   const leaves = canManageTenant ? [] : []; // Leave removed, but keep variable if needed elsewhere or remove. Removing all leave logic.
 
@@ -234,6 +243,31 @@ export function ShiftPage() {
     const remainingLabel = days > 0 ? `${days}日${hours}時間` : `${hours}時間`;
     return { deadline, targetMonth, remainingLabel, passed: false as const };
   }, [storeId, deadline, targetMonth]);
+
+  // Loop17: 人件費サマリ Card 用の payrollMembers / laborEstimates 復活 (Loop2 配線)
+  // Loop18 Reviewer P0: カレンダー表示月 (shiftViewMonth) に同期させる。
+  //   targetMonth はシフト申請締切ターゲット用 (deadlineInfo) として別役割で残置。
+  const payrollMembers = useMemo(() => {
+    if (!canManageTenant) return [];
+    return members;
+  }, [members, canManageTenant]);
+
+  // P2: 月給 fallback 用の rolesMap を共通 util (getEffectiveMonthlySalary) に渡す
+  const rolesMap = useMemo(() => new Map(roles.map(r => [r.id, r])), [roles]);
+
+  const laborEstimates = useMemo(() => {
+    if (!canManageTenant) return { tentative: [], all: [] };
+    const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+    const monthShifts = allShifts.filter(s => s.date >= monthStart && s.date <= monthEnd);
+    // P1: 「仮承認分」ラベルとの整合性確保のため status === 'tentative' のみに限定
+    //   (approved は含めない)。全体見込みは monthShifts (tentative + approved) のまま。
+    const tentativeShifts = monthShifts.filter(s => s.status === 'tentative');
+    return {
+      tentative: getLaborCostEstimate(tentativeShifts, payrollMembers, rolesMap),
+      all: getLaborCostEstimate(monthShifts, payrollMembers, rolesMap),
+    };
+  }, [canManageTenant, allShifts, shiftViewMonth, getLaborCostEstimate, payrollMembers, rolesMap]);
 
   const handlePrefSubmit = async (
     date: string,
@@ -812,6 +846,11 @@ export function ShiftPage() {
                       adminSummary={adminSummary}
                       preferenceSummary={preferenceSummary}
                       pendingPreferenceCount={pendingPreferenceCount}
+                      members={payrollMembers}
+                      roles={roles}
+                      tentativeLaborEstimates={laborEstimates.tentative}
+                      allLaborEstimates={laborEstimates.all}
+                      targetMonth={shiftViewMonth}
                       isDeadlinePassed={isDeadlinePassed}
                       canBypassDeadline={canEditDeadline}
                     />
@@ -888,6 +927,11 @@ export function ShiftPage() {
                   adminSummary={adminSummary}
                   preferenceSummary={preferenceSummary}
                   pendingPreferenceCount={pendingPreferenceCount}
+                  members={payrollMembers}
+                  roles={roles}
+                  tentativeLaborEstimates={laborEstimates.tentative}
+                  allLaborEstimates={laborEstimates.all}
+                  targetMonth={shiftViewMonth}
                   isDeadlinePassed={isDeadlinePassed}
                   canBypassDeadline={canEditDeadline}
                 />

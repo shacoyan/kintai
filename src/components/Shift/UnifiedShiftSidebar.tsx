@@ -6,10 +6,11 @@ import { Card, Button } from '../ui';
 import { PreferenceActionRow } from './PreferenceActionRow';
 import { ShiftActionRow } from './ShiftActionRow';
 import { ShiftPreferenceForm } from './ShiftPreferenceForm';
-import { PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
 import { formatTimeRange } from '../../utils/formatTimeRange';
 import { buildTentativeShiftMap, getEffectiveTime } from '../../utils/preferenceEffectiveTime';
-import type { Shift, ShiftPreference, ShiftPreset, Store, ShiftPreferenceType } from '../../types';
+import { getEffectiveMonthlySalary } from '../../utils/payrollCalc';
+import type { Shift, ShiftPreference, ShiftPreset, Store, ShiftPreferenceType, TenantMember, TenantRole } from '../../types';
+import type { LaborCostEstimate } from '../../hooks/useShift';
 
 export type UnifiedShiftSidebarMode = 'manager' | 'staff';
 
@@ -63,6 +64,13 @@ export interface UnifiedShiftSidebarProps {
   adminSummary?: { counts: Record<ShiftPreferenceType, number>; monthLabel: string };
   preferenceSummary?: Record<ShiftPreferenceType, number>;
   pendingPreferenceCount?: number;
+
+  // 人件費サマリ (Loop17)
+  members?: TenantMember[];
+  roles?: TenantRole[];
+  tentativeLaborEstimates?: LaborCostEstimate[];
+  allLaborEstimates?: LaborCostEstimate[];
+  targetMonth?: Date;
 
   // 締切ガード (staff モードのみ)
   isDeadlinePassed?: boolean;
@@ -147,8 +155,11 @@ export function UnifiedShiftSidebar({
   defaultStoreId,
   onMutated,
 
-  preferenceSummary,
-  pendingPreferenceCount,
+  members,
+  roles,
+  tentativeLaborEstimates,
+  allLaborEstimates,
+  targetMonth,
 
   isDeadlinePassed,
   canBypassDeadline,
@@ -183,6 +194,16 @@ export function UnifiedShiftSidebar({
       return selectedDate;
     }
   }, [selectedDate]);
+
+  const rolesMap = useMemo(() => new Map((roles ?? []).map(r => [r.id, r])), [roles]);
+  const laborCost = useMemo(() => {
+    const ms = members ?? [];
+    const isMonthly = (m: TenantMember) => (m.pay_type ?? 'hourly') === 'monthly' && getEffectiveMonthlySalary(m, rolesMap) > 0;
+    const monthlyTotal = ms.filter(isMonthly).reduce((s, m) => s + getEffectiveMonthlySalary(m, rolesMap), 0);
+    const tentativeHourlyTotal = (tentativeLaborEstimates ?? []).filter(e => e.payType === 'hourly').reduce((s, e) => s + e.estimatedCost, 0);
+    const allHourlyTotal = (allLaborEstimates ?? []).filter(e => e.payType === 'hourly').reduce((s, e) => s + e.estimatedCost, 0);
+    return { monthlyTotal, tentativeHourlyTotal, allHourlyTotal };
+  }, [members, rolesMap, tentativeLaborEstimates, allLaborEstimates]);
 
   // 理由: currentUserId=null のとき s.user_id === null が全件 false になり、自分の shift が「他メンバー」に紛れる事故を防ぐ defensive guard
   const myShifts = useMemo(() => {
@@ -255,6 +276,41 @@ export function UnifiedShiftSidebar({
     };
   }, [mode, selectedDate, onSelectedDateChange]);
 
+  // 人件費 Card は manager 限定（給与情報のセキュリティ慣行）
+  const laborCostCard = mode === 'manager' && (members?.length ?? 0) > 0 && (
+    <Card padding="sm">
+      <div className="text-sm font-bold mb-3">
+        {targetMonth ? `${format(targetMonth, 'yyyy年M月', { locale: ja })} の想定人件費` : '想定人件費'}
+      </div>
+      <div className="space-y-2">
+        <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-md p-3">
+          <div className="text-xs text-indigo-900 dark:text-indigo-100">月給合計 (固定費)</div>
+          <div className="text-indigo-900 dark:text-indigo-100 tabular-nums font-bold text-lg">
+            ¥{laborCost.monthlyTotal.toLocaleString()}
+          </div>
+        </div>
+        <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-md p-3">
+          <div className="text-xs text-emerald-900 dark:text-emerald-100">時給合計</div>
+          <div className="text-emerald-900 dark:text-emerald-100 tabular-nums font-bold text-lg">
+            ¥{laborCost.allHourlyTotal.toLocaleString()}
+          </div>
+          <div className="text-xs text-emerald-900/80 dark:text-emerald-100/80 mt-0.5">
+            仮承認分 ¥{laborCost.tentativeHourlyTotal.toLocaleString()}
+          </div>
+        </div>
+        <div className="bg-stone-50 dark:bg-stone-700/40 rounded-md p-3">
+          <div className="text-xs text-stone-900 dark:text-stone-50">総計</div>
+          <div className="text-stone-900 dark:text-stone-50 tabular-nums font-extrabold text-xl">
+            ¥{(laborCost.monthlyTotal + laborCost.allHourlyTotal).toLocaleString()}
+          </div>
+        </div>
+      </div>
+      <div className="text-[10px] text-stone-500 dark:text-stone-400 mt-2">
+        ※ 月給は固定費として全月給メンバー分を計上
+      </div>
+    </Card>
+  );
+
   if (mode === 'manager') {
     const canShowPreferenceList = !!onApprovePreference && !!onRejectPreference;
 
@@ -268,21 +324,14 @@ export function UnifiedShiftSidebar({
         aria-label="統合シフトサイドバー"
         className="w-[360px] sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4"
       >
-        {/* 選択日 Card (メイン) */}
-        <Card padding="sm">
-          <Card.Header className="flex justify-between items-center">
-            <span>{formattedSelectedDate}</span>
-            {selectedDate && (
+        {selectedDate && (
+          <Card padding="sm">
+            <Card.Header className="flex justify-between items-center">
+              <span>{formattedSelectedDate}</span>
               <Button variant="tertiary" size="sm" onClick={() => onSelectedDateChange(null)}>
                 クリア
               </Button>
-            )}
-          </Card.Header>
-          {!selectedDate ? (
-            <div className="text-sm text-stone-500">
-              カレンダーで日付を選択すると、その日のシフト・申請が表示されます。
-            </div>
-          ) : (
+            </Card.Header>
             <>
               {/* 上段「あなたの申請」セクション */}
               <h4 className="text-xs font-semibold text-blue-600 dark:text-blue-300 mb-1.5 px-1">
@@ -388,37 +437,9 @@ export function UnifiedShiftSidebar({
                 </>
               )}
             </>
-          )}
-        </Card>
-
-        {/* 未対応サマリ Card */}
-        <Card padding="sm">
-          <div className="text-center">
-            <div className="text-4xl font-bold text-blue-600">
-              {pendingPreferenceCount ?? 0}
-            </div>
-            <div className="text-sm text-stone-500 mt-1">
-              未対応のシフト申請
-            </div>
-          </div>
-        </Card>
-
-        {/* preferenceSummary Card (新規・staff と同じ仕様。manager にも表示) */}
-        {preferenceSummary && (
-          <Card padding="sm">
-            <Card.Header>サマリ</Card.Header>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              {PREFERENCE_THEME_LIST.map(t => (
-                <div key={t.type} className="space-y-1">
-                  <div className={`text-3xl font-bold tabular-nums ${t.countTextClass}`}>
-                    {preferenceSummary[t.type] ?? 0}
-                  </div>
-                  <div className="text-xs text-stone-500">{t.label}</div>
-                </div>
-              ))}
-            </div>
           </Card>
         )}
+        {laborCostCard}
       </aside>
     );
   }
@@ -469,22 +490,7 @@ export function UnifiedShiftSidebar({
         )}
       </Card>
 
-      {/* サマリ Card */}
-      {preferenceSummary && (
-        <Card padding="sm">
-          <Card.Header>サマリ</Card.Header>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            {PREFERENCE_THEME_LIST.map(t => (
-              <div key={t.type} className="space-y-1">
-                <div className={`text-3xl font-bold tabular-nums ${t.countTextClass}`}>
-                  {preferenceSummary[t.type] ?? 0}
-                </div>
-                <div className="text-xs text-stone-500">{t.label}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
+      {laborCostCard}
     </aside>
   );
 }
