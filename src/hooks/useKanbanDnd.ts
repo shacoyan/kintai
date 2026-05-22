@@ -70,6 +70,12 @@ export interface UseKanbanDndParams {
   myStoreIds?: string[];
   onError?: (msg: string) => void;
   onSuccess?: (msg: string) => void;
+  /**
+   * API 成功後に呼ばれるコールバック。typically `useTasks().refetch`。
+   * 楽観的更新 (optimisticOverrides) を解除する前にここで server 状態を同期させることで、
+   * カードが「楽観列 → 元の列に一瞬戻る → 真の列に再配置」とちらつくのを防ぐ。
+   */
+  onMutationSuccess?: () => void | Promise<void>;
 }
 
 export interface UseKanbanDndResult {
@@ -100,6 +106,7 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
     myStoreIds = [],
     onError,
     onSuccess,
+    onMutationSuccess,
   } = params;
 
   const { updateTask, completeTask, reopenTask } = useTaskMutations();
@@ -320,6 +327,18 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
         // 成功通知 (server refetch で確定するため override は消す)
         const columnLabel = TASK_STATUS_LABELS[newStatus];
         onSuccess?.(`「${task.title}」を ${columnLabel} に移動しました`);
+
+        // server 状態を同期してから override を解除 (順序が重要):
+        //   await onMutationSuccess (= useTasks.refetch) → tasks 配列に新 status が反映
+        //   → removeOptimisticOverride で楽観 Map から削除
+        // 逆順だとカードが「楽観列 → 元の列に一瞬戻る → 真の列に再配置」とちらつく。
+        // onMutationSuccess が失敗しても finally で isMutating は解除し、override は残しておく
+        // (次回ドラッグ時に上書きされる / 表示は依然新 status のまま)。
+        try {
+          await onMutationSuccess?.();
+        } catch {
+          // refetch 失敗は致命的ではない (override が残るので UI 表示は維持される)
+        }
         removeOptimisticOverride(taskId);
       } catch (err) {
         // rollback: 楽観更新を取り消し
@@ -339,6 +358,7 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
       updateTask,
       onError,
       onSuccess,
+      onMutationSuccess,
       removeOptimisticOverride,
     ],
   );

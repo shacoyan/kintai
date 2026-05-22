@@ -33,6 +33,11 @@ interface ResponsiveKanbanProps {
   projectNames?: Map<string, string>;
   onSuccess?: (msg: string) => void;
   onError?: (msg: string) => void;
+  /**
+   * API 成功後に呼ばれる callback。`useTasks().refetch` を渡すことで楽観的更新解除前に
+   * server 状態を同期し、カード表示のちらつきを防ぐ。
+   */
+  onMutationSuccess?: () => void | Promise<void>;
 }
 
 export function ResponsiveKanban(props: ResponsiveKanbanProps) {
@@ -44,6 +49,7 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
     myStoreIds: props.myStoreIds,
     onError: props.onError,
     onSuccess: props.onSuccess,
+    onMutationSuccess: props.onMutationSuccess,
   });
 
   return (

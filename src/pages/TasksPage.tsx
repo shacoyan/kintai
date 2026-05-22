@@ -386,6 +386,7 @@ export function TasksPage(): JSX.Element {
           projectNames={projectNames}
           onSuccess={(m) => showToast(m, 'success')}
           onError={(m) => showToast(m, 'error')}
+          onMutationSuccess={refetch}
         />
       )}
 
