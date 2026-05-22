@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'danger' | 'warning';
+export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'danger' | 'warning' | 'success';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
@@ -22,6 +22,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   tertiary:  'bg-transparent text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800',
   danger:    'bg-red-600 text-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-red-700 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] motion-safe:hover:-translate-y-px active:scale-[0.98]',
   warning:   'bg-transparent border border-stone-300 text-stone-700 hover:bg-stone-50 hover:border-stone-400 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800',
+  success:   'bg-emerald-700 text-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:bg-emerald-800 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] motion-safe:hover:-translate-y-px active:scale-[0.98] dark:bg-emerald-600 dark:hover:bg-emerald-500',
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {

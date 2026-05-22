@@ -4,7 +4,7 @@ import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Shift, LeaveRequest, ShiftPreference } from '../../types';
 import type { StatusFilterValue } from './unifiedShiftTypes';
-import { EmptyState } from '../ui';
+import { Button, EmptyState, IconButton } from '../ui';
 import { isJapaneseHoliday, getJapaneseHolidayName } from '../../lib/holidays';
 import { formatTimeRange } from '../../utils/formatTimeRange';
 import { getInitialShiftMonth } from '../../utils/initialShiftMonth';
@@ -202,24 +202,34 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} aria-label="前月" className="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-stone-700 motion-safe:transition-colors duration-150 ease-out">
-            <ChevronLeft className="w-5 h-5 text-stone-600 dark:text-stone-300" />
-          </button>
+          <IconButton
+            icon={<ChevronLeft className="w-5 h-5" />}
+            aria-label="前月"
+            variant="ghost"
+            size="md"
+            onClick={() => navigate(-1)}
+          />
           <span className="text-sm font-semibold text-stone-900 dark:text-stone-100 min-w-[120px] text-center">
             {viewMode === 'month'
               ? format(baseDate, 'yyyy年M月', { locale: ja })
               : `${format(dates[0], 'M/d')} - ${format(dates[dates.length - 1], 'M/d')}`
             }
           </span>
-          <button onClick={() => navigate(1)} aria-label="次月" className="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-stone-700 motion-safe:transition-colors duration-150 ease-out">
-            <ChevronRight className="w-5 h-5 text-stone-600 dark:text-stone-300" />
-          </button>
-          <button
+          <IconButton
+            icon={<ChevronRight className="w-5 h-5" />}
+            aria-label="次月"
+            variant="ghost"
+            size="md"
+            onClick={() => navigate(1)}
+          />
+          <Button
+            variant="tertiary"
+            size="sm"
             onClick={() => setBaseDate(new Date())}
-            className="px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/50 motion-safe:transition-colors duration-150 ease-out"
+            className="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50"
           >
             今日
-          </button>
+          </Button>
         </div>
 
         {/* 理由: ViewMode タブ切替の装飾。border 削除し shadow で枠を表現 */}

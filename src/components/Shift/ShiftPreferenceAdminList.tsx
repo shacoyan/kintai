@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { ShiftPreference } from '../../types';
 import { PreferenceActionRow } from './PreferenceActionRow';
-import { EmptyState, Heading } from '../ui';
-import { Spinner } from '../ui/Spinner';
+import { Button, EmptyState, Heading } from '../ui';
 
 interface ShiftPreferenceAdminListProps {
   preferences: ShiftPreference[];
@@ -154,71 +153,83 @@ export function ShiftPreferenceAdminList({
         </span>
         {bulkConfirming === 'approve' ? (
           <>
-            <button 
-              onClick={handleBulkApproveConfirm} 
-              disabled={processing} 
-              className="px-3 py-2 text-xs font-medium text-white bg-emerald-700 dark:bg-emerald-200 rounded-md hover:bg-emerald-700 dark:hover:bg-emerald-100 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out flex items-center"
+            <Button
+              variant="success"
+              size="sm"
+              onClick={handleBulkApproveConfirm}
+              disabled={processing}
+              loading={processing}
             >
-              {processing && <Spinner size="sm" inline className="mr-1" />}
               {selectedIds.size > 0 ? `選択 ${selectedIds.size}件 承認する` : `pending ${pendingCount}件 全て承認する`}
-            </button>
-            <button 
-              onClick={() => setBulkConfirming(null)} 
-              className="px-3 py-2 text-xs font-medium text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-700 rounded-md hover:bg-stone-200 dark:hover:bg-stone-600 motion-safe:transition-colors duration-150 ease-out"
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setBulkConfirming(null)}
             >
               戻す
-            </button>
+            </Button>
           </>
         ) : bulkConfirming === 'reject' ? (
           <>
-            <button 
-              onClick={handleBulkRejectConfirm} 
-              disabled={processing} 
-              className="px-3 py-2 text-xs font-medium text-white bg-red-700 dark:bg-red-200 rounded-md hover:bg-red-700 dark:hover:bg-red-100 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out flex items-center"
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleBulkRejectConfirm}
+              disabled={processing}
+              loading={processing}
             >
-              {processing && <Spinner size="sm" inline className="mr-1" />}
               {selectedIds.size > 0 ? `選択 ${selectedIds.size}件 却下する` : `pending ${pendingCount}件 全て却下する`}
-            </button>
-            <button 
-              onClick={() => setBulkConfirming(null)} 
-              className="px-3 py-2 text-xs font-medium text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-700 rounded-md hover:bg-stone-200 dark:hover:bg-stone-600 motion-safe:transition-colors duration-150 ease-out"
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setBulkConfirming(null)}
             >
               戻す
-            </button>
+            </Button>
           </>
         ) : (
           <>
-            <button 
-              onClick={() => setBulkConfirming('approve')} 
-              disabled={!canBulk} 
-              className="px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-800/30 rounded-md hover:bg-emerald-50 dark:hover:bg-emerald-800/50 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out"
+            <Button
+              variant="tertiary"
+              size="sm"
+              onClick={() => setBulkConfirming('approve')}
+              disabled={!canBulk}
+              className="text-emerald-700 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-800/30 hover:bg-emerald-100 dark:hover:bg-emerald-800/50"
             >
               一括承認
-            </button>
-            <button 
-              onClick={() => setBulkConfirming('reject')} 
-              disabled={!canBulk} 
-              className="px-3 py-2 text-xs font-medium text-red-700 dark:text-red-200 bg-red-50 dark:bg-red-800/30 rounded-md hover:bg-red-50 dark:hover:bg-red-800/50 disabled:opacity-50 motion-safe:transition-colors duration-150 ease-out"
+            </Button>
+            <Button
+              variant="tertiary"
+              size="sm"
+              onClick={() => setBulkConfirming('reject')}
+              disabled={!canBulk}
+              className="text-red-700 dark:text-red-200 bg-red-50 dark:bg-red-800/30 hover:bg-red-100 dark:hover:bg-red-800/50"
             >
               一括却下
-            </button>
+            </Button>
             {selectedIds.size > 0 && (
-              <button 
-                onClick={() => setSelectedIds(new Set())} 
-                className="text-xs text-stone-500 dark:text-stone-300 hover:underline"
+              <Button
+                variant="tertiary"
+                size="sm"
+                onClick={() => setSelectedIds(new Set())}
+                className="text-stone-500 dark:text-stone-300 hover:underline hover:bg-transparent dark:hover:bg-transparent px-0"
               >
                 選択解除
-              </button>
+              </Button>
             )}
           </>
         )}
         {!historyMode && visiblePendingIds.length > 0 && (
-          <button
+          <Button
+            variant="tertiary"
+            size="sm"
             onClick={toggleSelectAllPending}
-            className="ml-auto text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+            className="ml-auto text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:bg-transparent dark:hover:bg-transparent px-0"
           >
             {visiblePendingIds.every(id => selectedIds.has(id)) ? '全解除' : `表示中 pending ${visiblePendingIds.length}件 全選択`}
-          </button>
+          </Button>
         )}
       </div>
     );
@@ -324,12 +335,15 @@ export function ShiftPreferenceAdminList({
       </div>
 
       {overflow > 0 && (
-        <button 
-          onClick={() => setVisibleCount(c => c + PAGE_SIZE)} 
-          className="w-full px-6 py-3 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-stone-50 dark:hover:bg-stone-800 motion-safe:transition-colors duration-150 ease-out border-t border-stone-200 dark:border-stone-700 rounded-md"
+        <Button
+          variant="tertiary"
+          size="md"
+          fullWidth
+          onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+          className="border-t border-stone-200 dark:border-stone-700 rounded-md text-blue-600 dark:text-blue-400 hover:bg-stone-50 dark:hover:bg-stone-800"
         >
           もっと見る (+{Math.min(overflow, PAGE_SIZE)} / 残り {overflow}件)
-        </button>
+        </Button>
       )}
     </div>
   );

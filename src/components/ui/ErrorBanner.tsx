@@ -1,4 +1,5 @@
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { Button } from './Button';
 
 interface ErrorBannerProps {
   message: string;
@@ -12,9 +13,15 @@ export function ErrorBanner({ message, onRetry, className = '' }: ErrorBannerPro
       <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
       <div className="flex-1 text-sm">{message}</div>
       {onRetry && (
-        <button onClick={onRetry} className="ml-auto inline-flex items-center gap-1 text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-100">
-          <RefreshCw className="w-4 h-4" />再試行
-        </button>
+        <Button
+          variant="tertiary"
+          size="sm"
+          onClick={onRetry}
+          iconLeft={<RefreshCw className="w-4 h-4" />}
+          className="ml-auto text-red-600 dark:text-red-300 hover:text-red-700 dark:hover:text-red-100 hover:bg-red-100/50 dark:hover:bg-red-900/30"
+        >
+          再試行
+        </Button>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTenantRoles } from '../../hooks/useTenantRoles';
-import { Card, Button, Input, Heading } from '../ui';
+import { Card, Button, IconButton, Input, Heading } from '../ui';
 import { BottomSheet } from '../ui/BottomSheet';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
@@ -153,12 +153,20 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
                     </td>
                     <td className="px-4 py-3">{role.sort_order ?? 0}</td>
                     <td className="px-4 py-3 flex gap-2">
-                      <button onClick={() => openEditForm(role)} className="text-stone-500 dark:text-stone-300 hover:text-blue-600 dark:hover:text-blue-400" aria-label={`役職『${role.name}』を編集`}>
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => openDeleteConfirm(role)} className="text-stone-500 dark:text-stone-300 hover:text-red-600 dark:hover:text-red-400" aria-label={`役職『${role.name}』を削除`}>
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <IconButton
+                        icon={<Pencil className="w-4 h-4" />}
+                        aria-label={`役職『${role.name}』を編集`}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditForm(role)}
+                      />
+                      <IconButton
+                        icon={<Trash2 className="w-4 h-4" />}
+                        aria-label={`役職『${role.name}』を削除`}
+                        variant="danger"
+                        size="sm"
+                        onClick={() => openDeleteConfirm(role)}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -176,12 +184,20 @@ export function RoleManagementSection({ tenantId }: { tenantId: string }) {
                     <Heading level={3} as="h4">{role.name}</Heading>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => openEditForm(role)} className="p-1 text-stone-400 dark:text-stone-500 hover:text-blue-600 dark:hover:text-blue-400" aria-label={`役職『${role.name}』を編集`}>
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => openDeleteConfirm(role)} className="p-1 text-stone-400 dark:text-stone-500 hover:text-red-600 dark:hover:text-red-400" aria-label={`役職『${role.name}』を削除`}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <IconButton
+                      icon={<Pencil className="w-4 h-4" />}
+                      aria-label={`役職『${role.name}』を編集`}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEditForm(role)}
+                    />
+                    <IconButton
+                      icon={<Trash2 className="w-4 h-4" />}
+                      aria-label={`役職『${role.name}』を削除`}
+                      variant="danger"
+                      size="sm"
+                      onClick={() => openDeleteConfirm(role)}
+                    />
                   </div>
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">

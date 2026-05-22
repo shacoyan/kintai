@@ -4,6 +4,7 @@ import { ja } from 'date-fns/locale';
 import { TrendingUp } from 'lucide-react';
 import { AttendanceRecord, CorrectionRequest } from '../../types';
 import { EmptyState } from '../ui/EmptyState';
+import { Button } from '../ui';
 import { messages } from '../../lib/messages';
 
 interface DailyListProps {
@@ -100,10 +101,14 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                   </span>
                   <span className="text-xs text-stone-400 dark:text-stone-500 tabular-nums">記録なし</span>
                   {onRequestCorrection && (
-                    <button onClick={() => onRequestCorrection(dateStr)}
-                      className="px-2 py-1 text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 rounded-md hover:bg-blue-50 dark:hover:bg-blue-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                    <Button
+                      variant="tertiary"
+                      size="sm"
+                      onClick={() => onRequestCorrection(dateStr)}
+                      className="text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 hover:bg-blue-100 dark:hover:bg-blue-800/50"
+                    >
                       修正申請
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -130,16 +135,26 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                 </div>
                 <div className="flex gap-2">
                   {onRequestCorrection && (
-                    <button onClick={() => onRequestCorrection(dateStr, record)}
-                      className="flex-1 px-2 py-1 text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 rounded-md hover:bg-blue-50 dark:hover:bg-blue-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                    <Button
+                      variant="tertiary"
+                      size="sm"
+                      fullWidth
+                      onClick={() => onRequestCorrection(dateStr, record)}
+                      className="text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 hover:bg-blue-100 dark:hover:bg-blue-800/50"
+                    >
                       修正申請
-                    </button>
+                    </Button>
                   )}
                   {onRequestDeletion && (
-                    <button onClick={() => onRequestDeletion(dateStr, record)}
-                      className="flex-1 px-2 py-1 text-xs text-red-600 dark:text-red-200 bg-red-50 dark:bg-red-800/30 rounded-md hover:bg-red-50 dark:hover:bg-red-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                    <Button
+                      variant="tertiary"
+                      size="sm"
+                      fullWidth
+                      onClick={() => onRequestDeletion(dateStr, record)}
+                      className="text-xs text-red-600 dark:text-red-200 bg-red-50 dark:bg-red-800/30 hover:bg-red-100 dark:hover:bg-red-800/50"
+                    >
                       削除依頼
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -187,12 +202,14 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                     <td className="px-3 py-2 text-stone-300 dark:text-stone-600">--:--</td>
                     <td className="px-3 py-2">
                       {onRequestCorrection && (
-                        <button
+                        <Button
+                          variant="tertiary"
+                          size="sm"
                           onClick={() => onRequestCorrection(dateStr)}
-                          className="px-2 py-1 text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 rounded-md hover:bg-blue-50 dark:hover:bg-blue-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                          className="text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 hover:bg-blue-100 dark:hover:bg-blue-800/50"
                         >
                           修正申請
-                        </button>
+                        </Button>
                       )}
                     </td>
                   </tr>
@@ -226,20 +243,24 @@ export function DailyList({ records, year, month, onRequestCorrection, onRequest
                     </td>
                     <td className="px-3 py-2 space-x-1">
                       {onRequestCorrection && (
-                        <button
+                        <Button
+                          variant="tertiary"
+                          size="sm"
                           onClick={() => onRequestCorrection(dateStr, record)}
-                          className="px-2 py-1 text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 rounded-md hover:bg-blue-50 dark:hover:bg-blue-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                          className="text-xs text-blue-600 dark:text-blue-200 bg-blue-50 dark:bg-blue-800/30 hover:bg-blue-100 dark:hover:bg-blue-800/50"
                         >
                           修正申請
-                        </button>
+                        </Button>
                       )}
                       {onRequestDeletion && (
-                        <button
+                        <Button
+                          variant="tertiary"
+                          size="sm"
                           onClick={() => onRequestDeletion(dateStr, record)}
-                          className="px-2 py-1 text-xs text-red-600 dark:text-red-200 bg-red-50 dark:bg-red-800/30 rounded-md hover:bg-red-50 dark:hover:bg-red-800/50 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                          className="text-xs text-red-600 dark:text-red-200 bg-red-50 dark:bg-red-800/30 hover:bg-red-100 dark:hover:bg-red-800/50"
                         >
                           削除依頼
-                        </button>
+                        </Button>
                       )}
                     </td>
                   </tr>

@@ -194,10 +194,14 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                     {!record && <p className="text-stone-500 dark:text-stone-300">記録なし</p>}
                     {onRequestCorrection && (
                       <div className="pt-1">
-                        <button onClick={(e) => { e.stopPropagation(); onRequestCorrection?.(dateKey, record ?? undefined); }}
-                          className="text-xs text-blue-700 dark:text-blue-300 underline hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400">
+                        <Button
+                          variant="tertiary"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); onRequestCorrection?.(dateKey, record ?? undefined); }}
+                          className="text-blue-700 dark:text-blue-300 underline hover:no-underline hover:bg-transparent dark:hover:bg-transparent px-0"
+                        >
                           この日を修正申請する
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -399,7 +403,13 @@ export function HistoryPage() {
                 今月へ
               </Button>
             )}
-            <button onClick={handleDownloadCsv} className="px-3 py-2 text-sm font-medium rounded-md shadow-rest bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">CSV ダウンロード</button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleDownloadCsv}
+            >
+              CSV ダウンロード
+            </Button>
           </div>
           <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-stone-600 dark:text-stone-300" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
         </div>
