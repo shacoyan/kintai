@@ -393,13 +393,13 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                     {unsubmittedMembers.length}名
                   </span>
                 </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-300 mb-3">
+                <p className="text-xs text-stone-500 dark:text-stone-300 mb-3">
                   対象月（{format(unsubmittedTargetMonth, 'yyyy年M月')}）にシフト申請がないメンバー一覧です。
                 </p>
-                <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                <ul className="divide-y divide-stone-100 dark:divide-stone-800">
                   {unsubmittedMembers.map((m) => (
                     <li key={m.user_id} className="flex items-center justify-between py-2">
-                      <span className="text-sm text-neutral-800 dark:text-neutral-200">
+                      <span className="text-sm text-stone-800 dark:text-stone-200">
                         {m.display_name}
                       </span>
                       <Button
@@ -420,12 +420,12 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <Card>
                 <Card.Header>
                   <div className="flex items-center space-x-3">
-                    <div className="flex items-center justify-center w-10 h-10 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
-                      <QrCode className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+                    <div className="flex items-center justify-center w-10 h-10 bg-stone-100 dark:bg-stone-700 rounded-lg">
+                      <QrCode className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-300 mb-1">招待コード（メンバーに共有してください）</p>
-                      <p className="text-xl sm:text-2xl font-mono font-bold tracking-wide break-all text-neutral-900 dark:text-neutral-100">
+                      <p className="text-xs text-stone-500 dark:text-stone-300 mb-1">招待コード（メンバーに共有してください）</p>
+                      <p className="text-xl sm:text-2xl font-mono font-bold tracking-wide break-all text-stone-900 dark:text-stone-100">
                         {currentTenant.invite_code}
                       </p>
                     </div>
@@ -435,7 +435,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleCopyCode}
-                      className="px-4 py-2 text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 motion-safe:transition-colors duration-120 ease-out-expo dark:bg-primary-900/30 dark:text-primary-400 dark:hover:bg-primary-900/50 inline-flex items-center space-x-2"
+                      className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 motion-safe:transition-colors duration-150 ease-out dark:bg-blue-700/30 dark:text-blue-400 dark:hover:bg-blue-700/50 inline-flex items-center space-x-2"
                     >
                       {copied ? (
                         <>
@@ -472,7 +472,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
         {activeTab === 'corrections' && (
           <div className="space-y-6">
             <Card padding="none">
-              <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+              <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-700 flex items-center justify-between">
                 <Heading level={2}>修正申請（承認待ち）</Heading>
                 {pendingRequests.length > 0 && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-400">
@@ -489,7 +489,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
 
             {processedRequests.length > 0 && (
               <Card padding="none">
-                <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+                <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-700">
                   <Heading level={2}>修正申請履歴</Heading>
                 </div>
                 <CorrectionList requests={processedRequests} storeNames={storeNames} />
@@ -525,7 +525,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
                     <Heading level={3} as="h2">シフト申請締切</Heading>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
+                    <p className="text-xs text-stone-500 dark:text-stone-300 mt-0.5">
                       対象月（{format(startOfMonth(new Date()), 'yyyy年M月')}）のシフト申請締切日時を設定します。
                     </p>
                   </div>
@@ -545,7 +545,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
                     <Heading level={3} as="h2">給与締め日</Heading>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
+                    <p className="text-xs text-stone-500 dark:text-stone-300 mt-0.5">
                       毎月の給与計算における締め日（1〜31、31 は月末扱い）
                     </p>
                   </div>
@@ -558,9 +558,9 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                       onChange={(e) =>
                         setLocalCloseDay(Math.min(31, Math.max(1, Number(e.target.value))))
                       }
-                      className="w-20 px-2 py-1 border rounded text-sm bg-white dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-100"
+                      className="w-20 px-2 py-1 border rounded text-sm bg-white dark:bg-stone-900 dark:border-stone-700 dark:text-stone-100"
                     />
-                    <label className="flex items-center gap-1 text-sm text-neutral-700 dark:text-neutral-300">
+                    <label className="flex items-center gap-1 text-sm text-stone-700 dark:text-stone-300">
                       <input
                         type="checkbox"
                         checked={localCloseDay === 31}
@@ -591,10 +591,10 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <Heading level={2}>シフト不一致アラート</Heading>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
+                  <p className="text-xs text-stone-500 dark:text-stone-300 mt-0.5">
                     対象: {currentStore?.name ?? '全店舗'}
                   </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">
+                  <p className="text-xs text-stone-500 dark:text-stone-300 mt-0.5">
                     今月の承認済みシフトと実績の差異を表示します（猶予15分）
                   </p>
                 </div>
@@ -618,7 +618,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   return (
     <div className="space-y-6">
       {/* Mobile tabs - horizontal scroll */}
-      <div className="md:hidden border-b border-neutral-200 dark:border-neutral-700 overflow-x-auto -mx-4 px-4">
+      <div className="md:hidden border-b border-stone-200 dark:border-stone-700 overflow-x-auto -mx-4 px-4">
         <nav role="tablist" className="flex space-x-1 min-w-max" style={{ scrollSnapType: 'x mandatory' }}>
           {visibleTabs.map((tab, idx) => (
             <button
@@ -631,10 +631,10 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               ref={(el) => { tabRefs.current[idx] = el; }}
               onKeyDown={(e) => onTabKeyDown(e, idx)}
               onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm motion-safe:transition-colors duration-120 ease-out-expo ${
+              className={`whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm motion-safe:transition-colors duration-150 ease-out ${
                 activeTab === tab.id
-                  ? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
-                  : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 dark:text-neutral-300 dark:hover:text-neutral-200'
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
+                  : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300 dark:text-stone-300 dark:hover:text-stone-200'
               }`}
               style={{ scrollSnapAlign: 'start' }}
             >
@@ -668,12 +668,12 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       <div className="hidden md:flex gap-6">
         {/* Sidebar */}
         <nav className="md:w-[200px] shrink-0">
-          <Card padding="sm" className="sticky top-20 dark:bg-neutral-900">
+          <Card padding="sm" className="sticky top-20 dark:bg-stone-900">
             <div className="space-y-1" role="tablist" aria-orientation="vertical">
               {SECTIONS.map((section, sectionIndex) => (
                 <div key={section.label} role="presentation">
-                  {sectionIndex > 0 && <div className="border-t border-neutral-100 dark:border-neutral-800 my-2" role="presentation" />}
-                  <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider px-3 pt-3 pb-1" role="presentation">{section.label}</div>
+                  {sectionIndex > 0 && <div className="border-t border-stone-100 dark:border-stone-800 my-2" role="presentation" />}
+                  <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider px-3 pt-3 pb-1" role="presentation">{section.label}</div>
                   {visibleTabs.filter(tab => (section.items as readonly string[]).includes(tab.id)).map((tab) => {
                     const tabIdx = visibleTabs.findIndex(t => t.id === tab.id);
                     const isActive = activeTab === tab.id;
@@ -689,10 +689,10 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                         onKeyDown={(e) => onTabKeyDown(e, tabIdx)}
                         onClick={() => setActiveTab(tab.id)}
                         aria-current={isActive ? 'page' : undefined}
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between motion-safe:transition-colors duration-120 ease-out-expo ${
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between motion-safe:transition-colors duration-150 ease-out ${
                           isActive
-                            ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400 font-semibold border-l-2 border-primary-600 dark:border-primary-400 rounded-l-none'
-                            : 'text-neutral-600 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800/60'
+                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-700/30 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400 rounded-l-none'
+                            : 'text-stone-600 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-stone-800/60'
                         }`}
                       >
                         <span className="flex items-center gap-2">

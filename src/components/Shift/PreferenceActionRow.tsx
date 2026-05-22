@@ -37,8 +37,8 @@ const STATUS_DOT_CLASS: Record<string, string> = {
   pending: 'bg-warning-500 dark:bg-warning-400',
   approved: 'bg-success-500 dark:bg-success-400',
   rejected: 'bg-danger-500 dark:bg-danger-400',
-  modified: 'bg-primary-500 dark:bg-primary-400',
-  cancelled: 'bg-neutral-400 dark:bg-neutral-500',
+  modified: 'bg-blue-500 dark:bg-blue-400',
+  cancelled: 'bg-stone-400 dark:bg-stone-500',
 };
 
 interface CardState {
@@ -145,11 +145,11 @@ export function PreferenceActionRow({
 
     if (isUnavailable) {
       return (
-        <div className={`flex items-center gap-1 py-0.5 text-[10px] leading-tight text-neutral-900 dark:text-neutral-100 ${isRejected ? 'opacity-60 line-through' : ''}`} title={state.error ?? memberTitle}>
+        <div className={`flex items-center gap-1 py-0.5 text-[10px] leading-tight text-stone-900 dark:text-stone-100 ${isRejected ? 'opacity-60 line-through' : ''}`} title={state.error ?? memberTitle}>
           <span className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass}`} />
-          <span className={`flex-shrink-0 w-2 h-2 rounded-sm ${memberDotClass ?? 'bg-neutral-300'}`} aria-hidden="true" />
+          <span className={`flex-shrink-0 w-2 h-2 rounded-sm ${memberDotClass ?? 'bg-stone-300'}`} aria-hidden="true" />
           <span className="font-medium">{fullName}</span>
-          <span className="text-neutral-600 dark:text-neutral-300">
+          <span className="text-stone-600 dark:text-stone-300">
             {isApproved ? '不可（自動）' : '不可'}
           </span>
         </div>
@@ -158,15 +158,15 @@ export function PreferenceActionRow({
 
     return (
       <div className={`flex flex-col py-0.5 ${isRejected ? 'opacity-60 line-through' : ''}`} title={state.error ?? memberTitle}>
-        <div className="flex items-center gap-1 text-[10px] leading-tight text-neutral-900 dark:text-neutral-100">
+        <div className="flex items-center gap-1 text-[10px] leading-tight text-stone-900 dark:text-stone-100">
           <span className={`flex-shrink-0 w-2 h-2 rounded-full ${statusDotClass}`} />
-          <span className={`flex-shrink-0 w-2 h-2 rounded-sm ${memberDotClass ?? 'bg-neutral-300'}`} aria-hidden="true" />
+          <span className={`flex-shrink-0 w-2 h-2 rounded-sm ${memberDotClass ?? 'bg-stone-300'}`} aria-hidden="true" />
           <span className="font-medium truncate">{fullName}</span>
-          <span className="text-neutral-600 dark:text-neutral-300 flex-shrink-0">
+          <span className="text-stone-600 dark:text-stone-300 flex-shrink-0">
             {theme.label}
           </span>
           {timeLabel && (
-            <span className="text-neutral-500 dark:text-neutral-300 tabular-nums flex-shrink-0">
+            <span className="text-stone-500 dark:text-stone-300 tabular-nums flex-shrink-0">
               {timeLabel}
             </span>
           )}
@@ -174,14 +174,14 @@ export function PreferenceActionRow({
         
         {isPending && canManage && showInlineActions && (
           <div className="flex items-center justify-end gap-1 mt-0.5">
-            {state.loading && <Spinner size="sm" inline className="text-neutral-500 dark:text-neutral-300" />}
+            {state.loading && <Spinner size="sm" inline className="text-stone-500 dark:text-stone-300" />}
             
             {!state.loading && (
               <>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleApprove(); }}
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-success-700 bg-success-50 hover:bg-success-100 dark:text-success-300 dark:bg-success-900 dark:hover:bg-success-800 motion-safe:transition-colors duration-120 ease-out-expo"
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-success-700 bg-success-50 hover:bg-success-100 dark:text-success-300 dark:bg-success-900 dark:hover:bg-success-800 motion-safe:transition-colors duration-150 ease-out"
                   aria-label="承認"
                 >
                   <Check className="w-3.5 h-3.5" />
@@ -189,7 +189,7 @@ export function PreferenceActionRow({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleReject(); }}
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:hover:bg-danger-800 motion-safe:transition-colors duration-120 ease-out-expo"
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 dark:text-danger-300 dark:bg-danger-900 dark:hover:bg-danger-800 motion-safe:transition-colors duration-150 ease-out"
                   aria-label="却下"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -207,7 +207,7 @@ export function PreferenceActionRow({
               </span>
             )}
             {!isApproved && (
-              <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300">
+              <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-full text-[9px] font-medium bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300">
                 <XCircle className="w-2.5 h-2.5" />却下
               </span>
             )}
@@ -222,12 +222,12 @@ export function PreferenceActionRow({
 
   return (
     <div
-      className={`rounded-lg border p-3 space-y-2 motion-safe:transition-colors duration-120 ease-out-expo ${
+      className={`rounded-lg border p-3 space-y-2 motion-safe:transition-colors duration-150 ease-out ${
         isPending
           ? 'border-warning-200 bg-warning-50 dark:border-warning-700 dark:bg-warning-950'
           : isApproved
           ? 'border-success-200 bg-success-50 dark:border-success-700 dark:bg-success-950'
-          : 'border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800'
+          : 'border-stone-200 bg-stone-50 dark:border-stone-700 dark:bg-stone-800'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -242,34 +242,34 @@ export function PreferenceActionRow({
                   onToggleSelect?.(preference.id);
                 }}
                 aria-label={`${memberName ?? '不明'} のシフト申請を選択`}
-                className="mt-1 w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-primary-600 dark:text-primary-400 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-800 cursor-pointer"
+                className="mt-1 w-4 h-4 rounded border-stone-300 dark:border-stone-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-stone-800 cursor-pointer"
               />
             )}
-            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+            <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">
               {memberName ?? '不明'}
             </span>
             {showStoreBadge && storeName && (
-              <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-info-50 text-info-700 dark:bg-info-900/30 dark:text-info-300">
+              <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                 {storeName}
               </span>
             )}
-            <span className="text-xs text-neutral-500 dark:text-neutral-300">{preference.date}</span>
+            <span className="text-xs text-stone-500 dark:text-stone-300">{preference.date}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className={`text-base leading-none font-bold ${theme.iconColorClass}`}>
               <Ic className="w-4 h-4" />
             </span>
-            <span className="text-xs text-neutral-600 dark:text-neutral-300">
+            <span className="text-xs text-stone-600 dark:text-stone-300">
               {theme.label}
             </span>
             {preference.preference_type !== 'unavailable' && preference.start_time && preference.end_time && (
-              <span className="text-xs text-neutral-500 dark:text-neutral-300">
+              <span className="text-xs text-stone-500 dark:text-stone-300">
                 {formatTimeRange(preference.start_time, preference.end_time, { separator: ' 〜 ' })}
               </span>
             )}
           </div>
           {preference.note && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-300 mt-0.5">{preference.note}</p>
+            <p className="text-xs text-stone-500 dark:text-stone-300 mt-0.5">{preference.note}</p>
           )}
         </div>
 
@@ -283,7 +283,7 @@ export function PreferenceActionRow({
             </span>
           )}
           {isRejected && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300">
               <XCircle className="w-3 h-3" />却下済
             </span>
           )}
@@ -304,13 +304,13 @@ export function PreferenceActionRow({
       {state.showTimeEditor && isPending && canManage && (
         <div className="grid grid-cols-2 gap-2 pt-1">
           <div>
-            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+            <label className="block text-xs font-medium text-stone-600 dark:text-stone-300 mb-1">
               開始時刻
             </label>
             <select
               value={state.editStart}
               onChange={(e) => setState((prev) => ({ ...prev, editStart: e.target.value }))}
-              className="block w-full px-2 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white dark:bg-neutral-700 dark:text-neutral-100"
+              className="block w-full px-2 py-2 text-sm border border-stone-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-stone-700 dark:text-stone-100"
             >
               {TIME_OPTIONS.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -318,13 +318,13 @@ export function PreferenceActionRow({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">
+            <label className="block text-xs font-medium text-stone-600 dark:text-stone-300 mb-1">
               終了時刻
             </label>
             <select
               value={state.editEnd}
               onChange={(e) => setState((prev) => ({ ...prev, editEnd: e.target.value }))}
-              className="block w-full px-2 py-2 text-sm border border-neutral-300 dark:border-neutral-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-white dark:bg-neutral-700 dark:text-neutral-100"
+              className="block w-full px-2 py-2 text-sm border border-stone-300 dark:border-stone-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-white dark:bg-stone-700 dark:text-stone-100"
             >
               {TIME_OPTIONS.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -336,7 +336,7 @@ export function PreferenceActionRow({
 
       {isPending && !canManage && !isUnavailable && (
         <div className="pt-1">
-          <span className="text-xs text-neutral-400 dark:text-neutral-500">権限なし</span>
+          <span className="text-xs text-stone-400 dark:text-stone-500">権限なし</span>
         </div>
       )}
 
@@ -358,7 +358,7 @@ export function PreferenceActionRow({
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); setState((prev) => ({ ...prev, showTimeEditor: true })); }}
                 variant="tertiary"
-                className="h-auto px-3 py-1 text-xs text-primary-700 bg-primary-50 border border-primary-200 hover:bg-primary-100 dark:text-primary-300 dark:bg-primary-900 dark:border-primary-700 dark:hover:bg-primary-800"
+                className="h-auto px-3 py-1 text-xs text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900 dark:border-blue-700 dark:hover:bg-blue-800"
               >
                 時間指定で仮承認
               </Button>
@@ -390,7 +390,7 @@ export function PreferenceActionRow({
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); setState((prev) => ({ ...prev, showTimeEditor: false })); }}
                 variant="tertiary"
-                className="h-auto px-3 py-1 text-xs text-neutral-600 bg-neutral-100 hover:bg-neutral-200 dark:text-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600"
+                className="h-auto px-3 py-1 text-xs text-stone-600 bg-stone-100 hover:bg-stone-200 dark:text-stone-300 dark:bg-stone-700 dark:hover:bg-stone-600"
               >
                 キャンセル
               </Button>
@@ -410,7 +410,7 @@ export function PreferenceActionRow({
               <button
                 type="button"
                 onClick={() => setConfirming(null)}
-                className="h-auto px-3 py-1 text-xs rounded text-neutral-700 bg-neutral-100 hover:bg-neutral-200 dark:text-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600"
+                className="h-auto px-3 py-1 text-xs rounded text-stone-700 bg-stone-100 hover:bg-stone-200 dark:text-stone-200 dark:bg-stone-700 dark:hover:bg-stone-600"
               >
                 戻す
               </button>
@@ -430,7 +430,7 @@ export function PreferenceActionRow({
               <button
                 type="button"
                 onClick={() => setConfirming(null)}
-                className="h-auto px-3 py-1 text-xs rounded text-neutral-700 bg-neutral-100 hover:bg-neutral-200 dark:text-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600"
+                className="h-auto px-3 py-1 text-xs rounded text-stone-700 bg-stone-100 hover:bg-stone-200 dark:text-stone-200 dark:bg-stone-700 dark:hover:bg-stone-600"
               >
                 戻す
               </button>
@@ -450,7 +450,7 @@ export function PreferenceActionRow({
               <button
                 type="button"
                 onClick={() => setConfirming(null)}
-                className="h-auto px-3 py-1 text-xs rounded text-neutral-700 bg-neutral-100 hover:bg-neutral-200 dark:text-neutral-200 dark:bg-neutral-700 dark:hover:bg-neutral-600"
+                className="h-auto px-3 py-1 text-xs rounded text-stone-700 bg-stone-100 hover:bg-stone-200 dark:text-stone-200 dark:bg-stone-700 dark:hover:bg-stone-600"
               >
                 戻す
               </button>
@@ -474,7 +474,7 @@ export function PreferenceActionRow({
               <button
                 type="button"
                 onClick={() => setConfirming(null)}
-                className="px-2 py-1 text-xs rounded bg-neutral-100 dark:bg-neutral-700"
+                className="px-2 py-1 text-xs rounded bg-stone-100 dark:bg-stone-700"
               >
                 戻す
               </button>

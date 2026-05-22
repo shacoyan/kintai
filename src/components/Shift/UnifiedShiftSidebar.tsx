@@ -80,17 +80,17 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_BADGE_CLASS: Record<string, string> = {
   pending: 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300',
-  tentative: 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-300',
+  tentative: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   approved: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300',
-  modified: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300',
+  modified: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   rejected: 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300',
-  cancelled: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700/40 dark:text-neutral-300',
+  cancelled: 'bg-stone-100 text-stone-700 dark:bg-stone-700/40 dark:text-stone-300',
 };
 
 const MEMBER_COLORS = [
-  'bg-primary-100 border-primary-300 text-primary-800 dark:bg-primary-900/30 dark:border-primary-700 dark:text-primary-300',
+  'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
   'bg-member-3-100 border-member-3-300 text-member-3-800 dark:bg-member-3-100/20 dark:border-member-3-300/40 dark:text-member-3-100',
-  'bg-info-100 border-info-300 text-info-800 dark:bg-info-900/30 dark:border-info-700 dark:text-info-300',
+  'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
   'bg-member-4-100 border-member-4-300 text-member-4-800 dark:bg-member-4-100/20 dark:border-member-4-300/40 dark:text-member-4-100',
   'bg-member-6-100 border-member-6-300 text-member-6-800 dark:bg-member-6-100/20 dark:border-member-6-300/40 dark:text-member-6-100',
   'bg-member-2-100 border-member-2-300 text-member-2-800 dark:bg-member-2-100/20 dark:border-member-2-300/40 dark:text-member-2-100',
@@ -102,8 +102,8 @@ const MEMBER_COLORS = [
 
 function ShiftStatusReadonly({ shift }: { shift: Shift }) {
   return (
-    <div className="text-xs text-neutral-600 dark:text-neutral-300 flex items-center gap-2 px-3 py-2 bg-neutral-50 dark:bg-neutral-800 rounded">
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${STATUS_BADGE_CLASS[shift.status] ?? 'bg-neutral-100 text-neutral-700'}`}>
+    <div className="text-xs text-stone-600 dark:text-stone-300 flex items-center gap-2 px-3 py-2 bg-stone-50 dark:bg-stone-800 rounded">
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${STATUS_BADGE_CLASS[shift.status] ?? 'bg-stone-100 text-stone-700'}`}>
         {STATUS_LABEL[shift.status] ?? shift.status}
       </span>
       <span className="tabular-nums">
@@ -279,13 +279,13 @@ export function UnifiedShiftSidebar({
             )}
           </Card.Header>
           {!selectedDate ? (
-            <div className="text-sm text-neutral-500">
+            <div className="text-sm text-stone-500">
               カレンダーで日付を選択すると、その日のシフト・申請が表示されます。
             </div>
           ) : (
             <>
               {/* 上段「あなたの申請」セクション */}
-              <h4 className="text-xs font-semibold text-primary-600 dark:text-primary-300 mb-1.5 px-1">
+              <h4 className="text-xs font-semibold text-blue-600 dark:text-blue-300 mb-1.5 px-1">
                 あなたの申請
               </h4>
               {myShifts.length > 0 && (
@@ -312,13 +312,13 @@ export function UnifiedShiftSidebar({
 
               {/* 理由: 「あなたの申請」と「他メンバー」セクションの divider */}
               {showOtherSection && (
-                <div className="border-t border-neutral-200 dark:border-neutral-700 my-3" />
+                <div className="border-t border-stone-200 dark:border-stone-700 my-3" />
               )}
 
               {/* 下段「他メンバー」セクション */}
               {showOtherSection && (
                 <>
-                  <h4 className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-1.5 px-1">
+                  <h4 className="text-xs font-semibold text-stone-500 dark:text-stone-400 mb-1.5 px-1">
                     他メンバー
                   </h4>
                   {otherSectionShifts.length > 0 && (
@@ -365,7 +365,7 @@ export function UnifiedShiftSidebar({
                               onMutated={onMutated}
                             />
                             {showOverrideRow && (
-                              <div className="text-[11px] text-neutral-500 dark:text-neutral-300 px-2 leading-relaxed">
+                              <div className="text-[11px] text-stone-500 dark:text-stone-300 px-2 leading-relaxed">
                                 <div>
                                   申請:{' '}
                                   <span className="tabular-nums">
@@ -394,10 +394,10 @@ export function UnifiedShiftSidebar({
         {/* 未対応サマリ Card */}
         <Card padding="sm">
           <div className="text-center">
-            <div className="text-4xl font-bold text-primary-600">
+            <div className="text-4xl font-bold text-blue-600">
               {pendingPreferenceCount ?? 0}
             </div>
-            <div className="text-sm text-neutral-500 mt-1">
+            <div className="text-sm text-stone-500 mt-1">
               未対応のシフト申請
             </div>
           </div>
@@ -413,7 +413,7 @@ export function UnifiedShiftSidebar({
                   <div className={`text-3xl font-bold tabular-nums ${t.countTextClass}`}>
                     {preferenceSummary[t.type] ?? 0}
                   </div>
-                  <div className="text-xs text-neutral-500">{t.label}</div>
+                  <div className="text-xs text-stone-500">{t.label}</div>
                 </div>
               ))}
             </div>
@@ -479,7 +479,7 @@ export function UnifiedShiftSidebar({
                 <div className={`text-3xl font-bold tabular-nums ${t.countTextClass}`}>
                   {preferenceSummary[t.type] ?? 0}
                 </div>
-                <div className="text-xs text-neutral-500">{t.label}</div>
+                <div className="text-xs text-stone-500">{t.label}</div>
               </div>
             ))}
           </div>

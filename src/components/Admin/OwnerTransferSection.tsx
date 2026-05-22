@@ -28,9 +28,9 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
 
   if (!isOwner) {
     return (
-      <div className="bg-white dark:bg-neutral-900 rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-stone-900 rounded-lg shadow p-4">
         <Heading level={2} as="h3" className="mb-4">オーナー権限の移譲</Heading>
-        <p className="text-neutral-500 dark:text-neutral-300 text-sm">オーナーのみ実行可能です</p>
+        <p className="text-stone-500 dark:text-stone-300 text-sm">オーナーのみ実行可能です</p>
       </div>
     );
   }
@@ -69,7 +69,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
         type="button"
         onClick={handleCloseSheet}
         disabled={submitting}
-        className="px-4 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 bg-neutral-100 dark:bg-neutral-800 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50"
+        className="px-4 py-2 text-sm font-medium text-stone-700 dark:text-stone-200 bg-stone-100 dark:bg-stone-800 rounded-md hover:bg-stone-200 dark:hover:bg-stone-700 disabled:opacity-50"
       >
         キャンセル
       </button>
@@ -79,19 +79,19 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
 
   return (
     <>
-      <div className="bg-white dark:bg-neutral-900 rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-stone-900 rounded-lg shadow p-4">
         <Heading level={2} as="h3" className="mb-4">オーナー権限の移譲</Heading>
         
         {loading ? (
-          <div className="text-sm text-neutral-500 dark:text-neutral-300"><Spinner size="sm" inline showLabel label="読み込み中" /></div>
+          <div className="text-sm text-stone-500 dark:text-stone-300"><Spinner size="sm" inline showLabel label="読み込み中" /></div>
         ) : managerCandidates.length === 0 ? (
           <div className="text-center py-6">
-            <p className="text-neutral-500 dark:text-neutral-300 text-sm">先にスタッフを店長 (manager) に昇格させてください</p>
+            <p className="text-stone-500 dark:text-stone-300 text-sm">先にスタッフを店長 (manager) に昇格させてください</p>
           </div>
         ) : (
           <form onSubmit={handleOpenConfirm} className="space-y-4">
             <div>
-              <label htmlFor="transfer-target" className="block text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-1">
+              <label htmlFor="transfer-target" className="block text-sm font-medium text-stone-700 dark:text-stone-200 mb-1">
                 譲渡先のユーザー
               </label>
               <select
@@ -99,7 +99,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
                 required
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-neutral-300 dark:border-neutral-700 focus:outline-none focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 sm:text-sm rounded-md border"
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-stone-300 dark:border-stone-700 focus:outline-none focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 sm:text-sm rounded-md border"
               >
                 <option value="" disabled>
                   店長を選択してください
@@ -115,7 +115,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
               <button
                 type="submit"
                 disabled={!selectedUserId}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 dark:bg-primary-500 rounded-md hover:bg-primary-700 dark:hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-primary-400 disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 dark:bg-blue-500 rounded-md hover:bg-blue-700 dark:hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:bg-stone-300 dark:disabled:bg-stone-600 disabled:cursor-not-allowed"
               >
                 権限を移譲する
               </button>
@@ -130,7 +130,7 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
         title="オーナー権限の移譲確認"
         footer={confirmFooter}
       >
-        <div className="p-4 text-sm bg-warning-50 dark:bg-warning-900/30 border-l-4 border-warning-400 dark:border-warning-600 text-neutral-700 dark:text-neutral-200">
+        <div className="p-4 text-sm bg-warning-50 dark:bg-warning-900/30 border-l-4 border-warning-400 dark:border-warning-600 text-stone-700 dark:text-stone-200">
           <p>
             権限を移譲すると、あなたは店長 (manager) に降格します。元に戻すには新オーナーの操作が必要です。本当に移譲しますか？
           </p>

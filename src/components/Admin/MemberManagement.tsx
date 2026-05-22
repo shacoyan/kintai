@@ -23,9 +23,9 @@ interface MemberManagementProps {
 }
 
 const roleBadge: Record<string, { label: string; className: string }> = {
-  owner: { label: 'オーナー', className: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300' },
+  owner: { label: 'オーナー', className: 'bg-blue-100 text-blue-700 dark:bg-blue-700/30 dark:text-blue-300' },
   manager: { label: '店長', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
-  staff: { label: 'スタッフ', className: 'bg-neutral-100 text-neutral-800 dark:bg-neutral-700 dark:text-neutral-200' },
+  staff: { label: 'スタッフ', className: 'bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-200' },
 };
 
 export function MemberManagement({ tenantId }: MemberManagementProps) {
@@ -241,17 +241,17 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
 
   return (
     <Card padding="none">
-      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+      <div className="bg-white dark:bg-stone-800 rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-700">
           <Heading level={2}>メンバー管理</Heading>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">各メンバーの時給・深夜給を設定できます</p>
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-300">対象: {currentStore ? currentStore.name : '全店舗'}</p>
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-300">各メンバーの時給・深夜給を設定できます</p>
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-300">対象: {currentStore ? currentStore.name : '全店舗'}</p>
         </div>
 
         {/* カード型レイアウト（モバイル対応） */}
-        <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
+        <div className="divide-y divide-stone-200 dark:divide-stone-700">
           {members.length === 0 ? (
-            <EmptyState icon={<Users className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />} title={messages.empty.member.title} description={messages.empty.member.description} />
+            <EmptyState icon={<Users className="w-12 h-12 text-stone-400 dark:text-stone-500" />} title={messages.empty.member.title} description={messages.empty.member.description} />
           ) : (
             members.map((member) => {
               const badge = roleBadge[member.role] || roleBadge.staff;
@@ -259,16 +259,16 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
               const rate = member.hourly_rate ?? 0;
 
               return (
-                <div key={member.id} className="px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo">
+                <div key={member.id} className="px-6 py-4 hover:bg-stone-50 dark:hover:bg-stone-700 motion-safe:transition-colors duration-150 ease-out">
                   {/* 上段: 名前・ロール・参加日 */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-300 font-bold text-sm shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-700/30 flex items-center justify-center text-blue-700 dark:text-blue-300 font-bold text-sm shrink-0">
                         {member.display_name.charAt(0)}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">{member.display_name}</p>
-                        <p className="text-xs text-neutral-400 dark:text-neutral-500">{new Date(member.created_at).toLocaleDateString('ja-JP')} 参加</p>
+                        <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{member.display_name}</p>
+                        <p className="text-xs text-stone-400 dark:text-stone-500">{new Date(member.created_at).toLocaleDateString('ja-JP')} 参加</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -282,9 +282,9 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           aria-label={`${member.display_name} の店長権限`}
                           onClick={() => handleRoleToggle(member)}
                           disabled={togglingRoleId === member.id}
-                          className={`px-2 py-0.5 text-xs font-medium rounded motion-safe:transition-colors duration-120 ease-out-expo min-h-[44px] ${
+                          className={`px-2 py-0.5 text-xs font-medium rounded motion-safe:transition-colors duration-150 ease-out min-h-[44px] ${
                             member.role === 'manager'
-                              ? 'text-neutral-600 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600'
+                              ? 'text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600'
                               : 'text-success-700 dark:text-success-300 bg-success-50 dark:bg-success-900/30 hover:bg-success-100 dark:hover:bg-success-900/50'
                           } disabled:opacity-50`}
                           title={member.role === 'manager' ? 'スタッフに変更' : '店長に変更'}
@@ -295,7 +295,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       {member.role !== 'owner' && (
                         <button
                           onClick={() => setDeletingId(member.id)}
-                          className="p-2 text-neutral-400 dark:text-neutral-500 hover:text-danger-500 dark:hover:text-danger-400 motion-safe:transition-colors duration-120 ease-out-expo min-h-[44px] min-w-[44px]"
+                          className="p-2 text-stone-400 dark:text-stone-500 hover:text-danger-500 dark:hover:text-danger-400 motion-safe:transition-colors duration-150 ease-out min-h-[44px] min-w-[44px]"
                           title="メンバーを削除"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -326,11 +326,11 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                   <div className="space-y-2 md:ml-12">
                     {/* 役職セレクト */}
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-neutral-500 dark:text-neutral-300 w-14">役職</span>
+                      <span className="text-xs text-stone-500 dark:text-stone-300 w-14">役職</span>
                       <select
                         value={member.role_id ?? ''}
                         onChange={(e) => handleRoleIdChange(member, e.target.value)}
-                        className="text-sm border border-neutral-300 dark:border-neutral-600 rounded-md px-2 py-1 bg-white dark:bg-neutral-700 dark:text-neutral-100 min-h-[36px]"
+                        className="text-sm border border-stone-300 dark:border-stone-600 rounded-md px-2 py-1 bg-white dark:bg-stone-700 dark:text-stone-100 min-h-[36px]"
                         aria-label={`${member.display_name} の役職`}
                       >
                         <option value="">未設定</option>
@@ -341,24 +341,24 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     </div>
                     {/* 給与タイプ切替 */}
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-neutral-500 dark:text-neutral-300 w-14">給与形態</span>
-                      <div className="flex rounded-md overflow-hidden border border-neutral-300 dark:border-neutral-600">
+                      <span className="text-xs text-stone-500 dark:text-stone-300 w-14">給与形態</span>
+                      <div className="flex rounded-md overflow-hidden border border-stone-300 dark:border-stone-600">
                         <button
                           onClick={() => handlePayTypeChange(member, 'hourly')}
-                          className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-120 ease-out-expo ${
+                          className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-150 ease-out ${
                             (member.pay_type ?? 'hourly') === 'hourly'
-                              ? 'bg-primary-600 dark:bg-primary-500 text-white'
-                              : 'bg-white dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-600'
+                              ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                              : 'bg-white dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-600'
                           }`}
                         >
                           時給
                         </button>
                         <button
                           onClick={() => handlePayTypeChange(member, 'monthly')}
-                          className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-120 ease-out-expo ${
+                          className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-150 ease-out ${
                             member.pay_type === 'monthly'
-                              ? 'bg-primary-600 dark:bg-primary-500 text-white'
-                              : 'bg-white dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-600'
+                              ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                              : 'bg-white dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-600'
                           }`}
                         >
                           月給
@@ -370,16 +370,16 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       {/* 時給/月給入力 */}
                       {(member.pay_type ?? 'hourly') === 'hourly' ? (
                         <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
-                          <span className="text-xs text-neutral-500 dark:text-neutral-300 w-14">時給</span>
+                          <span className="text-xs text-stone-500 dark:text-stone-300 w-14">時給</span>
                           {(isEditing && !isMobile) ? (
                             <div className="hidden md:flex items-center gap-2">
-                              <span className="text-sm text-neutral-500 dark:text-neutral-300">¥</span>
+                              <span className="text-sm text-stone-500 dark:text-stone-300">¥</span>
                               <input
                                 type="number"
                                 value={editRate}
                                 onChange={(e) => setEditRate(e.target.value)}
                                 onKeyDown={(e) => handleKeyDown(e, member.id)}
-                                className="w-24 px-2 py-2 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                                className="w-24 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
                                 autoFocus
                                 disabled={saving}
                                 min="0"
@@ -404,9 +404,9 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           ) : (
                             <button
                               onClick={() => handleStartEdit(member)}
-                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-120 ease-out-expo ${
+                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-150 ease-out ${
                                 rate > 0
-                                  ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
+                                  ? 'text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
                                   : 'text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900 hover:bg-warning-100 dark:hover:bg-warning-800'
                               }`}
                             >
@@ -415,26 +415,26 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               ) : (() => {
                                 const inheritedRate = member.role_id ? (rolesMap.get(member.role_id)?.default_hourly_rate ?? null) : null;
                                 if (inheritedRate != null && inheritedRate > 0) {
-                                  return (<span className="text-[11px] text-neutral-500 dark:text-neutral-300">役職時給 ¥{inheritedRate.toLocaleString()} (継承)</span>);
+                                  return (<span className="text-[11px] text-stone-500 dark:text-stone-300">役職時給 ¥{inheritedRate.toLocaleString()} (継承)</span>);
                                 }
                                 return (<>未設定</>);
                               })()}
-                              <Pencil className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
+                              <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
                             </button>
                           )}
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
-                          <span className="text-xs text-neutral-500 dark:text-neutral-300 w-14">月給</span>
+                          <span className="text-xs text-stone-500 dark:text-stone-300 w-14">月給</span>
                           {(editingMonthlySalaryId === member.id && !isMobile) ? (
                             <div className="hidden md:flex items-center gap-2">
-                              <span className="text-sm text-neutral-500 dark:text-neutral-300">¥</span>
+                              <span className="text-sm text-stone-500 dark:text-stone-300">¥</span>
                               <input
                                 type="number"
                                 value={editMonthlySalary}
                                 onChange={(e) => setEditMonthlySalary(e.target.value)}
                                 onKeyDown={(e) => handleMonthlySalaryKeyDown(e, member.id)}
-                                className="w-28 px-2 py-2 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                                className="w-28 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
                                 autoFocus
                                 disabled={saving}
                                 min="0"
@@ -459,9 +459,9 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           ) : (
                             <button
                               onClick={() => handleStartEditMonthlySalary(member)}
-                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-120 ease-out-expo ${
+                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-150 ease-out ${
                                 (member.monthly_salary ?? 0) > 0
-                                  ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
+                                  ? 'text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
                                   : 'text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900 hover:bg-warning-100 dark:hover:bg-warning-800'
                               }`}
                             >
@@ -470,7 +470,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               ) : (
                                 <>未設定</>
                               )}
-                              <Pencil className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
+                              <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
                             </button>
                           )}
                         </div>
@@ -478,7 +478,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
 
                       {/* 有給付与日数 */}
                       <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
-                        <span className="text-xs text-neutral-500 dark:text-neutral-300 w-10">有給</span>
+                        <span className="text-xs text-stone-500 dark:text-stone-300 w-10">有給</span>
                         {(editingPaidLeaveDaysId === member.id && !isMobile) ? (
                           <div className="hidden md:flex items-center gap-2">
                             <input
@@ -486,7 +486,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               value={editPaidLeaveDays}
                               onChange={(e) => setEditPaidLeaveDays(e.target.value)}
                               onKeyDown={(e) => handlePaidLeaveDaysKeyDown(e, member.id)}
-                              className="w-20 px-2 py-2 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 bg-primary-50 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                              className="w-20 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
                               autoFocus
                               disabled={saving}
                               min="0"
@@ -511,9 +511,9 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         ) : (
                           <button
                             onClick={() => handleStartEditPaidLeaveDays(member)}
-                            className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-120 ease-out-expo ${
+                            className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-150 ease-out ${
                               (member.paid_leave_days ?? 0) > 0
-                                ? 'text-neutral-900 dark:text-neutral-100 border-neutral-200 dark:border-neutral-700 hover:border-primary-300 dark:hover:border-primary-700 hover:bg-primary-50 dark:hover:bg-primary-900/30'
+                                ? 'text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
                                 : 'text-warning-600 dark:text-warning-400 border-warning-200 dark:border-warning-800 bg-warning-50 dark:bg-warning-900 hover:bg-warning-100 dark:hover:bg-warning-800'
                             }`}
                           >
@@ -522,7 +522,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             ) : (
                               <>未設定</>
                             )}
-                            <Pencil className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-500" />
+                            <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
                           </button>
                         )}
                       </div>
@@ -534,9 +534,9 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             type="checkbox"
                             checked={member.night_shift_enabled ?? true}
                             onChange={() => handleNightShiftToggle(member)}
-                            className="h-4 w-4 text-primary-600 dark:text-primary-400 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer"
+                            className="h-4 w-4 text-blue-600 dark:text-blue-400 border-stone-300 dark:border-stone-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer"
                           />
-                          <span className="text-xs text-neutral-600 dark:text-neutral-300">深夜給 <span className="font-medium">1.25x</span></span>
+                          <span className="text-xs text-stone-600 dark:text-stone-300">深夜給 <span className="font-medium">1.25x</span></span>
                         </label>
                       </div>
 
@@ -569,9 +569,9 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                                   handleParttimeToggle(member);
                                 }}
                                 aria-label={`${member.display_name} のバイト判定`}
-                                className="h-4 w-4 text-primary-600 dark:text-primary-400 border-neutral-300 dark:border-neutral-600 rounded focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer disabled:cursor-not-allowed"
+                                className="h-4 w-4 text-blue-600 dark:text-blue-400 border-stone-300 dark:border-stone-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer disabled:cursor-not-allowed"
                               />
-                              <span className="text-xs text-neutral-600 dark:text-neutral-300">バイト</span>
+                              <span className="text-xs text-stone-600 dark:text-stone-300">バイト</span>
                             </label>
                           );
                         })()}
@@ -592,7 +592,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     }
                   >
                     <div className="px-4 py-2">
-                      <label className="block text-xs text-neutral-500 dark:text-neutral-300 mb-2">時給（円/時）</label>
+                      <label className="block text-xs text-stone-500 dark:text-stone-300 mb-2">時給（円/時）</label>
                       <Input type="number" aria-label="時給 (円)" value={editRate} onChange={(e) => setEditRate(e.target.value)} autoFocus min="0" step="50" disabled={saving} />
                     </div>
                   </BottomSheet>
@@ -610,7 +610,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     }
                   >
                     <div className="px-4 py-2">
-                      <label className="block text-xs text-neutral-500 dark:text-neutral-300 mb-2">月給（円/月）</label>
+                      <label className="block text-xs text-stone-500 dark:text-stone-300 mb-2">月給（円/月）</label>
                       <Input type="number" aria-label="月給 (円)" value={editMonthlySalary} onChange={(e) => setEditMonthlySalary(e.target.value)} autoFocus min="0" step="10000" disabled={saving} />
                     </div>
                   </BottomSheet>
@@ -628,7 +628,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     }
                   >
                     <div className="px-4 py-2">
-                      <label className="block text-xs text-neutral-500 dark:text-neutral-300 mb-2">有給日数（日）</label>
+                      <label className="block text-xs text-stone-500 dark:text-stone-300 mb-2">有給日数（日）</label>
                       <Input type="number" aria-label="有給日数" value={editPaidLeaveDays} onChange={(e) => setEditPaidLeaveDays(e.target.value)} autoFocus min="0" step="0.5" disabled={saving} />
                     </div>
                   </BottomSheet>
@@ -638,8 +638,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
           )}
         </div>
 
-        <div className="px-6 py-3 bg-neutral-50 dark:bg-neutral-700 border-t border-neutral-200 dark:border-neutral-700">
-          <p className="text-xs text-neutral-500 dark:text-neutral-300">深夜給: 22:00〜翌5:00 の勤務時間に対して時給1.25倍で計算されます</p>
+        <div className="px-6 py-3 bg-stone-50 dark:bg-stone-700 border-t border-stone-200 dark:border-stone-700">
+          <p className="text-xs text-stone-500 dark:text-stone-300">深夜給: 22:00〜翌5:00 の勤務時間に対して時給1.25倍で計算されます</p>
         </div>
       </div>
     </Card>

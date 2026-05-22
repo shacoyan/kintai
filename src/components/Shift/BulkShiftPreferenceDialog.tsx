@@ -207,7 +207,7 @@ export function BulkShiftPreferenceDialog({
 
         {/* 日付プレビュー chips */}
         <div>
-          <span className="block text-label text-neutral-700 dark:text-neutral-300 mb-2">
+          <span className="block text-label text-stone-700 dark:text-stone-300 mb-2">
             {messages.shiftPreference.bulk.dateCount(total)}
           </span>
           <ul
@@ -217,13 +217,13 @@ export function BulkShiftPreferenceDialog({
             {visibleDates.map((d) => (
               <li
                 key={d}
-                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-info-50 text-info-700 border border-info-200 dark:bg-info-900/30 dark:text-info-200 dark:border-info-700 tabular-nums"
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-700 tabular-nums"
               >
                 {d}
               </li>
             ))}
             {remainingCount > 0 && (
-              <li className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+              <li className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-700 dark:bg-stone-800 dark:text-stone-200">
                 +{remainingCount}日
               </li>
             )}
@@ -244,7 +244,7 @@ export function BulkShiftPreferenceDialog({
         {lockedCount > 0 && (
           <div
             role="status"
-            className="rounded-md border border-info-200 dark:border-info-800 bg-info-50 dark:bg-info-900/30 px-3 py-2 text-xs text-info-800 dark:text-info-200"
+            className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 px-3 py-2 text-xs text-blue-800 dark:text-blue-200"
           >
             {messages.shiftPreference.bulk.lockedWarning(total, lockedCount)}
           </div>
@@ -252,7 +252,7 @@ export function BulkShiftPreferenceDialog({
 
         {/* 希望種別ラジオ (PREFERENCE_THEME を流用) */}
         <div>
-          <span className="block text-label text-neutral-700 dark:text-neutral-300 mb-2">
+          <span className="block text-label text-stone-700 dark:text-stone-300 mb-2">
             {messages.shiftPreference.bulk.typeLabel}
           </span>
           <div
@@ -276,10 +276,10 @@ export function BulkShiftPreferenceDialog({
                   onClick={() => setPreferenceType(t.type)}
                   className={
                     'flex flex-col items-center justify-center gap-1 h-16 rounded-lg ' +
-                    'motion-safe:transition-colors duration-120 ease-out-expo focus-ring ' +
+                    'motion-safe:transition-colors duration-150 ease-out focus-ring ' +
                     (isSelected
                       ? `${t.cellClass} ring-2`
-                      : 'bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800')
+                      : 'bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800')
                   }
                 >
                   <Icon className="w-5 h-5" aria-hidden="true" />
@@ -296,7 +296,7 @@ export function BulkShiftPreferenceDialog({
             {presets.length === 0 && (
               <div
                 role="status"
-                className="rounded-md border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 px-3 py-2 text-xs text-neutral-700 dark:text-neutral-300"
+                className="rounded-md border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 px-3 py-2 text-xs text-stone-700 dark:text-stone-300"
               >
                 {messages.shiftPreference.bulk.presetEmpty}
               </div>
@@ -323,26 +323,26 @@ export function BulkShiftPreferenceDialog({
             {isCustomPreset && (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-label text-neutral-700 dark:text-neutral-300 mb-2">
+                  <label className="block text-label text-stone-700 dark:text-stone-300 mb-2">
                     {messages.shiftPreference.bulk.customStartLabel}
                   </label>
                   <input
                     type="time"
                     value={customStart}
                     onChange={(e) => setCustomStart(e.target.value)}
-                    className="w-full h-12 md:h-10 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-800 dark:text-neutral-100 px-3 text-body focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
+                    className="w-full h-12 md:h-10 border border-stone-300 dark:border-stone-600 rounded-md bg-white dark:bg-stone-800 dark:text-stone-100 px-3 text-body focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
                     aria-label={messages.shiftPreference.bulk.customStartLabel}
                   />
                 </div>
                 <div>
-                  <label className="block text-label text-neutral-700 dark:text-neutral-300 mb-2">
+                  <label className="block text-label text-stone-700 dark:text-stone-300 mb-2">
                     {messages.shiftPreference.bulk.customEndLabel}
                   </label>
                   <input
                     type="time"
                     value={customEnd}
                     onChange={(e) => setCustomEnd(e.target.value)}
-                    className="w-full h-12 md:h-10 border border-neutral-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-800 dark:text-neutral-100 px-3 text-body focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
+                    className="w-full h-12 md:h-10 border border-stone-300 dark:border-stone-600 rounded-md bg-white dark:bg-stone-800 dark:text-stone-100 px-3 text-body focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
                     aria-label={messages.shiftPreference.bulk.customEndLabel}
                   />
                 </div>
@@ -361,7 +361,7 @@ export function BulkShiftPreferenceDialog({
         {!showTimeFields && (
           <div
             role="status"
-            className="rounded-md border border-info-200 dark:border-info-800 bg-info-50 dark:bg-info-900/30 px-3 py-2 text-xs text-info-800 dark:text-info-200"
+            className="rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 px-3 py-2 text-xs text-blue-800 dark:text-blue-200"
           >
             {messages.shiftPreference.bulk.unavailableHint}
           </div>

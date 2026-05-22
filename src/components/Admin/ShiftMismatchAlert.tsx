@@ -55,7 +55,7 @@ function rowBgClass(type: ShiftMismatch['type']): string {
     case 'early_leave':
       return 'bg-warning-50 dark:bg-warning-900/20 border-warning-200 dark:border-warning-800';
     default:
-      return 'bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700';
+      return 'bg-stone-50 dark:bg-stone-800 border-stone-200 dark:border-stone-700';
   }
 }
 
@@ -105,12 +105,12 @@ export function ShiftMismatchAlert({
 
         return (
           <Card key={date} padding="none">
-            <div className="px-5 py-3 border-b border-neutral-200 dark:border-neutral-700 flex items-center gap-3">
-              <Heading level={4} as="h3" className="text-neutral-700 dark:text-neutral-200">{dateLabel}</Heading>
+            <div className="px-5 py-3 border-b border-stone-200 dark:border-stone-700 flex items-center gap-3">
+              <Heading level={4} as="h3" className="text-stone-700 dark:text-stone-200">{dateLabel}</Heading>
               <Badge tone="neutral">{items.length}件</Badge>
             </div>
 
-            <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
+            <ul className="divide-y divide-stone-100 dark:divide-stone-700">
               {items.map((m, idx) => {
                 const name = memberNames.get(m.userId) ?? m.userId;
                 return (
@@ -121,13 +121,13 @@ export function ShiftMismatchAlert({
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="font-medium text-neutral-900 dark:text-neutral-100 text-sm">{name}</span>
+                          <span className="font-medium text-stone-900 dark:text-stone-100 text-sm">{name}</span>
                           <Badge tone={typeBadgeTone(m.type)} icon={typeIcon(m.type)}>{typeLabel(m.type)}</Badge>
                         </div>
 
-                        <p className="text-sm text-neutral-700 dark:text-neutral-300 mb-1.5">{m.message}</p>
+                        <p className="text-sm text-stone-700 dark:text-stone-300 mb-1.5">{m.message}</p>
 
-                        <div className="text-xs text-neutral-500 dark:text-neutral-300 space-y-0.5">
+                        <div className="text-xs text-stone-500 dark:text-stone-300 space-y-0.5">
                           <p>シフト: {m.shiftStart} 〜 {m.shiftEnd}</p>
                           {(m.actualStart || m.actualEnd) && (
                             <p>

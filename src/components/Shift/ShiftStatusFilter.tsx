@@ -48,15 +48,15 @@ export function writeStatusFilter(set: Set<StatusFilterValue>): void {
  */
 const STATUS_CHIP_ON_CLASS: Record<StatusFilterValue, string> = {
   pending_preference: 'bg-warning-100 ring-2 ring-warning-500 text-warning-800 dark:bg-warning-900/40 dark:ring-warning-400 dark:text-warning-300',
-  tentative: 'bg-info-100 ring-2 ring-info-500 text-info-800 dark:bg-info-900/40 dark:ring-info-400 dark:text-info-300',
+  tentative: 'bg-blue-100 ring-2 ring-blue-500 text-blue-800 dark:bg-blue-900/40 dark:ring-blue-400 dark:text-blue-300',
   approved: 'bg-success-100 ring-2 ring-success-500 text-success-800 dark:bg-success-900/40 dark:ring-success-400 dark:text-success-300',
-  modified: 'bg-primary-100 ring-2 ring-primary-500 text-primary-800 dark:bg-primary-900/40 dark:ring-primary-400 dark:text-primary-300',
+  modified: 'bg-blue-100 ring-2 ring-blue-500 text-blue-800 dark:bg-blue-900/40 dark:ring-blue-400 dark:text-blue-300',
   rejected: 'bg-danger-100 ring-2 ring-danger-500 text-danger-800 dark:bg-danger-900/40 dark:ring-danger-400 dark:text-danger-300',
-  cancelled: 'bg-neutral-200 ring-2 ring-neutral-500 text-neutral-800 dark:bg-neutral-700 dark:ring-neutral-400 dark:text-neutral-100',
+  cancelled: 'bg-stone-200 ring-2 ring-stone-500 text-stone-800 dark:bg-stone-700 dark:ring-stone-400 dark:text-stone-100',
 };
 
 const CHIP_OFF_CLASS =
-  'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 ring-1 ring-transparent';
+  'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 ring-1 ring-transparent';
 
 interface ShiftStatusFilterProps {
   value: Set<StatusFilterValue>;
@@ -84,7 +84,7 @@ function StatusChip({
       aria-checked={isActive}
       aria-label={STATUS_FILTER_LABELS[status]}
       onClick={onToggle}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium motion-safe:transition-colors duration-120 ease-out-expo cursor-pointer select-none ${
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium motion-safe:transition-colors duration-150 ease-out cursor-pointer select-none ${
         isActive ? STATUS_CHIP_ON_CLASS[status] : CHIP_OFF_CLASS
       }`}
     >
@@ -150,7 +150,7 @@ export function ShiftStatusFilter({
 
       {/* SP: collapsible */}
       <details className="sm:hidden">
-        <summary className="cursor-pointer text-sm font-medium text-neutral-700 dark:text-neutral-300 select-none px-1 py-1">
+        <summary className="cursor-pointer text-sm font-medium text-stone-700 dark:text-stone-300 select-none px-1 py-1">
           表示ステータス（{summaryText}）
         </summary>
         <fieldset

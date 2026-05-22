@@ -187,15 +187,15 @@ export const InviteCodeIssueDialog: React.FC<InviteCodeIssueDialogProps> = ({
       <div className="flex flex-col gap-5">
         {/* 店舗選択 */}
         <fieldset>
-          <legend className="text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
+          <legend className="text-sm font-medium text-stone-700 dark:text-stone-200 mb-2">
             {messages.invite.storesLabel}
           </legend>
           {selectableStores.length === 0 ? (
-            <p className="text-sm text-neutral-500 dark:text-neutral-300">
+            <p className="text-sm text-stone-500 dark:text-stone-300">
               {messages.invite.storesNone}
             </p>
           ) : (
-            <ul className="max-h-48 overflow-y-auto rounded-md border border-neutral-200 dark:border-neutral-700 divide-y divide-neutral-200 dark:divide-neutral-700">
+            <ul className="max-h-48 overflow-y-auto rounded-md border border-stone-200 dark:border-stone-700 divide-y divide-stone-200 dark:divide-stone-700">
               {selectableStores.map((s) => {
                 const checked = selectedStoreIds.includes(s.id);
                 const isPrimary = checked && selectedStoreIds[0] === s.id;
@@ -203,7 +203,7 @@ export const InviteCodeIssueDialog: React.FC<InviteCodeIssueDialogProps> = ({
                   <li key={s.id}>
                     <label
                       htmlFor={`invite-dialog-store-${s.id}`}
-                      className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700/40"
+                      className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-700/40"
                     >
                       <input
                         id={`invite-dialog-store-${s.id}`}
@@ -211,13 +211,13 @@ export const InviteCodeIssueDialog: React.FC<InviteCodeIssueDialogProps> = ({
                         checked={checked}
                         onChange={() => toggleStore(s.id)}
                         disabled={submitting}
-                        className="h-4 w-4 rounded text-primary-600 dark:text-primary-400 focus:ring-primary-500 dark:focus:ring-primary-400"
+                        className="h-4 w-4 rounded text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
                       />
-                      <span className="text-sm text-neutral-700 dark:text-neutral-200 flex-1">
+                      <span className="text-sm text-stone-700 dark:text-stone-200 flex-1">
                         {s.name}
                       </span>
                       {isPrimary && (
-                        <span className="text-xs text-neutral-500 dark:text-neutral-300">
+                        <span className="text-xs text-stone-500 dark:text-stone-300">
                           {messages.invite.primaryStoreSuffix}
                         </span>
                       )}
@@ -227,27 +227,27 @@ export const InviteCodeIssueDialog: React.FC<InviteCodeIssueDialogProps> = ({
               })}
             </ul>
           )}
-          <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-300">
+          <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-300">
             {messages.invite.storesPlaceholder}
           </p>
           <p className="text-xs text-text-muted">
             {messages.invite.storesHintOptional}
           </p>
-          <p className="text-xs text-neutral-500 dark:text-neutral-300">
+          <p className="text-xs text-stone-500 dark:text-stone-300">
             {messages.invite.storesPrimaryHint}
           </p>
         </fieldset>
 
         {/* 有効期限 */}
         <fieldset>
-          <legend className="text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
+          <legend className="text-sm font-medium text-stone-700 dark:text-stone-200 mb-2">
             {messages.invite.expiresLabel}
           </legend>
           <div className="flex flex-wrap gap-3">
             {EXPIRES_OPTIONS.map((opt) => (
               <label
                 key={String(opt.value)}
-                className="inline-flex items-center text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer"
+                className="inline-flex items-center text-sm text-stone-700 dark:text-stone-200 cursor-pointer"
               >
                 <input
                   type="radio"
@@ -256,7 +256,7 @@ export const InviteCodeIssueDialog: React.FC<InviteCodeIssueDialogProps> = ({
                   checked={expiresInDays === opt.value}
                   onChange={() => setExpiresInDays(opt.value)}
                   disabled={submitting}
-                  className="mr-1.5 text-primary-600 dark:text-primary-400 focus:ring-primary-500 dark:focus:ring-primary-400"
+                  className="mr-1.5 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
                 />
                 {opt.label}
               </label>
@@ -266,14 +266,14 @@ export const InviteCodeIssueDialog: React.FC<InviteCodeIssueDialogProps> = ({
 
         {/* 使用回数 */}
         <fieldset>
-          <legend className="text-sm font-medium text-neutral-700 dark:text-neutral-200 mb-2">
+          <legend className="text-sm font-medium text-stone-700 dark:text-stone-200 mb-2">
             {messages.invite.maxUsesLabel}
           </legend>
           <div className="flex flex-wrap gap-3">
             {MAX_USES_OPTIONS.map((opt) => (
               <label
                 key={String(opt.value)}
-                className="inline-flex items-center text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer"
+                className="inline-flex items-center text-sm text-stone-700 dark:text-stone-200 cursor-pointer"
               >
                 <input
                   type="radio"
@@ -282,7 +282,7 @@ export const InviteCodeIssueDialog: React.FC<InviteCodeIssueDialogProps> = ({
                   checked={maxUses === opt.value}
                   onChange={() => setMaxUses(opt.value)}
                   disabled={submitting}
-                  className="mr-1.5 text-primary-600 dark:text-primary-400 focus:ring-primary-500 dark:focus:ring-primary-400"
+                  className="mr-1.5 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
                 />
                 {opt.label}
               </label>

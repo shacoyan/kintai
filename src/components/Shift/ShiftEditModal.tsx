@@ -40,11 +40,11 @@ for (let h = 0; h < 24; h++) {
 
 const STATUS_LABEL: Record<string, { text: string; className: string }> = {
   pending: { text: '申請中', className: 'bg-warning-100 text-warning-800 dark:bg-warning-900/30 dark:text-warning-300' },
-  tentative: { text: '仮承認', className: 'bg-info-100 text-info-800 dark:bg-info-900/30 dark:text-info-300' },
+  tentative: { text: '仮承認', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
   approved: { text: '承認済', className: 'bg-success-100 text-success-800 dark:bg-success-900/30 dark:text-success-300' },
   rejected: { text: '却下', className: 'bg-danger-100 text-danger-800 dark:bg-danger-900/30 dark:text-danger-300' },
-  modified: { text: '修正済', className: 'bg-primary-100 text-primary-800 dark:bg-primary-900/30 dark:text-primary-300' },
-  cancelled: { text: '取消', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700/30 dark:text-neutral-300' },
+  modified: { text: '修正済', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
+  cancelled: { text: '取消', className: 'bg-stone-100 text-stone-500 dark:bg-stone-700/30 dark:text-stone-300' },
 };
 
 export function ShiftEditModal({
@@ -233,7 +233,7 @@ export function ShiftEditModal({
             </>
           )}
           {canManageTenant && !canManageStore && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-300">この店舗の管理権限がありません</p>
+            <p className="text-xs text-stone-500 dark:text-stone-300">この店舗の管理権限がありません</p>
           )}
           <Button
             onClick={onClose}
@@ -313,21 +313,21 @@ export function ShiftEditModal({
       {mode === 'view' && (
         <div className="space-y-4">
           {storeName && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-300">店舗: <span className="font-medium text-neutral-700 dark:text-neutral-300">{storeName}</span></p>
+            <p className="text-xs text-stone-500 dark:text-stone-300">店舗: <span className="font-medium text-stone-700 dark:text-stone-300">{storeName}</span></p>
           )}
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <p className="text-xs text-neutral-500 dark:text-neutral-300">開始</p>
-              <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{shift.start_time.slice(0, 5)}</p>
+              <p className="text-xs text-stone-500 dark:text-stone-300">開始</p>
+              <p className="text-lg font-semibold text-stone-900 dark:text-stone-100 tabular-nums">{shift.start_time.slice(0, 5)}</p>
             </div>
-            <span className="text-neutral-400 dark:text-neutral-500">→</span>
+            <span className="text-stone-400 dark:text-stone-500">→</span>
             <div className="flex-1">
-              <p className="text-xs text-neutral-500 dark:text-neutral-300">終了</p>
-              <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">{shift.end_time.slice(0, 5)}</p>
+              <p className="text-xs text-stone-500 dark:text-stone-300">終了</p>
+              <p className="text-lg font-semibold text-stone-900 dark:text-stone-100 tabular-nums">{shift.end_time.slice(0, 5)}</p>
             </div>
           </div>
           {shift.note && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-300">メモ: {shift.note}</p>
+            <p className="text-xs text-stone-500 dark:text-stone-300">メモ: {shift.note}</p>
           )}
         </div>
       )}
@@ -365,7 +365,7 @@ export function ShiftEditModal({
       )}
 
       {mode === 'confirmDelete' && (
-        <p className="text-sm text-neutral-700 dark:text-neutral-300">
+        <p className="text-sm text-stone-700 dark:text-stone-300">
           このシフトを削除しますか？この操作は元に戻せません。
         </p>
       )}

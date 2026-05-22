@@ -155,7 +155,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
       );
     } else {
       memberManagementContent = (
-        <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
+        <div className="divide-y divide-stone-200 dark:divide-stone-700">
           {allMembers.map((member) => {
             const assigned = isMemberAssigned(member.id);
             const toggling = togglingMember === member.id;
@@ -163,23 +163,23 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
             return (
               <label
                 key={member.id}
-                className="flex items-center gap-3 px-6 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer motion-safe:transition-colors duration-120 ease-out-expo"
+                className="flex items-center gap-3 px-6 py-3 hover:bg-stone-50 dark:hover:bg-stone-700 cursor-pointer motion-safe:transition-colors duration-150 ease-out"
               >
                 <input
                   type="checkbox"
                   checked={assigned}
                   disabled={toggling}
                   onChange={() => handleToggleMember(member.id)}
-                  className="h-4 w-4 text-primary-600 dark:text-primary-400 rounded border-neutral-300 dark:border-neutral-600 focus:ring-primary-500 dark:focus:ring-primary-400 cursor-pointer disabled:opacity-50"
+                  className="h-4 w-4 text-blue-600 dark:text-blue-400 rounded border-stone-300 dark:border-stone-600 focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer disabled:opacity-50"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">{member.display_name}</p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-300">
+                  <p className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">{member.display_name}</p>
+                  <p className="text-xs text-stone-500 dark:text-stone-300">
                     {member.role === 'owner' ? 'オーナー' : member.role === 'manager' ? '店長' : 'スタッフ'}
                   </p>
                 </div>
                 {toggling && (
-                  <Spinner size="sm" inline className="text-primary-600 dark:text-primary-400 flex-shrink-0" />
+                  <Spinner size="sm" inline className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
                 )}
                 {!toggling && assigned && (
                   <Badge tone="primary">
@@ -197,10 +197,10 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                       handleToggleStoreManager(member.id, !is_manager);
                     }}
                     disabled={!isOwner || togglingManagerId === member.id}
-                    className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium motion-safe:transition-colors duration-120 ease-out-expo disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium motion-safe:transition-colors duration-150 ease-out disabled:opacity-50 disabled:cursor-not-allowed ${
                       is_manager
                         ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-300'
-                        : 'bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
+                        : 'bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300'
                     }`}
                     title={isOwner ? (is_manager ? '店長権限を外す' : '店長に任命') : 'オーナーのみ操作可能'}
                   >
@@ -216,7 +216,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
   } else {
     memberManagementContent = (
       <EmptyState 
-        icon={<StoreIcon className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />} 
+        icon={<StoreIcon className="w-12 h-12 text-stone-400 dark:text-stone-500" />} 
         title="店舗を選択してください" 
         description="左の一覧から店舗を選ぶとメンバー管理ができます" 
       />
@@ -228,13 +228,13 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
       <div className="lg:grid lg:grid-cols-2 lg:gap-6">
         {/* 左側: 店舗一覧 + 作成フォーム */}
         <Card padding="none">
-          <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+          <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-700">
             <Heading level={2}>店舗一覧</Heading>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">店舗を選択するとメンバー管理ができます</p>
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-300">店舗を選択するとメンバー管理ができます</p>
           </div>
 
           {/* 作成フォーム */}
-          <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700">
+          <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-700">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -246,7 +246,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                     handleCreateStore();
                   }
                 }}
-                className="flex-1 px-3 py-2 text-sm border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                className="flex-1 px-3 py-2 text-sm border border-stone-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-stone-700 dark:text-white dark:border-stone-600"
                 placeholder="店舗名を入力"
               />
               <Button
@@ -262,7 +262,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
           </div>
 
           {/* 店舗リスト */}
-          <div className="divide-y divide-neutral-200 dark:divide-neutral-700">
+          <div className="divide-y divide-stone-200 dark:divide-stone-700">
             {loading && stores.length === 0 ? (
               <PageSkeleton />
             ) : stores.length === 0 ? (
@@ -271,8 +271,8 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
               stores.map((store) => (
                 <div
                   key={store.id}
-                  className={`px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo ${
-                    selectedStore?.id === store.id ? 'bg-primary-50 dark:bg-primary-900/30 border-l-4 border-primary-500 dark:border-primary-400' : ''
+                  className={`px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-700 motion-safe:transition-colors duration-150 ease-out ${
+                    selectedStore?.id === store.id ? 'bg-blue-50 dark:bg-blue-700/30 border-l-4 border-blue-500 dark:border-blue-400' : ''
                   }`}
                   onClick={() => setSelectedStore(store)}
                 >
@@ -290,7 +290,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                           if (e.key === 'Escape') setEditingStoreId(null);
                         }}
                         autoFocus
-                        className="flex-1 px-2 py-1 text-sm border border-primary-400 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                        className="flex-1 px-2 py-1 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-stone-700 dark:text-white dark:border-stone-600"
                       />
                       <div className="flex items-center gap-2">
                         <Button
@@ -312,7 +312,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
                     </div>
                   ) : (
                     <>
-                      <span className="flex-1 text-sm font-medium text-neutral-900 dark:text-neutral-100">{store.name}</span>
+                      <span className="flex-1 text-sm font-medium text-stone-900 dark:text-stone-100">{store.name}</span>
                       <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="tertiary"
@@ -340,11 +340,11 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
         {/* 右側: メンバー管理 */}
         <div className="hidden lg:block">
           <Card padding="none">
-            <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-700">
+            <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-700">
               <Heading level={2}>
                 {selectedStore ? `${selectedStore.name} のメンバー` : 'メンバー管理'}
               </Heading>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-300">
                 {selectedStore
                   ? 'チェックを入れるとこの店舗に所属します'
                   : '左の一覧から店舗を選択してください'}
@@ -388,7 +388,7 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
           </div>
         }
       >
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">この操作は取り消せません。</p>
+        <p className="text-sm text-stone-600 dark:text-stone-300">この操作は取り消せません。</p>
       </BottomSheet>
     </>
   );

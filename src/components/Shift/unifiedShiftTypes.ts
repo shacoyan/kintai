@@ -60,9 +60,9 @@ export const STATUS_FILTER_LABELS: Record<StatusFilterValue, string> = {
 /** 各ステータスのドット表示用 CSS クラス (§16.5) */
 export const STATUS_FILTER_DOT_CLASS: Record<StatusFilterValue, string> = {
   pending_preference: 'bg-warning-400',
-  tentative: 'bg-info-400',
+  tentative: 'bg-blue-400',
   approved: 'bg-success-400',
-  modified: 'bg-primary-400',
+  modified: 'bg-blue-400',
   rejected: 'bg-danger-400',
-  cancelled: 'bg-neutral-400',
+  cancelled: 'bg-stone-400',
 };

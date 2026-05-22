@@ -151,16 +151,16 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
           </div>
         )}
 
-        <div className="text-lg font-bold text-neutral-800 dark:text-neutral-200">
+        <div className="text-lg font-bold text-stone-800 dark:text-stone-200">
           対象月: {format(targetMonth, 'yyyy年M月')}
         </div>
 
         {canEdit && (
-          <div className="rounded-md border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/40 p-3 text-sm">
+          <div className="rounded-md border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900/40 p-3 text-sm">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-300">テナント既定の締切日</p>
-                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+                <p className="text-xs text-stone-500 dark:text-stone-300">テナント既定の締切日</p>
+                <p className="text-sm font-semibold text-stone-800 dark:text-stone-100">
                   {previewLoading
                     ? '読み込み中...'
                     : defaultPreview

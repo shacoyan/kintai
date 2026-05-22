@@ -125,12 +125,12 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
 
   return (
     <Card padding="none">
-      <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
+      <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-800">
         <Heading level={2}>シフトプリセット</Heading>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-300">よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます</p>
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-300">よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます</p>
       </div>
 
-      <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+      <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-800/50">
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
           <div className="w-full md:flex-1 md:min-w-[120px]">
             <Input
@@ -184,18 +184,18 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
         </div>
       </div>
 
-      <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+      <div className="divide-y divide-stone-200 dark:divide-stone-800">
         {loading && presets.length === 0 ? (
           <PageSkeleton />
         ) : presets.length === 0 ? (
           <EmptyState
-            icon={<CalendarClock className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
+            icon={<CalendarClock className="w-12 h-12 text-stone-400 dark:text-stone-500" />}
             title="プリセットが未登録です"
             description="よく使う時間帯を登録すると、スタッフがシフト申請時にワンタップで入力できます"
           />
         ) : (
           presets.map((preset, index) => (
-            <div key={preset.id} className="px-6 py-3 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-800/50 motion-safe:transition-colors duration-120 ease-out-expo">
+            <div key={preset.id} className="px-6 py-3 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-stone-800/50 motion-safe:transition-colors duration-150 ease-out">
               {editingId === preset.id ? (
                 <div className="flex flex-wrap items-end gap-3 flex-1">
                   <div className="flex-1 min-w-[120px]">
@@ -258,7 +258,7 @@ export function ShiftPresetManager({ tenantId, storeId }: ShiftPresetManagerProp
                     <Badge tone="primary">
                       {preset.name}
                     </Badge>
-                    <span className="text-sm text-neutral-600 dark:text-neutral-300 inline-flex items-center gap-1">
+                    <span className="text-sm text-stone-600 dark:text-stone-300 inline-flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" />
                       {formatTimeRange(preset.start_time, preset.end_time, { separator: ' - ' })}
                     </span>

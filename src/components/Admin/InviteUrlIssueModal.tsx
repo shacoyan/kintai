@@ -94,7 +94,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
   if (!canIssue) {
     return (
       <BottomSheet isOpen={isOpen} onClose={onClose} title={messages.invite.listTitle}>
-        <p className="text-sm text-neutral-500 dark:text-neutral-300">
+        <p className="text-sm text-stone-500 dark:text-stone-300">
           {messages.invite.permissionDenied}
         </p>
       </BottomSheet>
@@ -197,9 +197,9 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
       >
         <div className="flex flex-col gap-4">
           {tenantName && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               ワークスペース:{' '}
-              <span className="font-medium text-neutral-700 dark:text-neutral-200">
+              <span className="font-medium text-stone-700 dark:text-stone-200">
                 {tenantName}
               </span>
             </p>
@@ -222,19 +222,19 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
 
           {/* リスト本体 */}
           <section
-            className="max-h-[60vh] overflow-y-auto rounded-md border border-neutral-200 dark:border-neutral-700"
+            className="max-h-[60vh] overflow-y-auto rounded-md border border-stone-200 dark:border-stone-700"
             aria-live="polite"
           >
             {loading && codes.length === 0 ? (
-              <p className="px-3 py-6 text-sm text-neutral-500 dark:text-neutral-300 text-center">
+              <p className="px-3 py-6 text-sm text-stone-500 dark:text-stone-300 text-center">
                 読み込み中...
               </p>
             ) : codes.length === 0 ? (
-              <p className="px-3 py-6 text-sm text-neutral-500 dark:text-neutral-300 text-center">
+              <p className="px-3 py-6 text-sm text-stone-500 dark:text-stone-300 text-center">
                 {messages.invite.listEmpty}
               </p>
             ) : (
-              <ul className="divide-y divide-neutral-200 dark:divide-neutral-700">
+              <ul className="divide-y divide-stone-200 dark:divide-stone-700">
                 {codes.map((code) => {
                   const url = buildInviteUrl(code.code);
                   const isJustCopied = lastCopiedCodeId === code.id;
@@ -244,17 +244,17 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
                   return (
                     <li
                       key={code.id}
-                      className="px-3 py-3 flex flex-col gap-2 bg-white dark:bg-neutral-800"
+                      className="px-3 py-3 flex flex-col gap-2 bg-white dark:bg-stone-800"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">
+                          <p className="text-sm font-medium text-stone-800 dark:text-stone-100 truncate">
                             {code.label && code.label.length > 0
                               ? code.label
                               : messages.invite.rowLabelFallback}
                           </p>
                           <p
-                            className="mt-0.5 text-xs font-mono tracking-widest text-neutral-600 dark:text-neutral-300 select-all break-all"
+                            className="mt-0.5 text-xs font-mono tracking-widest text-stone-600 dark:text-stone-300 select-all break-all"
                             aria-label="招待コード"
                             title={url}
                           >
@@ -265,22 +265,22 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
 
                       {/* 配属店舗 chip */}
                       <div className="flex flex-wrap gap-1.5">
-                        <span className="text-xs text-neutral-500 dark:text-neutral-400 self-center">
+                        <span className="text-xs text-stone-500 dark:text-stone-400 self-center">
                           {messages.invite.rowStoresLabel}:
                         </span>
                         {sortedStores.length === 0 ? (
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                          <span className="text-xs text-stone-500 dark:text-stone-400">
                             {messages.invite.assignedStoresNone}
                           </span>
                         ) : (
                           sortedStores.map((s, idx) => (
                             <span
                               key={s.store_id}
-                              className="inline-flex items-center rounded-full bg-neutral-100 dark:bg-neutral-700 px-2 py-0.5 text-xs text-neutral-700 dark:text-neutral-200"
+                              className="inline-flex items-center rounded-full bg-stone-100 dark:bg-stone-700 px-2 py-0.5 text-xs text-stone-700 dark:text-stone-200"
                             >
                               {s.store_name}
                               {idx === 0 && (
-                                <span className="ml-1 text-neutral-500 dark:text-neutral-400">
+                                <span className="ml-1 text-stone-500 dark:text-stone-400">
                                   {messages.invite.primaryStoreSuffix}
                                 </span>
                               )}
@@ -290,15 +290,15 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
                       </div>
 
                       {/* 期限 / 使用回数 */}
-                      <dl className="text-xs text-neutral-600 dark:text-neutral-300 space-y-0.5">
+                      <dl className="text-xs text-stone-600 dark:text-stone-300 space-y-0.5">
                         <div className="flex gap-1">
-                          <dt className="text-neutral-500 dark:text-neutral-400">
+                          <dt className="text-stone-500 dark:text-stone-400">
                             {messages.invite.rowExpiresLabel}:
                           </dt>
                           <dd>{formatExpiresAt(code.expires_at)}</dd>
                         </div>
                         <div className="flex gap-1">
-                          <dt className="text-neutral-500 dark:text-neutral-400">
+                          <dt className="text-stone-500 dark:text-stone-400">
                             {messages.invite.rowUsageLabel}:
                           </dt>
                           <dd>{formatUsage(code)}</dd>
@@ -310,7 +310,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
                         <button
                           type="button"
                           onClick={() => void handleCopy(code)}
-                          className="inline-flex items-center gap-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2.5 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
+                          className="inline-flex items-center gap-1 rounded border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
                           disabled={revokingId === code.id}
                         >
                           <Copy className="h-3.5 w-3.5" aria-hidden="true" />
@@ -319,7 +319,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleOpenEditDialog(code)}
-                          className="inline-flex items-center gap-1 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2.5 py-1.5 text-xs font-medium text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:focus-visible:ring-primary-400"
+                          className="inline-flex items-center gap-1 rounded border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-stone-700 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
                           disabled={revokingId === code.id}
                         >
                           <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
@@ -328,7 +328,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
                         <button
                           type="button"
                           onClick={() => void handleRevoke(code)}
-                          className="inline-flex items-center gap-1 rounded border border-danger-300 dark:border-danger-700 bg-white dark:bg-neutral-800 px-2.5 py-1.5 text-xs font-medium text-danger-700 dark:text-danger-300 hover:bg-danger-50 dark:hover:bg-danger-900/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-danger-500 dark:focus-visible:ring-danger-400 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded border border-danger-300 dark:border-danger-700 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-danger-700 dark:text-danger-300 hover:bg-danger-50 dark:hover:bg-danger-900/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-danger-500 dark:focus-visible:ring-danger-400 disabled:opacity-50"
                           disabled={revokingId === code.id}
                           aria-busy={revokingId === code.id || undefined}
                         >
@@ -343,7 +343,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
             )}
           </section>
 
-          <p className="text-xs text-neutral-500 dark:text-neutral-300 leading-relaxed">
+          <p className="text-xs text-stone-500 dark:text-stone-300 leading-relaxed">
             {messages.invite.reissueWarning}
           </p>
 

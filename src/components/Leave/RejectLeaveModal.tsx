@@ -82,7 +82,7 @@ export const RejectLeaveModal: React.FC<RejectLeaveModalProps> = ({
           aria-label="却下理由"
           aria-describedby={descId}
         />
-        <p id={descId} className="text-sm text-neutral-500 dark:text-neutral-300">
+        <p id={descId} className="text-sm text-stone-500 dark:text-stone-300">
           10文字以上で入力
         </p>
       </div>

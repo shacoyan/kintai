@@ -105,7 +105,7 @@ export function LeaveForm({ onSubmit, onCancel, remainingPaidLeave }: LeaveFormP
   const isDisabled = submitting || !!validationError;
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-neutral-800 rounded-lg shadow dark:shadow-neutral-900/30 border border-transparent dark:border-neutral-700 p-4 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-stone-800 rounded-lg shadow dark:shadow-stone-900/30 border border-transparent dark:border-stone-700 p-4 space-y-4">
       <Heading level={4}>休暇申請</Heading>
 
       {(error || validationError) && (
@@ -150,7 +150,7 @@ export function LeaveForm({ onSubmit, onCancel, remainingPaidLeave }: LeaveFormP
             onChange={(e) => setEndDate(e.target.value)}
           />
           {rangeDays > 0 && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-300">
+            <p className="text-xs text-stone-500 dark:text-stone-300">
               {startDate} 〜 {endDate}（{rangeDays}日間）
             </p>
           )}
@@ -168,7 +168,7 @@ export function LeaveForm({ onSubmit, onCancel, remainingPaidLeave }: LeaveFormP
         ))}
       </Select>
 
-      <p className="text-xs text-neutral-500 dark:text-neutral-300">
+      <p className="text-xs text-stone-500 dark:text-stone-300">
         現在の有給残: {remainingPaidLeave} 日
       </p>
 

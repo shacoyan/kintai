@@ -26,11 +26,11 @@ export const TenantNameEditSection: React.FC<TenantNameEditSectionProps> = ({
 
   if (!isOwner) {
     return (
-      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4 border border-neutral-100 dark:border-neutral-700">
+      <div className="bg-white dark:bg-stone-800 rounded-lg shadow p-4 border border-stone-100 dark:border-stone-700">
         <Heading level={2} as="h3" className="mb-2">
           テナント表示名編集
         </Heading>
-        <p className="text-sm text-neutral-500 dark:text-neutral-300">
+        <p className="text-sm text-stone-500 dark:text-stone-300">
           オーナーのみ実行可能です
         </p>
       </div>
@@ -53,14 +53,14 @@ export const TenantNameEditSection: React.FC<TenantNameEditSectionProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4 border border-neutral-100 dark:border-neutral-700">
+    <div className="bg-white dark:bg-stone-800 rounded-lg shadow p-4 border border-stone-100 dark:border-stone-700">
       <Heading level={2} as="h3" className="mb-4">
         テナント表示名編集
       </Heading>
 
       <div className="space-y-3">
         <div>
-          <label htmlFor="tenant-name-input" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+          <label htmlFor="tenant-name-input" className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">
             テナント名
           </label>
           <input
@@ -69,10 +69,10 @@ export const TenantNameEditSection: React.FC<TenantNameEditSectionProps> = ({
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             maxLength={50}
-            className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-primary-500 dark:focus:border-primary-400 dark:bg-neutral-700 dark:text-neutral-100 text-sm"
+            className="w-full px-3 py-2 border border-stone-300 dark:border-stone-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 dark:bg-stone-700 dark:text-stone-100 text-sm"
             placeholder="テナント名を入力"
           />
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-300">
+          <p className="mt-1 text-xs text-stone-500 dark:text-stone-300">
             {trimmed.length} / 50 文字
           </p>
         </div>
@@ -85,7 +85,7 @@ export const TenantNameEditSection: React.FC<TenantNameEditSectionProps> = ({
           type="button"
           onClick={handleSave}
           disabled={!canSubmit}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:focus:ring-primary-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-primary-500 dark:hover:bg-primary-600"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600"
         >
           {submitting ? '保存中...' : '保存'}
         </button>

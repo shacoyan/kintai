@@ -175,7 +175,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
                 {PREFERENCE_THEME_LIST.map(t => (
                   <div key={t.type}>
                     <div className={`text-2xl font-bold tabular-nums ${t.countTextClass}`}>{adminSummary.counts[t.type]}</div>
-                    <div className="text-xs text-neutral-500">{t.label}</div>
+                    <div className="text-xs text-stone-500">{t.label}</div>
                   </div>
                 ))}
               </div>
@@ -192,7 +192,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
               )}
             </Card.Header>
             {!selectedDate ? (
-              <div className="text-sm text-neutral-500">
+              <div className="text-sm text-stone-500">
                 カレンダーで日付を選択すると、その日のシフト申請一覧が表示されます。
               </div>
             ) : dateFilteredPreferences.length === 0 ? (
@@ -218,7 +218,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
                         onMutated={onMutated}
                       />
                       {showOverrideRow && (
-                        <div className="text-[11px] text-neutral-500 dark:text-neutral-300 px-2 leading-relaxed">
+                        <div className="text-[11px] text-stone-500 dark:text-stone-300 px-2 leading-relaxed">
                           <div>
                             申請:{' '}
                             <span className="tabular-nums">
@@ -242,10 +242,10 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
 
           <Card padding="sm">
             <div className="text-center">
-              <div className="text-4xl font-bold text-primary-600">
+              <div className="text-4xl font-bold text-blue-600">
                 {pendingPreferenceCount}
               </div>
-              <div className="text-sm text-neutral-500 mt-1">
+              <div className="text-sm text-stone-500 mt-1">
                 未対応のシフト申請
               </div>
             </div>
@@ -287,7 +287,7 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
                   <div className={`text-3xl font-bold tabular-nums ${t.countTextClass}`}>
                     {preferenceSummary[t.type]}
                   </div>
-                  <div className="text-xs text-neutral-500">{t.label}</div>
+                  <div className="text-xs text-stone-500">{t.label}</div>
                 </div>
               ))}
             </div>
@@ -306,13 +306,13 @@ export function ShiftPreferenceSidebar(props: ShiftPreferenceSidebarProps) {
                     <li key={p.id} className="border-b last:border-b-0">
                       <button
                         type="button"
-                        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 motion-safe:transition-colors duration-120 ease-out-expo"
+                        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-stone-50 dark:hover:bg-stone-800 motion-safe:transition-colors duration-150 ease-out"
                         onClick={() => handleTimedPreferenceClick(p.date)}
                       >
                         <span className="text-sm font-medium">
                           {dateLabel} {timeLabel}
                         </span>
-                        <ChevronRight className="w-4 h-4 text-neutral-400 shrink-0" />
+                        <ChevronRight className="w-4 h-4 text-stone-400 shrink-0" />
                       </button>
                     </li>
                   );

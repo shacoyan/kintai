@@ -292,17 +292,17 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
   return (
     <div className="space-y-6">
       {/* 月選択ヘッダー */}
-      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-stone-800 rounded-lg shadow p-4">
         <Heading level={2} as="h3" className="mb-4">月次勤怠カレンダー</Heading>
-        <p className="text-sm text-neutral-500 dark:text-neutral-300 mb-4">対象店舗: {currentStore?.name ?? '全店舗'}</p>
+        <p className="text-sm text-stone-500 dark:text-stone-300 mb-4">対象店舗: {currentStore?.name ?? '全店舗'}</p>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
           <div className="grid grid-cols-2 gap-3 md:contents">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">年</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">年</label>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                className="border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-stone-700 dark:text-white dark:border-stone-600"
               >
                 {yearOptions.map((y) => (
                   <option key={y} value={y}>{y}年</option>
@@ -310,11 +310,11 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">月</label>
+              <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">月</label>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                className="border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-stone-700 dark:text-white dark:border-stone-600"
               >
                 {monthOptions.map((m) => (
                   <option key={m} value={m}>{m}月</option>
@@ -332,13 +332,13 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
         </div>
 
         {/* 凡例 */}
-        <div className="mt-3 flex flex-wrap gap-3 text-[11px] md:text-xs text-neutral-600 dark:text-neutral-300">
+        <div className="mt-3 flex flex-wrap gap-3 text-[11px] md:text-xs text-stone-600 dark:text-stone-300">
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded bg-success-50 dark:bg-success-900/30 border border-success-300 dark:border-success-700" />
             出勤（〜8h）
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded bg-info-50 dark:bg-info-900/30 border border-info-300 dark:border-info-700" />
+            <span className="inline-block w-3 h-3 rounded bg-blue-50 dark:bg-blue-700/30 border border-blue-300 dark:border-blue-700" />
             残業（8h超）
           </span>
           <span className="flex items-center gap-1">
@@ -346,7 +346,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
             シフトあり・勤怠なし
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded bg-neutral-100 dark:bg-neutral-700 border border-neutral-300 dark:border-neutral-600" />
+            <span className="inline-block w-3 h-3 rounded bg-stone-100 dark:bg-stone-700 border border-stone-300 dark:border-stone-600" />
             記録なし
           </span>
         </div>
@@ -354,13 +354,13 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
       {/* カレンダーグリッド */}
       {loaded && members.length > 0 && (
-        <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
+        <div className="bg-white dark:bg-stone-800 rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="border-collapse text-xs tabular-nums" style={{ minWidth: `${40 + daysInMonth * 52}px` }}>
               <thead>
-                <tr className="bg-neutral-50 dark:bg-neutral-700">
+                <tr className="bg-stone-50 dark:bg-stone-700">
                   <th
-                    className="sticky left-0 top-0 z-20 bg-neutral-50 dark:bg-neutral-700 border-b border-r border-neutral-200 dark:border-neutral-600 px-3 py-2 text-left font-medium text-neutral-600 dark:text-neutral-300 whitespace-nowrap"
+                    className="sticky left-0 top-0 z-20 bg-stone-50 dark:bg-stone-700 border-b border-r border-stone-200 dark:border-stone-600 px-3 py-2 text-left font-medium text-stone-600 dark:text-stone-300 whitespace-nowrap"
                     style={{ minWidth: '100px' }}
                   >
                     スタッフ
@@ -371,33 +371,33 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                     return (
                       <th
                         key={day}
-                        className={`sticky top-0 z-[5] border-b border-r border-neutral-200 dark:border-neutral-600 py-1 font-medium text-center whitespace-nowrap ${
+                        className={`sticky top-0 z-[5] border-b border-r border-stone-200 dark:border-stone-600 py-1 font-medium text-center whitespace-nowrap ${
                           weekend
                             ? 'text-danger-500 dark:text-danger-400 bg-danger-50/50 dark:bg-danger-900/10'
-                            : 'text-neutral-600 dark:text-neutral-300 bg-neutral-50 dark:bg-neutral-700'
+                            : 'text-stone-600 dark:text-stone-300 bg-stone-50 dark:bg-stone-700'
                         }`}
                         style={{ minWidth: '48px', width: '48px' }}
                       >
                         <div>{day}</div>
-                        <div className="text-neutral-400 dark:text-neutral-500">{dayLabel}</div>
+                        <div className="text-stone-400 dark:text-stone-500">{dayLabel}</div>
                       </th>
                     );
                   })}
-                  <th className="sticky top-0 z-[5] border-b border-r border-neutral-200 dark:border-neutral-600 px-2 py-2 font-medium text-center text-neutral-600 dark:text-neutral-300 whitespace-nowrap bg-neutral-50 dark:bg-neutral-700">
+                  <th className="sticky top-0 z-[5] border-b border-r border-stone-200 dark:border-stone-600 px-2 py-2 font-medium text-center text-stone-600 dark:text-stone-300 whitespace-nowrap bg-stone-50 dark:bg-stone-700">
                     出勤日
                   </th>
-                  <th className="sticky top-0 z-[5] border-b border-neutral-200 dark:border-neutral-600 px-2 py-2 font-medium text-center text-neutral-600 dark:text-neutral-300 whitespace-nowrap bg-neutral-50 dark:bg-neutral-700">
+                  <th className="sticky top-0 z-[5] border-b border-stone-200 dark:border-stone-600 px-2 py-2 font-medium text-center text-stone-600 dark:text-stone-300 whitespace-nowrap bg-stone-50 dark:bg-stone-700">
                     合計
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-700">
+              <tbody className="divide-y divide-stone-100 dark:divide-stone-700">
                 {members.map((member) => {
                   const { workDays, totalMin } = getMemberSummary(member.user_id);
                   return (
-                    <tr key={member.user_id} className="hover:bg-neutral-50 dark:hover:bg-neutral-700/50 motion-safe:transition-colors duration-120 ease-out-expo">
+                    <tr key={member.user_id} className="hover:bg-stone-50 dark:hover:bg-stone-700/50 motion-safe:transition-colors duration-150 ease-out">
                       <td
-                        className="sticky left-0 z-10 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-600 px-3 py-2 font-medium text-neutral-800 dark:text-neutral-200 whitespace-nowrap"
+                        className="sticky left-0 z-10 bg-white dark:bg-stone-800 border-r border-stone-200 dark:border-stone-600 px-3 py-2 font-medium text-stone-800 dark:text-stone-200 whitespace-nowrap"
                         style={{ minWidth: '100px' }}
                       >
                         {member.display_name}
@@ -415,17 +415,17 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                         let cellContent: React.ReactNode = null;
                         let cellBg = weekend
                           ? 'bg-danger-50/50 dark:bg-danger-900/10'
-                          : 'bg-white dark:bg-neutral-800';
+                          : 'bg-white dark:bg-stone-800';
                         let textColor = '';
 
                         if (record && record.clock_in) {
                           const workMin = calcWorkMinutes(record);
                           const isOvertime = workMin > OVERTIME_THRESHOLD_MINUTES;
                           cellBg = isOvertime
-                            ? 'bg-info-50 dark:bg-info-900/30'
+                            ? 'bg-blue-50 dark:bg-blue-700/30'
                             : 'bg-success-50 dark:bg-success-900/30';
                           textColor = isOvertime
-                            ? 'text-info-700 dark:text-info-300 font-semibold'
+                            ? 'text-blue-700 dark:text-blue-300 font-semibold'
                             : 'text-success-700 dark:text-success-300 font-semibold';
                           cellContent = (
                             <span className={textColor}>{fmtMinutes(workMin)}</span>
@@ -441,10 +441,10 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                             onClick={() => handleCellClick(member.user_id, day)}
                             aria-selected={isSelected}
                             className={`
-                              border-r border-neutral-200 dark:border-neutral-600 p-1 text-center cursor-pointer
-                              motion-safe:transition-colors duration-120 ease-out-expo select-none
+                              border-r border-stone-200 dark:border-stone-600 p-1 text-center cursor-pointer
+                              motion-safe:transition-colors duration-150 ease-out select-none
                               ${cellBg}
-                              ${isSelected ? 'ring-2 ring-inset ring-primary-500 dark:ring-primary-400' : 'hover:ring-1 hover:ring-inset hover:ring-primary-300 dark:hover:ring-primary-700'}
+                              ${isSelected ? 'ring-2 ring-inset ring-blue-500 dark:ring-blue-400' : 'hover:ring-1 hover:ring-inset hover:ring-blue-300 dark:hover:ring-blue-700'}
                             `}
                             style={{ minWidth: '48px', width: '48px', height: '44px' }}
                           >
@@ -453,10 +453,10 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                         );
                       })}
 
-                      <td className="border-r border-neutral-200 dark:border-neutral-600 px-2 py-2 text-center text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
+                      <td className="border-r border-stone-200 dark:border-stone-600 px-2 py-2 text-center text-stone-700 dark:text-stone-300 whitespace-nowrap">
                         {workDays}日
                       </td>
-                      <td className="px-2 py-2 text-center text-neutral-700 dark:text-neutral-300 whitespace-nowrap">
+                      <td className="px-2 py-2 text-center text-stone-700 dark:text-stone-300 whitespace-nowrap">
                         {fmtMinutes(totalMin)}
                       </td>
                     </tr>
@@ -470,7 +470,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
       {loaded && members.length === 0 && (
         <EmptyState
-          icon={<Users className="w-12 h-12 text-neutral-400 dark:text-neutral-500" />}
+          icon={<Users className="w-12 h-12 text-stone-400 dark:text-stone-500" />}
           title="メンバーが登録されていません"
           description="メンバー管理タブからメンバーを追加してください"
         />
@@ -494,7 +494,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
               <button
                 onClick={handleSave}
                 disabled={saving || (!edit.clock_in && !selectedCell.record)}
-                className="bg-primary-600 dark:bg-primary-500 text-white px-5 py-2 rounded-md text-sm hover:bg-primary-700 dark:hover:bg-primary-500 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition-colors duration-120 ease-out-expo"
+                className="bg-blue-600 dark:bg-blue-500 text-white px-5 py-2 rounded-md text-sm hover:bg-blue-700 dark:hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed motion-safe:transition-colors duration-150 ease-out"
               >
                 {saving ? '保存中...' : selectedCell.record ? '更新' : '登録'}
               </button>
@@ -511,7 +511,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
                     </Button>
                     <button
                       onClick={() => setConfirmDelete(false)}
-                      className="bg-neutral-200 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-200 px-4 py-2 rounded-md text-sm hover:bg-neutral-300 dark:hover:bg-neutral-500 motion-safe:transition-colors duration-120 ease-out-expo"
+                      className="bg-stone-200 dark:bg-stone-600 text-stone-700 dark:text-stone-200 px-4 py-2 rounded-md text-sm hover:bg-stone-300 dark:hover:bg-stone-500 motion-safe:transition-colors duration-150 ease-out"
                     >
                       キャンセル
                     </button>
@@ -528,7 +528,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
               <button
                 onClick={() => setSelectedCell(null)}
-                className="text-sm text-neutral-500 dark:text-neutral-300 hover:text-neutral-700 dark:hover:text-neutral-200 motion-safe:transition-colors duration-120 ease-out-expo"
+                className="text-sm text-stone-500 dark:text-stone-300 hover:text-stone-700 dark:hover:text-stone-200 motion-safe:transition-colors duration-150 ease-out"
               >
                 閉じる
               </button>
@@ -540,43 +540,43 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">出勤時刻</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">出勤時刻</label>
                 <input
                   type="datetime-local"
                   value={edit.clock_in}
                   onChange={(e) => setEdit((prev) => ({ ...prev, clock_in: e.target.value }))}
-                  className="w-full border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-stone-700 dark:text-white dark:border-stone-600"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">退勤時刻</label>
+                <label className="block text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">退勤時刻</label>
                 <input
                   type="datetime-local"
                   value={edit.clock_out}
                   onChange={(e) => setEdit((prev) => ({ ...prev, clock_out: e.target.value }))}
-                  className="w-full border border-neutral-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 dark:bg-neutral-700 dark:text-white dark:border-neutral-600"
+                  className="w-full border border-stone-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-stone-700 dark:text-white dark:border-stone-600"
                 />
               </div>
             </div>
 
             {selectedCell.record && selectedCell.record.breaks && selectedCell.record.breaks.length > 0 && (
               <div>
-                <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">休憩</p>
+                <p className="text-sm font-medium text-stone-700 dark:text-stone-300 mb-1">休憩</p>
                 <div className="space-y-1">
                   {selectedCell.record.breaks.map((b, idx) => (
-                    <div key={b.id} className="text-sm text-neutral-600 dark:text-neutral-300 flex gap-2 tabular-nums">
+                    <div key={b.id} className="text-sm text-stone-600 dark:text-stone-300 flex gap-2 tabular-nums">
                       <span>#{idx + 1}</span>
                       <span>{b.start_time ? format(parseISO(b.start_time), 'HH:mm') : '—'}</span>
                       <span>〜</span>
                       <span>{b.end_time ? format(parseISO(b.end_time), 'HH:mm') : '打刻中'}</span>
                       {b.start_time && b.end_time && (
-                        <span className="text-neutral-400 dark:text-neutral-500">
+                        <span className="text-stone-400 dark:text-stone-500">
                           ({fmtMinutes(differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time)))})
                         </span>
                       )}
                     </div>
                   ))}
-                  <p className="text-sm text-neutral-500 dark:text-neutral-300 tabular-nums">
+                  <p className="text-sm text-stone-500 dark:text-stone-300 tabular-nums">
                     合計休憩: {fmtMinutes(calcBreakMinutes(selectedCell.record))}
                   </p>
                 </div>
@@ -591,7 +591,7 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
               const breakMin = selectedCell.record ? calcBreakMinutes(selectedCell.record) : 0;
               const workMin = Math.max(0, grossMin - breakMin);
               return (
-                <p className="text-sm text-primary-600 dark:text-primary-400 tabular-nums">
+                <p className="text-sm text-blue-600 dark:text-blue-400 tabular-nums">
                   労働時間（予算）: {fmtMinutes(workMin)}
                   {breakMin > 0 && ` (休憩 ${fmtMinutes(breakMin)} 除く)`}
                 </p>

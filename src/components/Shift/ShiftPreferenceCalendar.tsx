@@ -31,12 +31,12 @@ interface ShiftPreferenceCalendarProps {
 }
 
 const MEMBER_TONE_CLASSES = [
-  'bg-primary-50 text-primary-700',
+  'bg-blue-50 text-blue-700',
   'bg-success-50 text-success-500',
-  'bg-info-50 text-info-500',
+  'bg-blue-50 text-blue-500',
   'bg-warning-50 text-warning-500',
   'bg-danger-50 text-danger-500',
-  'bg-neutral-100 text-neutral-700',
+  'bg-stone-100 text-stone-700',
 ];
 
 export function ShiftPreferenceCalendar({
@@ -157,19 +157,19 @@ export function ShiftPreferenceCalendar({
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
+          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 focus-ring"
           aria-label="前月"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
         <div className="text-center">
-          <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100 tabular-nums">
+          <p className="text-base font-semibold text-stone-900 dark:text-stone-100 tabular-nums">
             {format(baseDate, 'yyyy年M月', { locale: ja })}
           </p>
           <button
             type="button"
             onClick={() => setBaseDate(new Date())}
-            className="text-[11px] font-semibold text-primary-600 dark:text-primary-400 hover:underline mt-0.5"
+            className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline mt-0.5"
           >
             今月へ戻る
           </button>
@@ -177,7 +177,7 @@ export function ShiftPreferenceCalendar({
         <button
           type="button"
           onClick={() => navigate(1)}
-          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-neutral-500 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 focus-ring"
+          className="w-10 h-10 inline-flex items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 focus-ring"
           aria-label="次月"
         >
           <ChevronRight className="w-5 h-5" />
@@ -206,10 +206,10 @@ export function ShiftPreferenceCalendar({
             className={
               'text-center text-[11px] font-semibold ' +
               (i === 5
-                ? 'text-info-500'
+                ? 'text-blue-500'
                 : i === 6
                 ? 'text-danger-500'
-                : 'text-neutral-500 dark:text-neutral-300')
+                : 'text-stone-500 dark:text-stone-300')
             }
           >
             {d}
@@ -245,34 +245,34 @@ export function ShiftPreferenceCalendar({
           const pendingCount = dayPrefs.filter(p => p.status === 'pending').length;
 
           const baseCell = isAdminView
-            ? 'min-h-[88px] lg:min-h-[120px] rounded-lg flex flex-col items-stretch gap-0.5 text-[11px] motion-safe:transition-colors duration-120 ease-out-expo focus-ring select-none cursor-pointer relative'
-            : 'min-h-[56px] md:min-h-[72px] rounded-lg flex flex-col items-center justify-center gap-0.5 text-[11px] motion-safe:transition-colors duration-120 ease-out-expo focus-ring select-none cursor-pointer';
+            ? 'min-h-[88px] lg:min-h-[120px] rounded-lg flex flex-col items-stretch gap-0.5 text-[11px] motion-safe:transition-colors duration-150 ease-out focus-ring select-none cursor-pointer relative'
+            : 'min-h-[56px] md:min-h-[72px] rounded-lg flex flex-col items-center justify-center gap-0.5 text-[11px] motion-safe:transition-colors duration-150 ease-out focus-ring select-none cursor-pointer';
 
           let stateCell: string;
           if (!isCurrentMonth) {
-            stateCell = 'bg-neutral-100 text-neutral-500 cursor-not-allowed dark:bg-neutral-800 dark:text-neutral-500';
+            stateCell = 'bg-stone-100 text-stone-500 cursor-not-allowed dark:bg-stone-800 dark:text-stone-500';
           } else if (theme && !isAdminView) {
             stateCell = theme.cellClass + ' hover:opacity-90';
           } else {
             stateCell =
-              'bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800';
+              'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50 dark:bg-stone-900 dark:border-stone-700 dark:text-stone-300 dark:hover:bg-stone-800';
           }
-          const todayRing = isToday ? ' ring-2 ring-primary-500' : '';
+          const todayRing = isToday ? ' ring-2 ring-blue-500' : '';
           const isBulkSelected = bulkSelectionMode && !!selectedDates && selectedDates.has(dateStr);
           // 選択中視覚 (§5.3 + P2-INT-1):
-          //   bg-info-50 (solid) は preferred/unavailable 等の既存 cellClass を上書きする恐れがあるため
-          //   ring-2 + bg-info-100/50 (半透明) に変更し、既存色を透かす。
+          //   bg-blue-50 (solid) は preferred/unavailable 等の既存 cellClass を上書きする恐れがあるため
+          //   ring-2 + bg-blue-100/50 (半透明) に変更し、既存色を透かす。
           const bulkSelectedClass = isBulkSelected
-            ? ' ring-2 ring-info-500 ring-offset-1 bg-info-100/50 dark:bg-info-900/30'
+            ? ' ring-2 ring-blue-500 ring-offset-1 bg-blue-100/50 dark:bg-blue-900/30'
             : '';
           const dayNumColor =
             !isCurrentMonth
-              ? 'text-neutral-500 dark:text-neutral-500'
+              ? 'text-stone-500 dark:text-stone-500'
               : dayOfWeek === 6
               ? 'text-danger-500'
               : dayOfWeek === 5
-              ? 'text-info-500'
-              : 'text-neutral-700 dark:text-neutral-300';
+              ? 'text-blue-500'
+              : 'text-stone-700 dark:text-stone-300';
 
           const ariaLabel = `${format(d, 'yyyy年M月d日 (E)', { locale: ja })}${
             primaryPref ? ` ${getPreferenceTheme(primaryPref.preference_type).label}` : ''
@@ -335,7 +335,7 @@ export function ShiftPreferenceCalendar({
                     );
                   })}
                   {(nU > 0 || nP > 0) ? (
-                    <span className="text-[9px] text-neutral-500 dark:text-neutral-400 px-1">
+                    <span className="text-[9px] text-stone-500 dark:text-stone-400 px-1">
                       {[
                         nU > 0 ? `不可${nU}` : null,
                         nP > 0 ? `希望${nP}` : null,
@@ -394,7 +394,7 @@ export function ShiftPreferenceCalendar({
       {isAdminView && (
         <div className="md:hidden flex flex-col gap-2">
           {dailyGroups.length === 0 && !isCurrentMonthEmpty && (
-            <p className="text-xs text-neutral-500 dark:text-neutral-300 text-center py-4">
+            <p className="text-xs text-stone-500 dark:text-stone-300 text-center py-4">
               この月のシフト申請データがありません
             </p>
           )}
@@ -406,16 +406,16 @@ export function ShiftPreferenceCalendar({
               dayOfWeek === 6
                 ? 'text-danger-500'
                 : dayOfWeek === 5
-                ? 'text-info-500'
-                : 'text-neutral-700 dark:text-neutral-300';
+                ? 'text-blue-500'
+                : 'text-stone-700 dark:text-stone-300';
             return (
               <div
                 key={dateStr}
                 className={
-                  'rounded-lg border bg-white dark:bg-neutral-900 ' +
+                  'rounded-lg border bg-white dark:bg-stone-900 ' +
                   (isToday
-                    ? 'border-primary-500 ring-1 ring-primary-500'
-                    : 'border-neutral-200 dark:border-neutral-700')
+                    ? 'border-blue-500 ring-1 ring-blue-500'
+                    : 'border-stone-200 dark:border-stone-700')
                 }
               >
                 <button
@@ -424,9 +424,9 @@ export function ShiftPreferenceCalendar({
                   aria-pressed={bulkSelectionMode ? !!selectedDates?.has(dateStr) : undefined}
                   aria-selected={bulkSelectionMode ? !!selectedDates?.has(dateStr) : undefined}
                   className={
-                    'w-full flex items-center justify-between px-3 py-2.5 border-b border-neutral-100 dark:border-neutral-700 focus-ring rounded-t-lg hover:bg-neutral-50 dark:hover:bg-neutral-800' +
+                    'w-full flex items-center justify-between px-3 py-2.5 border-b border-stone-100 dark:border-stone-700 focus-ring rounded-t-lg hover:bg-stone-50 dark:hover:bg-stone-800' +
                     (bulkSelectionMode && selectedDates?.has(dateStr)
-                      ? ' ring-2 ring-info-500 ring-offset-1 bg-info-100/50 dark:bg-info-900/30'
+                      ? ' ring-2 ring-blue-500 ring-offset-1 bg-blue-100/50 dark:bg-blue-900/30'
                       : '')
                   }
                   aria-label={`${format(date, 'M月d日 (E)', { locale: ja })} のシフト申請一覧を開く`}
@@ -440,12 +440,12 @@ export function ShiftPreferenceCalendar({
                         未対応 {pendingCount}
                       </span>
                     )}
-                    <span className="text-[11px] text-neutral-500 dark:text-neutral-300 tabular-nums">
+                    <span className="text-[11px] text-stone-500 dark:text-stone-300 tabular-nums">
                       {prefs.length}件
                     </span>
                   </span>
                 </button>
-                <ul className="divide-y divide-neutral-100 dark:divide-neutral-700">
+                <ul className="divide-y divide-stone-100 dark:divide-stone-700">
                   {prefs.map((p) => {
                     const tone = userToneMap.get(p.user_id) ?? MEMBER_TONE_CLASSES[0];
                     return (

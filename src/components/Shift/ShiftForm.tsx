@@ -60,7 +60,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-neutral-800 rounded-lg shadow p-4 space-y-4">
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-stone-800 rounded-lg shadow p-4 space-y-4">
       <Heading level={4}>{date} のシフト申請</Heading>
 
       {error && (
@@ -74,7 +74,7 @@ export function ShiftForm({ date, onSubmit, onCancel, initialStartTime, initialE
               key={p.id}
               type="button"
               onClick={() => { setStartTime(p.start_time.slice(0, 5)); setEndTime(p.end_time.slice(0, 5)); }}
-              className="inline-flex items-center px-3 py-2 text-xs font-medium bg-primary-50 dark:bg-primary-900 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 motion-safe:transition-colors duration-120 ease-out-expo"
+              className="inline-flex items-center px-3 py-2 text-xs font-medium bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900 motion-safe:transition-colors duration-150 ease-out"
             >
               <Clock className="w-3.5 h-3.5 mr-1" />
               {p.name} ({formatTimeRange(p.start_time, p.end_time)})

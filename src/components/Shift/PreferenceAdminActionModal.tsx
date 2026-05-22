@@ -91,24 +91,24 @@ export function PreferenceAdminActionModal({
     >
       <div className="space-y-4">
         {/* 申請内容サマリ */}
-        <div className="rounded-md bg-neutral-50 dark:bg-neutral-800 p-3 space-y-1.5">
+        <div className="rounded-md bg-stone-50 dark:bg-stone-800 p-3 space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+            <span className="text-sm font-medium text-stone-900 dark:text-stone-100">
               {memberName ?? '不明なメンバー'}
             </span>
             {storeName && (
               <Badge tone="neutral">{storeName}</Badge>
             )}
           </div>
-          <div className="text-xs text-neutral-600 dark:text-neutral-300">
+          <div className="text-xs text-stone-600 dark:text-stone-300">
             {preference.date}
           </div>
-          <div className="text-sm text-neutral-700 dark:text-neutral-200 flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+          <div className="text-sm text-stone-700 dark:text-stone-200 flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-stone-500 dark:text-stone-400" />
             {timeLabel}
           </div>
           {preference.note && (
-            <div className="text-xs text-neutral-600 dark:text-neutral-300 pt-1 border-t border-neutral-200 dark:border-neutral-700">
+            <div className="text-xs text-stone-600 dark:text-stone-300 pt-1 border-t border-stone-200 dark:border-stone-700">
               {preference.note}
             </div>
           )}
@@ -165,7 +165,7 @@ export function PreferenceAdminActionModal({
         {/* 確認: 仮承認 */}
         {mode === 'confirmApprove' && (
           <div className="space-y-3">
-            <p className="text-sm text-neutral-700 dark:text-neutral-200">
+            <p className="text-sm text-stone-700 dark:text-stone-200">
               この申請を仮承認します。よろしいですか？
             </p>
             <div className="flex items-center gap-2">
@@ -192,25 +192,25 @@ export function PreferenceAdminActionModal({
         {/* 時間指定 → 確認 (Reviewer P2: ここでは時刻入力のみ、実行は confirmApproveWithTime で確認後) */}
         {mode === 'pickTime' && (
           <div className="space-y-3">
-            <p className="text-sm text-neutral-700 dark:text-neutral-200">
+            <p className="text-sm text-stone-700 dark:text-stone-200">
               仮承認する時間を指定してください。
             </p>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-neutral-600 dark:text-neutral-300">開始</label>
+              <label className="text-xs text-stone-600 dark:text-stone-300">開始</label>
               <select
                 value={editStart}
                 onChange={(e) => setEditStart(e.target.value)}
                 disabled={loading}
-                className="text-sm rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-2 py-1"
+                className="text-sm rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 px-2 py-1"
               >
                 {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
-              <label className="text-xs text-neutral-600 dark:text-neutral-300 ml-2">終了</label>
+              <label className="text-xs text-stone-600 dark:text-stone-300 ml-2">終了</label>
               <select
                 value={editEnd}
                 onChange={(e) => setEditEnd(e.target.value)}
                 disabled={loading}
-                className="text-sm rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 px-2 py-1"
+                className="text-sm rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 px-2 py-1"
               >
                 {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -239,7 +239,7 @@ export function PreferenceAdminActionModal({
         {/* 確認: 時間指定で仮承認 (Reviewer P2: 確認 → 実行の 2 段階フローを完成させる) */}
         {mode === 'confirmApproveWithTime' && (
           <div className="space-y-3">
-            <p className="text-sm text-neutral-700 dark:text-neutral-200">
+            <p className="text-sm text-stone-700 dark:text-stone-200">
               <span className="font-medium">{editStart} 〜 {editEnd}</span> でこの申請を仮承認します。よろしいですか？
             </p>
             <div className="flex items-center gap-2">
@@ -266,7 +266,7 @@ export function PreferenceAdminActionModal({
         {/* 確認: 却下 */}
         {mode === 'confirmReject' && (
           <div className="space-y-3">
-            <p className="text-sm text-neutral-700 dark:text-neutral-200">
+            <p className="text-sm text-stone-700 dark:text-stone-200">
               この申請を却下します。よろしいですか？
             </p>
             <div className="flex items-center gap-2">

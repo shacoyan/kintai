@@ -35,9 +35,9 @@ interface ShiftCalendarProps {
 }
 
 const MEMBER_COLORS = [
-  'bg-primary-100 border-primary-300 text-primary-800 dark:bg-primary-900/30 dark:border-primary-700 dark:text-primary-300',
+  'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
   'bg-member-3-100 border-member-3-300 text-member-3-800 dark:bg-member-3-100/20 dark:border-member-3-300/40 dark:text-member-3-100',
-  'bg-info-100 border-info-300 text-info-800 dark:bg-info-900/30 dark:border-info-700 dark:text-info-300',
+  'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
   'bg-member-4-100 border-member-4-300 text-member-4-800 dark:bg-member-4-100/20 dark:border-member-4-300/40 dark:text-member-4-100',
   'bg-member-6-100 border-member-6-300 text-member-6-800 dark:bg-member-6-100/20 dark:border-member-6-300/40 dark:text-member-6-100',
   'bg-member-2-100 border-member-2-300 text-member-2-800 dark:bg-member-2-100/20 dark:border-member-2-300/40 dark:text-member-2-100',
@@ -49,11 +49,11 @@ const MEMBER_COLORS = [
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-warning-100 border-warning-300 text-warning-800 dark:bg-warning-900/30 dark:border-warning-700 dark:text-warning-300',
-  tentative: 'bg-info-100 border-info-300 text-info-800 dark:bg-info-900/30 dark:border-info-700 dark:text-info-300',
+  tentative: 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
   approved: 'bg-success-100 border-success-300 text-success-800 dark:bg-success-900/30 dark:border-success-700 dark:text-success-300',
   rejected: 'bg-danger-100 border-danger-300 text-danger-800 dark:bg-danger-900/30 dark:border-danger-700 dark:text-danger-300',
-  modified: 'bg-primary-100 border-primary-300 text-primary-800 dark:bg-primary-900/30 dark:border-primary-700 dark:text-primary-300',
-  cancelled: 'bg-neutral-100 border-neutral-300 text-neutral-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-neutral-300',
+  modified: 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
+  cancelled: 'bg-stone-100 border-stone-300 text-stone-500 dark:bg-stone-700 dark:border-stone-600 dark:text-stone-300',
 };
 
 const LEAVE_TYPE_DOT: Record<string, string> = {
@@ -63,10 +63,10 @@ const LEAVE_TYPE_DOT: Record<string, string> = {
   special: 'bg-leave-type-special-500',
   maternity: 'bg-leave-type-maternity-500',
   paternity: 'bg-leave-type-paternity-500',
-  compassionate: 'bg-neutral-500',
+  compassionate: 'bg-stone-500',
   comp_holiday: 'bg-leave-type-comp-holiday-500',
-  absence: 'bg-neutral-400',
-  other: 'bg-info-500',
+  absence: 'bg-stone-400',
+  other: 'bg-blue-500',
 };
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {
@@ -202,21 +202,21 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
       {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(-1)} aria-label="前月" className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo">
-            <ChevronLeft className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
+          <button onClick={() => navigate(-1)} aria-label="前月" className="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-stone-700 motion-safe:transition-colors duration-150 ease-out">
+            <ChevronLeft className="w-5 h-5 text-stone-600 dark:text-stone-300" />
           </button>
-          <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 min-w-[120px] text-center">
+          <span className="text-sm font-semibold text-stone-900 dark:text-stone-100 min-w-[120px] text-center">
             {viewMode === 'month'
               ? format(baseDate, 'yyyy年M月', { locale: ja })
               : `${format(dates[0], 'M/d')} - ${format(dates[dates.length - 1], 'M/d')}`
             }
           </span>
-          <button onClick={() => navigate(1)} aria-label="次月" className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 motion-safe:transition-colors duration-120 ease-out-expo">
-            <ChevronRight className="w-5 h-5 text-neutral-600 dark:text-neutral-300" />
+          <button onClick={() => navigate(1)} aria-label="次月" className="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-stone-700 motion-safe:transition-colors duration-150 ease-out">
+            <ChevronRight className="w-5 h-5 text-stone-600 dark:text-stone-300" />
           </button>
           <button
             onClick={() => setBaseDate(new Date())}
-            className="px-2 py-1 text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 rounded hover:bg-primary-100 dark:hover:bg-primary-900/50 motion-safe:transition-colors duration-120 ease-out-expo"
+            className="px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 motion-safe:transition-colors duration-150 ease-out"
           >
             今日
           </button>
@@ -230,10 +230,10 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
               onClick={() => setViewMode(mode)}
               role="tab"
               aria-selected={viewMode === mode}
-              className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-120 ease-out-expo ${
+              className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-150 ease-out ${
                 viewMode === mode
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700'
               }`}
             >
               {mode === 'week' ? '週' : mode === '2week' ? '2週' : '月'}
@@ -254,13 +254,13 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
       )}
 
       {/* Calendar grid */}
-      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-stone-800 rounded-lg shadow overflow-hidden">
         {/* 理由: 曜日ヘッダーとセル領域の divider */}
         {/* Header */}
-        <div className="grid grid-cols-7 bg-neutral-50 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700">
+        <div className="grid grid-cols-7 bg-stone-50 dark:bg-stone-700 border-b border-stone-200 dark:border-stone-700">
           {weekDays.map((d, i) => (
             <div key={i} className={`text-center py-2 text-xs font-medium ${
-              i === 5 ? 'text-primary-600 dark:text-primary-400' : i === 6 ? 'text-danger-600 dark:text-danger-400' : 'text-neutral-500 dark:text-neutral-300'
+              i === 5 ? 'text-blue-600 dark:text-blue-400' : i === 6 ? 'text-danger-600 dark:text-danger-400' : 'text-stone-500 dark:text-stone-300'
             }`}>
               {d}
             </div>
@@ -300,8 +300,8 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     onDateClick(dateStr);
                   }
                 }}
-                className={`relative min-h-[70px] sm:min-h-[80px] border-b border-r border-neutral-100 dark:border-neutral-700 p-1 cursor-pointer motion-safe:transition-colors duration-120 ease-out-expo ${
-                  !isCurrentMonth ? 'bg-neutral-50 dark:bg-neutral-700/50 opacity-50' : ''
+                className={`relative min-h-[70px] sm:min-h-[80px] border-b border-r border-stone-100 dark:border-stone-700 p-1 cursor-pointer motion-safe:transition-colors duration-150 ease-out ${
+                  !isCurrentMonth ? 'bg-stone-50 dark:bg-stone-700/50 opacity-50' : ''
                 } ${
                   isCurrentMonth && isHoliday ? 'bg-weekend-holiday-50 dark:bg-weekend-holiday-900/30' : ''
                 } ${
@@ -309,15 +309,15 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                 } ${
                   isCurrentMonth && !isHoliday && dayOfWeek === 0 ? 'bg-weekend-sunday-50 dark:bg-weekend-sunday-900/30' : ''
                 } ${
-                  isCurrentMonth ? 'hover:bg-neutral-50 dark:hover:bg-neutral-700' : ''
+                  isCurrentMonth ? 'hover:bg-stone-50 dark:hover:bg-stone-700' : ''
                 }`}
               >
                 <div className={`text-xs font-medium mb-0.5 ${
                   isToday
-                    ? 'bg-primary-600 text-white w-5 h-5 rounded-full flex items-center justify-center'
+                    ? 'bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center'
                     : isHoliday && isCurrentMonth
                       ? 'text-weekend-holiday-700 dark:text-weekend-holiday-100'
-                      : 'text-neutral-700 dark:text-neutral-300'
+                      : 'text-stone-700 dark:text-stone-300'
                 }`}>
                   {format(d, 'd')}
                 </div>
@@ -341,7 +341,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                             onShiftClick?.(s);
                           }
                         }}
-                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-120 ease-out-expo ${colorClass} ${isMine ? 'border-l-4 border-l-primary-600 dark:border-l-primary-400 font-semibold' : ''}`}
+                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorClass} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
                       >
                         {memberNames ? (
                           <span title={memberNames.get(s.user_id) ?? ''}>
@@ -352,7 +352,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                         )}
                         {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
                         {isMine && (
-                          <span className="ml-1 inline-block bg-primary-600 text-white text-[8px] px-1 rounded" aria-label="自分のシフト">あなた</span>
+                          <span className="ml-1 inline-block bg-blue-600 text-white text-[8px] px-1 rounded" aria-label="自分のシフト">あなた</span>
                         )}
                       </div>
                     );
@@ -377,7 +377,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                             onPreferenceClick?.(p);
                           }
                         }}
-                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border border-dashed truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-120 ease-out-expo ${colorBase} ${isMine ? 'border-l-4 border-l-primary-600 dark:border-l-primary-400 font-semibold' : ''}`}
+                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded border border-dashed truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorBase} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
                       >
                         {memberNames ? (
                           <span title={memberNames.get(p.user_id) ?? ''}>
@@ -388,7 +388,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                         )}
                         {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
                         {isMine && (
-                          <span className="ml-1 inline-block bg-primary-600 text-white text-[8px] px-1 rounded" aria-label="自分の申請">あなた</span>
+                          <span className="ml-1 inline-block bg-blue-600 text-white text-[8px] px-1 rounded" aria-label="自分の申請">あなた</span>
                         )}
                         <span className="ml-1 inline-block bg-warning-50 text-warning-700 dark:bg-warning-900/40 dark:text-warning-300 text-[8px] px-1 rounded">申請</span>
                       </div>
@@ -400,13 +400,13 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     {dayLeaves.slice(0, 4).map((l) => (
                       <span
                         key={l.id}
-                        className={`w-1.5 h-1.5 rounded-full ${LEAVE_TYPE_DOT[l.leave_type] || 'bg-info-500'} ${
+                        className={`w-1.5 h-1.5 rounded-full ${LEAVE_TYPE_DOT[l.leave_type] || 'bg-blue-500'} ${
                           l.status === 'pending' ? 'ring-1 ring-warning-400' : ''
                         }`}
                       />
                     ))}
                     {dayLeaves.length > 4 && (
-                      <span className="text-[8px] text-neutral-500 dark:text-neutral-300 leading-none">
+                      <span className="text-[8px] text-stone-500 dark:text-stone-300 leading-none">
                         +{dayLeaves.length - 4}
                       </span>
                     )}
