@@ -22,9 +22,9 @@ const VARIANT_CLASSES: Record<IconButtonVariant, string> = {
 };
 
 const SIZE_CLASSES: Record<IconButtonSize, string> = {
-  sm: 'h-8 w-8',
-  md: 'h-9 w-9',
-  lg: 'h-10 w-10',
+  sm: 'min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-8 sm:w-8',
+  md: 'min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-9 sm:w-9',
+  lg: 'min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 sm:h-10 sm:w-10',
 };
 
 const BASE_CLASSES =

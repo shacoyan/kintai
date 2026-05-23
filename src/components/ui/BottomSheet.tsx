@@ -62,14 +62,14 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
         role="dialog"
         aria-modal="true"
         {...ariaProps}
-        className="relative w-full md:max-w-lg bg-white dark:bg-stone-900 rounded-t-2xl md:rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] max-h-[90vh] overflow-hidden motion-safe:animate-slide-up md:animate-none motion-safe:transition-transform duration-200 ease-out"
+        className="relative w-full md:max-w-lg bg-white dark:bg-stone-900 rounded-t-2xl md:rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] max-h-[90vh] flex flex-col overflow-hidden motion-safe:animate-slide-up md:animate-none motion-safe:transition-transform duration-200 ease-out"
       >
         {/* Handle bar (mobile only) */}
-        <div className="md:hidden flex justify-center">
+        <div className="md:hidden flex justify-center flex-shrink-0">
           <div className="mx-auto w-12 h-1 rounded-full bg-stone-300 dark:bg-stone-600 my-2" />
         </div>
         {title && (
-          <div className="border-b border-stone-200 dark:border-stone-700">
+          <div className="border-b border-stone-200 dark:border-stone-700 flex-shrink-0">
             <div className="flex items-center justify-between px-4 py-3">
               <h2 id={titleId} className="text-base font-semibold text-stone-900 dark:text-stone-50">{title}</h2>
               <button
@@ -87,9 +87,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
             )}
           </div>
         )}
-        <div className="p-4 overflow-y-auto">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto p-4">{children}</div>
         {footer && (
-          <div className="px-4 py-3 border-t border-stone-200 dark:border-stone-700">
+          <div className="px-4 py-3 border-t border-stone-200 dark:border-stone-700 flex-shrink-0">
             {footer}
           </div>
         )}

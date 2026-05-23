@@ -130,18 +130,108 @@ export function LaborCostCard({
       {showDetailTable && (
         // 理由: オーナー要望によりスクロール撤廃。max-h と overflow-y を削除し、
         // 全員常時表示。横幅対応の overflow-x-auto のみ残す。
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-left text-stone-500 dark:text-stone-400">
-                <th className="px-3 py-2 font-medium sticky left-0 bg-white dark:bg-stone-800 z-10 sm:static sm:bg-transparent">スタッフ名</th>
-                <th className="px-3 py-2 font-medium text-right tabular-nums">通常時間</th>
-                <th className="px-3 py-2 font-medium text-right tabular-nums">深夜時間</th>
-                <th className="px-3 py-2 font-medium text-right tabular-nums">合計時間</th>
-                <th className="px-3 py-2 font-medium text-right tabular-nums">支払い予定人件費</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-200 dark:divide-stone-700">
+        <>
+          <ul className="md:hidden mt-3 space-y-2">
+            {monthlyMembers.length > 0 && (
+              <>
+                <li className="text-xs font-semibold text-stone-700 dark:text-stone-300 bg-stone-50 dark:bg-stone-700/40 rounded-md px-3 py-2">
+                  月給メンバー
+                </li>
+                {monthlyMembers.map(m => {
+                  const estimate = monthlyEstimatesMap.get(m.user_id);
+                  return (
+                    <li key={m.id} className="rounded-md border border-stone-200 dark:border-stone-700 p-3">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="font-medium text-stone-900 dark:text-stone-50 truncate">{m.display_name}</span>
+                        <span className="text-xs font-semibold tabular-nums text-blue-600 dark:text-blue-400 shrink-0">
+                          ¥{getEffectiveMonthlySalary(m, rolesMap).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <p className="text-stone-500 dark:text-stone-400">通常</p>
+                          <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{estimate ? fmtTime(estimate.shiftMinutes - estimate.nightMinutes) : '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-stone-500 dark:text-stone-400">深夜</p>
+                          <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{estimate ? fmtTime(estimate.nightMinutes) : '-'}</p>
+                        </div>
+                        <div>
+                          <p className="text-stone-500 dark:text-stone-400">合計</p>
+                          <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{estimate ? fmtTime(estimate.shiftMinutes) : '-'}</p>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </>
+            )}
+            {hourlyEstimates.length > 0 && (
+              <>
+                <li className="text-xs font-semibold text-stone-700 dark:text-stone-300 bg-stone-50 dark:bg-stone-700/40 rounded-md px-3 py-2">
+                  時給メンバー
+                </li>
+                {hourlyEstimates.map(e => (
+                  <li key={e.userId} className="rounded-md border border-stone-200 dark:border-stone-700 p-3">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="font-medium text-stone-900 dark:text-stone-50 truncate">{e.displayName}</span>
+                      <span className="text-xs font-semibold tabular-nums text-blue-600 dark:text-blue-400 shrink-0">
+                        ¥{e.estimatedCost.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <p className="text-stone-500 dark:text-stone-400">通常</p>
+                        <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(e.shiftMinutes - e.nightMinutes)}</p>
+                      </div>
+                      <div>
+                        <p className="text-stone-500 dark:text-stone-400">深夜</p>
+                        <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(e.nightMinutes)}</p>
+                      </div>
+                      <div>
+                        <p className="text-stone-500 dark:text-stone-400">合計</p>
+                        <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(e.shiftMinutes)}</p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </>
+            )}
+            <li className="rounded-md border-2 border-stone-300 dark:border-stone-600 bg-stone-100 dark:bg-stone-700/40 p-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-bold text-stone-900 dark:text-stone-50">合計</span>
+                <span className="text-sm font-bold tabular-nums text-blue-700 dark:text-blue-300 shrink-0">
+                  ¥{detailTotals.cost.toLocaleString()}
+                </span>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <p className="text-stone-500 dark:text-stone-400">通常</p>
+                  <p className="font-bold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(detailTotals.normal)}</p>
+                </div>
+                <div>
+                  <p className="text-stone-500 dark:text-stone-400">深夜</p>
+                  <p className="font-bold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(detailTotals.night)}</p>
+                </div>
+                <div>
+                  <p className="text-stone-500 dark:text-stone-400">合計</p>
+                  <p className="font-bold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(detailTotals.total)}</p>
+                </div>
+              </div>
+            </li>
+          </ul>
+          <div className="mt-3 overflow-x-auto hidden md:block">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-stone-500 dark:text-stone-400">
+                  <th className="px-3 py-2 font-medium sticky left-0 bg-white dark:bg-stone-800 z-10 sm:static sm:bg-transparent">スタッフ名</th>
+                  <th className="px-3 py-2 font-medium text-right tabular-nums">通常時間</th>
+                  <th className="px-3 py-2 font-medium text-right tabular-nums">深夜時間</th>
+                  <th className="px-3 py-2 font-medium text-right tabular-nums">合計時間</th>
+                  <th className="px-3 py-2 font-medium text-right tabular-nums">支払い予定人件費</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-200 dark:divide-stone-700">
               {monthlyMembers.length > 0 && (
                 <>
                   <tr>
@@ -184,9 +274,10 @@ export function LaborCostCard({
                 <td className="px-3 py-2 text-right tabular-nums">{fmtTime(detailTotals.total)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">¥{detailTotals.cost.toLocaleString()}</td>
               </tr>
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </Card>
   );

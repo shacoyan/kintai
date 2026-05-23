@@ -212,7 +212,7 @@ export function BulkShiftPreferenceDialog({
           </span>
           <ul
             aria-label={allDatesLabel}
-            className="flex flex-wrap gap-1.5"
+            className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto sm:max-h-none sm:overflow-visible"
           >
             {visibleDates.map((d) => (
               <li
@@ -321,7 +321,7 @@ export function BulkShiftPreferenceDialog({
 
             {/* カスタム時刻入力 */}
             {isCustomPreset && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <div>
                   <label className="block text-label text-stone-700 dark:text-stone-300 mb-2">
                     {messages.shiftPreference.bulk.customStartLabel}

@@ -211,25 +211,29 @@ export function PreferenceAdminActionModal({
             <p className="text-sm text-stone-700 dark:text-stone-200">
               仮承認する時間を指定してください。
             </p>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-stone-600 dark:text-stone-300">開始</label>
-              <select
-                value={editStart}
-                onChange={(e) => setEditStart(e.target.value)}
-                disabled={loading}
-                className="text-sm rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 px-2 py-1"
-              >
-                {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <label className="text-xs text-stone-600 dark:text-stone-300 ml-2">終了</label>
-              <select
-                value={editEnd}
-                onChange={(e) => setEditEnd(e.target.value)}
-                disabled={loading}
-                className="text-sm rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 px-2 py-1"
-              >
-                {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:gap-2">
+              <div className="sm:contents">
+                <label className="text-xs text-stone-600 dark:text-stone-300 block sm:inline">開始</label>
+                <select
+                  value={editStart}
+                  onChange={(e) => setEditStart(e.target.value)}
+                  disabled={loading}
+                  className="w-full sm:w-auto mt-1 sm:mt-0 text-sm rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 px-2 py-1"
+                >
+                  {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="sm:contents">
+                <label className="text-xs text-stone-600 dark:text-stone-300 block sm:inline sm:ml-2">終了</label>
+                <select
+                  value={editEnd}
+                  onChange={(e) => setEditEnd(e.target.value)}
+                  disabled={loading}
+                  className="w-full sm:w-auto mt-1 sm:mt-0 text-sm rounded-md border border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 px-2 py-1"
+                >
+                  {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <Button

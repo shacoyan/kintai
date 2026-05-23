@@ -351,6 +351,8 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                       ? userColorMap.get(s.user_id) || MEMBER_COLORS[0]
                       : STATUS_COLORS[s.status];
                     const isMine = !!currentUserId && !!memberNames && s.user_id === currentUserId;
+                    const fullTime = formatTimeRange(s.start_time, s.end_time, { compactNextDay: true });
+                    const spTime = s.start_time?.slice(0, 5) ?? '';
                     // 理由: shift バーの rounded border は member 色チップの枠線（MEMBER_COLORS の border 色とセット）
                     return (
                       <div
@@ -369,14 +371,19 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                       >
                         {memberNames ? (
                           <span title={memberNames.get(s.user_id) ?? ''}>
-                            {memberNames.get(s.user_id) ?? '不明'} {formatTimeRange(s.start_time, s.end_time, { compactNextDay: true })}
+                            <span className="hidden sm:inline">{memberNames.get(s.user_id) ?? '不明'} </span>
+                            <span className="sm:hidden tabular-nums">{spTime}</span>
+                            <span className="hidden sm:inline">{fullTime}</span>
                           </span>
                         ) : (
-                          <span>{formatTimeRange(s.start_time, s.end_time, { compactNextDay: true })}</span>
+                          <span>
+                            <span className="sm:hidden tabular-nums">{spTime}</span>
+                            <span className="hidden sm:inline">{fullTime}</span>
+                          </span>
                         )}
                         {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
                         {isMine && (
-                          <span className="ml-1 inline-block bg-blue-600 text-white text-[8px] px-1 rounded-md" aria-label="自分のシフト">あなた</span>
+                          <span className="ml-1 hidden sm:inline-block bg-blue-600 text-white text-[8px] px-1 rounded-md" aria-label="自分のシフト">あなた</span>
                         )}
                       </div>
                     );
@@ -386,6 +393,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     const timeDisplay = (p.start_time && p.end_time)
                       ? formatTimeRange(p.start_time, p.end_time, { compactNextDay: true })
                       : '終日';
+                    const spTime = p.start_time ? p.start_time.slice(0, 5) : '終日';
                     const isMine = !!currentUserId && !!memberNames && p.user_id === currentUserId;
                     // 理由: preference バーの border border-dashed は申請の視覚識別（pending）に使用
                     return (
@@ -405,16 +413,22 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                       >
                         {memberNames ? (
                           <span title={memberNames.get(p.user_id) ?? ''}>
-                            {memberNames.get(p.user_id) ?? '不明'} {timeDisplay}
+                            <span className="hidden sm:inline">{memberNames.get(p.user_id) ?? '不明'} </span>
+                            <span className="sm:hidden tabular-nums">{spTime}</span>
+                            <span className="hidden sm:inline">{timeDisplay}</span>
                           </span>
                         ) : (
-                          <span>{timeDisplay}</span>
+                          <span>
+                            <span className="sm:hidden tabular-nums">{spTime}</span>
+                            <span className="hidden sm:inline">{timeDisplay}</span>
+                          </span>
                         )}
                         {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
                         {isMine && (
-                          <span className="ml-1 inline-block bg-blue-600 text-white text-[8px] px-1 rounded-md" aria-label="自分の申請">あなた</span>
+                          <span className="ml-1 hidden sm:inline-block bg-blue-600 text-white text-[8px] px-1 rounded-md" aria-label="自分の申請">あなた</span>
                         )}
-                        <span className="ml-1 inline-block bg-orange-50 text-orange-700 dark:bg-orange-800/40 dark:text-orange-200 text-[8px] px-1 rounded-md">申請</span>
+                        <span className="sm:hidden inline-block w-1.5 h-1.5 rounded-full bg-orange-500 ml-1 align-middle" aria-label="申請中" />
+                        <span className="hidden sm:inline-block bg-orange-50 text-orange-700 dark:bg-orange-800/40 dark:text-orange-200 text-[8px] px-1 rounded-md">申請</span>
                       </div>
                     );
                   })}

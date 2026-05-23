@@ -265,7 +265,7 @@ export function UnifiedShiftSidebar({
       <aside
         ref={sidebarRef}
         aria-label="統合シフトサイドバー"
-        className="w-[360px] sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4"
+        className="w-full lg:w-[360px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto space-y-4"
       >
         {selectedDate && (
           <Card padding="sm">
@@ -391,7 +391,7 @@ export function UnifiedShiftSidebar({
     <aside
       ref={sidebarRef}
       aria-label="統合シフトサイドバー"
-      className="w-[360px] sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto space-y-4"
+      className="w-full lg:w-[360px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto space-y-4"
     >
       {/* ShiftStatusReadonly: 自分の確定シフト read-only */}
       {selectedDate && dateFilteredShifts.length > 0 && (
