@@ -7,7 +7,7 @@ import { useLeave } from '../hooks/useLeave';
 import { useAuth } from '../hooks/useAuth';
 import { ClockButton } from '../components/Attendance/ClockButton';
 import { BreakButton } from '../components/Attendance/BreakButton';
-import { AlertTriangle, CheckCircle2, CalendarDays, FileClock } from 'lucide-react';
+import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, FileClock } from 'lucide-react';
 import { Card, StatCard, Badge, Button, DashboardSkeleton, ListRowSkeleton, Heading } from '../components/ui';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { messages } from '../lib/messages';
@@ -15,15 +15,8 @@ import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, startOfM
 import { ja } from 'date-fns/locale';
 import { formatTimeRange } from '../utils/formatTimeRange';
 
-function getGreeting(hour: number): string {
-  if (hour >= 4 && hour < 11) return 'おはようございます';
-  if (hour >= 11 && hour < 17) return 'こんにちは';
-  if (hour >= 17 && hour < 23) return 'こんばんは';
-  return 'お疲れさまです';
-}
-
 export function DashboardPage() {
-  const { tenants, currentTenant, myRole } = useTenant();
+  const { currentTenant, myRole } = useTenant();
   // RequireTenant ガードにより currentTenant は必ず存在する
   const tenantId = currentTenant!.id;
   const { currentStore } = useStoreContext();
@@ -149,19 +142,8 @@ export function DashboardPage() {
   // 日跨ぎの未退勤レコード
   const carryOverRecord = activeRecord && activeRecord.date !== todayStr ? activeRecord : null;
 
-  // 今週の残りシフト（今日以降）
-  const upcomingShifts = myShifts
-    .filter((s) => s.date >= todayStr && s.status !== 'cancelled' && s.status !== 'rejected')
-    .slice(0, 3);
-
   // 申請中の休暇件数
   const pendingLeaveCount = myLeaves.filter(l => l.status === 'pending').length;
-  const displayName = tenants.find(t => t.id === tenantId)?.display_name;
-  const greeting = getGreeting(today.getHours());
-  const greetingLine = displayName ? `${greeting}、${displayName} さん。` : `${greeting}。`;
-  const nextShiftLine = upcomingShifts[0]
-    ? `次の予定は ${format(parseISO(upcomingShifts[0].date), 'M月d日（E）', { locale: ja })} ${formatTimeRange(upcomingShifts[0].start_time, upcomingShifts[0].end_time, { separator: '〜' })}。`
-    : '現在予定されている次のシフトはありません。';
 
   const weekStartDate = startOfWeek(today, { weekStartsOn: 1 });
   const weekEndDate = endOfWeek(today, { weekStartsOn: 1 });
@@ -184,195 +166,239 @@ export function DashboardPage() {
   const monthlyProgress = plannedMinutes > 0
     ? Math.min(100, Math.round((totalWorkMinutes / plannedMinutes) * 100))
     : 0;
-  const remainingPlannedMinutes = plannedMinutes > 0
-    ? Math.max(0, plannedMinutes - totalWorkMinutes)
-    : null;
+  const monthRate = monthlyProgress;
+  const monthHoursActual = (totalWorkMinutes / 60).toFixed(1);
+  const monthHoursPlanned = (plannedMinutes / 60).toFixed(1);
+  // TODO(loop-next): 未提出判定接続 (現状はダミー display)
+  const showShiftUnsubmittedBanner = true;
+  const dummyTeamMembers = [
+    { name: '中村 隆志', store: '吸暮', status: 'working' as const, time: '09:02' },
+    { name: '田中 由紀', store: 'KITUNE', status: 'break' as const, time: '13:15' },
+    { name: '佐藤 涼介', store: 'Goodbye', status: 'off' as const, time: '退勤' },
+    { name: '高橋 美咲', store: '金魚', status: 'working' as const, time: '11:30' },
+    { name: '伊藤 圭一', store: '吸暮', status: 'working' as const, time: '10:45' },
+  ];
+
+  const statusDotColor = (s: 'working' | 'break' | 'off') => {
+    if (s === 'working') return 'bg-emerald-500';
+    if (s === 'break') return 'bg-orange-500';
+    return 'bg-stone-300';
+  };
 
   return (
     <div className="min-h-full bg-stone-50 px-4 py-5 text-stone-900 dark:bg-stone-950 dark:text-stone-50 md:px-6 md:py-8">
-      <div className="mx-auto max-w-6xl space-y-5 md:space-y-6">
-        <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
-            <Heading level={1}>打刻 / ダッシュボード</Heading>
-            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{greetingLine}</p>
-          </div>
-          <p className="font-num text-sm tabular-nums text-stone-500 dark:text-stone-400">
-            {format(today, 'yyyy年M月d日 (E)', { locale: ja })}
-          </p>
+      <div className="mx-auto max-w-6xl space-y-6">
+        <header>
+          <Heading level={1}>打刻 / ダッシュボード</Heading>
         </header>
 
         {dashboardError && <ErrorBanner message={messages.error.withRetry(dashboardError)} />}
 
-        <Card padding="lg" className="rounded-2xl border-stone-200 py-10 text-center shadow-sm dark:border-stone-700 md:py-14">
-          <div className="font-num text-6xl font-semibold leading-none tabular-nums text-stone-900 dark:text-stone-50 md:text-7xl">
-            {format(now, 'HH:mm:ss')}
-          </div>
-          <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
-            {format(today, 'yyyy年M月d日 (E)', { locale: ja })}
-          </p>
-        </Card>
-
-        <section className="mx-auto max-w-md">
-          {currentStore == null ? (
-            <Card padding="md" className="border-l-4 border-orange-400 bg-orange-50/70 text-center shadow-sm dark:border-orange-300 dark:bg-orange-900/20">
-              <div className="flex flex-col items-center gap-2">
-                <Badge tone="warning" withDot>店舗未選択</Badge>
-                <p className="text-sm text-orange-700 dark:text-orange-200">打刻するには上部のセレクタから店舗を選択してください。</p>
-              </div>
-            </Card>
-          ) : (
-            <ClockButton
-              status={status}
-              clockIn={clockIn}
-              clockOut={clockOut}
-              todayRecords={todayRecords}
-              activeRecord={activeRecord}
-            >
-              <BreakButton
-                status={status}
-                breakStart={breakStart}
-                breakEnd={breakEnd}
-                activeRecord={activeRecord}
-                activeBreak={activeBreak}
-              />
-            </ClockButton>
-          )}
-        </section>
-
-        <Card padding="md" className="rounded-2xl shadow-sm">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div>
-              <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">出勤時刻</p>
-              <p className="font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">{formatTime(firstClockIn)}</p>
-            </div>
-            <div>
-              <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">退勤予定</p>
-              <p className="font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">
-                {todayShift ? formatTimeRange(todayShift.start_time, todayShift.end_time, { separator: '〜' }).split('〜')[1] : '-'}
-              </p>
-            </div>
-            <div>
-              <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">経過時間</p>
-              <p className="font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">{formatDuration(totalWorkMinutes)}</p>
-            </div>
-            <div>
-              <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">休憩</p>
-              <p className="font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">{formatDuration(totalBreakMinutes)}</p>
-            </div>
-          </div>
-        </Card>
-
-        {carryOverRecord ? (
-          <Card
-            padding="md"
-            className="rounded-2xl border-l-[6px] border-red-500 bg-red-50/80 shadow-sm ring-1 ring-red-100/60 dark:border-red-400 dark:bg-red-900/20 dark:ring-red-700/40"
-          >
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-6 w-6 flex-shrink-0 text-red-600 dark:text-red-400" />
-              <div className="flex-1">
-                <div className="mb-1.5 flex items-center gap-2">
-                  <Badge tone="danger" withDot>未完了</Badge>
-                  <span className="text-sm font-semibold text-red-700 dark:text-red-200">退勤打刻が未完了です</span>
+        <div className="grid gap-4 md:grid-cols-[minmax(0,420px)_1fr] md:gap-6">
+          <div className="space-y-4">
+            {currentStore == null ? (
+              <Card padding="md" className="rounded-2xl border-l-4 border-orange-400 bg-orange-50/70 text-center shadow-sm dark:border-orange-300 dark:bg-orange-900/20">
+                <div className="flex flex-col items-center gap-2">
+                  <Badge tone="warning" withDot>店舗未選択</Badge>
+                  <p className="text-sm text-orange-700 dark:text-orange-200">打刻するには上部のセレクタから店舗を選択してください。</p>
                 </div>
-                <p className="text-sm text-stone-700 dark:text-stone-200">
-                  <span className="font-num tabular-nums">{carryOverRecord.date}</span> に出勤(<span className="font-num tabular-nums">{formatTime(carryOverRecord.clock_in)}</span>) したまま退勤打刻がされていません
-                </p>
-                <div className="mt-3 max-w-sm">
-                  <Button variant="danger" size="lg" onClick={clockOut} fullWidth>今すぐ退勤打刻</Button>
-                </div>
-              </div>
-            </div>
-          </Card>
-        ) : (
-          <Card padding="md" className="rounded-2xl border-l-4 border-emerald-500 bg-emerald-50/50 shadow-sm dark:border-emerald-400 dark:bg-emerald-900/20">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <p className="text-sm text-stone-700 dark:text-stone-200">
-                今日は整っています。{nextShiftLine}
-              </p>
-            </div>
-          </Card>
-        )}
-
-        <Card padding="md" className="rounded-2xl shadow-sm">
-          <Card.Header className="mb-4 border-b-0 pb-0">今週のシフト</Card.Header>
-          <Card.Body>
-            {shiftLoading ? (
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-7">
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <ListRowSkeleton key={i} />
-                ))}
-              </div>
+              </Card>
             ) : (
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-7">
-                {weekDays.map((day) => {
-                  const dateKey = format(day, 'yyyy-MM-dd');
-                  const shift = activeWeekShifts.find((s) => s.date === dateKey);
-                  const isToday = dateKey === todayStr;
-                  return (
-                    <div
-                      key={dateKey}
-                      className={`flex flex-row items-center justify-between rounded-xl border border-stone-200 px-3 py-3 dark:border-stone-700 md:flex-col md:justify-start md:px-2 ${isToday ? 'ring-2 ring-blue-500' : ''}`}
-                    >
-                      <div className="text-left md:text-center">
-                        <p className="text-xs text-stone-500 dark:text-stone-400">{format(day, 'E', { locale: ja })}</p>
-                        <p className="font-num text-base font-semibold tabular-nums text-stone-900 dark:text-stone-50">{format(day, 'd')}</p>
-                      </div>
-                      <p className="font-num text-sm tabular-nums text-stone-700 dark:text-stone-300 md:mt-2">
-                        {shift ? formatTimeRange(shift.start_time, shift.end_time, { separator: '〜' }) : '-'}
-                      </p>
+              <ClockButton
+                status={status}
+                clockIn={clockIn}
+                clockOut={clockOut}
+                todayRecords={todayRecords}
+                activeRecord={activeRecord}
+              >
+                <BreakButton
+                  status={status}
+                  breakStart={breakStart}
+                  breakEnd={breakEnd}
+                  activeRecord={activeRecord}
+                  activeBreak={activeBreak}
+                />
+              </ClockButton>
+            )}
+
+            {carryOverRecord && (
+              <Card
+                padding="md"
+                className="rounded-xl border-l-[6px] border-red-500 bg-red-50/80 shadow-sm ring-1 ring-red-100/60 dark:border-red-400 dark:bg-red-900/20 dark:ring-red-700/40"
+              >
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-6 w-6 flex-shrink-0 text-red-600 dark:text-red-400" />
+                  <div className="flex-1">
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <Badge tone="danger" withDot>未完了</Badge>
+                      <span className="text-sm font-semibold text-red-700 dark:text-red-200">退勤打刻が未完了です</span>
                     </div>
-                  );
-                })}
+                    <p className="text-sm text-stone-700 dark:text-stone-200">
+                      <span className="font-num tabular-nums">{carryOverRecord.date}</span> に出勤(<span className="font-num tabular-nums">{formatTime(carryOverRecord.clock_in)}</span>) したまま退勤打刻がされていません
+                    </p>
+                    <div className="mt-3 max-w-sm">
+                      <Button variant="danger" size="lg" onClick={clockOut} fullWidth>今すぐ退勤打刻</Button>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {showShiftUnsubmittedBanner && (
+              <div className="flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 dark:border-orange-700/40 dark:bg-orange-900/20">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-600 dark:text-orange-400" />
+                <p className="flex-1 text-sm text-stone-700 dark:text-stone-200">
+                  6月のシフトを未提出です。締切 5/28 23:59
+                </p>
+                <a href="/shift" className="text-sm font-medium text-orange-700 hover:text-orange-800 dark:text-orange-200 dark:hover:text-orange-100">
+                  確認 →
+                </a>
               </div>
             )}
-          </Card.Body>
-        </Card>
 
-        <Card padding="md" className="rounded-2xl shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-label text-stone-500 dark:text-stone-400">今月実績</p>
-              <p className="mt-1 font-num text-kpi-lg tabular-nums text-stone-900 dark:text-stone-50">{formatDuration(totalWorkMinutes)}</p>
-            </div>
-            <p className="text-sm text-stone-500 dark:text-stone-400">取得済みデータで表示</p>
-          </div>
-          <div className="mt-5 h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
-            <div className="h-full rounded-full bg-blue-600" style={{ width: `${monthlyProgress}%` }} />
-          </div>
-          <div className="mt-5 grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-label text-stone-500 dark:text-stone-400">予定</p>
-              <p className="mt-1 font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">
-                {plannedMinutes > 0 ? formatDuration(plannedMinutes) : '-'}
-              </p>
-            </div>
-            <div>
-              <p className="text-label text-stone-500 dark:text-stone-400">残り</p>
-              <p className="mt-1 font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">
-                {remainingPlannedMinutes != null ? formatDuration(remainingPlannedMinutes) : '-'}
-              </p>
-            </div>
-          </div>
-        </Card>
+            <Card padding="md" className="rounded-xl shadow-sm">
+              <h3 className="mb-4 text-label text-stone-500 dark:text-stone-400">本日の記録</h3>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div>
+                  <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">出勤時刻</p>
+                  <p className="font-num text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-50 md:text-3xl">{formatTime(firstClockIn)}</p>
+                </div>
+                <div>
+                  <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">退勤予定</p>
+                  <p className="font-num text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-50 md:text-3xl">
+                    {todayShift ? formatTimeRange(todayShift.start_time, todayShift.end_time, { separator: '〜' }).split('〜')[1] : '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">経過時間</p>
+                  <p className="font-num text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-50 md:text-3xl">{formatDuration(totalWorkMinutes)}</p>
+                </div>
+                <div>
+                  <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">休憩</p>
+                  <p className="font-num text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-50 md:text-3xl">{formatDuration(totalBreakMinutes)}</p>
+                </div>
+              </div>
+            </Card>
 
-        {/* 全社員打刻状況は別 Loop で実データソース接続予定。 */}
-        {myRole === 'owner' && (
-          <Card padding="md" className="rounded-2xl shadow-sm">
-            <Card.Header className="mb-0 border-b-0 pb-0">全社員打刻状況</Card.Header>
-            <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">会長専用（準備中）</p>
-          </Card>
-        )}
+            <Card padding="md" className="rounded-xl shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-label text-stone-500 dark:text-stone-400">今週のシフト</h3>
+                <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
+                  <button type="button" aria-label="前の月" className="rounded p-1 hover:bg-stone-100 dark:hover:bg-stone-700">
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="font-num tabular-nums">{format(today, 'M月')}</span>
+                  <button type="button" aria-label="次の月" className="rounded p-1 hover:bg-stone-100 dark:hover:bg-stone-700">
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+              {shiftLoading ? (
+                <div className="grid grid-cols-7 gap-2">
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <ListRowSkeleton key={i} />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-7 gap-2">
+                  {weekDays.map((day) => {
+                    const dateKey = format(day, 'yyyy-MM-dd');
+                    const shift = activeWeekShifts.find((s) => s.date === dateKey);
+                    const isToday = dateKey === todayStr;
+                    const hasShift = shift != null;
+                    return (
+                      <div
+                        key={dateKey}
+                        className={`flex flex-col items-center rounded-lg px-2 py-3 ${isToday ? 'bg-blue-50 ring-2 ring-blue-600 dark:bg-blue-900/30' : 'bg-stone-50/60 dark:bg-stone-800/40'}`}
+                        title={hasShift ? formatTimeRange(shift.start_time, shift.end_time, { separator: '〜' }) : 'シフトなし'}
+                      >
+                        <p className="text-xs text-stone-500 dark:text-stone-400">{format(day, 'E', { locale: ja })}</p>
+                        <p className="font-num text-base font-semibold tabular-nums text-stone-900 dark:text-stone-50">{format(day, 'd')}</p>
+                        <div
+                          className={`mt-3 h-3.5 w-4/5 rounded-sm ${hasShift ? 'bg-stone-900 dark:bg-stone-200' : 'bg-stone-200 dark:bg-stone-700'}`}
+                          style={{ opacity: hasShift ? 1 : 0.4 }}
+                          aria-hidden="true"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
 
-        {myRole === 'staff' && (
-          <section>
-            <h3 className="mb-2 text-label text-stone-500 dark:text-stone-400">休暇情報</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <StatCard label="有給残" value={remainingPaidLeave !== null ? remainingPaidLeave : '-'} unit="日" icon={<CalendarDays size={16} />} />
-              <StatCard label="申請中の休暇" value={pendingLeaveCount} unit="件" icon={<FileClock size={16} />} />
-            </div>
-          </section>
-        )}
+            <Card padding="md" className="rounded-xl shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-label text-stone-500 dark:text-stone-400">月間サマリ</h3>
+                <span className="text-xs text-stone-400 dark:text-stone-500">今月</span>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">実績</p>
+                  <p className="mt-1 font-num text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-50 md:text-3xl">
+                    {monthHoursActual}<span className="ml-1 text-sm font-normal text-stone-500 dark:text-stone-400">h</span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">予定</p>
+                  <p className="mt-1 font-num text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-50 md:text-3xl">
+                    {monthHoursPlanned}<span className="ml-1 text-sm font-normal text-stone-500 dark:text-stone-400">h</span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-stone-500 dark:text-stone-400">達成率</p>
+                  <p className="mt-1 font-num text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-50 md:text-3xl">
+                    {monthRate}<span className="ml-1 text-sm font-normal text-stone-500 dark:text-stone-400">%</span>
+                  </p>
+                </div>
+              </div>
+              <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-stone-100 dark:bg-stone-700">
+                <div className="h-full rounded-full bg-blue-600" style={{ width: `${monthRate}%` }} />
+              </div>
+              <div className="mt-2 flex justify-between text-xs tabular-nums text-stone-400 dark:text-stone-500">
+                <span>1</span><span>8</span><span>15</span><span>22</span><span>29</span>
+              </div>
+            </Card>
+
+            {myRole === 'owner' && (
+              <Card padding="md" className="rounded-xl shadow-sm">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-label text-stone-500 dark:text-stone-400">全社員打刻状況</h3>
+                  <span className="text-xs text-stone-400 dark:text-stone-500">全店舗 ▾</span>
+                </div>
+                <ul className="divide-y divide-stone-100 dark:divide-stone-700">
+                  {dummyTeamMembers.map((m) => (
+                    <li key={m.name} className="flex items-center gap-3 py-2.5">
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-stone-100 text-sm font-semibold text-stone-600 dark:bg-stone-700 dark:text-stone-200">
+                        {m.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-stone-900 dark:text-stone-50">{m.name}</p>
+                        <p className="truncate text-xs text-stone-500 dark:text-stone-400">{m.store}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-block h-1.5 w-1.5 rounded-full ${statusDotColor(m.status)}`} aria-hidden="true" />
+                        <span className="font-num text-sm tabular-nums text-stone-700 dark:text-stone-300">{m.time}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-xs text-stone-400 dark:text-stone-500">※ 表示はダミーデータ（次 Loop で実データ接続）</p>
+              </Card>
+            )}
+
+            {myRole === 'staff' && (
+              <section>
+                <h3 className="mb-2 text-label text-stone-500 dark:text-stone-400">休暇情報</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <StatCard label="有給残" value={remainingPaidLeave !== null ? remainingPaidLeave : '-'} unit="日" icon={<CalendarDays size={16} />} />
+                  <StatCard label="申請中の休暇" value={pendingLeaveCount} unit="件" icon={<FileClock size={16} />} />
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

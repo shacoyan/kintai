@@ -63,7 +63,8 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
             badgeTone: 'neutral' as const,
             withDot: false,
             buttonVariant: 'primary' as const,
-            borderColor: 'border-stone-200 dark:border-stone-700',
+            buttonClassName: '!bg-blue-600 hover:!bg-blue-700 !text-white',
+            borderColor: 'border-l-stone-200 dark:border-l-stone-700',
             breathClass: '',
             disabled: false,
           };
@@ -74,7 +75,8 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           badgeTone: 'neutral' as const,
           withDot: false,
           buttonVariant: 'primary' as const,
-          borderColor: 'border-stone-200 dark:border-stone-700',
+          buttonClassName: '!bg-blue-600 hover:!bg-blue-700 !text-white',
+          borderColor: 'border-l-stone-200 dark:border-l-stone-700',
           breathClass: '',
           disabled: false,
         };
@@ -85,7 +87,8 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           badgeTone: isCarryOver ? 'warning' as const : 'success' as const,
           withDot: true,
           buttonVariant: 'danger' as const,
-          borderColor: isCarryOver ? 'border-orange-500 dark:border-orange-400' : 'border-emerald-500 dark:border-emerald-400',
+          buttonClassName: '!bg-stone-900 hover:!bg-stone-800 !text-white',
+          borderColor: isCarryOver ? 'border-l-orange-500 dark:border-l-orange-400' : 'border-l-emerald-500 dark:border-l-emerald-400',
           breathClass: isCarryOver ? 'motion-safe:animate-border-breathe-warning' : 'motion-safe:animate-border-breathe-success',
           disabled: false,
         };
@@ -96,7 +99,8 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           badgeTone: 'warning' as const,
           withDot: true,
           buttonVariant: 'primary' as const,
-          borderColor: 'border-orange-500 dark:border-orange-400',
+          buttonClassName: '',
+          borderColor: 'border-l-orange-500 dark:border-l-orange-400',
           breathClass: 'motion-safe:animate-border-breathe-warning',
           disabled: true,
         };
@@ -156,7 +160,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
 
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-lg border-l-4 bg-white p-6 shadow-sm dark:bg-stone-800 md:p-8 motion-safe:transition-[border-left-color] motion-safe:duration-300 motion-safe:ease-out ${config.borderColor} ${isTransitioning ? '' : config.breathClass}`}
+      className={`relative w-full overflow-hidden rounded-2xl border border-l-4 border-stone-200/70 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-800 md:p-8 motion-safe:transition-[border-left-color] motion-safe:duration-300 motion-safe:ease-out ${config.borderColor} ${isTransitioning ? '' : config.breathClass}`}
       data-transitioning={isTransitioning || undefined}
       aria-busy={processing || undefined}
     >
@@ -235,7 +239,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
             disabled={config.disabled || processing}
             aria-label={config.label}
             loading={processing}
-            className="min-h-[64px] motion-safe:active:scale-[0.97]"
+            className={`min-h-[64px] motion-safe:active:scale-[0.97] ${config.buttonClassName}`}
           >
             {config.label}
           </Button>
