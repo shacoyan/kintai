@@ -349,6 +349,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 label="今月の総勤務時間"
                 value={0}
                 unit="h"
+                dashWhenZero
                 icon={<Clock size={16} />}
                 hint="集計準備中"
               />
@@ -362,6 +363,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 label="シフト充足率"
                 value={0}
                 unit="%"
+                dashWhenZero
                 icon={<CalendarCheck size={16} />}
                 hint="集計準備中"
               />

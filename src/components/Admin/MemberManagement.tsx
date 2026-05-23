@@ -680,7 +680,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border tabular-nums motion-safe:transition-colors ${
                               rate > 0
                                 ? 'text-stone-800 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
-                                : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
+                                : 'text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700/60 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-800/40'
                             }`}
                           >
                             {rate > 0 ? (
@@ -700,7 +700,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border tabular-nums motion-safe:transition-colors ${
                               (member.monthly_salary ?? 0) > 0
                                 ? 'text-stone-800 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
-                                : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
+                                : 'text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700/60 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-800/40'
                             }`}
                           >
                             {(member.monthly_salary ?? 0) > 0 ? <>¥{(member.monthly_salary ?? 0).toLocaleString()}/月</> : <>未設定</>}
@@ -712,7 +712,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border tabular-nums motion-safe:transition-colors ${
                             (member.paid_leave_days ?? 0) > 0
                               ? 'text-stone-800 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
-                              : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
+                              : 'text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700/60 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-800/40'
                           }`}
                         >
                           有給 {(member.paid_leave_days ?? 0) > 0 ? <>{member.paid_leave_days ?? 0}日</> : <>未設定</>}

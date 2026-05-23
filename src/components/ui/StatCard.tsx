@@ -12,8 +12,9 @@ export interface StatCardTrend {
 
 export interface StatCardProps {
   label: string;
-  value: string | number;
+  value: string | number | null | undefined;
   unit?: string;
+  dashWhenZero?: boolean;
   trend?: StatCardTrend;
   hint?: string;
   icon?: React.ReactNode;
@@ -34,7 +35,13 @@ function TrendIcon({ direction }: { direction: StatTrendDirection }): JSX.Elemen
 }
 
 export function StatCard(props: StatCardProps): JSX.Element {
-  const { label, value, unit, trend, hint, icon, className } = props;
+  const { label, value, unit, dashWhenZero, trend, hint, icon, className } = props;
+  const isDash =
+    value === null ||
+    value === undefined ||
+    (dashWhenZero === true && value === 0);
+  const displayValue = isDash ? '-' : value;
+  const showUnit = !isDash && Boolean(unit);
 
   return (
     <Card padding="md" className={className}>
@@ -48,8 +55,8 @@ export function StatCard(props: StatCardProps): JSX.Element {
       </div>
 
       <p className="mt-2 text-kpi-lg num tabular-nums text-stone-900">
-        {value}
-        {unit ? (
+        {displayValue}
+        {showUnit ? (
           <span className="ml-1 text-[18px] font-semibold text-stone-500">
             {unit}
           </span>

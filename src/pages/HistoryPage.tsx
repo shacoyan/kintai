@@ -304,9 +304,9 @@ function MonthlyBarChart({ year, month, records, onBarClick, selectedDate }: Mon
         <EmptyState size="sm" title="データなし" />
       ) : (
         <>
-          <div className="flex h-20 items-end gap-0.5">
+          <div className="flex h-20 lg:h-[140px] items-end gap-0.5">
             {dayValues.map(({ dateKey, dayLabel, minutes }) => {
-              const height = maxMinutes > 0 ? Math.max(minutes > 0 ? 2 : 0, Math.round((minutes / maxMinutes) * 80)) : 0;
+              const height = maxMinutes > 0 ? Math.max(minutes > 0 ? 2 : 0, Math.round((minutes / maxMinutes) * 100)) : 0;
               const isSelected = selectedDate === dateKey;
 
               return (
@@ -321,7 +321,7 @@ function MonthlyBarChart({ year, month, records, onBarClick, selectedDate }: Mon
                     className={`w-full rounded-t-sm motion-safe:transition-colors duration-150 ${
                       isSelected ? 'bg-blue-600 opacity-100 dark:bg-blue-500' : 'bg-stone-400 opacity-40 dark:bg-stone-500'
                     } group-hover:bg-blue-600 group-hover:opacity-80 dark:group-hover:bg-blue-500`}
-                    style={{ height }}
+                    style={{ height: `${height}%` }}
                   />
                 </button>
               );

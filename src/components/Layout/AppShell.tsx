@@ -26,7 +26,7 @@ export function AppShell({ children, sidebar, topbar, mobileHeader, bottomNav, e
 
       <div className="flex-1 flex flex-col min-w-0">
         {topbar && (
-          <header className="hidden md:flex md:items-center md:h-14 md:px-6 md:bg-white md:dark:bg-stone-900 md:border-b md:border-stone-200 md:dark:border-stone-800 md:shadow-[0_1px_2px_rgba(0,0,0,0.04)] md:sticky md:top-0 md:z-30">
+          <header className="hidden md:flex md:items-center md:min-h-14 md:py-2 md:px-6 md:bg-white md:dark:bg-stone-900 md:border-b md:border-stone-200 md:dark:border-stone-800 md:shadow-[0_1px_2px_rgba(0,0,0,0.04)] md:sticky md:top-0 md:z-30">
             {topbar}
           </header>
         )}
