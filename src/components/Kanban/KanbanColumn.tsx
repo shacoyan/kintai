@@ -52,7 +52,7 @@ export function KanbanColumn({
   return (
     <div
       className={cn(
-        'flex min-h-[400px] flex-col overflow-hidden rounded-[10px] border border-stone-200/70 bg-stone-100 motion-safe:transition-colors duration-150 dark:border-stone-700/60 dark:bg-stone-900',
+        'flex min-h-[400px] flex-col overflow-hidden rounded-[10px] border border-stone-200/70 bg-stone-100 motion-safe:transition-colors duration-150 dark:border-stone-700/60 dark:bg-stone-800/60',
         hideHeader && 'min-h-0 rounded-none border-0',
       )}
     >

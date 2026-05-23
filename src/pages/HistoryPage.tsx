@@ -602,7 +602,7 @@ export function HistoryPage() {
             </Card>
             <Card padding="md" className="flex-1 p-2 lg:p-4">
               <div className="text-[10px] text-stone-500 dark:text-stone-300 lg:text-[11px]">修正申請</div>
-              <div className="mt-0.5 text-[15px] font-semibold tabular-nums text-orange-600 dark:text-orange-300 lg:text-2xl">
+              <div className="mt-0.5 text-[15px] font-semibold tabular-nums text-orange-700 dark:text-orange-300 lg:text-2xl">
                 {pendingCorrectionCount}<span className="ml-1 text-[10px] font-medium text-stone-500 dark:text-stone-300 lg:text-[11px]">件<span className="hidden lg:inline"> pending</span></span>
               </div>
             </Card>

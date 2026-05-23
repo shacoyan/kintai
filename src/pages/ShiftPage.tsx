@@ -524,7 +524,7 @@ export function ShiftPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-[1440px] mx-auto px-4 py-6 space-y-6">
       <div className="flex flex-col gap-4 pb-16">
         {/* ヘッダー: 「シフト」見出しのみ (月表示 + pending 件数バッジ削除) */}
         <header className="flex flex-col gap-1">
@@ -708,7 +708,7 @@ export function ShiftPage() {
         </Card>
 
         {preferenceView === 'current' && (
-          <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:items-start">
+          <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-6 lg:items-start">
             <div className="flex flex-col gap-4">
               {prefLoading && (
                 <div className="flex items-center justify-center py-6">

@@ -36,6 +36,8 @@ const AVATAR_PALETTE = [
   'bg-cyan-100 text-cyan-700 dark:bg-cyan-700/30 dark:text-cyan-300',
 ];
 
+const MEMBER_TABLE_GRID_CLASS = 'grid-cols-[32px,minmax(0,1fr),80px,90px,140px,90px,60px,40px,40px]';
+
 function avatarColor(name: string): string {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
@@ -302,8 +304,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
       ) : (
         <>
             <div className="hidden md:block overflow-x-auto">
-              <div className="min-w-[960px]">
-                <div className="grid grid-cols-[36px,minmax(0,1fr),80px,160px,170px,110px,80px,60px,40px] gap-3 px-4 md:px-5 py-2.5 items-center bg-stone-50 dark:bg-stone-900/50 border-b border-stone-200 dark:border-stone-700 text-[10px] font-semibold text-stone-500 uppercase tracking-[0.04em]">
+              <div className="min-w-[860px]">
+                <div className={`grid ${MEMBER_TABLE_GRID_CLASS} gap-3 px-4 md:px-5 py-2 items-center bg-stone-50 dark:bg-stone-900/50 border-b border-stone-200 dark:border-stone-700 text-[11px] font-semibold text-stone-500 uppercase tracking-[0.06em]`}>
                   <div />
                   <div>名前</div>
                   <div>バイト</div>
@@ -320,8 +322,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                     const rate = member.hourly_rate ?? 0;
 
                     return (
-                      <div key={member.id} className="grid grid-cols-[36px,minmax(0,1fr),80px,160px,170px,110px,80px,60px,40px] gap-3 px-4 md:px-5 py-2.5 items-center border-t border-stone-100 dark:border-stone-700/60 hover:bg-stone-50 dark:hover:bg-stone-800/40 motion-safe:transition-colors">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center font-semibold text-xs shrink-0 ${avatarColor(member.display_name)}`}>
+                      <div key={member.id} className={`grid ${MEMBER_TABLE_GRID_CLASS} gap-3 px-4 md:px-5 py-2 items-center border-t border-stone-100 dark:border-stone-700/60 hover:bg-stone-50 dark:hover:bg-stone-800/40 motion-safe:transition-colors`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-xs shrink-0 ${avatarColor(member.display_name)}`}>
                           {member.display_name.charAt(0)}
                         </div>
                         <div className="min-w-0">
@@ -360,9 +362,9 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           })()}
                         </div>
                         <div className="min-w-0">
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${badge.className}`}>{badge.label}</span>
+                          <div className="flex flex-col gap-2 min-w-0">
+                            <div className="flex flex-col items-start gap-1 min-w-0">
+                              <span className={`inline-flex max-w-full truncate px-2 py-0.5 rounded-full text-[11px] font-medium ${badge.className}`}>{badge.label}</span>
                               {member.role !== 'owner' && myRole === 'owner' && (
                                 <button
                                   role="switch"
@@ -370,7 +372,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                                   aria-label={`${member.display_name} の店長権限`}
                                   onClick={() => handleRoleToggle(member)}
                                   disabled={togglingRoleId === member.id}
-                                  className={`px-2 py-1 text-xs font-medium rounded-md motion-safe:transition-colors ${
+                                  className={`max-w-full truncate px-2 py-1 text-xs font-medium rounded-md motion-safe:transition-colors ${
                                     member.role === 'manager'
                                       ? 'text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600'
                                       : 'text-emerald-700 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-800/30 hover:bg-emerald-50 dark:hover:bg-emerald-800/50'
@@ -398,10 +400,10 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         </div>
                         <div>
                           <div className="space-y-2">
-                            <div className="inline-flex rounded-md overflow-hidden border border-stone-200 dark:border-stone-600">
+                            <div className="inline-flex h-6 rounded-[4px] overflow-hidden border border-stone-200 dark:border-stone-600">
                               <button
                                 onClick={() => handlePayTypeChange(member, 'hourly')}
-                                className={`px-2.5 py-1 text-xs font-medium motion-safe:transition-colors ${
+                                className={`px-2 py-0.5 text-[11px] font-medium motion-safe:transition-colors ${
                                   (member.pay_type ?? 'hourly') === 'hourly'
                                     ? 'bg-blue-600 dark:bg-blue-500 text-white'
                                     : 'bg-white dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-600'
@@ -411,7 +413,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               </button>
                               <button
                                 onClick={() => handlePayTypeChange(member, 'monthly')}
-                                className={`px-2.5 py-1 text-xs font-medium motion-safe:transition-colors ${
+                                className={`px-2 py-0.5 text-[11px] font-medium motion-safe:transition-colors ${
                                   member.pay_type === 'monthly'
                                     ? 'bg-blue-600 dark:bg-blue-500 text-white'
                                     : 'bg-white dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-600'
@@ -429,7 +431,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                                     value={editRate}
                                     onChange={(e) => setEditRate(e.target.value)}
                                     onKeyDown={(e) => handleKeyDown(e, member.id)}
-                                    className="w-24 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
+                                    className="w-20 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
                                     autoFocus
                                     disabled={saving}
                                     min="0"
@@ -471,7 +473,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                                   value={editMonthlySalary}
                                   onChange={(e) => setEditMonthlySalary(e.target.value)}
                                   onKeyDown={(e) => handleMonthlySalaryKeyDown(e, member.id)}
-                                  className="w-28 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
+                                  className="w-20 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
                                   autoFocus
                                   disabled={saving}
                                   min="0"
@@ -545,11 +547,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             <span className={`inline-block h-4 w-4 rounded-full bg-white shadow motion-safe:transition-transform ${(member.night_shift_enabled ?? true) ? 'translate-x-4' : 'translate-x-0.5'}`} />
                           </button>
                         </div>
-                        <div>
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            在職
-                          </span>
+                        <div className="flex items-center justify-center">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-label="在職" title="在職" />
                         </div>
                         <div className="text-right">
                           {member.role !== 'owner' && (

@@ -352,7 +352,7 @@ export function TasksPage(): JSX.Element {
 
   // ────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
+    <div className="max-w-[1440px] mx-auto px-4 py-6 space-y-5">
       {/* ヘッダー */}
       <header className="space-y-3">
         <div className="flex items-start justify-between gap-4">
@@ -464,19 +464,21 @@ export function TasksPage(): JSX.Element {
 
       {/* View別レンダリング: Kanban */}
       {!tasksLoading && !tasksError && viewMode === 'kanban' && (
-        <ResponsiveKanban
-          tasks={filteredTasks}
-          onTaskClick={(task) => setDialog({ mode: 'edit', task })}
-          myRole={myRoleNarrow}
-          isParttime={isParttime}
-          currentUserId={user?.id}
-          myStoreIds={myStoreIds}
-          memberNames={memberNames}
-          projectNames={projectNames}
-          onSuccess={(m) => showToast(m, 'success')}
-          onError={(m) => showToast(m, 'error')}
-          onMutationSuccess={refetch}
-        />
+        <div className="min-h-[calc(100vh-260px)]">
+          <ResponsiveKanban
+            tasks={filteredTasks}
+            onTaskClick={(task) => setDialog({ mode: 'edit', task })}
+            myRole={myRoleNarrow}
+            isParttime={isParttime}
+            currentUserId={user?.id}
+            myStoreIds={myStoreIds}
+            memberNames={memberNames}
+            projectNames={projectNames}
+            onSuccess={(m) => showToast(m, 'success')}
+            onError={(m) => showToast(m, 'error')}
+            onMutationSuccess={refetch}
+          />
+        </div>
       )}
 
       {/* View別レンダリング: List */}

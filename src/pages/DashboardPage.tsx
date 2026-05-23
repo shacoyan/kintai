@@ -200,6 +200,10 @@ export function DashboardPage() {
   const maxWeekHours = Math.max(...weekItems.map((item) => item.hours), 1);
   // TODO(loop-next): 未提出判定接続 (現状はダミー display)
   const showShiftUnsubmittedBanner = true;
+  // TODO(Iter 5): 全社員 打刻状況を実データ接続
+  //   - useTenantAdmin().members で全 member 取得
+  //   - 各 member の attendance_record 今日分を集計 (working/break/finished/absent)
+  //   - 会長 (owner) のみ表示の gating は維持
   const dummyTeamMembers = [
     { name: '中村 隆志', store: '吸暮', role: '店長', status: 'working' as const, time: '09:02' },
     { name: '田中 由紀', store: 'KITUNE', role: '正社員', status: 'break' as const, time: '13:15' },
@@ -360,7 +364,7 @@ export function DashboardPage() {
                           <span className="text-[10px] text-stone-400 dark:text-stone-500">休</span>
                         ) : (
                           <div
-                            className={`w-[18px] rounded-sm ${item.isToday ? 'bg-blue-600' : item.isPlanned ? 'bg-stone-300 opacity-50 dark:bg-stone-500' : 'bg-stone-900 dark:bg-stone-200'}`}
+                            className={`w-[18px] rounded-sm ${item.isToday ? 'bg-blue-600' : item.isPlanned ? 'bg-stone-300 opacity-50 dark:bg-stone-500' : 'bg-stone-900 dark:bg-stone-400'}`}
                             style={{ height: `${Math.max(8, (item.hours / maxWeekHours) * 100)}%` }}
                             aria-hidden="true"
                           />
@@ -437,7 +441,7 @@ export function DashboardPage() {
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-stone-400 dark:text-stone-500">※ 表示はダミーデータ（次 Loop で実データ接続）</p>
+                <p className="text-xs text-stone-400 dark:text-stone-500">※ 表示はダミーデータ（Iter 5 で実データ接続予定）</p>
               </Card>
             )}
 

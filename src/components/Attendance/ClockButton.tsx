@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { differenceInMinutes, format, parseISO } from 'date-fns';
+import { ja } from 'date-fns/locale';
 import { formatInTimeZone } from 'date-fns-tz';
 import { AttendanceRecord } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
@@ -200,6 +201,9 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
           :{format(currentTime, 'ss')}
         </span>
       </div>
+      <p className="mt-1 text-center text-sm text-stone-500 dark:text-stone-300 tabular-nums">
+        {format(currentTime, 'yyyy年 M月d日 (E)', { locale: ja })}
+      </p>
 
       {activeRecord?.clock_in && status !== 'not_started' && (
         <div

@@ -672,7 +672,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               {SECTIONS.map((section, sectionIndex) => (
                 <div key={section.label} role="presentation">
                   {sectionIndex > 0 && <div className="border-t border-stone-100 dark:border-stone-700/60 my-2" role="presentation" />}
-                  <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider px-3 pt-2 pb-1" role="presentation">{section.label}</div>
+                  <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-[0.06em] px-2.5 pt-1 pb-1.5" role="presentation">{section.label}</div>
                   {visibleTabs.filter(tab => (section.items as readonly string[]).includes(tab.id)).map((tab) => {
                     const tabIdx = visibleTabs.findIndex(t => t.id === tab.id);
                     const isActive = activeTab === tab.id;

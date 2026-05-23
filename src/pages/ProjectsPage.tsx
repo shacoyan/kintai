@@ -10,7 +10,7 @@ import {
   type ActionMenuItem,
 } from '../components/ui';
 import { Archive, CheckSquare, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
-import type { Project, ProjectStatus, TaskStatus } from '../types';
+import type { Project, ProjectStatus, Task, TaskStatus } from '../types';
 import { ProjectDialog } from '../components/Project';
 import type { ProjectInput, ProjectStoreOption } from '../components/Project';
 import { useProjects, useProjectMutations } from '../hooks/useProjects';
@@ -46,6 +46,31 @@ const PROJECT_BAR_BG: Record<string, string> = {
   'border-indigo-500': 'bg-indigo-500',
   'border-stone-300 dark:border-stone-600': 'bg-stone-400 dark:bg-stone-500',
 };
+
+const avatarColors = [
+  'bg-stone-200 text-stone-700',
+  'bg-blue-100 text-blue-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-orange-100 text-orange-700',
+  'bg-purple-100 text-purple-700',
+  'bg-cyan-100 text-cyan-700',
+  'bg-amber-100 text-amber-700',
+  'bg-indigo-100 text-indigo-700',
+];
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function getAvatarColor(userId: string | null): string {
+  if (!userId) return avatarColors[0];
+  return avatarColors[hashString(userId) % avatarColors.length];
+}
 
 function getProjectBarBg(projectId: string): string {
   return PROJECT_BAR_BG[getProjectColor(projectId).border] ?? 'bg-stone-400 dark:bg-stone-500';
@@ -167,7 +192,7 @@ function DeleteConfirmDialog({
 }
 
 export function ProjectsPage() {
-  const { currentTenant, myRole, isParttime, myStoreIds } = useTenant();
+  const { currentTenant, myRole, isParttime, myStoreIds, members } = useTenant();
   // RequireTenant ガード後の前提
   const tenantId = currentTenant!.id;
   const managerial = myRole === 'owner' || myRole === 'manager';
@@ -176,6 +201,15 @@ export function ProjectsPage() {
   // フィルタ state
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('active');
   const [storeFilter, setStoreFilter] = useState<string>('all'); // 'all' | 'company' | <storeId>
+  const [viewMode, setViewMode] = useState<'card' | 'list'>(() => {
+    try {
+      if (typeof window === 'undefined') return 'card';
+      const stored = window.localStorage.getItem('kintai:projects:viewMode');
+      return stored === 'card' || stored === 'list' ? stored : 'card';
+    } catch {
+      return 'card';
+    }
+  });
 
   // 店舗一覧 fetch (useStore は呼び出し側で明示 fetch が必要)
   const { stores, fetchStores } = useStore(tenantId);
@@ -215,6 +249,26 @@ export function ProjectsPage() {
     for (const s of stores) m.set(s.id, s.name);
     return m;
   }, [stores]);
+
+  const memberMap = useMemo(
+    () => new Map(members.map((member) => [member.user_id, member.display_name])),
+    [members],
+  );
+
+  const tasksByProjectId = useMemo(() => {
+    const m = new Map<string, Task[]>();
+    for (const task of tasks) {
+      const projectId = task.project_id;
+      if (projectId === null) continue;
+      const list = m.get(projectId);
+      if (list) {
+        list.push(task);
+      } else {
+        m.set(projectId, [task]);
+      }
+    }
+    return m;
+  }, [tasks]);
 
   const getStoreLabel = useCallback(
     (storeId: string | null): string => {
@@ -293,6 +347,15 @@ export function ProjectsPage() {
     },
     [readonly, managerial, isParttime],
   );
+
+  const handleViewModeChange = useCallback((nextMode: 'card' | 'list') => {
+    setViewMode(nextMode);
+    try {
+      window.localStorage.setItem('kintai:projects:viewMode', nextMode);
+    } catch {
+      // localStorage may be unavailable in private or restricted contexts.
+    }
+  }, []);
 
   // アクション ----
   const openCreate = useCallback(() => {
@@ -433,17 +496,47 @@ export function ProjectsPage() {
             onChange={(e) => setStoreFilter(e.target.value)}
           />
         </div>
-        <Button
-          variant={statusFilter === 'archived' ? 'primary' : 'secondary'}
-          size="sm"
+        <button
+          type="button"
+          className={`h-8 rounded-full border px-3 text-xs font-medium motion-safe:transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-900 ${
+            statusFilter === 'archived'
+              ? 'border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-500 dark:bg-blue-950/40 dark:text-blue-300'
+              : 'border-stone-300 bg-transparent text-stone-600 hover:border-stone-400 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800'
+          }`}
           onClick={() =>
             setStatusFilter((current) => (current === 'archived' ? 'active' : 'archived'))
           }
+          aria-pressed={statusFilter === 'archived'}
         >
-          {statusFilter === 'archived' ? '✓ ' : ''}
-          アーカイブを表示
-        </Button>
+          {statusFilter === 'archived' ? '✓ アーカイブを表示' : 'アーカイブを表示'}
+        </button>
         <div className="min-w-0 flex-1" />
+        <div className="inline-flex shrink-0 items-center rounded-full bg-stone-100 p-1 dark:bg-stone-800">
+          <button
+            type="button"
+            className={`h-7 rounded-full px-3 text-[13px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+              viewMode === 'card'
+                ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                : 'text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+            }`}
+            onClick={() => handleViewModeChange('card')}
+            aria-pressed={viewMode === 'card'}
+          >
+            カード
+          </button>
+          <button
+            type="button"
+            className={`h-7 rounded-full px-3 text-[13px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+              viewMode === 'list'
+                ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                : 'text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+            }`}
+            onClick={() => handleViewModeChange('list')}
+            aria-pressed={viewMode === 'list'}
+          >
+            リスト
+          </button>
+        </div>
         {managerial && !readonly && (
           <Button variant="primary" size="md" onClick={openCreate}>
             <Plus className="h-4 w-4" aria-hidden="true" />
@@ -483,11 +576,23 @@ export function ProjectsPage() {
             const archivable = canArchiveOrRestore(project);
             const deletable = canDelete(project);
             const colorClasses = getProjectColor(project.id);
-            const projectTasks = tasks.filter((task) => task.project_id === project.id);
+            const projectTasks = tasksByProjectId.get(project.id) ?? [];
             const doneTasks = projectTasks.filter((task) => task.status === 'done').length;
             const totalTasks = projectTasks.length;
             const openTasks = totalTasks - doneTasks;
             const pct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
+            const assignees = Array.from(
+              new Set(
+                projectTasks
+                  .map((task) => task.assignee_user_id)
+                  .filter((userId): userId is string => userId !== null),
+              ),
+            ).map((userId) => ({
+              userId,
+              displayName: memberMap.get(userId) ?? '?',
+            }));
+            const visibleAssignees = assignees.slice(0, 3);
+            const hiddenAssignees = assignees.slice(3);
             const menuItems: ActionMenuItem[] = [];
 
             if (editable) {
@@ -578,8 +683,32 @@ export function ProjectsPage() {
                 </div>
 
                 <div className="flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400">
-                  <CheckSquare className="h-3 w-3" aria-hidden="true" />
+                  <CheckSquare className="h-3 w-3 shrink-0" aria-hidden="true" />
                   <span className="num tabular-nums">未完了 {openTasks}</span>
+                  <div className="flex-1" />
+                  {assignees.length > 0 && (
+                    <div className="flex">
+                      {visibleAssignees.map((assignee) => (
+                        <div
+                          key={assignee.userId}
+                          className={`flex h-[22px] w-[22px] items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold first:ml-0 -ml-1.5 dark:border-stone-900 ${getAvatarColor(assignee.userId)}`}
+                          title={assignee.displayName}
+                          aria-label={assignee.displayName}
+                        >
+                          {assignee.displayName.charAt(0)}
+                        </div>
+                      ))}
+                      {hiddenAssignees.length > 0 && (
+                        <div
+                          className="flex h-[22px] w-[22px] items-center justify-center rounded-full border-2 border-white bg-stone-200 text-[10px] font-semibold text-stone-700 -ml-1.5 dark:border-stone-900"
+                          title={hiddenAssignees.map((assignee) => assignee.displayName).join(', ')}
+                          aria-label={`他 ${hiddenAssignees.length} 人`}
+                        >
+                          +{hiddenAssignees.length}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </Card>
             );
