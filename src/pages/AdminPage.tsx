@@ -1,13 +1,9 @@
-import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
 import { useTenant } from '../hooks/useTenant';
 import { AdminDashboard } from '../components/Admin/AdminDashboard';
-import { AdminSkeleton, Heading } from '../components/ui';
+import { AdminSkeleton } from '../components/ui';
 
 export function AdminPage() {
-  const [currentMonth] = useState(() => new Date());
   const { currentTenant, myRole } = useTenant();
   // RequireTenant ガードにより currentTenant は必ず存在する
   const tenantId = currentTenant!.id;
@@ -25,13 +21,7 @@ export function AdminPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <header className="mb-6">
-        <Heading level={1}>
-          店舗ダッシュボード
-        </Heading>
-        <p className="text-sm text-stone-500 tabular-nums mt-1">{format(currentMonth, 'yyyy年M月', { locale: ja })}</p>
-      </header>
+    <div className="max-w-[1280px] mx-auto px-4 py-4 md:py-6">
       <AdminDashboard tenantId={tenantId} />
     </div>
   );

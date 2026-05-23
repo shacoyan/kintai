@@ -417,22 +417,20 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
             )}
 
             {currentTenant && (
-              <Card>
-                <Card.Header>
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center justify-center w-10 h-10 bg-stone-100 dark:bg-stone-700 rounded-lg">
-                      <QrCode className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <Card padding="md">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center justify-center w-10 h-10 bg-stone-100 dark:bg-stone-700 rounded-lg shrink-0">
+                      <QrCode className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-xs text-stone-500 dark:text-stone-300 mb-1">招待コード（メンバーに共有してください）</p>
                       <p className="text-xl sm:text-2xl font-mono font-bold tracking-wide break-all text-stone-900 dark:text-stone-100">
                         {currentTenant.invite_code}
                       </p>
                     </div>
                   </div>
-                </Card.Header>
-                <Card.Body>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={handleCopyCode}
                       className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 motion-safe:transition-colors duration-150 ease-out dark:bg-blue-700/30 dark:text-blue-400 dark:hover:bg-blue-700/50 inline-flex items-center space-x-2"
@@ -460,7 +458,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                       </Button>
                     )}
                   </div>
-                </Card.Body>
+                </div>
               </Card>
             )}
             {/* TODO(Phase 3): useTenantAdmin 拡張で totalHours / fillRate を実値化 */}
@@ -616,10 +614,10 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Mobile tabs - horizontal scroll */}
-      <div className="md:hidden border-b border-stone-200 dark:border-stone-700 overflow-x-auto -mx-4 px-4">
-        <nav role="tablist" className="flex space-x-1 min-w-max" style={{ scrollSnapType: 'x mandatory' }}>
+      <div className="md:hidden -mx-4 mb-3 px-3 py-2.5 bg-stone-50 dark:bg-stone-900 border-b border-stone-200 dark:border-stone-700">
+        <nav role="tablist" className="flex gap-1.5 overflow-x-auto" style={{ scrollSnapType: 'x mandatory' }}>
           {visibleTabs.map((tab, idx) => (
             <button
               key={tab.id}
@@ -631,26 +629,27 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               ref={(el) => { tabRefs.current[idx] = el; }}
               onKeyDown={(e) => onTabKeyDown(e, idx)}
               onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm motion-safe:transition-colors duration-150 ease-out ${
+              className={`whitespace-nowrap inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border motion-safe:transition-colors ${
                 activeTab === tab.id
-                  ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
-                  : 'border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300 dark:text-stone-300 dark:hover:text-stone-200'
+                  ? 'bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 border-stone-900 dark:border-stone-100'
+                  : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-700'
               }`}
               style={{ scrollSnapAlign: 'start' }}
             >
-              {tab.label}
+              <tab.icon size={11} />
+              <span>{tab.label}</span>
               {tab.id === 'leaves' && pendingLeaves.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
+                <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
                   {pendingLeaves.length}
                 </span>
               )}
               {tab.id === 'corrections' && pendingRequests.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
+                <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
                   {pendingRequests.length}
                 </span>
               )}
               {tab.id === 'mismatch' && mismatches.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-800/30 dark:text-red-400">
+                <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-50 text-red-700 dark:bg-red-800/30 dark:text-red-400">
                   {mismatches.length}
                 </span>
               )}
@@ -665,15 +664,15 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       </div>
 
       {/* Desktop layout - sidebar + content */}
-      <div className="hidden md:flex gap-6">
+      <div className="hidden md:flex gap-5">
         {/* Sidebar */}
-        <nav className="md:w-[200px] shrink-0">
-          <Card padding="sm" className="sticky top-20 dark:bg-stone-900">
+        <nav className="md:w-[220px] shrink-0">
+          <Card padding="sm" className="sticky top-20 p-2 dark:bg-stone-800">
             <div className="space-y-1" role="tablist" aria-orientation="vertical">
               {SECTIONS.map((section, sectionIndex) => (
                 <div key={section.label} role="presentation">
-                  {sectionIndex > 0 && <div className="border-t border-stone-100 dark:border-stone-800 my-2" role="presentation" />}
-                  <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider px-3 pt-3 pb-1" role="presentation">{section.label}</div>
+                  {sectionIndex > 0 && <div className="border-t border-stone-100 dark:border-stone-700/60 my-2" role="presentation" />}
+                  <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider px-3 pt-2 pb-1" role="presentation">{section.label}</div>
                   {visibleTabs.filter(tab => (section.items as readonly string[]).includes(tab.id)).map((tab) => {
                     const tabIdx = visibleTabs.findIndex(t => t.id === tab.id);
                     const isActive = activeTab === tab.id;
@@ -689,28 +688,26 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                         onKeyDown={(e) => onTabKeyDown(e, tabIdx)}
                         onClick={() => setActiveTab(tab.id)}
                         aria-current={isActive ? 'page' : undefined}
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between motion-safe:transition-colors duration-150 ease-out ${
+                        className={`w-full text-left flex items-center gap-2 px-3 py-2 rounded-md text-sm motion-safe:transition-colors ${
                           isActive
-                            ? 'bg-blue-50 text-blue-700 dark:bg-blue-700/30 dark:text-blue-400 font-semibold border-l-2 border-blue-600 dark:border-blue-400 rounded-l-none'
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-semibold border-l-2 border-blue-600 dark:border-blue-400 rounded-l-none'
                             : 'text-stone-600 hover:bg-stone-50 dark:text-stone-300 dark:hover:bg-stone-800/60'
                         }`}
                       >
-                        <span className="flex items-center gap-2">
-                          <tab.icon size={16} />
-                          <span>{tab.label}</span>
-                        </span>
+                        <tab.icon size={14} />
+                        <span>{tab.label}</span>
                         {tab.id === 'leaves' && pendingLeaves.length > 0 && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
+                          <span className="ml-auto inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
                             {pendingLeaves.length}
                           </span>
                         )}
                         {tab.id === 'corrections' && pendingRequests.length > 0 && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
+                          <span className="ml-auto inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 dark:bg-orange-800/30 dark:text-orange-400">
                             {pendingRequests.length}
                           </span>
                         )}
                         {tab.id === 'mismatch' && mismatches.length > 0 && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-800/30 dark:text-red-400">
+                          <span className="ml-auto inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-800/30 dark:text-red-400">
                             {mismatches.length}
                           </span>
                         )}
@@ -724,7 +721,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
         </nav>
 
         {/* Content */}
-        <div className="flex-1 min-w-0" role="tabpanel" id={`admin-tabpanel-${activeTab}`} aria-labelledby={`admin-tab-${activeTab}`} tabIndex={0}>
+        <div className="flex-1 min-w-0 space-y-4" role="tabpanel" id={`admin-tabpanel-${activeTab}`} aria-labelledby={`admin-tab-${activeTab}`} tabIndex={0}>
           {renderContent()}
         </div>
       </div>

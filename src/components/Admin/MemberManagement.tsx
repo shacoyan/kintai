@@ -7,7 +7,6 @@ import type { TenantMember } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { BottomSheet } from '../ui/BottomSheet';
-import { Heading } from '../ui/Heading';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { formatSupabaseError } from '../../lib/errors';
@@ -266,82 +265,70 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   }
 
   return (
-    <Card padding="none">
-      <div className="bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 overflow-hidden">
-        <div className="px-4 md:px-6 py-4 border-b border-stone-200 dark:border-stone-700 flex items-center justify-between gap-3">
-          <div>
-            <Heading level={2}>メンバー管理</Heading>
-            <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-300">
-              対象: {currentStore ? currentStore.name : '全店舗'} ・ {filtered.length} 名
-            </p>
-          </div>
+    <Card padding="none" className="overflow-hidden bg-white dark:bg-stone-800">
+      <div className="flex flex-col md:flex-row md:items-center gap-3 px-4 md:px-5 py-3 border-b border-stone-200 dark:border-stone-700 bg-stone-50/60 dark:bg-stone-900/40">
+        <div className="relative md:w-[260px]">
+          <Search className="absolute left-3 top-1/2 w-4 h-4 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="名前で検索…"
+            aria-label="メンバーを検索"
+            className="pl-9 h-9"
+          />
         </div>
+        <select
+          value={filterRoleId}
+          onChange={(e) => setFilterRoleId(e.target.value)}
+          className="text-sm border border-stone-200 dark:border-stone-600 rounded-md px-2.5 py-1.5 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-100 h-9 md:w-[160px]"
+          aria-label="役職で絞り込み"
+        >
+          <option value="all">全て</option>
+          <option value="none">未設定</option>
+          {roles.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+        <div className="hidden md:block flex-1" />
+        <p className="text-xs text-stone-500 dark:text-stone-400 md:text-right whitespace-nowrap">
+          対象: {currentStore ? currentStore.name : '全店舗'} ・ <span className="tabular-nums">{filtered.length}</span> 名
+        </p>
+      </div>
 
-        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between px-4 md:px-6 py-3 border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">
-          <div className="relative md:w-80">
-            <Search className="absolute left-3 top-1/2 w-4 h-4 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="メンバーを検索…"
-              aria-label="メンバーを検索"
-              className="pl-9"
-            />
-          </div>
-          <select
-            value={filterRoleId}
-            onChange={(e) => setFilterRoleId(e.target.value)}
-            className="text-sm border border-stone-200 dark:border-stone-600 rounded-md px-3 py-2 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-100 min-h-[40px]"
-            aria-label="役職で絞り込み"
-          >
-            <option value="all">全て</option>
-            <option value="none">未設定</option>
-            {roles.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {members.length === 0 ? (
-          <EmptyState icon={<Users className="w-12 h-12 text-stone-400 dark:text-stone-500" />} title={messages.empty.member.title} description={messages.empty.member.description} />
-        ) : (
-          <>
+      {members.length === 0 ? (
+        <EmptyState icon={<Users className="w-12 h-12 text-stone-400 dark:text-stone-500" />} title={messages.empty.member.title} description={messages.empty.member.description} />
+      ) : (
+        <>
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-stone-50 dark:bg-stone-900/50 text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide">
-                  <tr>
-                    <th className="text-left px-4 py-3 font-medium">メンバー</th>
-                    <th className="text-left px-3 py-3 font-medium">バイト</th>
-                    <th className="text-left px-3 py-3 font-medium">役職</th>
-                    <th className="text-left px-3 py-3 font-medium">時給/月給</th>
-                    <th className="text-left px-3 py-3 font-medium">有給</th>
-                    <th className="text-center px-3 py-3 font-medium">深夜給</th>
-                    <th className="text-left px-3 py-3 font-medium">状態</th>
-                    <th className="text-right px-4 py-3 font-medium w-12"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((member) => {
+              <div className="min-w-[960px]">
+                <div className="grid grid-cols-[36px,minmax(0,1fr),80px,160px,170px,110px,80px,60px,40px] gap-3 px-4 md:px-5 py-2.5 items-center bg-stone-50 dark:bg-stone-900/50 border-b border-stone-200 dark:border-stone-700 text-[10px] font-semibold text-stone-500 uppercase tracking-[0.04em]">
+                  <div />
+                  <div>名前</div>
+                  <div>バイト</div>
+                  <div>役職</div>
+                  <div>時給/月給</div>
+                  <div>有給</div>
+                  <div>深夜</div>
+                  <div>在職</div>
+                  <div />
+                </div>
+                {filtered.map((member) => {
                     const badge = roleBadge[member.role] || roleBadge.staff;
                     const isEditing = editingId === member.id;
                     const rate = member.hourly_rate ?? 0;
 
                     return (
-                      <tr key={member.id} className="border-t border-stone-100 dark:border-stone-700/60 hover:bg-stone-50 dark:hover:bg-stone-700/30 motion-safe:transition-colors">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 ${avatarColor(member.display_name)}`}>
-                              {member.display_name.charAt(0)}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-medium text-stone-900 dark:text-stone-100 truncate">{member.display_name}</div>
-                              <div className="text-xs text-stone-400 dark:text-stone-500">display: {member.display_name.slice(0, 6)}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
+                      <div key={member.id} className="grid grid-cols-[36px,minmax(0,1fr),80px,160px,170px,110px,80px,60px,40px] gap-3 px-4 md:px-5 py-2.5 items-center border-t border-stone-100 dark:border-stone-700/60 hover:bg-stone-50 dark:hover:bg-stone-800/40 motion-safe:transition-colors">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center font-semibold text-xs shrink-0 ${avatarColor(member.display_name)}`}>
+                          {member.display_name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-[13px] font-medium truncate text-stone-900 dark:text-stone-100">{member.display_name}</div>
+                          <div className="text-[10px] text-stone-400 dark:text-stone-500 truncate">display: {member.display_name.slice(0, 6)}</div>
+                        </div>
+                        <div>
                           {(() => {
                             const isSelf = member.user_id === user?.id;
                             const isOwner = member.role === 'owner';
@@ -371,11 +358,11 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               </label>
                             );
                           })()}
-                        </td>
-                        <td className="px-3 py-3">
+                        </div>
+                        <div className="min-w-0">
                           <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                              <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${badge.className}`}>{badge.label}</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium ${badge.className}`}>{badge.label}</span>
                               {member.role !== 'owner' && myRole === 'owner' && (
                                 <button
                                   role="switch"
@@ -397,7 +384,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             <select
                               value={member.role_id ?? ''}
                               onChange={(e) => handleRoleIdChange(member, e.target.value)}
-                              className="text-sm border border-stone-200 dark:border-stone-600 rounded-md px-2 py-1 bg-white dark:bg-stone-700 dark:text-stone-100"
+                              className="w-full text-xs border border-stone-200 dark:border-stone-600 rounded-md px-2 py-1 bg-white dark:bg-stone-700 dark:text-stone-100"
                               aria-label={`${member.display_name} の役職`}
                             >
                               <option value="">未設定</option>
@@ -408,8 +395,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               ))}
                             </select>
                           </div>
-                        </td>
-                        <td className="px-3 py-3">
+                        </div>
+                        <div>
                           <div className="space-y-2">
                             <div className="inline-flex rounded-md overflow-hidden border border-stone-200 dark:border-stone-600">
                               <button
@@ -511,8 +498,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               </button>
                             )}
                           </div>
-                        </td>
-                        <td className="px-3 py-3">
+                        </div>
+                        <div>
                           {editingPaidLeaveDaysId === member.id && !isMobile ? (
                             <div className="hidden md:flex items-center gap-2">
                               <input
@@ -546,8 +533,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
                             </button>
                           )}
-                        </td>
-                        <td className="px-3 py-3 text-center">
+                        </div>
+                        <div className="text-center">
                           <button
                             role="switch"
                             aria-checked={member.night_shift_enabled ?? true}
@@ -557,14 +544,14 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           >
                             <span className={`inline-block h-4 w-4 rounded-full bg-white shadow motion-safe:transition-transform ${(member.night_shift_enabled ?? true) ? 'translate-x-4' : 'translate-x-0.5'}`} />
                           </button>
-                        </td>
-                        <td className="px-3 py-3">
-                          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400">
+                        </div>
+                        <div>
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             在職
                           </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
+                        </div>
+                        <div className="text-right">
                           {member.role !== 'owner' && (
                             <button
                               onClick={() => setDeletingId(member.id)}
@@ -574,12 +561,11 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                               <Trash2 className="w-4 h-4" />
                             </button>
                           )}
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+              </div>
             </div>
 
             <div className="md:hidden">
@@ -599,15 +585,25 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           <p className="text-xs text-stone-400 dark:text-stone-500">{new Date(member.created_at).toLocaleDateString('ja-JP')} 参加</p>
                         </div>
                       </div>
-                      {member.role !== 'owner' && (
-                        <button
-                          onClick={() => setDeletingId(member.id)}
-                          className="p-1.5 rounded-md text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-red-600 dark:hover:text-red-400 motion-safe:transition-colors"
-                          title="メンバーを削除"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <div className="shrink-0 text-right">
+                        <div className="text-sm font-semibold tabular-nums text-stone-900 dark:text-stone-100">
+                          {(member.pay_type ?? 'hourly') === 'hourly'
+                            ? rate > 0 ? `¥${rate.toLocaleString()}/h` : '未設定'
+                            : (member.monthly_salary ?? 0) > 0 ? `¥${(member.monthly_salary ?? 0).toLocaleString()}/月` : '未設定'}
+                        </div>
+                        <div className="mt-0.5 text-[11px] tabular-nums text-stone-500 dark:text-stone-400">
+                          有給 {(member.paid_leave_days ?? 0) > 0 ? `${member.paid_leave_days ?? 0}日` : '未設定'}
+                        </div>
+                        {member.role !== 'owner' && (
+                          <button
+                            onClick={() => setDeletingId(member.id)}
+                            className="mt-1 inline-flex p-1.5 rounded-md text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-red-600 dark:hover:text-red-400 motion-safe:transition-colors"
+                            title="メンバーを削除"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     <div className="mt-3 ml-12 space-y-3">
@@ -872,7 +868,6 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
         <div className="px-6 py-3 bg-stone-50 dark:bg-stone-900/50 border-t border-stone-200 dark:border-stone-700">
           <p className="text-xs text-stone-500 dark:text-stone-300">深夜給: 22:00〜翌5:00 の勤務時間に対して時給1.25倍で計算されます</p>
         </div>
-      </div>
     </Card>
   );
 }

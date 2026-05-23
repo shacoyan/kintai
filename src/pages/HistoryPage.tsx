@@ -6,7 +6,6 @@ import { useAttendanceViewer } from '../hooks/useAttendanceViewer';
 import { useStoreContext } from '../contexts/StoreContext';
 import { useToast } from '../contexts/ToastContext';
 import { DailyList } from '../components/Attendance/DailyList';
-import { MonthlySummary } from '../components/Attendance/MonthlySummary';
 import { CorrectionForm } from '../components/Correction/CorrectionForm';
 import { useCorrection } from '../hooks/useCorrection';
 import { AttendanceRecord, CorrectionRequest } from '../types';
@@ -24,9 +23,9 @@ import {
   differenceInMinutes,
 } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, CalendarX } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarX, Download } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton, HistorySkeleton, Heading } from '../components/ui';
+import { Button, Card, Badge, ListRowSkeleton, EmptyState, Skeleton, HistorySkeleton } from '../components/ui';
 import { messages } from '../lib/messages';
 
 // safelist: bg-blue-500, bg-blue-400, bg-emerald-500, bg-emerald-400, bg-red-500, bg-red-400, text-blue-500, text-blue-400, text-red-500, text-red-400
@@ -44,7 +43,6 @@ interface HistoryCalendarProps {
   year: number;
   month: number;
   records: AttendanceRecord[];
-  onRequestCorrection?: (date: string, record?: AttendanceRecord) => void;
   correctionRequests?: CorrectionRequest[];
   selectedDate: string | null;
   onSelectDate: (date: string | null) => void;
@@ -67,6 +65,10 @@ function formatWorkHours(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${h}:${String(m).padStart(2, '0')}`;
+}
+
+function formatWorkHoursDecimal(minutes: number): string {
+  return (minutes / 60).toFixed(1);
 }
 
 function formatRecordTime(time: string | null | undefined): string {
@@ -100,22 +102,17 @@ function HistoryCalendar({ year, month, records, correctionRequests, selectedDat
   const weekDayLabels = ['月', '火', '水', '木', '金', '土', '日'];
   const today = format(new Date(), 'yyyy-MM-dd');
 
-  const legends: { color: string; label: string }[] = [
-    { color: 'bg-emerald-500 dark:bg-emerald-400', label: '通常勤務' },
-    { color: 'bg-blue-500 dark:bg-blue-400', label: '8時間以上' },
-  ];
-
   return (
-    <Card padding="none">
+    <Card padding="none" className="overflow-hidden">
       <div className="grid grid-cols-7 border-b border-stone-200 dark:border-stone-700">
         {weekDayLabels.map((day, i) => (
           <div
             key={day}
-            className={`py-2 text-center text-xs font-semibold ${
+            className={`py-1.5 lg:py-2 text-center text-[10px] lg:text-xs font-semibold ${
               i === 5
-                ? 'text-blue-500 dark:text-blue-400'
+                ? 'text-blue-600 dark:text-blue-400'
                 : i === 6
-                ? 'text-red-500 dark:text-red-400'
+                ? 'text-red-600 dark:text-red-400'
                 : 'text-stone-500 dark:text-stone-300'
             }`}
           >
@@ -124,91 +121,68 @@ function HistoryCalendar({ year, month, records, correctionRequests, selectedDat
         ))}
       </div>
 
-      <div className="px-4 pb-4">
-        <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7 gap-px bg-stone-200 dark:bg-stone-700">
           {days.map((day, idx) => {
             const dateKey = format(day, 'yyyy-MM-dd');
             const record = recordMap.get(dateKey);
             const isCurrentMonth = isSameMonth(day, new Date(year, month - 1, 1));
             const workMins = record ? calcWorkMinutes(record) : 0;
-            const isOvertime = workMins >= 8 * 60; 
             const isSelected = selectedDate === dateKey;
-            const dayOfWeek = day.getDay(); 
             const isFuture = dateKey > today;
+            const intensity = workMins > 0 ? Math.min(1, workMins / (9 * 60)) : 0;
 
             return (
-              <div key={idx}>
                 <button
+                  key={idx}
                   onClick={() => {
                     if (!isCurrentMonth || isFuture) return;
                     onSelectDate(isSelected ? null : dateKey);
                   }}
                   disabled={isFuture && isCurrentMonth}
-                  className={`relative w-full min-h-[56px] p-1 text-left border-b border-r border-stone-100 dark:border-stone-700 motion-safe:transition-colors duration-150 ease-out ${
+                  className={`relative flex min-h-[48px] lg:min-h-[78px] w-full flex-col gap-[3px] lg:gap-1 bg-white p-1 text-center lg:p-1.5 lg:px-2 lg:text-left dark:bg-stone-900 motion-safe:transition-colors duration-150 ease-out ${
                     !isCurrentMonth
-                      ? 'bg-stone-50 dark:bg-stone-900/30 cursor-default'
-                      : isFuture
-                      ? 'cursor-default'
-                      : isSelected
-                      ? 'bg-blue-50 dark:bg-blue-900/20'
-                      : 'hover:bg-stone-50 dark:hover:bg-stone-700/50'
-                  } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400`}
+                      ? 'cursor-default opacity-40'
+                    : isFuture
+                      ? 'cursor-default opacity-40'
+                    : isSelected
+                      ? 'outline outline-2 -outline-offset-2 outline-blue-600 dark:outline-blue-400'
+                      : 'hover:bg-stone-50 dark:hover:bg-stone-800/70'
+                  } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:focus-visible:ring-blue-400`}
                 >
                   <span
-                    className={`text-xs font-medium block mb-0.5 ${
-                      !isCurrentMonth
-                        ? 'text-stone-300 dark:text-stone-600'
-                        : isFuture
-                        ? 'text-stone-300 dark:text-stone-600'
-                        : dayOfWeek === 0
-                        ? 'text-red-500 dark:text-red-400'
-                        : dayOfWeek === 6
-                        ? 'text-blue-500 dark:text-blue-400'
-                        : 'text-stone-700 dark:text-stone-300'
-                    }`}
+                    className="block text-[10px] lg:text-[11px] font-semibold tabular-nums text-stone-700 dark:text-stone-200"
                   >
                     {format(day, 'd')}
                   </span>
 
                   {isCurrentMonth && !isFuture && record && record.clock_in && (
-                    <div className="flex flex-col gap-0.5">
-                      <div className="flex items-center gap-1">
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                            isOvertime
-                              ? 'bg-blue-500 dark:bg-blue-400'
-                              : 'bg-emerald-500 dark:bg-emerald-400'
-                          }`}
-                        />
-                        {workMins > 0 && (
-                          <span className="text-xs text-stone-500 dark:text-stone-300 leading-none">
-                            {formatWorkHours(workMins)}
-                          </span>
-                        )}
+                    <>
+                      <div className="text-[11px] lg:text-base font-semibold leading-none tabular-nums text-stone-900 dark:text-stone-100">
+                        {formatWorkHoursDecimal(workMins)}
+                        <span className="hidden lg:inline text-[9px] font-medium text-stone-500 dark:text-stone-300">h</span>
                       </div>
-                    </div>
+                      <div className="hidden text-[9px] tabular-nums text-stone-500 dark:text-stone-300 lg:block">
+                        {formatRecordTime(record.clock_in)}-{formatRecordTime(record.clock_out)}
+                      </div>
+                    </>
                   )}
 
                   {isCurrentMonth && pendingDateSet.has(dateKey) && (
                     <span
-                      className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-orange-500 dark:bg-orange-400"
+                      className="absolute right-[3px] top-[3px] h-[5px] w-[5px] rounded-full bg-orange-500 lg:right-1 lg:top-1 lg:h-1.5 lg:w-1.5 dark:bg-orange-400"
                       aria-label="修正申請中"
                     />
                   )}
+                  {isCurrentMonth && !isFuture && workMins > 0 && (
+                    <span
+                      className="absolute bottom-0 left-0 right-0 h-0.5 lg:h-[3px]"
+                      style={{ background: `color-mix(in srgb, #2563eb ${30 + intensity * 70}%, transparent)` }}
+                      aria-hidden="true"
+                    />
+                  )}
                 </button>
-              </div>
             );
           })}
-        </div>
-
-        <div className="px-4 py-2 border-t border-stone-100 dark:border-stone-700 flex items-center gap-4 text-xs text-stone-500 dark:text-stone-300">
-          {legends.map((legend) => (
-            <div key={legend.label} className="flex items-center gap-1">
-              <span className={`w-2 h-2 rounded-full ${legend.color}`} />
-              <span>{legend.label}</span>
-            </div>
-          ))}
-        </div>
       </div>
     </Card>
   );
@@ -228,13 +202,15 @@ function SelectedDayDetail({ date, record, onRequestCorrection, pending }: Selec
   const breakMinutes = record ? calcBreakMinutes(record) : 0;
 
   return (
-    <Card padding="md" className="min-h-[280px]">
-      <div className="flex h-full flex-col gap-5">
-        <div className="flex items-start justify-between gap-3">
-          <h3 className={`text-base font-semibold ${date ? 'text-stone-900 dark:text-stone-100' : 'text-stone-500 dark:text-stone-300'}`}>
-            {date ? format(parseISO(date), 'M月d日 (E)', { locale: ja }) : '日付を選択してください'}
-          </h3>
-          {pending && <Badge tone="warning">修正申請中</Badge>}
+    <Card padding="md">
+      <div className="flex h-full min-h-[220px] flex-col">
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className={`text-base font-semibold ${date ? 'text-stone-900 dark:text-stone-100' : 'text-stone-500 dark:text-stone-300'}`}>
+            {date ? format(parseISO(date), 'M月 d 日', { locale: ja }) : '日付を選択してください'}
+          </h2>
+          {date && <span className="text-xs text-stone-500 dark:text-stone-300">({format(parseISO(date), 'E', { locale: ja })})</span>}
+          <div className="flex-1" />
+          {date && record && (pending ? <Badge tone="warning">修正申請中</Badge> : <Badge tone="success">承認済</Badge>)}
         </div>
 
         {date == null ? (
@@ -243,35 +219,49 @@ function SelectedDayDetail({ date, record, onRequestCorrection, pending }: Selec
           <p className="text-sm text-stone-500 dark:text-stone-300">未来の日付です</p>
         ) : record ? (
           <>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <p className="text-xs text-stone-500 dark:text-stone-300">出勤</p>
-                <p className="text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-100">{formatRecordTime(record.clock_in)}</p>
+            <div className="grid grid-cols-3 overflow-hidden rounded-md border border-stone-200 dark:border-stone-700">
+              <div className="border-r border-stone-200 p-2.5 dark:border-stone-700 lg:p-3">
+                <p className="text-[10px] text-stone-500 dark:text-stone-300">出勤</p>
+                <p className="text-[15px] lg:text-lg font-semibold tabular-nums text-stone-900 dark:text-stone-100">{formatRecordTime(record.clock_in)}</p>
               </div>
-              <div>
-                <p className="text-xs text-stone-500 dark:text-stone-300">退勤</p>
-                <p className="text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-100">{formatRecordTime(record.clock_out)}</p>
+              <div className="border-r border-stone-200 p-2.5 dark:border-stone-700 lg:p-3">
+                <p className="text-[10px] text-stone-500 dark:text-stone-300">退勤</p>
+                <p className="text-[15px] lg:text-lg font-semibold tabular-nums text-stone-900 dark:text-stone-100">{formatRecordTime(record.clock_out)}</p>
               </div>
-              <div>
-                <p className="text-xs text-stone-500 dark:text-stone-300">勤務</p>
-                <p className="text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-100">{formatWorkHours(workMinutes)}</p>
+              <div className="p-2.5 lg:p-3">
+                <p className="text-[10px] text-stone-500 dark:text-stone-300">勤務時間</p>
+                <p className="text-[15px] lg:text-lg font-semibold tabular-nums text-stone-900 dark:text-stone-100">{formatWorkHoursDecimal(workMinutes)}h</p>
               </div>
             </div>
-            <p className="text-sm text-stone-600 dark:text-stone-300 tabular-nums">休憩 {formatWorkHours(breakMinutes)}</p>
+            {pending && (
+              <div className="mt-3 rounded-md bg-orange-50 p-3 text-xs leading-relaxed text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                <strong>修正申請中</strong><br />
+                この日の打刻修正を申請中です。承認されるまで現在の記録が表示されます。
+              </div>
+            )}
+            <p className="mt-3 text-xs text-stone-500 dark:text-stone-300 tabular-nums">休憩 {formatWorkHours(breakMinutes)}</p>
           </>
         ) : (
-          <p className="text-sm text-stone-500 dark:text-stone-300">打刻記録がありません</p>
+          <div className="py-6 text-center text-xs text-stone-500 dark:text-stone-300">休日 — 打刻データなし</div>
         )}
 
         {date && !isFuture && onRequestCorrection && (
-          <div className="mt-auto pt-2">
+          <div className="mt-auto flex gap-2 pt-3">
             <Button
-              variant="primary"
+              variant="warning"
               size="md"
               onClick={() => onRequestCorrection(date, record)}
               fullWidth
             >
-              この日を修正申請する
+              修正申請
+            </Button>
+            <Button
+              variant="tertiary"
+              size="md"
+              onClick={() => onRequestCorrection(date, record)}
+              className="hidden lg:inline-flex"
+            >
+              休憩を編集
             </Button>
           </div>
         )}
@@ -305,46 +295,44 @@ function MonthlyBarChart({ year, month, records, onBarClick, selectedDate }: Mon
       minutes: record ? calcWorkMinutes(record) : 0,
     };
   });
-  const maxMinutes = Math.max(10 * 60, ...dayValues.map(day => day.minutes));
+  const maxMinutes = Math.max(9 * 60, ...dayValues.map(day => day.minutes));
 
   return (
     <Card padding="md">
-      <h3 className="text-label text-stone-500 dark:text-stone-300 mb-4">日別勤務時間</h3>
+      <h3 className="mb-2.5 text-xs font-semibold text-stone-900 dark:text-stone-100">勤務時間の傾向</h3>
       {records.length === 0 ? (
         <EmptyState size="sm" title="データなし" />
       ) : (
-        <div className="overflow-x-auto pb-2">
-          <div className="flex items-end gap-1 min-w-max h-[160px]">
+        <>
+          <div className="flex h-20 items-end gap-0.5">
             {dayValues.map(({ dateKey, dayLabel, minutes }) => {
-              const height = maxMinutes > 0 ? Math.max(2, Math.round((minutes / maxMinutes) * 136)) : 2;
+              const height = maxMinutes > 0 ? Math.max(minutes > 0 ? 2 : 0, Math.round((minutes / maxMinutes) * 80)) : 0;
               const isSelected = selectedDate === dateKey;
-              const isOvertime = minutes >= 8 * 60;
-              const barColor = minutes === 0
-                ? 'bg-stone-200 dark:bg-stone-700'
-                : isOvertime
-                ? 'bg-blue-600 dark:bg-blue-500'
-                : 'bg-blue-300 dark:bg-blue-400';
 
               return (
                 <button
                   key={dateKey}
                   type="button"
                   onClick={() => onBarClick?.(dateKey)}
-                  className="group flex w-7 cursor-pointer flex-col items-center justify-end gap-1 focus-visible:outline-none"
+                  className="group flex flex-1 cursor-pointer items-end focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                   aria-label={`${dayLabel}日 ${formatWorkHours(minutes)}`}
                 >
                   <span
-                    className={`w-6 rounded-t motion-safe:transition-colors duration-150 ${barColor} ${
-                      isSelected ? 'ring-2 ring-blue-700 ring-offset-2 dark:ring-blue-300 dark:ring-offset-stone-900' : ''
-                    } group-hover:bg-blue-500 dark:group-hover:bg-blue-400 group-focus-visible:ring-2 group-focus-visible:ring-blue-500 group-focus-visible:ring-offset-2 dark:group-focus-visible:ring-offset-stone-900 cursor-pointer`}
+                    className={`w-full rounded-t-sm motion-safe:transition-colors duration-150 ${
+                      isSelected ? 'bg-blue-600 opacity-100 dark:bg-blue-500' : 'bg-stone-400 opacity-40 dark:bg-stone-500'
+                    } group-hover:bg-blue-600 group-hover:opacity-80 dark:group-hover:bg-blue-500`}
                     style={{ height }}
                   />
-                  <span className="text-xs text-stone-500 dark:text-stone-300 tabular-nums">{dayLabel}</span>
                 </button>
               );
             })}
           </div>
-        </div>
+          <div className="mt-1.5 flex justify-between text-[10px] tabular-nums text-stone-500 dark:text-stone-300">
+            <span>1日</span>
+            <span>15日</span>
+            <span>{format(monthEnd, 'd')}日</span>
+          </div>
+        </>
       )}
     </Card>
   );
@@ -500,6 +488,7 @@ export function HistoryPage() {
   const selectedDatePending = selectedDate
     ? ownCorrectionRequests.some(r => r.status === 'pending' && r.date === selectedDate)
     : false;
+  const pendingCorrectionCount = ownCorrectionRequests.filter(r => r.status === 'pending').length;
 
   const isCurrentMonthShown = (() => {
     const now = new Date();
@@ -516,7 +505,7 @@ export function HistoryPage() {
   }
 
   return (
-    <div className={`max-w-6xl mx-auto px-4 py-6 space-y-6 motion-safe:transition-opacity duration-180 ease-out${isRefetching ? ' opacity-60 pointer-events-none' : ''}`}>
+    <div className={`max-w-6xl mx-auto px-4 py-6 space-y-4 motion-safe:transition-opacity duration-180 ease-out${isRefetching ? ' opacity-60 pointer-events-none' : ''}`}>
       {currentStore == null && (
         <Card padding="md">
           <div className="flex items-center justify-center gap-2 text-sm">
@@ -526,125 +515,142 @@ export function HistoryPage() {
         </Card>
       )}
 
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <Heading level={1}>履歴</Heading>
-          <p className="text-sm text-stone-500 dark:text-stone-300 mt-1">勤怠の月次記録を確認します</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-full p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                viewMode === 'list'
-                  ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
-                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
-              }`}
-              aria-pressed={viewMode === 'list'}
-            >
-              リスト
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('calendar')}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                viewMode === 'calendar'
-                  ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
-                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
-              }`}
-              aria-pressed={viewMode === 'calendar'}
-            >
-              カレンダー
-            </button>
-          </div>
-        </div>
-      </header>
-      
-      <Card padding="md">
-        <div className="flex items-center justify-between gap-2">
-          <Button variant="tertiary" size="md" iconLeft={<ChevronLeft className="w-5 h-5 text-stone-600 dark:text-stone-300" />} onClick={handlePrevMonth} aria-label="前月"><></></Button>
-          <div className="flex items-center gap-2">
-            <Heading level={2}>
-              {format(currentDate, 'yyyy年M月', { locale: ja })}
-            </Heading>
+      <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-3.5 lg:grid-cols-[1.8fr_1fr] lg:gap-5">
+        <div className="flex flex-col gap-3.5">
+          <div className="flex items-center gap-2 lg:gap-2.5">
+            <div className="order-5 ml-auto inline-flex items-center rounded-full bg-stone-100 p-1 dark:bg-stone-800 lg:order-none lg:ml-0">
+              <button
+                type="button"
+                onClick={() => setViewMode('calendar')}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:px-4 lg:text-sm ${
+                  viewMode === 'calendar'
+                    ? 'bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-50'
+                    : 'text-stone-600 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100'
+                }`}
+                aria-pressed={viewMode === 'calendar'}
+              >
+                <span className="hidden lg:inline">カレンダー</span>
+                <span className="lg:hidden">暦</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:px-4 lg:text-sm ${
+                  viewMode === 'list'
+                    ? 'bg-white text-stone-900 shadow-sm dark:bg-stone-700 dark:text-stone-50'
+                    : 'text-stone-600 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100'
+                }`}
+                aria-pressed={viewMode === 'list'}
+              >
+                <span className="hidden lg:inline">リスト</span>
+                <span className="lg:hidden">一覧</span>
+              </button>
+            </div>
+            <div className="hidden h-[22px] w-px bg-stone-200 dark:bg-stone-700 lg:block" />
+            <Button variant="tertiary" size="sm" iconLeft={<ChevronLeft className="h-4 w-4 text-stone-600 dark:text-stone-300" />} onClick={handlePrevMonth} aria-label="前月"><></></Button>
+            <div className="min-w-[70px] text-center text-[13px] font-semibold tabular-nums text-stone-900 dark:text-stone-100 lg:min-w-[90px] lg:text-sm">
+              {format(currentDate, 'yyyy / MM')}
+            </div>
+            <Button variant="tertiary" size="sm" iconLeft={<ChevronRight className="h-4 w-4 text-stone-600 dark:text-stone-300" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
             {!isCurrentMonthShown && (
-              <Button variant="tertiary" size="sm" onClick={() => setCurrentDate(new Date())}>
+              <Button variant="tertiary" size="sm" onClick={() => setCurrentDate(new Date())} className="hidden lg:inline-flex">
                 今月へ
               </Button>
             )}
+            <div className="hidden flex-1 lg:block" />
             <Button
-              variant="primary"
+              variant="warning"
               size="md"
+              iconLeft={<Download className="h-4 w-4" />}
               onClick={handleDownloadCsv}
+              className="hidden lg:inline-flex"
             >
-              CSV ダウンロード
+              CSV 出力
             </Button>
           </div>
-          <Button variant="tertiary" size="md" iconLeft={<ChevronRight className="w-5 h-5 text-stone-600 dark:text-stone-300" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
-        </div>
 
-        {canSwitchUser && currentStore != null && (
-          <div className="flex items-center gap-2 pt-2 justify-center">
-            <label className="text-sm text-stone-500 dark:text-stone-300">対象メンバー:</label>
-            <select value={effectiveUserId ?? ''} onChange={(e) => setSelectedUserId(e.target.value || null)}
-              className="px-2 py-1 text-sm border border-stone-300 rounded-md bg-white dark:bg-stone-900 dark:border-stone-700 text-stone-900 dark:text-stone-100">
-              {myUserId && <option value={myUserId}>自分</option>}
-              {members.filter(m => m.user_id !== myUserId).map(m => (
-                <option key={m.user_id} value={m.user_id}>{m.display_name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-      </Card>
-
-      <MonthlySummary summary={monthlySummary} />
-
-      {showInitialSkeleton ? (
-        viewMode === 'list' ? (
-          <Card padding="md">
-            <ListRowSkeleton />
-            <ListRowSkeleton />
-            <ListRowSkeleton />
-          </Card>
-        ) : (
-          <Card padding="none">
-            <div className="p-4">
-              <Skeleton variant="rectangular" height={28} className="mb-3" />
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: 42 }).map((_, i) => (
-                  <Skeleton key={i} variant="rectangular" height={56} />
+          {canSwitchUser && currentStore != null && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-stone-500 dark:text-stone-300">対象メンバー</label>
+              <select value={effectiveUserId ?? ''} onChange={(e) => setSelectedUserId(e.target.value || null)}
+                className="rounded-md border border-stone-300 bg-white px-2 py-1 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100">
+                {myUserId && <option value={myUserId}>自分</option>}
+                {members.filter(m => m.user_id !== myUserId).map(m => (
+                  <option key={m.user_id} value={m.user_id}>{m.display_name}</option>
                 ))}
-              </div>
+              </select>
+              {!isCurrentMonthShown && (
+                <Button variant="tertiary" size="sm" onClick={() => setCurrentDate(new Date())} className="lg:hidden">
+                  今月へ
+                </Button>
+              )}
             </div>
-          </Card>
-        )
-      ) : (
-        viewMode === 'list' ? (
-          showEmpty ? (
-            <EmptyState
-              icon={<CalendarX className="w-12 h-12 text-stone-400 dark:text-stone-500" />}
-              title={messages.empty.historyMonth.title}
-              description="ダッシュボードから打刻すると、ここに記録が表示されます。"
-            />
-          ) : (
-            <Card padding="none">
-              <Card.Header>
-                <h3 className="text-label text-stone-500 dark:text-stone-300">日別勤怠記録</h3>
-              </Card.Header>
-              <DailyList
-                records={monthlyRecords}
-                year={year}
-                month={month}
-                onRequestCorrection={handleCorrection}
-                onRequestDeletion={handleDeletion}
-                correctionRequests={ownCorrectionRequests}
-              />
+          )}
+
+          <div className="flex gap-1.5 lg:gap-3">
+            <Card padding="md" className="flex-1 p-2 lg:p-4">
+              <div className="text-[10px] text-stone-500 dark:text-stone-300 lg:text-[11px]">勤務日数</div>
+              <div className="mt-0.5 text-[15px] font-semibold tabular-nums text-stone-900 dark:text-stone-100 lg:text-2xl">
+                {monthlySummary.workDays}<span className="ml-1 text-[10px] font-medium text-stone-500 dark:text-stone-300 lg:text-[11px]">日</span>
+              </div>
             </Card>
-          )
-        ) : (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
+            <Card padding="md" className="flex-1 p-2 lg:p-4">
+              <div className="text-[10px] text-stone-500 dark:text-stone-300 lg:text-[11px]">勤務時間</div>
+              <div className="mt-0.5 text-[15px] font-semibold tabular-nums text-stone-900 dark:text-stone-100 lg:text-2xl">
+                {formatWorkHoursDecimal(monthlySummary.totalWorkMinutes)}<span className="ml-1 text-[10px] font-medium text-stone-500 dark:text-stone-300 lg:text-[11px]">h</span>
+              </div>
+            </Card>
+            <Card padding="md" className="flex-1 p-2 lg:p-4">
+              <div className="text-[10px] text-stone-500 dark:text-stone-300 lg:text-[11px]">修正申請</div>
+              <div className="mt-0.5 text-[15px] font-semibold tabular-nums text-orange-600 dark:text-orange-300 lg:text-2xl">
+                {pendingCorrectionCount}<span className="ml-1 text-[10px] font-medium text-stone-500 dark:text-stone-300 lg:text-[11px]">件<span className="hidden lg:inline"> pending</span></span>
+              </div>
+            </Card>
+          </div>
+
+          {showInitialSkeleton ? (
+            viewMode === 'list' ? (
+              <Card padding="md">
+                <ListRowSkeleton />
+                <ListRowSkeleton />
+                <ListRowSkeleton />
+              </Card>
+            ) : (
+              <Card padding="none">
+                <div className="p-4">
+                  <Skeleton variant="rectangular" height={28} className="mb-3" />
+                  <div className="grid grid-cols-7 gap-1">
+                    {Array.from({ length: 42 }).map((_, i) => (
+                      <Skeleton key={i} variant="rectangular" height={56} />
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            )
+          ) : viewMode === 'list' ? (
+            showEmpty ? (
+              <EmptyState
+                icon={<CalendarX className="w-12 h-12 text-stone-400 dark:text-stone-500" />}
+                title={messages.empty.historyMonth.title}
+                description="ダッシュボードから打刻すると、ここに記録が表示されます。"
+              />
+            ) : (
+              <Card padding="none">
+                <Card.Header>
+                  <h3 className="text-label text-stone-500 dark:text-stone-300">日別勤怠記録</h3>
+                </Card.Header>
+                <DailyList
+                  records={monthlyRecords}
+                  year={year}
+                  month={month}
+                  onRequestCorrection={handleCorrection}
+                  onRequestDeletion={handleDeletion}
+                  correctionRequests={ownCorrectionRequests}
+                />
+              </Card>
+            )
+          ) : (
+            <>
               <HistoryCalendar
                 year={year}
                 month={month}
@@ -653,29 +659,43 @@ export function HistoryPage() {
                 selectedDate={selectedDate}
                 onSelectDate={setSelectedDate}
               />
-              <SelectedDayDetail
-                date={selectedDate}
-                record={selectedRecord}
-                pending={selectedDatePending}
-                onRequestCorrection={handleCorrection}
-              />
-            </div>
-            <MonthlyBarChart
-              year={year}
-              month={month}
-              records={monthlyRecords}
-              selectedDate={selectedDate}
-              onBarClick={setSelectedDate}
-            />
-            {showEmpty && (
-              <EmptyState
-                size="sm"
-                title={messages.empty.historyMonth.title}
-              />
-            )}
-          </>
-        )
-      )}
+              {showEmpty && (
+                <EmptyState
+                  size="sm"
+                  title={messages.empty.historyMonth.title}
+                />
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <SelectedDayDetail
+            date={selectedDate}
+            record={selectedRecord}
+            pending={selectedDatePending}
+            onRequestCorrection={handleCorrection}
+          />
+          <MonthlyBarChart
+            year={year}
+            month={month}
+            records={monthlyRecords}
+            selectedDate={selectedDate}
+            onBarClick={(date) => setSelectedDate(prev => prev === date ? null : date)}
+          />
+          <div className="lg:hidden">
+            <Button
+              variant="warning"
+              size="md"
+              iconLeft={<Download className="h-4 w-4" />}
+              onClick={handleDownloadCsv}
+              fullWidth
+            >
+              CSV 出力
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <CorrectionForm
         isOpen={correctionModal.isOpen}

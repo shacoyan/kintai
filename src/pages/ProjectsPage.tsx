@@ -1,16 +1,20 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Heading,
   Button,
   Select,
   EmptyState,
   BottomSheet,
-  StatusPill,
+  Card,
+  Badge,
+  ActionMenu,
+  type ActionMenuItem,
 } from '../components/ui';
-import type { Project, ProjectStatus } from '../types';
+import { Archive, CheckSquare, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import type { Project, ProjectStatus, TaskStatus } from '../types';
 import { ProjectDialog } from '../components/Project';
 import type { ProjectInput, ProjectStoreOption } from '../components/Project';
 import { useProjects, useProjectMutations } from '../hooks/useProjects';
+import { useTasks } from '../hooks/useTasks';
 import { useStore } from '../hooks/useStore';
 import { useTenant } from '../contexts/TenantContext';
 import { getProjectColor } from '../lib/projectColor';
@@ -27,6 +31,77 @@ interface DeleteConfirmDialogProps {
   onClose: () => void;
   onConfirm: () => Promise<void>;
   projectName: string;
+}
+
+const TASK_STATUSES: TaskStatus[] = ['todo', 'in_progress', 'done', 'cancelled'];
+
+const PROJECT_BAR_BG: Record<string, string> = {
+  'border-blue-500': 'bg-blue-500',
+  'border-emerald-500': 'bg-emerald-500',
+  'border-orange-500': 'bg-orange-500',
+  'border-purple-500': 'bg-purple-500',
+  'border-pink-500': 'bg-pink-500',
+  'border-cyan-500': 'bg-cyan-500',
+  'border-amber-500': 'bg-amber-500',
+  'border-indigo-500': 'bg-indigo-500',
+  'border-stone-300 dark:border-stone-600': 'bg-stone-400 dark:bg-stone-500',
+};
+
+function getProjectBarBg(projectId: string): string {
+  return PROJECT_BAR_BG[getProjectColor(projectId).border] ?? 'bg-stone-400 dark:bg-stone-500';
+}
+
+function startOfLocalDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function formatMonthDay(date: Date): string {
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function getWeekRange(now = new Date()): { start: Date; end: Date; label: string } {
+  const today = startOfLocalDay(now);
+  const day = today.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const start = new Date(today);
+  start.setDate(today.getDate() + mondayOffset);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return {
+    start,
+    end,
+    label: `${formatMonthDay(start)} – ${formatMonthDay(end)}`,
+  };
+}
+
+function parseLocalDate(date: string): Date {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+interface SummaryCardProps {
+  label: string;
+  value: number;
+  hint: string;
+  tone?: 'default' | 'danger';
+}
+
+function SummaryCard({ label, value, hint, tone = 'default' }: SummaryCardProps): JSX.Element {
+  return (
+    <Card padding="sm" className="flex flex-col gap-1 rounded-[8px] hover:shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      <div className="text-xs text-stone-500 dark:text-stone-400">{label}</div>
+      <div
+        className={`num tabular-nums text-2xl font-semibold ${
+          tone === 'danger'
+            ? 'text-red-600 dark:text-red-400'
+            : 'text-stone-900 dark:text-stone-100'
+        }`}
+      >
+        {value}
+      </div>
+      <div className="text-[10px] text-stone-400 dark:text-stone-500">{hint}</div>
+    </Card>
+  );
 }
 
 function DeleteConfirmDialog({
@@ -110,13 +185,20 @@ export function ProjectsPage() {
 
   const storeIdParam: string | null | undefined =
     storeFilter === 'all' ? undefined : storeFilter === 'company' ? null : storeFilter;
-  const statusParam: ProjectStatus[] | undefined =
-    statusFilter === 'all' ? undefined : [statusFilter];
 
   const { projects, isLoading, error, refetch } = useProjects({
     tenantId,
     storeId: storeIdParam,
-    status: statusParam,
+    status: undefined,
+  });
+
+  const {
+    tasks,
+    isLoading: tasksLoading,
+    error: tasksError,
+  } = useTasks({
+    tenantId,
+    status: TASK_STATUSES,
   });
 
   const { createProject, updateProject, archiveProject, deleteProject } = useProjectMutations();
@@ -141,6 +223,44 @@ export function ProjectsPage() {
     },
     [storeNameMap],
   );
+
+  const visibleProjects = useMemo(
+    () =>
+      projects.filter((project) =>
+        statusFilter === 'all' ? true : project.status === statusFilter,
+      ),
+    [projects, statusFilter],
+  );
+
+  const weekRange = useMemo(() => getWeekRange(), []);
+
+  const taskStats = useMemo(() => {
+    const weekEndExclusive = new Date(weekRange.end);
+    weekEndExclusive.setDate(weekRange.end.getDate() + 1);
+    const today = startOfLocalDay(new Date());
+
+    let doing = 0;
+    let doneThisWeek = 0;
+    let overdue = 0;
+
+    for (const task of tasks) {
+      if (task.status === 'in_progress') doing += 1;
+
+      if (task.status === 'done') {
+        const updatedAt = new Date(task.updated_at);
+        if (updatedAt >= weekRange.start && updatedAt < weekEndExclusive) {
+          doneThisWeek += 1;
+        }
+      }
+
+      if (task.due_date && task.status !== 'done') {
+        const dueDate = parseLocalDate(task.due_date);
+        if (dueDate < today) overdue += 1;
+      }
+    }
+
+    return { doing, doneThisWeek, overdue };
+  }, [tasks, weekRange]);
 
   // 権限判定 ----
   // 2026-05-22 Loop 4 P0-2 fix:
@@ -266,12 +386,6 @@ export function ProjectsPage() {
   }, [deleteTarget, deleteProject, refetch]);
 
   // フィルタ options ----
-  const statusFilterOptions = [
-    { value: 'all', label: '全ステータス' },
-    { value: 'active', label: '有効' },
-    { value: 'archived', label: 'アーカイブ' },
-  ];
-
   const storeFilterOptions = useMemo(
     () => [
       { value: 'all', label: '全店舗' },
@@ -282,22 +396,7 @@ export function ProjectsPage() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto py-6 px-4 md:px-6 space-y-6">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <Heading level={1}>プロジェクト</Heading>
-          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-            タスクをまとめる単位。店舗別 / 全社で管理できます。
-          </p>
-        </div>
-        {managerial && !readonly && (
-          <Button variant="primary" size="md" onClick={openCreate}>
-            新規作成
-          </Button>
-        )}
-      </header>
-
-      {/* グローバルエラー */}
+    <div className="mx-auto flex max-w-[1280px] flex-col gap-3.5 px-4 py-4 md:px-6 md:py-6">
       {mutationError && (
         <div
           role="alert"
@@ -314,110 +413,175 @@ export function ProjectsPage() {
           プロジェクトの取得に失敗しました: {error.message}
         </div>
       )}
-
-      {/* フィルタ */}
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-48">
-          <Select
-            label="ステータス"
-            options={statusFilterOptions}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as ProjectStatus | 'all')}
-          />
+      {tasksError && (
+        <div
+          role="alert"
+          className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-800/20 dark:text-red-200"
+        >
+          タスクの取得に失敗しました: {tasksError.message}
         </div>
-        <div className="w-48">
+      )}
+
+      <div className="flex flex-wrap items-center gap-2.5">
+        <div className="w-40 md:w-48">
           <Select
-            label="店舗"
             options={storeFilterOptions}
             value={storeFilter}
+            size="sm"
+            className="text-xs"
+            aria-label="店舗"
             onChange={(e) => setStoreFilter(e.target.value)}
           />
         </div>
+        <Button
+          variant={statusFilter === 'archived' ? 'primary' : 'secondary'}
+          size="sm"
+          onClick={() =>
+            setStatusFilter((current) => (current === 'archived' ? 'active' : 'archived'))
+          }
+        >
+          {statusFilter === 'archived' ? '✓ ' : ''}
+          アーカイブを表示
+        </Button>
+        <div className="min-w-0 flex-1" />
+        {managerial && !readonly && (
+          <Button variant="primary" size="md" onClick={openCreate}>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            新規プロジェクト
+          </Button>
+        )}
       </div>
 
-      {/* 一覧 */}
-      {isLoading ? (
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <SummaryCard
+          label="プロジェクト数"
+          value={projects.filter((project) => project.status === 'active').length}
+          hint="アクティブ"
+        />
+        <SummaryCard label="進行中タスク" value={taskStats.doing} hint="全社" />
+        <SummaryCard label="今週完了" value={taskStats.doneThisWeek} hint={weekRange.label} />
+        <SummaryCard label="期限切れ" value={taskStats.overdue} hint="要対応" tone="danger" />
+      </div>
+
+      {isLoading || tasksLoading ? (
         <div className="py-12 text-center text-sm text-stone-500 dark:text-stone-400">
           読み込み中…
         </div>
-      ) : projects.length === 0 ? (
+      ) : visibleProjects.length === 0 ? (
         <EmptyState
           title="プロジェクトがありません"
           description={
             managerial && !readonly
-              ? '右上の「新規作成」から最初のプロジェクトを作成してください。'
+              ? '「新規プロジェクト」から最初のプロジェクトを作成してください。'
               : '現在のフィルタに該当するプロジェクトはありません。'
           }
         />
       ) : (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project) => {
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {visibleProjects.map((project) => {
             const editable = canEdit(project);
             const archivable = canArchiveOrRestore(project);
             const deletable = canDelete(project);
             const colorClasses = getProjectColor(project.id);
+            const projectTasks = tasks.filter((task) => task.project_id === project.id);
+            const doneTasks = projectTasks.filter((task) => task.status === 'done').length;
+            const totalTasks = projectTasks.length;
+            const openTasks = totalTasks - doneTasks;
+            const pct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
+            const menuItems: ActionMenuItem[] = [];
+
+            if (editable) {
+              menuItems.push({
+                key: 'edit',
+                label: '編集',
+                icon: <Pencil className="h-4 w-4" aria-hidden="true" />,
+                disabled: mutationBusy,
+                onSelect: () => openEdit(project),
+              });
+            }
+            if (archivable) {
+              menuItems.push({
+                key: 'archive',
+                label: project.status === 'active' ? 'アーカイブ' : '復活',
+                icon:
+                  project.status === 'active' ? (
+                    <Archive className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                  ),
+                disabled: mutationBusy,
+                onSelect: () => void handleArchiveOrRestore(project),
+              });
+            }
+            if (deletable) {
+              menuItems.push({
+                key: 'delete',
+                label: '削除',
+                tone: 'danger',
+                icon: <Trash2 className="h-4 w-4" aria-hidden="true" />,
+                disabled: mutationBusy,
+                onSelect: () => {
+                  setMutationError(null);
+                  setDeleteTarget(project);
+                },
+              });
+            }
+
             return (
-              <div
+              <Card
                 key={project.id}
-                className={`group relative flex flex-col rounded-xl border border-stone-200 bg-white dark:bg-stone-900 dark:border-stone-700 border-l-4 ${colorClasses.border} p-4 transition-all duration-150 ease-out hover:shadow-md hover:-translate-y-0.5`}
+                padding="sm"
+                className={`flex flex-col gap-2.5 rounded-[8px] border-t-[3px] ${colorClasses.border} transition hover:-translate-y-0.5 hover:shadow-md ${
+                  project.status === 'archived' ? 'opacity-55' : ''
+                }`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100 truncate min-w-0">
-                    {project.name}
-                  </h3>
-                  <StatusPill tone={project.status === 'active' ? 'success' : 'neutral'}>
-                    {project.status === 'active' ? '有効' : 'アーカイブ'}
-                  </StatusPill>
+                <div className="flex items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="line-clamp-1 text-sm font-semibold leading-[1.3] text-stone-900 dark:text-stone-100">
+                      {project.name}
+                    </div>
+                    <div className="mt-1 line-clamp-2 text-xs leading-[1.4] text-stone-500 dark:text-stone-400">
+                      {project.description || '説明はありません'}
+                    </div>
+                  </div>
+                  <ActionMenu
+                    items={menuItems}
+                    triggerLabel={`${project.name} の操作`}
+                    triggerSize="sm"
+                    bottomSheetTitle="プロジェクト操作"
+                    disabled={menuItems.length === 0}
+                  />
                 </div>
 
-                <div className="mt-1 text-xs text-stone-500 dark:text-stone-400">
-                  {getStoreLabel(project.store_id)}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge tone={project.store_id === null ? 'primary' : 'neutral'}>
+                    {getStoreLabel(project.store_id)}
+                  </Badge>
+                  {project.status === 'archived' && <Badge tone="warning">アーカイブ</Badge>}
                 </div>
 
-                <p className="mt-3 text-sm text-stone-600 dark:text-stone-300 line-clamp-2 min-h-[2.5rem]">
-                  {project.description || (
-                    <span className="text-stone-400 dark:text-stone-500">
-                      説明はありません
+                <div className="border-t border-stone-100 dark:border-stone-800" />
+
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between gap-3">
+                    <span className="text-xs text-stone-500 dark:text-stone-400">進捗</span>
+                    <span className="num tabular-nums text-xs font-semibold text-stone-600 dark:text-stone-300">
+                      {doneTasks} / {totalTasks} ({pct}%)
                     </span>
-                  )}
-                </p>
-
-                <div className="mt-4 flex items-center justify-end gap-2 pt-3 border-t border-stone-100 dark:border-stone-800">
-                  {editable && (
-                    <Button
-                      variant="tertiary"
-                      size="sm"
-                      onClick={() => openEdit(project)}
-                      disabled={mutationBusy}
-                    >
-                      編集
-                    </Button>
-                  )}
-                  {archivable && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => void handleArchiveOrRestore(project)}
-                      disabled={mutationBusy}
-                    >
-                      {project.status === 'active' ? 'アーカイブ' : '復活'}
-                    </Button>
-                  )}
-                  {deletable && (
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => {
-                        setMutationError(null);
-                        setDeleteTarget(project);
-                      }}
-                      disabled={mutationBusy}
-                    >
-                      削除
-                    </Button>
-                  )}
+                  </div>
+                  <div className="h-1 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
+                    <div
+                      className={`h-full rounded-full transition-[width] ${getProjectBarBg(project.id)}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
+
+                <div className="flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400">
+                  <CheckSquare className="h-3 w-3" aria-hidden="true" />
+                  <span className="num tabular-nums">未完了 {openTasks}</span>
+                </div>
+              </Card>
             );
           })}
         </div>
