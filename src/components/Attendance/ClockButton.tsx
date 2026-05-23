@@ -160,7 +160,7 @@ export function ClockButton({ status, clockIn, clockOut, todayRecords, activeRec
 
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-2xl border border-l-4 border-stone-200/70 bg-white p-6 shadow-sm dark:border-stone-700 dark:bg-stone-800 md:p-8 motion-safe:transition-[border-left-color] motion-safe:duration-300 motion-safe:ease-out ${config.borderColor} ${isTransitioning ? '' : config.breathClass}`}
+      className={`relative w-full overflow-hidden border-l-4 border-stone-200/70 px-0 py-1 dark:border-stone-700 motion-safe:transition-[border-left-color] motion-safe:duration-300 motion-safe:ease-out ${config.borderColor} ${isTransitioning ? '' : config.breathClass}`}
       data-transitioning={isTransitioning || undefined}
       aria-busy={processing || undefined}
     >

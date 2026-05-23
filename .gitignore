@@ -14,3 +14,6 @@ tmp/
 
 # 視覚回帰 baseline は commit 対象（L29 以降）。
 # e2e/visual-regression.spec.ts-snapshots/ は意図的に gitignore しない。
+
+# Claude Design source (local reference only)
+KINTAI design/
