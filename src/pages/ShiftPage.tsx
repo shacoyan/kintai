@@ -607,7 +607,7 @@ export function ShiftPage() {
               {/* ShiftStatusFilter — 常時表示。pending_preference は manager のみ表示 */}
               {/* Loop12: manager は常時「未承認を一括却下」ボタンを横並び表示 */}
               {/* オーナー要望: 「まとめてシフト申請」→「未承認を一括却下」→「仮承認を一括本承認」の順に横並び */}
-              <div className="flex flex-wrap items-start gap-2">
+              <div className="flex flex-col gap-2 sm:flex sm:flex-wrap sm:flex-row sm:items-start">
                 <div className="flex-1 min-w-0">
                   <ShiftStatusFilter
                     value={statusFilter}
@@ -615,101 +615,103 @@ export function ShiftPage() {
                     showPreferenceStatus={canManageTenant}
                   />
                 </div>
-                {storeId && !isBulkMode && (
-                  <Button
-                    variant="success"
-                    size="sm"
-                    iconLeft={<CalendarPlus className="w-4 h-4" />}
-                    onClick={handleEnterBulkMode}
-                    disabled={isDeadlinePassed && !canEditDeadline}
-                    className="shrink-0"
-                    aria-pressed={isBulkMode}
-                    aria-label={messages.shiftPreference.bulk.entryButtonAria}
-                  >
-                    {messages.shiftPreference.bulk.entryButton}
-                  </Button>
-                )}
-                {canManageTenant && (() => {
-                  const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                  const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                  const pendingInRange = preferencesForCalendar.filter(
-                    p => p.status === 'pending' && p.date >= monthStart && p.date <= monthEnd
-                  );
-                  const count = pendingInRange.length;
-                  const handleBulkRejectInRange = async () => {
-                    if (count === 0) return;
-                    // eslint-disable-next-line no-alert
-                    if (!window.confirm(`${count}件却下します。よろしいですか？`)) return;
-                    let errors = 0;
-                    for (const p of pendingInRange) {
-                      try {
-                        await rejectPreference(p.id);
-                      } catch {
-                        errors += 1;
-                      }
-                    }
-                    fetchPreferenceRange();
-                    fetchRange();
-                    if (errors > 0) {
-                      // eslint-disable-next-line no-console
-                      console.warn(`[bulkRejectInRange] ${errors} 件で却下エラーが発生しました`);
-                    }
-                  };
-                  return (
-                    /* Button component (variant=danger) に統一 — aria-label・disabled・件数表示は完全保持 */
+                <div className="flex flex-wrap gap-2">
+                  {storeId && !isBulkMode && (
                     <Button
-                      variant="danger"
+                      variant="success"
                       size="sm"
-                      onClick={handleBulkRejectInRange}
-                      disabled={count === 0}
-                      className="shrink-0"
-                      aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
+                      iconLeft={<CalendarPlus className="w-4 h-4" />}
+                      onClick={handleEnterBulkMode}
+                      disabled={isDeadlinePassed && !canEditDeadline}
+                      className="shrink-0 grow sm:grow-0"
+                      aria-pressed={isBulkMode}
+                      aria-label={messages.shiftPreference.bulk.entryButtonAria}
                     >
-                      未承認を一括却下{count > 0 ? `（${count}）` : ''}
+                      {messages.shiftPreference.bulk.entryButton}
                     </Button>
-                  );
-                })()}
-                {canManageTenant && (() => {
-                  // 「仮承認を一括本承認」: 表示中の月に含まれる shift.status === 'tentative' を一括で本承認する。
-                  // - approveShift (RPC approve_shift_final) を 1 件ずつ呼ぶ。エラー件数は console.warn でログ出力。
-                  // - 「未承認を一括却下」と同じパターン (filter → confirm → for ループ → fetchRange)。
-                  const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                  const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                  const tentativeInRange = shifts.filter(
-                    s => s.status === 'tentative' && s.date >= monthStart && s.date <= monthEnd
-                  );
-                  const tCount = tentativeInRange.length;
-                  const handleBulkApproveTentative = async () => {
-                    if (tCount === 0) return;
-                    // eslint-disable-next-line no-alert
-                    if (!window.confirm(`${tCount}件を本承認します。よろしいですか？`)) return;
-                    let errors = 0;
-                    for (const s of tentativeInRange) {
-                      try {
-                        await approveShift(s.id);
-                      } catch {
-                        errors += 1;
+                  )}
+                  {canManageTenant && (() => {
+                    const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                    const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                    const pendingInRange = preferencesForCalendar.filter(
+                      p => p.status === 'pending' && p.date >= monthStart && p.date <= monthEnd
+                    );
+                    const count = pendingInRange.length;
+                    const handleBulkRejectInRange = async () => {
+                      if (count === 0) return;
+                      // eslint-disable-next-line no-alert
+                      if (!window.confirm(`${count}件却下します。よろしいですか？`)) return;
+                      let errors = 0;
+                      for (const p of pendingInRange) {
+                        try {
+                          await rejectPreference(p.id);
+                        } catch {
+                          errors += 1;
+                        }
                       }
-                    }
-                    fetchRange();
-                    if (errors > 0) {
-                      // eslint-disable-next-line no-console
-                      console.warn(`[bulkApproveTentative] ${errors} 件で承認エラーが発生しました`);
-                    }
-                  };
-                  return (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={handleBulkApproveTentative}
-                      disabled={tCount === 0}
-                      className="shrink-0"
-                      aria-label={`表示中の期間の仮承認シフトを一括本承認（${tCount}件）`}
-                    >
-                      仮承認を一括本承認{tCount > 0 ? `（${tCount}）` : ''}
-                    </Button>
-                  );
-                })()}
+                      fetchPreferenceRange();
+                      fetchRange();
+                      if (errors > 0) {
+                        // eslint-disable-next-line no-console
+                        console.warn(`[bulkRejectInRange] ${errors} 件で却下エラーが発生しました`);
+                      }
+                    };
+                    return (
+                      /* Button component (variant=danger) に統一 — aria-label・disabled・件数表示は完全保持 */
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={handleBulkRejectInRange}
+                        disabled={count === 0}
+                        className="shrink-0 grow sm:grow-0"
+                        aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
+                      >
+                        未承認を一括却下{count > 0 ? `（${count}）` : ''}
+                      </Button>
+                    );
+                  })()}
+                  {canManageTenant && (() => {
+                    // 「仮承認を一括本承認」: 表示中の月に含まれる shift.status === 'tentative' を一括で本承認する。
+                    // - approveShift (RPC approve_shift_final) を 1 件ずつ呼ぶ。エラー件数は console.warn でログ出力。
+                    // - 「未承認を一括却下」と同じパターン (filter → confirm → for ループ → fetchRange)。
+                    const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                    const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                    const tentativeInRange = shifts.filter(
+                      s => s.status === 'tentative' && s.date >= monthStart && s.date <= monthEnd
+                    );
+                    const tCount = tentativeInRange.length;
+                    const handleBulkApproveTentative = async () => {
+                      if (tCount === 0) return;
+                      // eslint-disable-next-line no-alert
+                      if (!window.confirm(`${tCount}件を本承認します。よろしいですか？`)) return;
+                      let errors = 0;
+                      for (const s of tentativeInRange) {
+                        try {
+                          await approveShift(s.id);
+                        } catch {
+                          errors += 1;
+                        }
+                      }
+                      fetchRange();
+                      if (errors > 0) {
+                        // eslint-disable-next-line no-console
+                        console.warn(`[bulkApproveTentative] ${errors} 件で承認エラーが発生しました`);
+                      }
+                    };
+                    return (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={handleBulkApproveTentative}
+                        disabled={tCount === 0}
+                        className="shrink-0 grow sm:grow-0"
+                        aria-label={`表示中の期間の仮承認シフトを一括本承認（${tCount}件）`}
+                      >
+                        仮承認を一括本承認{tCount > 0 ? `（${tCount}）` : ''}
+                      </Button>
+                    );
+                  })()}
+                </div>
               </div>
 
 
@@ -719,7 +721,7 @@ export function ShiftPage() {
                 <div
                   role="region"
                   aria-label="一括シフト申請 選択モード"
-                  className="flex items-center justify-between gap-2 flex-wrap rounded-md border border-blue-100 dark:border-blue-700 bg-blue-50 dark:bg-blue-800/30 px-3 py-2"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 flex-wrap rounded-md border border-blue-100 dark:border-blue-700 bg-blue-50 dark:bg-blue-800/30 px-3 py-2 sticky bottom-2 z-30 sm:static shadow-md sm:shadow-none"
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-blue-700 dark:text-blue-100 tabular-nums">
@@ -735,12 +737,13 @@ export function ShiftPage() {
                       </button>
                     )}
                   </div>
-                  <div className="hidden md:flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="secondary"
                       size="sm"
                       iconLeft={<X className="w-4 h-4" />}
                       onClick={handleCancelBulkMode}
+                      className="grow sm:grow-0"
                     >
                       {messages.shiftPreference.bulk.cancelMode}
                     </Button>
@@ -749,6 +752,7 @@ export function ShiftPage() {
                       size="sm"
                       onClick={handleProceedBulkDialog}
                       disabled={selectedBulkDates.size === 0}
+                      className="grow sm:grow-0"
                     >
                       {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
                     </Button>

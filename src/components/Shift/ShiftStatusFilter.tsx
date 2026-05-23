@@ -161,7 +161,7 @@ export function ShiftStatusFilter({
 
       {/* SP: collapsible */}
       <details className="sm:hidden">
-        <summary className="cursor-pointer text-sm font-medium text-stone-700 dark:text-stone-300 select-none px-1 py-1">
+        <summary className="cursor-pointer text-sm font-medium text-stone-700 dark:text-stone-300 select-none px-2 py-2">
           表示ステータス（{summaryText}）
         </summary>
         <fieldset

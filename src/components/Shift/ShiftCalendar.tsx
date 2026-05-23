@@ -205,7 +205,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
   return (
     <div className="space-y-3">
       {/* Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <IconButton
             icon={<ChevronLeft className="w-5 h-5" />}
@@ -238,7 +238,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
         </div>
 
         {/* 理由: ViewMode タブ切替の装飾。border 削除し shadow で枠を表現 */}
-        <div className="flex rounded-md overflow-hidden shadow-sm" role="tablist">
+        <div className="flex rounded-md overflow-hidden shadow-sm self-start sm:self-auto" role="tablist">
           {(['week', '2week', 'month'] as ViewMode[]).map((mode) => (
             <button
               key={mode}

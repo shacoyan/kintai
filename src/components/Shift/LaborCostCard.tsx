@@ -102,24 +102,24 @@ export function LaborCostCard({
         {targetMonth ? `${format(targetMonth, 'yyyy年M月', { locale: ja })} の想定人件費` : '想定人件費'}
       </div>
       <div className="flex flex-wrap gap-2">
-        <div className="flex-1 min-w-[150px] bg-indigo-50 dark:bg-indigo-900/30 rounded-md p-3">
+        <div className="flex-1 basis-full sm:basis-auto sm:min-w-[150px] bg-indigo-50 dark:bg-indigo-900/30 rounded-md p-3">
           <div className="text-xs text-indigo-900 dark:text-indigo-100">月給合計 (固定費)</div>
-          <div className="text-indigo-900 dark:text-indigo-100 tabular-nums font-bold text-lg">
+          <div className="text-indigo-900 dark:text-indigo-100 tabular-nums font-bold text-xl sm:text-lg">
             ¥{laborCost.monthlyTotal.toLocaleString()}
           </div>
         </div>
-        <div className="flex-1 min-w-[150px] bg-emerald-50 dark:bg-emerald-900/30 rounded-md p-3">
+        <div className="flex-1 basis-full sm:basis-auto sm:min-w-[150px] bg-emerald-50 dark:bg-emerald-900/30 rounded-md p-3">
           <div className="text-xs text-emerald-900 dark:text-emerald-100">時給合計</div>
-          <div className="text-emerald-900 dark:text-emerald-100 tabular-nums font-bold text-lg">
+          <div className="text-emerald-900 dark:text-emerald-100 tabular-nums font-bold text-xl sm:text-lg">
             ¥{laborCost.allHourlyTotal.toLocaleString()}
           </div>
           <div className="text-xs text-emerald-900/80 dark:text-emerald-100/80 mt-0.5">
             仮承認分 ¥{laborCost.tentativeHourlyTotal.toLocaleString()}
           </div>
         </div>
-        <div className="flex-1 min-w-[150px] bg-stone-50 dark:bg-stone-700/40 rounded-md p-3">
+        <div className="flex-1 basis-full sm:basis-auto sm:min-w-[150px] bg-stone-50 dark:bg-stone-700/40 rounded-md p-3">
           <div className="text-xs text-stone-900 dark:text-stone-50">総計</div>
-          <div className="text-stone-900 dark:text-stone-50 tabular-nums font-extrabold text-xl">
+          <div className="text-stone-900 dark:text-stone-50 tabular-nums font-extrabold text-2xl sm:text-xl">
             ¥{(laborCost.monthlyTotal + laborCost.allHourlyTotal).toLocaleString()}
           </div>
         </div>
@@ -134,7 +134,7 @@ export function LaborCostCard({
           <table className="w-full text-xs">
             <thead>
               <tr className="text-left text-stone-500 dark:text-stone-400">
-                <th className="px-3 py-2 font-medium">スタッフ名</th>
+                <th className="px-3 py-2 font-medium sticky left-0 bg-white dark:bg-stone-800 z-10 sm:static sm:bg-transparent">スタッフ名</th>
                 <th className="px-3 py-2 font-medium text-right tabular-nums">通常時間</th>
                 <th className="px-3 py-2 font-medium text-right tabular-nums">深夜時間</th>
                 <th className="px-3 py-2 font-medium text-right tabular-nums">合計時間</th>
@@ -151,7 +151,7 @@ export function LaborCostCard({
                     const estimate = monthlyEstimatesMap.get(m.user_id);
                     return (
                       <tr key={m.id}>
-                        <td className="px-3 py-2 text-left">{m.display_name}</td>
+                        <td className="px-3 py-2 text-left sticky left-0 bg-white dark:bg-stone-800 z-10 sm:static sm:bg-transparent">{m.display_name}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{estimate ? fmtTime(estimate.shiftMinutes - estimate.nightMinutes) : '-'}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{estimate ? fmtTime(estimate.nightMinutes) : '-'}</td>
                         <td className="px-3 py-2 text-right tabular-nums">{estimate ? fmtTime(estimate.shiftMinutes) : '-'}</td>
@@ -168,7 +168,7 @@ export function LaborCostCard({
                   </tr>
                   {hourlyEstimates.map(e => (
                     <tr key={e.userId}>
-                      <td className="px-3 py-2 text-left">{e.displayName}</td>
+                      <td className="px-3 py-2 text-left sticky left-0 bg-white dark:bg-stone-800 z-10 sm:static sm:bg-transparent">{e.displayName}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{fmtTime(e.shiftMinutes - e.nightMinutes)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{fmtTime(e.nightMinutes)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{fmtTime(e.shiftMinutes)}</td>
@@ -178,7 +178,7 @@ export function LaborCostCard({
                 </>
               )}
               <tr className="bg-stone-100 dark:bg-stone-700/40 font-bold">
-                <td className="px-3 py-2 text-left">合計</td>
+                <td className="px-3 py-2 text-left sticky left-0 bg-stone-100 dark:bg-stone-700/40 z-10 sm:static">合計</td>
                 <td className="px-3 py-2 text-right tabular-nums">{fmtTime(detailTotals.normal)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{fmtTime(detailTotals.night)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{fmtTime(detailTotals.total)}</td>
