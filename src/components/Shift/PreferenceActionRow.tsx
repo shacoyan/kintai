@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, X, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
+import { Check, X, CheckCircle2, XCircle, RotateCcw, Clock } from 'lucide-react';
 import type { ShiftPreference } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
 import { getPreferenceTheme } from '../../lib/preferenceTheme';
@@ -234,16 +234,18 @@ export function PreferenceActionRow({
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
             {selectable && isPending && canManage && (
-              <input
-                type="checkbox"
-                checked={!!selected}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  onToggleSelect?.(preference.id);
-                }}
-                aria-label={`${memberName ?? '不明'} のシフト申請を選択`}
-                className="mt-1 w-4 h-4 rounded-md border-stone-300 dark:border-stone-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-stone-800 cursor-pointer"
-              />
+              <label className="inline-flex items-center p-2 sm:p-0 -m-2 sm:m-0 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!selected}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    onToggleSelect?.(preference.id);
+                  }}
+                  aria-label={`${memberName ?? '不明'} のシフト申請を選択`}
+                  className="w-5 h-5 sm:w-4 sm:h-4 rounded-md border-stone-300 dark:border-stone-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 dark:bg-stone-800 cursor-pointer"
+                />
+              </label>
             )}
             <span className="text-sm font-semibold text-stone-900 dark:text-stone-100">
               {memberName ?? '不明'}
@@ -341,7 +343,7 @@ export function PreferenceActionRow({
       )}
 
       {isPending && canManage && !isUnavailable && (
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap pt-1">
           {confirming === null && !state.showTimeEditor && (
             <>
               <Button
@@ -349,27 +351,33 @@ export function PreferenceActionRow({
                 loading={state.loading}
                 onClick={(e) => { e.stopPropagation(); setConfirming('approve'); }}
                 variant="primary"
-                className="h-auto px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600"
+                aria-label="仮承認"
+                className="h-auto px-3 py-1 text-xs bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 flex items-center justify-center"
               >
-                仮承認
+                <Check className="w-4 h-4 sm:hidden" aria-hidden="true" />
+                <span className="hidden sm:inline">仮承認</span>
               </Button>
               <Button
                 type="button"
                 disabled={state.loading}
                 onClick={(e) => { e.stopPropagation(); setState((prev) => ({ ...prev, showTimeEditor: true })); }}
                 variant="tertiary"
-                className="h-auto px-3 py-1 text-xs text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900 dark:border-blue-700 dark:hover:bg-blue-800"
+                aria-label="時間指定で仮承認"
+                className="h-auto px-3 py-1 text-xs text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 dark:text-blue-300 dark:bg-blue-900 dark:border-blue-700 dark:hover:bg-blue-800 flex items-center justify-center"
               >
-                時間指定で仮承認
+                <Clock className="w-4 h-4 sm:hidden" aria-hidden="true" />
+                <span className="hidden sm:inline">時間指定で仮承認</span>
               </Button>
               <Button
                 type="button"
                 loading={state.loading}
                 onClick={(e) => { e.stopPropagation(); setConfirming('reject'); }}
                 variant="danger"
-                className="h-auto px-3 py-1 text-xs text-red-700 bg-red-50 border border-red-100 hover:bg-red-50 dark:text-red-200 dark:bg-red-800 dark:border-red-700 dark:hover:bg-red-700"
+                aria-label="却下"
+                className="h-auto px-3 py-1 text-xs text-red-700 bg-red-50 border border-red-100 hover:bg-red-50 dark:text-red-200 dark:bg-red-800 dark:border-red-700 dark:hover:bg-red-700 flex items-center justify-center"
               >
-                却下
+                <X className="w-4 h-4 sm:hidden" aria-hidden="true" />
+                <span className="hidden sm:inline">却下</span>
               </Button>
             </>
           )}

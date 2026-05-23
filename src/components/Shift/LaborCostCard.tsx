@@ -101,7 +101,40 @@ export function LaborCostCard({
       <div className="text-sm font-bold mb-3">
         {targetMonth ? `${format(targetMonth, 'yyyy年M月', { locale: ja })} の想定人件費` : '想定人件費'}
       </div>
-      <div className="flex flex-wrap gap-2">
+      {/* SP: details で折畳 (md 未満のみ表示) */}
+      <details className="md:hidden group" open>
+        <summary className="flex items-baseline justify-between gap-2 cursor-pointer list-none rounded-md bg-stone-50 dark:bg-stone-700/40 p-3 [&::-webkit-details-marker]:hidden">
+          <span className="flex items-baseline gap-2">
+            <svg className="w-4 h-4 text-stone-600 dark:text-stone-200 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M7 5l6 5-6 5V5z" />
+            </svg>
+            <span className="text-xs text-stone-900 dark:text-stone-50 font-semibold">総計</span>
+          </span>
+          <span className="text-stone-900 dark:text-stone-50 tabular-nums font-extrabold text-xl">
+            ¥{(laborCost.monthlyTotal + laborCost.allHourlyTotal).toLocaleString()}
+          </span>
+        </summary>
+        <div className="mt-2 flex flex-col gap-2">
+          <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-md p-3">
+            <div className="text-xs text-indigo-900 dark:text-indigo-100">月給合計 (固定費)</div>
+            <div className="text-indigo-900 dark:text-indigo-100 tabular-nums font-bold text-xl">
+              ¥{laborCost.monthlyTotal.toLocaleString()}
+            </div>
+          </div>
+          <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-md p-3">
+            <div className="text-xs text-emerald-900 dark:text-emerald-100">時給合計</div>
+            <div className="text-emerald-900 dark:text-emerald-100 tabular-nums font-bold text-xl">
+              ¥{laborCost.allHourlyTotal.toLocaleString()}
+            </div>
+            <div className="text-xs text-emerald-900/80 dark:text-emerald-100/80 mt-0.5">
+              仮承認分 ¥{laborCost.tentativeHourlyTotal.toLocaleString()}
+            </div>
+          </div>
+        </div>
+      </details>
+
+      {/* md 以上: 既存の横並び 3 カード */}
+      <div className="hidden md:flex flex-wrap gap-2">
         <div className="flex-1 basis-full sm:basis-auto sm:min-w-[150px] bg-indigo-50 dark:bg-indigo-900/30 rounded-md p-3">
           <div className="text-xs text-indigo-900 dark:text-indigo-100">月給合計 (固定費)</div>
           <div className="text-indigo-900 dark:text-indigo-100 tabular-nums font-bold text-xl sm:text-lg">
@@ -124,7 +157,7 @@ export function LaborCostCard({
           </div>
         </div>
       </div>
-      <div className="text-[10px] text-stone-500 dark:text-stone-400 mt-2">
+      <div className="text-[10px] text-stone-600 dark:text-stone-300 mt-2">
         ※ 月給は固定費として全月給メンバー分を計上
       </div>
       {showDetailTable && (
@@ -149,15 +182,15 @@ export function LaborCostCard({
                       </div>
                       <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
                         <div>
-                          <p className="text-stone-500 dark:text-stone-400">通常</p>
+                          <p className="text-stone-600 dark:text-stone-300">通常</p>
                           <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{estimate ? fmtTime(estimate.shiftMinutes - estimate.nightMinutes) : '-'}</p>
                         </div>
                         <div>
-                          <p className="text-stone-500 dark:text-stone-400">深夜</p>
+                          <p className="text-stone-600 dark:text-stone-300">深夜</p>
                           <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{estimate ? fmtTime(estimate.nightMinutes) : '-'}</p>
                         </div>
                         <div>
-                          <p className="text-stone-500 dark:text-stone-400">合計</p>
+                          <p className="text-stone-600 dark:text-stone-300">合計</p>
                           <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{estimate ? fmtTime(estimate.shiftMinutes) : '-'}</p>
                         </div>
                       </div>
@@ -181,15 +214,15 @@ export function LaborCostCard({
                     </div>
                     <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
                       <div>
-                        <p className="text-stone-500 dark:text-stone-400">通常</p>
+                        <p className="text-stone-600 dark:text-stone-300">通常</p>
                         <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(e.shiftMinutes - e.nightMinutes)}</p>
                       </div>
                       <div>
-                        <p className="text-stone-500 dark:text-stone-400">深夜</p>
+                        <p className="text-stone-600 dark:text-stone-300">深夜</p>
                         <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(e.nightMinutes)}</p>
                       </div>
                       <div>
-                        <p className="text-stone-500 dark:text-stone-400">合計</p>
+                        <p className="text-stone-600 dark:text-stone-300">合計</p>
                         <p className="font-semibold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(e.shiftMinutes)}</p>
                       </div>
                     </div>
@@ -206,15 +239,15 @@ export function LaborCostCard({
               </div>
               <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
                 <div>
-                  <p className="text-stone-500 dark:text-stone-400">通常</p>
+                  <p className="text-stone-600 dark:text-stone-300">通常</p>
                   <p className="font-bold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(detailTotals.normal)}</p>
                 </div>
                 <div>
-                  <p className="text-stone-500 dark:text-stone-400">深夜</p>
+                  <p className="text-stone-600 dark:text-stone-300">深夜</p>
                   <p className="font-bold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(detailTotals.night)}</p>
                 </div>
                 <div>
-                  <p className="text-stone-500 dark:text-stone-400">合計</p>
+                  <p className="text-stone-600 dark:text-stone-300">合計</p>
                   <p className="font-bold tabular-nums text-stone-900 dark:text-stone-50">{fmtTime(detailTotals.total)}</p>
                 </div>
               </div>
@@ -223,7 +256,7 @@ export function LaborCostCard({
           <div className="mt-3 overflow-x-auto hidden md:block">
             <table className="w-full text-xs">
               <thead>
-                <tr className="text-left text-stone-500 dark:text-stone-400">
+                <tr className="text-left text-stone-600 dark:text-stone-300">
                   <th className="px-3 py-2 font-medium sticky left-0 bg-white dark:bg-stone-800 z-10 sm:static sm:bg-transparent">スタッフ名</th>
                   <th className="px-3 py-2 font-medium text-right tabular-nums">通常時間</th>
                   <th className="px-3 py-2 font-medium text-right tabular-nums">深夜時間</th>

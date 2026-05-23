@@ -254,7 +254,7 @@ export function ShiftPreferenceAdminList({
   return (
     <div className="space-y-3">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <Heading level={4} className="flex items-center gap-2">
           {historyMode ? 'シフト申請の履歴' : 'シフト申請の承認'}
           {historyMode ? (
@@ -274,7 +274,7 @@ export function ShiftPreferenceAdminList({
 
       {/* フィルタータブ */}
       {!historyMode && (
-        <div className="flex items-center justify-between border-b border-stone-200 dark:border-stone-700">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-stone-200 dark:border-stone-700">
           <div className="flex gap-1 flex-1">
             <button
               onClick={() => setStatusFilter('pending')}

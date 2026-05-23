@@ -205,8 +205,8 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
   return (
     <div className="space-y-3">
       {/* Controls */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-row items-center gap-1.5 justify-between sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-1 sm:flex-none min-w-0">
           <IconButton
             icon={<ChevronLeft className="w-5 h-5" />}
             aria-label="前月"
@@ -214,7 +214,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
             size="md"
             onClick={() => navigate(-1)}
           />
-          <span className="text-sm font-semibold text-stone-900 dark:text-stone-100 min-w-[120px] text-center">
+          <span className="text-sm font-semibold text-stone-900 dark:text-stone-100 min-w-[90px] sm:min-w-[120px] text-center">
             {viewMode === 'month'
               ? format(baseDate, 'yyyy年M月', { locale: ja })
               : `${format(dates[0], 'M/d')} - ${format(dates[dates.length - 1], 'M/d')}`
@@ -238,14 +238,14 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
         </div>
 
         {/* 理由: ViewMode タブ切替の装飾。border 削除し shadow で枠を表現 */}
-        <div className="flex rounded-md overflow-hidden shadow-sm self-start sm:self-auto" role="tablist">
+        <div className="flex rounded-md overflow-hidden shadow-sm shrink-0" role="tablist">
           {(['week', '2week', 'month'] as ViewMode[]).map((mode) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
               role="tab"
               aria-selected={viewMode === mode}
-              className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-150 ease-out ${
+              className={`px-3 py-2 text-xs sm:py-1 font-medium motion-safe:transition-colors duration-150 ease-out ${
                 viewMode === mode
                   ? 'bg-blue-600 text-white'
                   : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700'
@@ -324,7 +324,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     onDateClick(dateStr);
                   }
                 }}
-                className={`relative min-h-[70px] sm:min-h-[80px] border-b border-r border-stone-100 dark:border-stone-700 p-1 cursor-pointer motion-safe:transition-colors duration-150 ease-out ${
+                className={`relative min-h-[80px] sm:min-h-[80px] border-b border-r border-stone-100 dark:border-stone-700 p-1 cursor-pointer motion-safe:transition-colors duration-150 ease-out ${
                   !isCurrentMonth ? 'bg-stone-50 dark:bg-stone-700/50 opacity-50' : ''
                 } ${
                   isCurrentMonth && isHoliday ? 'bg-weekend-holiday-50 dark:bg-weekend-holiday-900/30' : ''
@@ -367,7 +367,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                             onShiftClick?.(s);
                           }
                         }}
-                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded-md border truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorClass} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
+                        className={`text-xs sm:text-[10px] leading-tight min-h-[28px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded-md border truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorClass} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
                       >
                         {memberNames ? (
                           <span title={memberNames.get(s.user_id) ?? ''}>
@@ -383,7 +383,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                         )}
                         {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
                         {isMine && (
-                          <span className="ml-1 hidden sm:inline-block bg-blue-600 text-white text-[8px] px-1 rounded-md" aria-label="自分のシフト">あなた</span>
+                          <span className="ml-1 hidden sm:inline-block bg-blue-600 text-white text-[10px] sm:text-[8px] px-1 rounded-md" aria-label="自分のシフト">あなた</span>
                         )}
                       </div>
                     );
@@ -409,7 +409,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                             onPreferenceClick?.(p);
                           }
                         }}
-                        className={`text-[11px] sm:text-[10px] leading-tight min-h-[24px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded-md border border-dashed truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorBase} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
+                        className={`text-xs sm:text-[10px] leading-tight min-h-[28px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded-md border border-dashed truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorBase} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
                       >
                         {memberNames ? (
                           <span title={memberNames.get(p.user_id) ?? ''}>
@@ -425,10 +425,10 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                         )}
                         {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
                         {isMine && (
-                          <span className="ml-1 hidden sm:inline-block bg-blue-600 text-white text-[8px] px-1 rounded-md" aria-label="自分の申請">あなた</span>
+                          <span className="ml-1 hidden sm:inline-block bg-blue-600 text-white text-[10px] sm:text-[8px] px-1 rounded-md" aria-label="自分の申請">あなた</span>
                         )}
                         <span className="sm:hidden inline-block w-1.5 h-1.5 rounded-full bg-orange-500 ml-1 align-middle" aria-label="申請中" />
-                        <span className="hidden sm:inline-block bg-orange-50 text-orange-700 dark:bg-orange-800/40 dark:text-orange-200 text-[8px] px-1 rounded-md">申請</span>
+                        <span className="hidden sm:inline-block bg-orange-50 text-orange-700 dark:bg-orange-800/40 dark:text-orange-200 text-[10px] sm:text-[8px] px-1 rounded-md">申請</span>
                       </div>
                     );
                   })}
@@ -444,7 +444,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                       />
                     ))}
                     {dayLeaves.length > 4 && (
-                      <span className="text-[8px] text-stone-500 dark:text-stone-300 leading-none">
+                      <span className="text-[10px] sm:text-[8px] text-stone-500 dark:text-stone-300 leading-none">
                         +{dayLeaves.length - 4}
                       </span>
                     )}

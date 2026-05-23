@@ -74,7 +74,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
               <h2 id={titleId} className="text-base font-semibold text-stone-900 dark:text-stone-50">{title}</h2>
               <button
                 onClick={onClose}
-                className="text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 p-1 rounded-md transition-colors duration-150 ease-out"
+                className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 rounded-md transition-colors duration-150 ease-out"
                 aria-label="閉じる"
               >
                 ✕

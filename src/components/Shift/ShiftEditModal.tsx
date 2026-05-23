@@ -298,7 +298,10 @@ export function ShiftEditModal({
       description={memberName}
       footer={renderFooter()}
     >
-      <div className="flex justify-end mb-2">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-stone-700 dark:text-stone-300 tabular-nums">
+          {shift.date}
+        </span>
         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${status.className}`}>
           {status.text}
         </span>

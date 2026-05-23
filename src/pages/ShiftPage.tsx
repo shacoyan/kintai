@@ -525,7 +525,7 @@ export function ShiftPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      <div className="flex flex-col gap-4 pb-24">
+      <div className="flex flex-col gap-4 pb-16">
         {/* ヘッダー: 「シフト」見出しのみ (月表示 + pending 件数バッジ削除) */}
         <header className="flex flex-col gap-1">
           <Heading level={1}>シフト</Heading>
@@ -607,7 +607,7 @@ export function ShiftPage() {
               {/* ShiftStatusFilter — 常時表示。pending_preference は manager のみ表示 */}
               {/* Loop12: manager は常時「未承認を一括却下」ボタンを横並び表示 */}
               {/* オーナー要望: 「まとめてシフト申請」→「未承認を一括却下」→「仮承認を一括本承認」の順に横並び */}
-              <div className="flex flex-col gap-2 sm:flex sm:flex-wrap sm:flex-row sm:items-start">
+              <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-start sm:gap-2">
                 <div className="flex-1 min-w-0">
                   <ShiftStatusFilter
                     value={statusFilter}
@@ -615,7 +615,7 @@ export function ShiftPage() {
                     showPreferenceStatus={canManageTenant}
                   />
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
                   {storeId && !isBulkMode && (
                     <Button
                       variant="success"
@@ -704,7 +704,7 @@ export function ShiftPage() {
                         size="sm"
                         onClick={handleBulkApproveTentative}
                         disabled={tCount === 0}
-                        className="shrink-0 grow sm:grow-0"
+                        className="shrink-0 grow col-span-2 sm:grow-0 sm:col-auto"
                         aria-label={`表示中の期間の仮承認シフトを一括本承認（${tCount}件）`}
                       >
                         仮承認を一括本承認{tCount > 0 ? `（${tCount}）` : ''}
@@ -821,13 +821,13 @@ export function ShiftPage() {
                       <p className="text-2xl font-semibold text-stone-900 dark:text-stone-100 tabular-nums">
                         {preferenceSummary.preferred}
                       </p>
-                      <p className="text-[11px] text-stone-500 dark:text-stone-300 mt-0.5">申請日</p>
+                      <p className="text-xs text-stone-500 dark:text-stone-300 mt-0.5">申請日</p>
                     </div>
                     <div className="pl-3">
                       <p className="text-2xl font-semibold text-stone-900 dark:text-stone-100 tabular-nums">
                         {preferenceSummary.unavailable}
                       </p>
-                      <p className="text-[11px] text-stone-500 dark:text-stone-300 mt-0.5">出勤不可</p>
+                      <p className="text-xs text-stone-500 dark:text-stone-300 mt-0.5">出勤不可</p>
                     </div>
                   </Card.Body>
                 </Card>
