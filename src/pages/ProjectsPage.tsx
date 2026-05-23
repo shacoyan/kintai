@@ -13,6 +13,7 @@ import type { ProjectInput, ProjectStoreOption } from '../components/Project';
 import { useProjects, useProjectMutations } from '../hooks/useProjects';
 import { useStore } from '../hooks/useStore';
 import { useTenant } from '../contexts/TenantContext';
+import { getProjectColor } from '../lib/projectColor';
 
 // === 2026-05-22 タスク管理 Phase 1 Loop 6 ===
 // プロジェクト管理画面 (一覧 + フィルタ + ダイアログ)
@@ -349,35 +350,39 @@ export function ProjectsPage() {
           }
         />
       ) : (
-        <div className="rounded-lg border border-stone-200 bg-white divide-y divide-stone-200 dark:bg-stone-800 dark:border-stone-700 dark:divide-stone-700">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => {
             const editable = canEdit(project);
             const archivable = canArchiveOrRestore(project);
             const deletable = canDelete(project);
+            const colorClasses = getProjectColor(project.id);
             return (
               <div
                 key={project.id}
-                className="flex flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between"
+                className={`group relative flex flex-col rounded-xl border border-stone-200 bg-white dark:bg-stone-900 dark:border-stone-700 border-l-4 ${colorClasses.border} p-4 transition-all duration-150 ease-out hover:shadow-md hover:-translate-y-0.5`}
               >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">
-                      {project.name}
-                    </span>
-                    <StatusPill tone={project.status === 'active' ? 'success' : 'neutral'}>
-                      {project.status === 'active' ? '有効' : 'アーカイブ'}
-                    </StatusPill>
-                    <span className="text-xs text-stone-500 dark:text-stone-400">
-                      {getStoreLabel(project.store_id)}
-                    </span>
-                  </div>
-                  {project.description && (
-                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-400 line-clamp-2">
-                      {project.description}
-                    </p>
-                  )}
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100 truncate min-w-0">
+                    {project.name}
+                  </h3>
+                  <StatusPill tone={project.status === 'active' ? 'success' : 'neutral'}>
+                    {project.status === 'active' ? '有効' : 'アーカイブ'}
+                  </StatusPill>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+
+                <div className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                  {getStoreLabel(project.store_id)}
+                </div>
+
+                <p className="mt-3 text-sm text-stone-600 dark:text-stone-300 line-clamp-2 min-h-[2.5rem]">
+                  {project.description || (
+                    <span className="text-stone-400 dark:text-stone-500">
+                      説明はありません
+                    </span>
+                  )}
+                </p>
+
+                <div className="mt-4 flex items-center justify-end gap-2 pt-3 border-t border-stone-100 dark:border-stone-800">
                   {editable && (
                     <Button
                       variant="tertiary"

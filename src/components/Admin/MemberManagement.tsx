@@ -15,7 +15,7 @@ import { PageSkeleton } from '../ui/Skeleton';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Trash2, Pencil, Users } from 'lucide-react';
+import { Search, Trash2, Pencil, Users } from 'lucide-react';
 import { messages } from '../../lib/messages';
 
 interface MemberManagementProps {
@@ -27,6 +27,21 @@ const roleBadge: Record<string, { label: string; className: string }> = {
   manager: { label: '店長', className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-800/30 dark:text-emerald-200' },
   staff: { label: 'スタッフ', className: 'bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-200' },
 };
+
+const AVATAR_PALETTE = [
+  'bg-blue-100 text-blue-700 dark:bg-blue-700/30 dark:text-blue-300',
+  'bg-emerald-100 text-emerald-700 dark:bg-emerald-700/30 dark:text-emerald-300',
+  'bg-orange-100 text-orange-700 dark:bg-orange-700/30 dark:text-orange-300',
+  'bg-purple-100 text-purple-700 dark:bg-purple-700/30 dark:text-purple-300',
+  'bg-pink-100 text-pink-700 dark:bg-pink-700/30 dark:text-pink-300',
+  'bg-cyan-100 text-cyan-700 dark:bg-cyan-700/30 dark:text-cyan-300',
+];
+
+function avatarColor(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+}
 
 export function MemberManagement({ tenantId }: MemberManagementProps) {
   const { showToast } = useToast();
@@ -49,6 +64,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const [editingPaidLeaveDaysId, setEditingPaidLeaveDaysId] = useState<string | null>(null);
   const [editPaidLeaveDays, setEditPaidLeaveDays] = useState<string>('');
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [filterRoleId, setFilterRoleId] = useState<string>('all');
 
   const [isMobile, setIsMobile] = useState<boolean>(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
@@ -68,6 +85,15 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   useEffect(() => {
     fetchRoles();
   }, [fetchRoles]);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return members.filter(
+      (m) =>
+        (filterRoleId === 'all' || m.role_id === filterRoleId || (filterRoleId === 'none' && !m.role_id)) &&
+        (q === '' || m.display_name.toLowerCase().includes(q))
+    );
+  }, [members, filterRoleId, search]);
 
   const handleRoleIdChange = async (member: TenantMember, roleId: string) => {
     try {
@@ -241,111 +267,398 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
 
   return (
     <Card padding="none">
-      <div className="bg-white dark:bg-stone-800 rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-700">
-          <Heading level={2}>メンバー管理</Heading>
-          <p className="mt-1 text-sm text-stone-500 dark:text-stone-300">各メンバーの時給・深夜給を設定できます</p>
-          <p className="mt-1 text-xs text-stone-500 dark:text-stone-300">対象: {currentStore ? currentStore.name : '全店舗'}</p>
+      <div className="bg-white dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 overflow-hidden">
+        <div className="px-4 md:px-6 py-4 border-b border-stone-200 dark:border-stone-700 flex items-center justify-between gap-3">
+          <div>
+            <Heading level={2}>メンバー管理</Heading>
+            <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-300">
+              対象: {currentStore ? currentStore.name : '全店舗'} ・ {filtered.length} 名
+            </p>
+          </div>
         </div>
 
-        {/* カード型レイアウト（モバイル対応） */}
-        <div className="divide-y divide-stone-200 dark:divide-stone-700">
-          {members.length === 0 ? (
-            <EmptyState icon={<Users className="w-12 h-12 text-stone-400 dark:text-stone-500" />} title={messages.empty.member.title} description={messages.empty.member.description} />
-          ) : (
-            members.map((member) => {
-              const badge = roleBadge[member.role] || roleBadge.staff;
-              const isEditing = editingId === member.id;
-              const rate = member.hourly_rate ?? 0;
+        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between px-4 md:px-6 py-3 border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900">
+          <div className="relative md:w-80">
+            <Search className="absolute left-3 top-1/2 w-4 h-4 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="メンバーを検索…"
+              aria-label="メンバーを検索"
+              className="pl-9"
+            />
+          </div>
+          <select
+            value={filterRoleId}
+            onChange={(e) => setFilterRoleId(e.target.value)}
+            className="text-sm border border-stone-200 dark:border-stone-600 rounded-md px-3 py-2 bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-100 min-h-[40px]"
+            aria-label="役職で絞り込み"
+          >
+            <option value="all">全て</option>
+            <option value="none">未設定</option>
+            {roles.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-              return (
-                <div key={member.id} className="px-6 py-4 hover:bg-stone-50 dark:hover:bg-stone-700 motion-safe:transition-colors duration-150 ease-out">
-                  {/* 上段: 名前・ロール・参加日 */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-700/30 flex items-center justify-center text-blue-700 dark:text-blue-300 font-bold text-sm shrink-0">
-                        {member.display_name.charAt(0)}
+        {members.length === 0 ? (
+          <EmptyState icon={<Users className="w-12 h-12 text-stone-400 dark:text-stone-500" />} title={messages.empty.member.title} description={messages.empty.member.description} />
+        ) : (
+          <>
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-stone-50 dark:bg-stone-900/50 text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-medium">メンバー</th>
+                    <th className="text-left px-3 py-3 font-medium">バイト</th>
+                    <th className="text-left px-3 py-3 font-medium">役職</th>
+                    <th className="text-left px-3 py-3 font-medium">時給/月給</th>
+                    <th className="text-left px-3 py-3 font-medium">有給</th>
+                    <th className="text-center px-3 py-3 font-medium">深夜給</th>
+                    <th className="text-left px-3 py-3 font-medium">状態</th>
+                    <th className="text-right px-4 py-3 font-medium w-12"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((member) => {
+                    const badge = roleBadge[member.role] || roleBadge.staff;
+                    const isEditing = editingId === member.id;
+                    const rate = member.hourly_rate ?? 0;
+
+                    return (
+                      <tr key={member.id} className="border-t border-stone-100 dark:border-stone-700/60 hover:bg-stone-50 dark:hover:bg-stone-700/30 motion-safe:transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 ${avatarColor(member.display_name)}`}>
+                              {member.display_name.charAt(0)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-medium text-stone-900 dark:text-stone-100 truncate">{member.display_name}</div>
+                              <div className="text-xs text-stone-400 dark:text-stone-500">display: {member.display_name.slice(0, 6)}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          {(() => {
+                            const isSelf = member.user_id === user?.id;
+                            const isOwner = member.role === 'owner';
+                            const isStaffViewer = (myRole as string) === 'staff';
+                            const disabled = isStaffViewer || isSelf || isOwner;
+                            const title = isOwner
+                              ? 'オーナーはバイト判定の対象外です'
+                              : isSelf
+                                ? '自分自身のバイト判定は変更できません'
+                                : isStaffViewer
+                                  ? '権限がありません'
+                                  : undefined;
+                            return (
+                              <label className={`inline-flex items-center gap-1.5 select-none ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} title={title}>
+                                <input
+                                  type="checkbox"
+                                  checked={member.is_parttime ?? false}
+                                  disabled={disabled}
+                                  onChange={() => {
+                                    if (disabled) return;
+                                    handleParttimeToggle(member);
+                                  }}
+                                  aria-label={`${member.display_name} のバイト判定`}
+                                  className="h-4 w-4 text-blue-600 dark:text-blue-400 border-stone-300 dark:border-stone-600 rounded-md focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer disabled:cursor-not-allowed"
+                                />
+                                <span className="text-xs text-stone-600 dark:text-stone-300">バイト</span>
+                              </label>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${badge.className}`}>{badge.label}</span>
+                              {member.role !== 'owner' && myRole === 'owner' && (
+                                <button
+                                  role="switch"
+                                  aria-checked={member.role === 'manager'}
+                                  aria-label={`${member.display_name} の店長権限`}
+                                  onClick={() => handleRoleToggle(member)}
+                                  disabled={togglingRoleId === member.id}
+                                  className={`px-2 py-1 text-xs font-medium rounded-md motion-safe:transition-colors ${
+                                    member.role === 'manager'
+                                      ? 'text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600'
+                                      : 'text-emerald-700 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-800/30 hover:bg-emerald-50 dark:hover:bg-emerald-800/50'
+                                  } disabled:opacity-50`}
+                                  title={member.role === 'manager' ? 'スタッフに変更' : '店長に変更'}
+                                >
+                                  {togglingRoleId === member.id ? '...' : member.role === 'manager' ? '→スタッフ' : '→店長'}
+                                </button>
+                              )}
+                            </div>
+                            <select
+                              value={member.role_id ?? ''}
+                              onChange={(e) => handleRoleIdChange(member, e.target.value)}
+                              className="text-sm border border-stone-200 dark:border-stone-600 rounded-md px-2 py-1 bg-white dark:bg-stone-700 dark:text-stone-100"
+                              aria-label={`${member.display_name} の役職`}
+                            >
+                              <option value="">未設定</option>
+                              {roles.map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {r.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          <div className="space-y-2">
+                            <div className="inline-flex rounded-md overflow-hidden border border-stone-200 dark:border-stone-600">
+                              <button
+                                onClick={() => handlePayTypeChange(member, 'hourly')}
+                                className={`px-2.5 py-1 text-xs font-medium motion-safe:transition-colors ${
+                                  (member.pay_type ?? 'hourly') === 'hourly'
+                                    ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                                    : 'bg-white dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-600'
+                                }`}
+                              >
+                                時給
+                              </button>
+                              <button
+                                onClick={() => handlePayTypeChange(member, 'monthly')}
+                                className={`px-2.5 py-1 text-xs font-medium motion-safe:transition-colors ${
+                                  member.pay_type === 'monthly'
+                                    ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                                    : 'bg-white dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-600'
+                                }`}
+                              >
+                                月給
+                              </button>
+                            </div>
+                            {(member.pay_type ?? 'hourly') === 'hourly' ? (
+                              isEditing && !isMobile ? (
+                                <div className="hidden md:flex items-center gap-2">
+                                  <span className="text-sm text-stone-500 dark:text-stone-300">¥</span>
+                                  <input
+                                    type="number"
+                                    value={editRate}
+                                    onChange={(e) => setEditRate(e.target.value)}
+                                    onKeyDown={(e) => handleKeyDown(e, member.id)}
+                                    className="w-24 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
+                                    autoFocus
+                                    disabled={saving}
+                                    min="0"
+                                    step="50"
+                                  />
+                                  <Button variant="primary" size="sm" onClick={() => handleSave(member.id)} disabled={saving}>
+                                    {saving ? '...' : '保存'}
+                                  </Button>
+                                  <Button variant="secondary" size="sm" onClick={handleCancel}>
+                                    取消
+                                  </Button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => handleStartEdit(member)}
+                                  className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border tabular-nums motion-safe:transition-colors ${
+                                    rate > 0
+                                      ? 'text-stone-800 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
+                                      : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
+                                  }`}
+                                >
+                                  {rate > 0 ? (
+                                    <>¥{rate.toLocaleString()}/h</>
+                                  ) : (() => {
+                                    const inheritedRate = member.role_id ? (rolesMap.get(member.role_id)?.default_hourly_rate ?? null) : null;
+                                    if (inheritedRate != null && inheritedRate > 0) {
+                                      return <span className="text-[11px] text-stone-500 dark:text-stone-300">役職時給 ¥{inheritedRate.toLocaleString()} (継承)</span>;
+                                    }
+                                    return <>未設定</>;
+                                  })()}
+                                  <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
+                                </button>
+                              )
+                            ) : editingMonthlySalaryId === member.id && !isMobile ? (
+                              <div className="hidden md:flex items-center gap-2">
+                                <span className="text-sm text-stone-500 dark:text-stone-300">¥</span>
+                                <input
+                                  type="number"
+                                  value={editMonthlySalary}
+                                  onChange={(e) => setEditMonthlySalary(e.target.value)}
+                                  onKeyDown={(e) => handleMonthlySalaryKeyDown(e, member.id)}
+                                  className="w-28 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
+                                  autoFocus
+                                  disabled={saving}
+                                  min="0"
+                                  step="10000"
+                                />
+                                <Button variant="primary" size="sm" onClick={() => handleSaveMonthlySalary(member.id)} disabled={saving}>
+                                  {saving ? '...' : '保存'}
+                                </Button>
+                                <Button variant="secondary" size="sm" onClick={() => setEditingMonthlySalaryId(null)}>
+                                  取消
+                                </Button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleStartEditMonthlySalary(member)}
+                                className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border tabular-nums motion-safe:transition-colors ${
+                                  (member.monthly_salary ?? 0) > 0
+                                    ? 'text-stone-800 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
+                                    : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
+                                }`}
+                              >
+                                {(member.monthly_salary ?? 0) > 0 ? <>¥{(member.monthly_salary ?? 0).toLocaleString()}/月</> : <>未設定</>}
+                                <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-3 py-3">
+                          {editingPaidLeaveDaysId === member.id && !isMobile ? (
+                            <div className="hidden md:flex items-center gap-2">
+                              <input
+                                type="number"
+                                value={editPaidLeaveDays}
+                                onChange={(e) => setEditPaidLeaveDays(e.target.value)}
+                                onKeyDown={(e) => handlePaidLeaveDaysKeyDown(e, member.id)}
+                                className="w-20 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
+                                autoFocus
+                                disabled={saving}
+                                min="0"
+                                step="0.5"
+                              />
+                              <Button variant="primary" size="sm" onClick={() => handleSavePaidLeaveDays(member.id)} disabled={saving}>
+                                {saving ? '...' : '保存'}
+                              </Button>
+                              <Button variant="secondary" size="sm" onClick={() => setEditingPaidLeaveDaysId(null)}>
+                                取消
+                              </Button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleStartEditPaidLeaveDays(member)}
+                              className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border tabular-nums motion-safe:transition-colors ${
+                                (member.paid_leave_days ?? 0) > 0
+                                  ? 'text-stone-800 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
+                                  : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
+                              }`}
+                            >
+                              {(member.paid_leave_days ?? 0) > 0 ? <>{member.paid_leave_days ?? 0}日</> : <>未設定</>}
+                              <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
+                            </button>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <button
+                            role="switch"
+                            aria-checked={member.night_shift_enabled ?? true}
+                            aria-label={`${member.display_name} の深夜給`}
+                            onClick={() => handleNightShiftToggle(member)}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full motion-safe:transition-colors ${(member.night_shift_enabled ?? true) ? 'bg-blue-600' : 'bg-stone-300 dark:bg-stone-600'}`}
+                          >
+                            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow motion-safe:transition-transform ${(member.night_shift_enabled ?? true) ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                          </button>
+                        </td>
+                        <td className="px-3 py-3">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            在職
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {member.role !== 'owner' && (
+                            <button
+                              onClick={() => setDeletingId(member.id)}
+                              className="p-1.5 rounded-md text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-red-600 dark:hover:text-red-400 motion-safe:transition-colors"
+                              title="メンバーを削除"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="md:hidden">
+              {filtered.map((member) => {
+                const badge = roleBadge[member.role] || roleBadge.staff;
+                const rate = member.hourly_rate ?? 0;
+
+                return (
+                  <div key={member.id} className="px-4 py-3 border-t border-stone-100 dark:border-stone-700/60 first:border-t-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm shrink-0 ${avatarColor(member.display_name)}`}>
+                          {member.display_name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">{member.display_name}</p>
+                          <p className="text-xs text-stone-400 dark:text-stone-500">{new Date(member.created_at).toLocaleDateString('ja-JP')} 参加</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{member.display_name}</p>
-                        <p className="text-xs text-stone-400 dark:text-stone-500">{new Date(member.created_at).toLocaleDateString('ja-JP')} 参加</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.className}`}>
-                        {badge.label}
-                      </span>
-                      {member.role !== 'owner' && myRole === 'owner' && (
-                        <button
-                          role="switch"
-                          aria-checked={member.role === 'manager'}
-                          aria-label={`${member.display_name} の店長権限`}
-                          onClick={() => handleRoleToggle(member)}
-                          disabled={togglingRoleId === member.id}
-                          className={`px-2 py-0.5 text-xs font-medium rounded-md motion-safe:transition-colors duration-150 ease-out min-h-[44px] ${
-                            member.role === 'manager'
-                              ? 'text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600'
-                              : 'text-emerald-700 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-800/30 hover:bg-emerald-50 dark:hover:bg-emerald-800/50'
-                          } disabled:opacity-50`}
-                          title={member.role === 'manager' ? 'スタッフに変更' : '店長に変更'}
-                        >
-                          {togglingRoleId === member.id ? '...' : member.role === 'manager' ? '→スタッフ' : '→店長'}
-                        </button>
-                      )}
                       {member.role !== 'owner' && (
                         <button
                           onClick={() => setDeletingId(member.id)}
-                          className="p-2 text-stone-400 dark:text-stone-500 hover:text-red-500 dark:hover:text-red-400 motion-safe:transition-colors duration-150 ease-out min-h-[44px] min-w-[44px]"
+                          className="p-1.5 rounded-md text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-red-600 dark:hover:text-red-400 motion-safe:transition-colors"
                           title="メンバーを削除"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       )}
-                      <BottomSheet
-                        isOpen={deletingId === member.id}
-                        onClose={() => setDeletingId(null)}
-                        title="メンバーを削除しますか？"
-                        description={`「${member.display_name}」さんの所属情報が完全に削除されます。この操作は元に戻せません。`}
-                        footer={
-                          <div className="flex justify-end gap-2">
-                            <Button variant="secondary" size="sm" onClick={() => setDeletingId(null)}>
-                              キャンセル
-                            </Button>
-                            <Button variant="danger" size="sm" onClick={() => handleDelete(member.id)}>
-                              削除する
-                            </Button>
-                          </div>
-                        }
-                      >
-                        <div />
-                      </BottomSheet>
                     </div>
-                  </div>
 
-                  {/* 下段: 役職・給与タイプ・時給/月給・有給・深夜給 */}
-                  <div className="space-y-2 md:ml-12">
-                    {/* 役職セレクト */}
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-stone-500 dark:text-stone-300 w-14">役職</span>
-                      <select
-                        value={member.role_id ?? ''}
-                        onChange={(e) => handleRoleIdChange(member, e.target.value)}
-                        className="text-sm border border-stone-300 dark:border-stone-600 rounded-md px-2 py-1 bg-white dark:bg-stone-700 dark:text-stone-100 min-h-[36px]"
-                        aria-label={`${member.display_name} の役職`}
-                      >
-                        <option value="">未設定</option>
-                        {roles.map((r) => (
-                          <option key={r.id} value={r.id}>{r.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    {/* 給与タイプ切替 */}
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-stone-500 dark:text-stone-300 w-14">給与形態</span>
-                      <div className="flex rounded-md overflow-hidden border border-stone-300 dark:border-stone-600">
+                    <div className="mt-3 ml-12 space-y-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${badge.className}`}>{badge.label}</span>
+                        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${(member.is_parttime ?? false) ? 'bg-orange-100 text-orange-700 dark:bg-orange-700/30 dark:text-orange-300' : 'bg-stone-100 text-stone-700 dark:bg-stone-700 dark:text-stone-300'}`}>
+                          {(member.is_parttime ?? false) ? 'バイト' : 'バイト外'}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          在職
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select
+                          value={member.role_id ?? ''}
+                          onChange={(e) => handleRoleIdChange(member, e.target.value)}
+                          className="text-sm border border-stone-200 dark:border-stone-600 rounded-md px-2 py-1 bg-white dark:bg-stone-700 dark:text-stone-100 min-h-[36px]"
+                          aria-label={`${member.display_name} の役職`}
+                        >
+                          <option value="">未設定</option>
+                          {roles.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name}
+                            </option>
+                          ))}
+                        </select>
+                        {member.role !== 'owner' && myRole === 'owner' && (
+                          <button
+                            role="switch"
+                            aria-checked={member.role === 'manager'}
+                            aria-label={`${member.display_name} の店長権限`}
+                            onClick={() => handleRoleToggle(member)}
+                            disabled={togglingRoleId === member.id}
+                            className={`px-2 py-1 text-xs font-medium rounded-md min-h-[36px] motion-safe:transition-colors ${
+                              member.role === 'manager'
+                                ? 'text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600'
+                                : 'text-emerald-700 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-800/30 hover:bg-emerald-50 dark:hover:bg-emerald-800/50'
+                            } disabled:opacity-50`}
+                            title={member.role === 'manager' ? 'スタッフに変更' : '店長に変更'}
+                          >
+                            {togglingRoleId === member.id ? '...' : member.role === 'manager' ? '→スタッフ' : '→店長'}
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="inline-flex rounded-md overflow-hidden border border-stone-200 dark:border-stone-600">
                         <button
                           onClick={() => handlePayTypeChange(member, 'hourly')}
-                          className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-150 ease-out ${
+                          className={`px-3 py-1.5 text-xs font-medium motion-safe:transition-colors ${
                             (member.pay_type ?? 'hourly') === 'hourly'
                               ? 'bg-blue-600 dark:bg-blue-500 text-white'
                               : 'bg-white dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-600'
@@ -355,7 +668,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         </button>
                         <button
                           onClick={() => handlePayTypeChange(member, 'monthly')}
-                          className={`px-3 py-1 text-xs font-medium motion-safe:transition-colors duration-150 ease-out ${
+                          className={`px-3 py-1.5 text-xs font-medium motion-safe:transition-colors ${
                             member.pay_type === 'monthly'
                               ? 'bg-blue-600 dark:bg-blue-500 text-white'
                               : 'bg-white dark:bg-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-600'
@@ -364,188 +677,71 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           月給
                         </button>
                       </div>
-                    </div>
 
-                    <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-4">
-                      {/* 時給/月給入力 */}
-                      {(member.pay_type ?? 'hourly') === 'hourly' ? (
-                        <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
-                          <span className="text-xs text-stone-500 dark:text-stone-300 w-14">時給</span>
-                          {(isEditing && !isMobile) ? (
-                            <div className="hidden md:flex items-center gap-2">
-                              <span className="text-sm text-stone-500 dark:text-stone-300">¥</span>
-                              <input
-                                type="number"
-                                value={editRate}
-                                onChange={(e) => setEditRate(e.target.value)}
-                                onKeyDown={(e) => handleKeyDown(e, member.id)}
-                                className="w-24 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
-                                autoFocus
-                                disabled={saving}
-                                min="0"
-                                step="50"
-                              />
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleSave(member.id)}
-                                disabled={saving}
-                              >
-                                {saving ? '...' : '保存'}
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={handleCancel}
-                              >
-                                取消
-                              </Button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleStartEdit(member)}
-                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-150 ease-out ${
-                                rate > 0
-                                  ? 'text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
-                                  : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
-                              }`}
-                            >
-                              {rate > 0 ? (
-                                <>¥{rate.toLocaleString()}</>
-                              ) : (() => {
-                                const inheritedRate = member.role_id ? (rolesMap.get(member.role_id)?.default_hourly_rate ?? null) : null;
-                                if (inheritedRate != null && inheritedRate > 0) {
-                                  return (<span className="text-[11px] text-stone-500 dark:text-stone-300">役職時給 ¥{inheritedRate.toLocaleString()} (継承)</span>);
-                                }
-                                return (<>未設定</>);
-                              })()}
-                              <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
-                          <span className="text-xs text-stone-500 dark:text-stone-300 w-14">月給</span>
-                          {(editingMonthlySalaryId === member.id && !isMobile) ? (
-                            <div className="hidden md:flex items-center gap-2">
-                              <span className="text-sm text-stone-500 dark:text-stone-300">¥</span>
-                              <input
-                                type="number"
-                                value={editMonthlySalary}
-                                onChange={(e) => setEditMonthlySalary(e.target.value)}
-                                onKeyDown={(e) => handleMonthlySalaryKeyDown(e, member.id)}
-                                className="w-28 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
-                                autoFocus
-                                disabled={saving}
-                                min="0"
-                                step="10000"
-                              />
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleSaveMonthlySalary(member.id)}
-                                disabled={saving}
-                              >
-                                {saving ? '...' : '保存'}
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => setEditingMonthlySalaryId(null)}
-                              >
-                                取消
-                              </Button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleStartEditMonthlySalary(member)}
-                              className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-150 ease-out ${
-                                (member.monthly_salary ?? 0) > 0
-                                  ? 'text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
-                                  : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
-                              }`}
-                            >
-                              {(member.monthly_salary ?? 0) > 0 ? (
-                                <>¥{(member.monthly_salary ?? 0).toLocaleString()}</>
-                              ) : (
-                                <>未設定</>
-                              )}
-                              <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
-                            </button>
-                          )}
-                        </div>
-                      )}
-
-                      {/* 有給付与日数 */}
-                      <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
-                        <span className="text-xs text-stone-500 dark:text-stone-300 w-10">有給</span>
-                        {(editingPaidLeaveDaysId === member.id && !isMobile) ? (
-                          <div className="hidden md:flex items-center gap-2">
-                            <input
-                              type="number"
-                              value={editPaidLeaveDays}
-                              onChange={(e) => setEditPaidLeaveDays(e.target.value)}
-                              onKeyDown={(e) => handlePaidLeaveDaysKeyDown(e, member.id)}
-                              className="w-20 px-2 py-2 text-sm border border-blue-400 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 bg-blue-50 dark:bg-stone-700 dark:text-white dark:border-stone-600"
-                              autoFocus
-                              disabled={saving}
-                              min="0"
-                              step="0.5"
-                            />
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              onClick={() => handleSavePaidLeaveDays(member.id)}
-                              disabled={saving}
-                            >
-                              {saving ? '...' : '保存'}
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => setEditingPaidLeaveDaysId(null)}
-                            >
-                              取消
-                            </Button>
-                          </div>
-                        ) : (
+                      <div className="flex flex-wrap items-center gap-2">
+                        {(member.pay_type ?? 'hourly') === 'hourly' ? (
                           <button
-                            onClick={() => handleStartEditPaidLeaveDays(member)}
-                            className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border motion-safe:transition-colors duration-150 ease-out ${
-                              (member.paid_leave_days ?? 0) > 0
-                                ? 'text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
+                            onClick={() => handleStartEdit(member)}
+                            className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border tabular-nums motion-safe:transition-colors ${
+                              rate > 0
+                                ? 'text-stone-800 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
                                 : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
                             }`}
                           >
-                            {(member.paid_leave_days ?? 0) > 0 ? (
-                              <>{(member.paid_leave_days ?? 0)}日</>
-                            ) : (
-                              <>未設定</>
-                            )}
+                            {rate > 0 ? (
+                              <>¥{rate.toLocaleString()}/h</>
+                            ) : (() => {
+                              const inheritedRate = member.role_id ? (rolesMap.get(member.role_id)?.default_hourly_rate ?? null) : null;
+                              if (inheritedRate != null && inheritedRate > 0) {
+                                return <span className="text-[11px] text-stone-500 dark:text-stone-300">役職時給 ¥{inheritedRate.toLocaleString()} (継承)</span>;
+                              }
+                              return <>未設定</>;
+                            })()}
+                            <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleStartEditMonthlySalary(member)}
+                            className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border tabular-nums motion-safe:transition-colors ${
+                              (member.monthly_salary ?? 0) > 0
+                                ? 'text-stone-800 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
+                                : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
+                            }`}
+                          >
+                            {(member.monthly_salary ?? 0) > 0 ? <>¥{(member.monthly_salary ?? 0).toLocaleString()}/月</> : <>未設定</>}
                             <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
                           </button>
                         )}
+                        <button
+                          onClick={() => handleStartEditPaidLeaveDays(member)}
+                          className={`inline-flex items-center gap-2 px-3 py-2 min-h-[44px] text-sm rounded-md border tabular-nums motion-safe:transition-colors ${
+                            (member.paid_leave_days ?? 0) > 0
+                              ? 'text-stone-800 dark:text-stone-100 border-stone-200 dark:border-stone-700 hover:border-blue-300 dark:hover:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-700/30'
+                              : 'text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-700 bg-orange-50 dark:bg-orange-800 hover:bg-orange-50 dark:hover:bg-orange-700'
+                          }`}
+                        >
+                          有給 {(member.paid_leave_days ?? 0) > 0 ? <>{member.paid_leave_days ?? 0}日</> : <>未設定</>}
+                          <Pencil className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500" />
+                        </button>
                       </div>
 
-                      {/* 深夜給 */}
-                      <div className="flex items-center gap-2 md:ml-auto justify-between md:justify-start w-full md:w-auto">
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                          <input
-                            type="checkbox"
-                            checked={member.night_shift_enabled ?? true}
-                            onChange={() => handleNightShiftToggle(member)}
-                            className="h-4 w-4 text-blue-600 dark:text-blue-400 border-stone-300 dark:border-stone-600 rounded-md focus:ring-blue-500 dark:focus:ring-blue-400 cursor-pointer"
-                          />
-                          <span className="text-xs text-stone-600 dark:text-stone-300">深夜給 <span className="font-medium">1.25x</span></span>
+                      <div className="flex flex-wrap items-center gap-4">
+                        <label className="inline-flex items-center gap-2 text-xs text-stone-600 dark:text-stone-300">
+                          <span>深夜給</span>
+                          <button
+                            role="switch"
+                            aria-checked={member.night_shift_enabled ?? true}
+                            aria-label={`${member.display_name} の深夜給`}
+                            onClick={() => handleNightShiftToggle(member)}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full motion-safe:transition-colors ${(member.night_shift_enabled ?? true) ? 'bg-blue-600' : 'bg-stone-300 dark:bg-stone-600'}`}
+                          >
+                            <span className={`inline-block h-4 w-4 rounded-full bg-white shadow motion-safe:transition-transform ${(member.night_shift_enabled ?? true) ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                          </button>
                         </label>
-                      </div>
 
-                      {/* バイト判定 (migration 056) */}
-                      <div className="flex items-center gap-2 justify-between md:justify-start w-full md:w-auto">
                         {(() => {
                           const isSelf = member.user_id === user?.id;
                           const isOwner = member.role === 'owner';
-                          // L226 で staff は早期 return 済だが、設計書要件として防御層を残す。
                           const isStaffViewer = (myRole as string) === 'staff';
                           const disabled = isStaffViewer || isSelf || isOwner;
                           const title = isOwner
@@ -556,10 +752,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                                 ? '権限がありません'
                                 : undefined;
                           return (
-                            <label
-                              className={`flex items-center gap-2 select-none ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                              title={title}
-                            >
+                            <label className={`inline-flex items-center gap-2 select-none ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`} title={title}>
                               <input
                                 type="checkbox"
                                 checked={member.is_parttime ?? false}
@@ -578,67 +771,105 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                       </div>
                     </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* SP 用 時給編集 BottomSheet */}
-                  <BottomSheet
-                    isOpen={isMobile && editingId === member.id}
-                    onClose={handleCancel}
-                    title={`時給を編集 — ${member.display_name}`}
-                    footer={
-                      <div className="flex justify-end gap-2">
-                        <Button variant="secondary" size="md" onClick={handleCancel} className="min-h-[44px]">キャンセル</Button>
-                        <Button variant="primary" size="md" onClick={() => handleSave(member.id)} disabled={saving} className="min-h-[44px]">{saving ? '保存中...' : '保存'}</Button>
-                      </div>
-                    }
-                  >
-                    <div className="px-4 py-2">
-                      <label className="block text-xs text-stone-500 dark:text-stone-300 mb-2">時給（円/時）</label>
-                      <Input type="number" aria-label="時給 (円)" value={editRate} onChange={(e) => setEditRate(e.target.value)} autoFocus min="0" step="50" disabled={saving} />
+            {filtered.length === 0 && (
+              <div className="border-t border-stone-100 dark:border-stone-700/60 px-6 py-10 text-center text-sm text-stone-500 dark:text-stone-300">
+                条件に一致するメンバーはいません
+              </div>
+            )}
+
+            {filtered.map((member) => (
+              <div key={`${member.id}-sheets`}>
+                <BottomSheet
+                  isOpen={deletingId === member.id}
+                  onClose={() => setDeletingId(null)}
+                  title="メンバーを削除しますか？"
+                  description={`「${member.display_name}」さんの所属情報が完全に削除されます。この操作は元に戻せません。`}
+                  footer={
+                    <div className="flex justify-end gap-2">
+                      <Button variant="secondary" size="sm" onClick={() => setDeletingId(null)}>
+                        キャンセル
+                      </Button>
+                      <Button variant="danger" size="sm" onClick={() => handleDelete(member.id)}>
+                        削除する
+                      </Button>
                     </div>
-                  </BottomSheet>
+                  }
+                >
+                  <div />
+                </BottomSheet>
 
-                  {/* SP 用 月給編集 BottomSheet */}
-                  <BottomSheet
-                    isOpen={isMobile && editingMonthlySalaryId === member.id}
-                    onClose={() => setEditingMonthlySalaryId(null)}
-                    title={`月給を編集 — ${member.display_name}`}
-                    footer={
-                      <div className="flex justify-end gap-2">
-                        <Button variant="secondary" size="md" onClick={() => setEditingMonthlySalaryId(null)} className="min-h-[44px]">キャンセル</Button>
-                        <Button variant="primary" size="md" onClick={() => handleSaveMonthlySalary(member.id)} disabled={saving} className="min-h-[44px]">{saving ? '保存中...' : '保存'}</Button>
-                      </div>
-                    }
-                  >
-                    <div className="px-4 py-2">
-                      <label className="block text-xs text-stone-500 dark:text-stone-300 mb-2">月給（円/月）</label>
-                      <Input type="number" aria-label="月給 (円)" value={editMonthlySalary} onChange={(e) => setEditMonthlySalary(e.target.value)} autoFocus min="0" step="10000" disabled={saving} />
+                <BottomSheet
+                  isOpen={isMobile && editingId === member.id}
+                  onClose={handleCancel}
+                  title={`時給を編集 — ${member.display_name}`}
+                  footer={
+                    <div className="flex justify-end gap-2">
+                      <Button variant="secondary" size="md" onClick={handleCancel} className="min-h-[44px]">
+                        キャンセル
+                      </Button>
+                      <Button variant="primary" size="md" onClick={() => handleSave(member.id)} disabled={saving} className="min-h-[44px]">
+                        {saving ? '保存中...' : '保存'}
+                      </Button>
                     </div>
-                  </BottomSheet>
+                  }
+                >
+                  <div className="px-4 py-2">
+                    <label className="block text-xs text-stone-500 dark:text-stone-300 mb-2">時給（円/時）</label>
+                    <Input type="number" aria-label="時給 (円)" value={editRate} onChange={(e) => setEditRate(e.target.value)} autoFocus min="0" step="50" disabled={saving} />
+                  </div>
+                </BottomSheet>
 
-                  {/* SP 用 有給編集 BottomSheet */}
-                  <BottomSheet
-                    isOpen={isMobile && editingPaidLeaveDaysId === member.id}
-                    onClose={() => setEditingPaidLeaveDaysId(null)}
-                    title={`有給日数を編集 — ${member.display_name}`}
-                    footer={
-                      <div className="flex justify-end gap-2">
-                        <Button variant="secondary" size="md" onClick={() => setEditingPaidLeaveDaysId(null)} className="min-h-[44px]">キャンセル</Button>
-                        <Button variant="primary" size="md" onClick={() => handleSavePaidLeaveDays(member.id)} disabled={saving} className="min-h-[44px]">{saving ? '保存中...' : '保存'}</Button>
-                      </div>
-                    }
-                  >
-                    <div className="px-4 py-2">
-                      <label className="block text-xs text-stone-500 dark:text-stone-300 mb-2">有給日数（日）</label>
-                      <Input type="number" aria-label="有給日数" value={editPaidLeaveDays} onChange={(e) => setEditPaidLeaveDays(e.target.value)} autoFocus min="0" step="0.5" disabled={saving} />
+                <BottomSheet
+                  isOpen={isMobile && editingMonthlySalaryId === member.id}
+                  onClose={() => setEditingMonthlySalaryId(null)}
+                  title={`月給を編集 — ${member.display_name}`}
+                  footer={
+                    <div className="flex justify-end gap-2">
+                      <Button variant="secondary" size="md" onClick={() => setEditingMonthlySalaryId(null)} className="min-h-[44px]">
+                        キャンセル
+                      </Button>
+                      <Button variant="primary" size="md" onClick={() => handleSaveMonthlySalary(member.id)} disabled={saving} className="min-h-[44px]">
+                        {saving ? '保存中...' : '保存'}
+                      </Button>
                     </div>
-                  </BottomSheet>
-                </div>
-              );
-            })
-          )}
-        </div>
+                  }
+                >
+                  <div className="px-4 py-2">
+                    <label className="block text-xs text-stone-500 dark:text-stone-300 mb-2">月給（円/月）</label>
+                    <Input type="number" aria-label="月給 (円)" value={editMonthlySalary} onChange={(e) => setEditMonthlySalary(e.target.value)} autoFocus min="0" step="10000" disabled={saving} />
+                  </div>
+                </BottomSheet>
 
-        <div className="px-6 py-3 bg-stone-50 dark:bg-stone-700 border-t border-stone-200 dark:border-stone-700">
+                <BottomSheet
+                  isOpen={isMobile && editingPaidLeaveDaysId === member.id}
+                  onClose={() => setEditingPaidLeaveDaysId(null)}
+                  title={`有給日数を編集 — ${member.display_name}`}
+                  footer={
+                    <div className="flex justify-end gap-2">
+                      <Button variant="secondary" size="md" onClick={() => setEditingPaidLeaveDaysId(null)} className="min-h-[44px]">
+                        キャンセル
+                      </Button>
+                      <Button variant="primary" size="md" onClick={() => handleSavePaidLeaveDays(member.id)} disabled={saving} className="min-h-[44px]">
+                        {saving ? '保存中...' : '保存'}
+                      </Button>
+                    </div>
+                  }
+                >
+                  <div className="px-4 py-2">
+                    <label className="block text-xs text-stone-500 dark:text-stone-300 mb-2">有給日数（日）</label>
+                    <Input type="number" aria-label="有給日数" value={editPaidLeaveDays} onChange={(e) => setEditPaidLeaveDays(e.target.value)} autoFocus min="0" step="0.5" disabled={saving} />
+                  </div>
+                </BottomSheet>
+              </div>
+            ))}
+          </>
+        )}
+
+        <div className="px-6 py-3 bg-stone-50 dark:bg-stone-900/50 border-t border-stone-200 dark:border-stone-700">
           <p className="text-xs text-stone-500 dark:text-stone-300">深夜給: 22:00〜翌5:00 の勤務時間に対して時給1.25倍で計算されます</p>
         </div>
       </div>

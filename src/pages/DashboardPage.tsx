@@ -11,7 +11,7 @@ import { AlertTriangle, CheckCircle2, CalendarDays, FileClock } from 'lucide-rea
 import { Card, StatCard, Badge, Button, DashboardSkeleton, ListRowSkeleton, Heading } from '../components/ui';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { messages } from '../lib/messages';
-import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { formatTimeRange } from '../utils/formatTimeRange';
 
@@ -49,14 +49,13 @@ export function DashboardPage() {
 
   const dashboardError = (attendanceError ?? shiftError ?? leaveError)?.message ?? null;
 
-  // 勤務中の労働時間をリアルタイム更新するためのタイマー
+  // ヒーロー時計と勤務中の労働時間をリアルタイム更新するためのタイマー
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    if (status !== 'working' && status !== 'on_break') return;
-    setNow(new Date()); // ステータス変更時に即座に更新
-    const timer = setInterval(() => setNow(new Date()), 10_000);
+    setNow(new Date());
+    const timer = setInterval(() => setNow(new Date()), 1_000);
     return () => clearInterval(timer);
-  }, [status]);
+  }, []);
 
   // 有給残日数
   const [remainingPaidLeave, setRemainingPaidLeave] = useState<number | null>(null);
@@ -90,7 +89,7 @@ export function DashboardPage() {
   }
 
   const todayStr = todayFromHook;
-  const today = new Date();
+  const today = now;
 
   // 今日のレコードのみ（日跨ぎの未退勤レコードは除外して集計）
   const todayOnlyRecords = todayRecords.filter((r) => r.date === todayStr);
@@ -126,6 +125,19 @@ export function DashboardPage() {
     return sum;
   }, 0);
 
+  const totalBreakMinutes = todayOnlyRecords.reduce((sum, record) => {
+    const breakMins = (record.breaks || []).reduce((bSum, b) => {
+      if (b.start_time && b.end_time) {
+        return bSum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
+      }
+      if (b.start_time && !b.end_time) {
+        return bSum + differenceInMinutes(now, parseISO(b.start_time));
+      }
+      return bSum;
+    }, 0);
+    return sum + breakMins;
+  }, 0);
+
   const firstClockIn = todayOnlyRecords.length > 0
     ? todayOnlyRecords.reduce((earliest, record) => {
         if (!record.clock_in) return earliest;
@@ -133,12 +145,6 @@ export function DashboardPage() {
         return record.clock_in < earliest ? record.clock_in : earliest;
       }, null as string | null)
     : null;
-
-  const lastClockOut = todayOnlyRecords.reduce((latest, record) => {
-    if (!record.clock_out) return latest;
-    if (!latest) return record.clock_out;
-    return record.clock_out > latest ? record.clock_out : latest;
-  }, null as string | null);
 
   // 日跨ぎの未退勤レコード
   const carryOverRecord = activeRecord && activeRecord.date !== todayStr ? activeRecord : null;
@@ -157,36 +163,64 @@ export function DashboardPage() {
     ? `次の予定は ${format(parseISO(upcomingShifts[0].date), 'M月d日（E）', { locale: ja })} ${formatTimeRange(upcomingShifts[0].start_time, upcomingShifts[0].end_time, { separator: '〜' })}。`
     : '現在予定されている次のシフトはありません。';
 
+  const weekStartDate = startOfWeek(today, { weekStartsOn: 1 });
+  const weekEndDate = endOfWeek(today, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }, (_, index) => addDays(weekStartDate, index));
+  const activeWeekShifts = myShifts.filter((s) => (
+    s.date >= format(weekStartDate, 'yyyy-MM-dd') &&
+    s.date <= format(weekEndDate, 'yyyy-MM-dd') &&
+    s.status !== 'cancelled' &&
+    s.status !== 'rejected'
+  ));
+  const todayShift = activeWeekShifts.find((s) => s.date === todayStr) ?? null;
+
+  const plannedMinutes = activeWeekShifts.reduce((sum, shift) => {
+    const shiftDate = shift.date;
+    const start = parseISO(`${shiftDate}T${shift.start_time}`);
+    const rawEnd = parseISO(`${shiftDate}T${shift.end_time}`);
+    const end = shift.end_time <= shift.start_time ? addDays(rawEnd, 1) : rawEnd;
+    return sum + Math.max(0, differenceInMinutes(end, start));
+  }, 0);
+  const monthlyProgress = plannedMinutes > 0
+    ? Math.min(100, Math.round((totalWorkMinutes / plannedMinutes) * 100))
+    : 0;
+  const remainingPlannedMinutes = plannedMinutes > 0
+    ? Math.max(0, plannedMinutes - totalWorkMinutes)
+    : null;
+
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          {displayName ? (
-            <Heading level={1}>{greetingLine}</Heading>
+    <div className="min-h-full bg-stone-50 px-4 py-5 text-stone-900 dark:bg-stone-950 dark:text-stone-50 md:px-6 md:py-8">
+      <div className="mx-auto max-w-6xl space-y-5 md:space-y-6">
+        <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <Heading level={1}>打刻 / ダッシュボード</Heading>
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{greetingLine}</p>
+          </div>
+          <p className="font-num text-sm tabular-nums text-stone-500 dark:text-stone-400">
+            {format(today, 'yyyy年M月d日 (E)', { locale: ja })}
+          </p>
+        </header>
+
+        {dashboardError && <ErrorBanner message={messages.error.withRetry(dashboardError)} />}
+
+        <Card padding="lg" className="rounded-2xl border-stone-200 py-10 text-center shadow-sm dark:border-stone-700 md:py-14">
+          <div className="font-num text-6xl font-semibold leading-none tabular-nums text-stone-900 dark:text-stone-50 md:text-7xl">
+            {format(now, 'HH:mm:ss')}
+          </div>
+          <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+            {format(today, 'yyyy年M月d日 (E)', { locale: ja })}
+          </p>
+        </Card>
+
+        <section className="mx-auto max-w-md">
+          {currentStore == null ? (
+            <Card padding="md" className="border-l-4 border-orange-400 bg-orange-50/70 text-center shadow-sm dark:border-orange-300 dark:bg-orange-900/20">
+              <div className="flex flex-col items-center gap-2">
+                <Badge tone="warning" withDot>店舗未選択</Badge>
+                <p className="text-sm text-orange-700 dark:text-orange-200">打刻するには上部のセレクタから店舗を選択してください。</p>
+              </div>
+            </Card>
           ) : (
-            <Heading level={1}>{format(today, 'M月d日（E）', { locale: ja })}</Heading>
-          )}
-          {displayName && (
-            <p className="text-sm text-stone-500 dark:text-stone-300 mt-1">
-              {format(today, 'M月d日（E）', { locale: ja })}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-2" />
-      </header>
-
-      {dashboardError && <ErrorBanner message={messages.error.withRetry(dashboardError)} />}
-
-      <div className="flex flex-col items-center gap-4 py-8 md:py-12">
-        {currentStore == null ? (
-          <Card padding="md" className="w-full border-l-4 border-orange-400 dark:border-orange-200">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <Badge tone="warning" withDot>店舗未選択</Badge>
-              <p className="text-sm text-orange-700 dark:text-orange-200">打刻するには上部のセレクタから店舗を選択してください。</p>
-            </div>
-          </Card>
-        ) : (
-          <div className="w-full max-w-md md:max-w-lg">
             <ClockButton
               status={status}
               clockIn={clockIn}
@@ -202,140 +236,142 @@ export function DashboardPage() {
                 activeBreak={activeBreak}
               />
             </ClockButton>
-          </div>
-        )}
-      </div>
+          )}
+        </section>
 
-      {carryOverRecord ? (
-        <Card
-          padding="md"
-          className="border-l-[6px] border-red-500 dark:border-red-400 bg-red-50/70 dark:bg-red-800/30 shadow-sm ring-1 ring-red-100/60 dark:ring-red-700/40"
-        >
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1.5">
-                <Badge tone="danger" withDot>未完了</Badge>
-                <span className="text-sm font-semibold text-red-700 dark:text-red-200">退勤打刻が未完了です</span>
-              </div>
-              <p className="text-sm text-stone-700 dark:text-stone-200">
-                <span className="font-num tabular-nums">{carryOverRecord.date}</span> に出勤(<span className="font-num tabular-nums">{formatTime(carryOverRecord.clock_in)}</span>) したまま退勤打刻がされていません
+        <Card padding="md" className="rounded-2xl shadow-sm">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div>
+              <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">出勤時刻</p>
+              <p className="font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">{formatTime(firstClockIn)}</p>
+            </div>
+            <div>
+              <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">退勤予定</p>
+              <p className="font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">
+                {todayShift ? formatTimeRange(todayShift.start_time, todayShift.end_time, { separator: '〜' }).split('〜')[1] : '-'}
               </p>
-              <div className="mt-3">
-                <Button variant="danger" size="lg" onClick={clockOut} fullWidth>今すぐ退勤打刻</Button>
-              </div>
+            </div>
+            <div>
+              <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">経過時間</p>
+              <p className="font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">{formatDuration(totalWorkMinutes)}</p>
+            </div>
+            <div>
+              <p className="mb-1.5 text-label text-stone-500 dark:text-stone-400">休憩</p>
+              <p className="font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">{formatDuration(totalBreakMinutes)}</p>
             </div>
           </div>
         </Card>
-      ) : (
-        <Card padding="md" className="border-l-4 border-emerald-500 dark:border-emerald-400 bg-emerald-50/40 dark:bg-emerald-800/20">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
+
+        {carryOverRecord ? (
+          <Card
+            padding="md"
+            className="rounded-2xl border-l-[6px] border-red-500 bg-red-50/80 shadow-sm ring-1 ring-red-100/60 dark:border-red-400 dark:bg-red-900/20 dark:ring-red-700/40"
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-6 w-6 flex-shrink-0 text-red-600 dark:text-red-400" />
+              <div className="flex-1">
+                <div className="mb-1.5 flex items-center gap-2">
+                  <Badge tone="danger" withDot>未完了</Badge>
+                  <span className="text-sm font-semibold text-red-700 dark:text-red-200">退勤打刻が未完了です</span>
+                </div>
+                <p className="text-sm text-stone-700 dark:text-stone-200">
+                  <span className="font-num tabular-nums">{carryOverRecord.date}</span> に出勤(<span className="font-num tabular-nums">{formatTime(carryOverRecord.clock_in)}</span>) したまま退勤打刻がされていません
+                </p>
+                <div className="mt-3 max-w-sm">
+                  <Button variant="danger" size="lg" onClick={clockOut} fullWidth>今すぐ退勤打刻</Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <Card padding="md" className="rounded-2xl border-l-4 border-emerald-500 bg-emerald-50/50 shadow-sm dark:border-emerald-400 dark:bg-emerald-900/20">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
               <p className="text-sm text-stone-700 dark:text-stone-200">
                 今日は整っています。{nextShiftLine}
               </p>
             </div>
-          </div>
-        </Card>
-      )}
+          </Card>
+        )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card padding="md">
-          <Card.Header>本日の記録</Card.Header>
-          <Card.Body>
-            {todayRecords.length === 0 ? (
-              <p className="text-sm text-stone-500 dark:text-stone-400 text-center py-6">まだ今日の記録はありません。</p>
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-center">
-                    <p className="text-label text-stone-500 dark:text-stone-400 mb-1">最初の出勤</p>
-                    <p className="text-kpi-md font-num tabular-nums text-stone-900 dark:text-stone-100">{formatTime(firstClockIn)}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-label text-stone-500 dark:text-stone-400 mb-1">最後の退勤</p>
-                    <p className="text-kpi-md font-num tabular-nums text-stone-900 dark:text-stone-100">{lastClockOut ? formatTime(lastClockOut) : (activeRecord ? '勤務中' : '-')}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-label text-stone-500 dark:text-stone-400 mb-1">労働時間</p>
-                    <p className="text-kpi-md font-num tabular-nums text-stone-900 dark:text-stone-100">{formatDuration(totalWorkMinutes)}</p>
-                  </div>
-                </div>
-
-                <div className="border-t border-stone-200 dark:border-stone-700 pt-3 flex items-center justify-between text-sm">
-                  <span className="text-stone-500 dark:text-stone-400">セッション数</span>
-                  <span className="font-num tabular-nums text-stone-900 dark:text-stone-100">{todayRecords.filter(r => r.clock_in).length} 回</span>
-                </div>
-
-                {todayRecords.length > 0 && (
-                  <details className="border-t border-stone-200 dark:border-stone-700 pt-3">
-                    <summary className="cursor-pointer text-sm text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100 select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 rounded-md">
-                      セッション履歴を表示
-                    </summary>
-                    <ul className="mt-2 space-y-1">
-                      {todayRecords.map((r, i) => (
-                        <li key={r.id ?? i} className="flex items-center justify-between gap-3 text-sm bg-stone-50 dark:bg-stone-800/50 rounded-md px-3 py-2">
-                          <span className="text-stone-500 dark:text-stone-400 font-num tabular-nums">#{i + 1}</span>
-                          <span className="font-num tabular-nums text-stone-800 dark:text-stone-200">
-                            {formatTime(r.clock_in)} 〜 {r.clock_out ? formatTime(r.clock_out) : '勤務中'}
-                          </span>
-                          <span className="font-num tabular-nums text-stone-600 dark:text-stone-300">
-                            {r.total_work_minutes != null ? formatDuration(r.total_work_minutes) : '-'}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-              </div>
-            )}
-          </Card.Body>
-        </Card>
-
-        <Card padding="md">
-          <Card.Header>今週のシフト</Card.Header>
+        <Card padding="md" className="rounded-2xl shadow-sm">
+          <Card.Header className="mb-4 border-b-0 pb-0">今週のシフト</Card.Header>
           <Card.Body>
             {shiftLoading ? (
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-7">
                 {Array.from({ length: 7 }).map((_, i) => (
                   <ListRowSkeleton key={i} />
                 ))}
               </div>
-            ) : upcomingShifts.length > 0 ? (
-              <div className="space-y-2">
-                {upcomingShifts.map((shift) => (
-                  <div key={shift.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="font-num tabular-nums text-stone-600 dark:text-stone-300">
-                      {format(parseISO(shift.date), 'M/d(E)', { locale: ja })}
-                    </span>
-                    <span className="font-num tabular-nums text-stone-800 dark:text-stone-200">
-                      {formatTimeRange(shift.start_time, shift.end_time, { separator: ' 〜 ' })}
-                    </span>
-                    {shift.status === 'approved' ? (
-                      <Badge tone="success" withDot>承認済</Badge>
-                    ) : shift.status === 'pending' ? (
-                      <Badge tone="warning" withDot>申請中</Badge>
-                    ) : (
-                      <Badge tone="neutral">{shift.status}</Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
             ) : (
-              <p className="text-sm text-stone-500 dark:text-stone-400 text-center py-6">今週の予定はありません。</p>
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-7">
+                {weekDays.map((day) => {
+                  const dateKey = format(day, 'yyyy-MM-dd');
+                  const shift = activeWeekShifts.find((s) => s.date === dateKey);
+                  const isToday = dateKey === todayStr;
+                  return (
+                    <div
+                      key={dateKey}
+                      className={`flex flex-row items-center justify-between rounded-xl border border-stone-200 px-3 py-3 dark:border-stone-700 md:flex-col md:justify-start md:px-2 ${isToday ? 'ring-2 ring-blue-500' : ''}`}
+                    >
+                      <div className="text-left md:text-center">
+                        <p className="text-xs text-stone-500 dark:text-stone-400">{format(day, 'E', { locale: ja })}</p>
+                        <p className="font-num text-base font-semibold tabular-nums text-stone-900 dark:text-stone-50">{format(day, 'd')}</p>
+                      </div>
+                      <p className="font-num text-sm tabular-nums text-stone-700 dark:text-stone-300 md:mt-2">
+                        {shift ? formatTimeRange(shift.start_time, shift.end_time, { separator: '〜' }) : '-'}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </Card.Body>
         </Card>
 
+        <Card padding="md" className="rounded-2xl shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-label text-stone-500 dark:text-stone-400">今月実績</p>
+              <p className="mt-1 font-num text-kpi-lg tabular-nums text-stone-900 dark:text-stone-50">{formatDuration(totalWorkMinutes)}</p>
+            </div>
+            <p className="text-sm text-stone-500 dark:text-stone-400">取得済みデータで表示</p>
+          </div>
+          <div className="mt-5 h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-700">
+            <div className="h-full rounded-full bg-blue-600" style={{ width: `${monthlyProgress}%` }} />
+          </div>
+          <div className="mt-5 grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-label text-stone-500 dark:text-stone-400">予定</p>
+              <p className="mt-1 font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">
+                {plannedMinutes > 0 ? formatDuration(plannedMinutes) : '-'}
+              </p>
+            </div>
+            <div>
+              <p className="text-label text-stone-500 dark:text-stone-400">残り</p>
+              <p className="mt-1 font-num text-kpi-md tabular-nums text-stone-900 dark:text-stone-50">
+                {remainingPlannedMinutes != null ? formatDuration(remainingPlannedMinutes) : '-'}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* 全社員打刻状況は別 Loop で実データソース接続予定。 */}
+        {myRole === 'owner' && (
+          <Card padding="md" className="rounded-2xl shadow-sm">
+            <Card.Header className="mb-0 border-b-0 pb-0">全社員打刻状況</Card.Header>
+            <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">会長専用（準備中）</p>
+          </Card>
+        )}
+
         {myRole === 'staff' && (
-          <div className="md:col-span-2">
-            <h3 className="text-label text-stone-500 dark:text-stone-400 mb-2">休暇情報</h3>
+          <section>
+            <h3 className="mb-2 text-label text-stone-500 dark:text-stone-400">休暇情報</h3>
             <div className="grid grid-cols-2 gap-3">
               <StatCard label="有給残" value={remainingPaidLeave !== null ? remainingPaidLeave : '-'} unit="日" icon={<CalendarDays size={16} />} />
               <StatCard label="申請中の休暇" value={pendingLeaveCount} unit="件" icon={<FileClock size={16} />} />
             </div>
-          </div>
+          </section>
         )}
       </div>
     </div>

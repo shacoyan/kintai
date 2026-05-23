@@ -46,13 +46,37 @@ interface HistoryCalendarProps {
   records: AttendanceRecord[];
   onRequestCorrection?: (date: string, record?: AttendanceRecord) => void;
   correctionRequests?: CorrectionRequest[];
+  selectedDate: string | null;
+  onSelectDate: (date: string | null) => void;
 }
 
-function HistoryCalendar({ year, month, records, onRequestCorrection, correctionRequests }: HistoryCalendarProps) {
+function calcWorkMinutes(record: AttendanceRecord): number {
+  if (record.total_work_minutes != null) return record.total_work_minutes;
+  if (!record.clock_in || !record.clock_out) return 0;
+  return Math.max(0, differenceInMinutes(parseISO(record.clock_out), parseISO(record.clock_in)));
+}
+
+function calcBreakMinutes(record: AttendanceRecord): number {
+  return (record.breaks ?? []).reduce((sum, breakRecord) => {
+    if (!breakRecord.start_time || !breakRecord.end_time) return sum;
+    return sum + Math.max(0, differenceInMinutes(parseISO(breakRecord.end_time), parseISO(breakRecord.start_time)));
+  }, 0);
+}
+
+function formatWorkHours(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
+function formatRecordTime(time: string | null | undefined): string {
+  return time ? format(parseISO(time), 'HH:mm') : '--:--';
+}
+
+function HistoryCalendar({ year, month, records, correctionRequests, selectedDate, onSelectDate }: HistoryCalendarProps) {
   const pendingDateSet = new Set(
     (correctionRequests ?? []).filter(r => r.status === 'pending').map(r => r.date)
   );
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   
   const monthStart = startOfMonth(new Date(year, month - 1, 1));
   const monthEnd = endOfMonth(monthStart);
@@ -75,18 +99,6 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
 
   const weekDayLabels = ['月', '火', '水', '木', '金', '土', '日'];
   const today = format(new Date(), 'yyyy-MM-dd');
-
-  function calcWorkMinutes(record: AttendanceRecord): number {
-    if (record.total_work_minutes != null) return record.total_work_minutes;
-    if (!record.clock_in || !record.clock_out) return 0;
-    return Math.max(0, differenceInMinutes(parseISO(record.clock_out), parseISO(record.clock_in)));
-  }
-
-  function formatWorkHours(minutes: number): string {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${h}:${String(m).padStart(2, '0')}`;
-  }
 
   const legends: { color: string; label: string }[] = [
     { color: 'bg-emerald-500 dark:bg-emerald-400', label: '通常勤務' },
@@ -129,7 +141,7 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                 <button
                   onClick={() => {
                     if (!isCurrentMonth || isFuture) return;
-                    setSelectedDate(isSelected ? null : dateKey);
+                    onSelectDate(isSelected ? null : dateKey);
                   }}
                   disabled={isFuture && isCurrentMonth}
                   className={`relative w-full min-h-[56px] p-1 text-left border-b border-r border-stone-100 dark:border-stone-700 motion-safe:transition-colors duration-150 ease-out ${
@@ -184,28 +196,6 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
                     />
                   )}
                 </button>
-
-                {isSelected && isCurrentMonth && !isFuture && (
-                  <div className="col-span-7 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-3 py-2 text-xs text-stone-700 dark:text-stone-300 space-y-1">
-                    <p className="font-semibold text-blue-700 dark:text-blue-300">{dateKey}</p>
-                    {record?.clock_in && <p>出勤: {format(parseISO(record.clock_in), 'HH:mm')}</p>}
-                    {record?.clock_out && <p>退勤: {format(parseISO(record.clock_out), 'HH:mm')}</p>}
-                    {record && workMins > 0 && <p>勤務時間: {formatWorkHours(workMins)}</p>}
-                    {!record && <p className="text-stone-500 dark:text-stone-300">記録なし</p>}
-                    {onRequestCorrection && (
-                      <div className="pt-1">
-                        <Button
-                          variant="tertiary"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); onRequestCorrection?.(dateKey, record ?? undefined); }}
-                          className="text-blue-700 dark:text-blue-300 underline hover:no-underline hover:bg-transparent dark:hover:bg-transparent px-0"
-                        >
-                          この日を修正申請する
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             );
           })}
@@ -220,6 +210,142 @@ function HistoryCalendar({ year, month, records, onRequestCorrection, correction
           ))}
         </div>
       </div>
+    </Card>
+  );
+}
+
+interface SelectedDayDetailProps {
+  date: string | null;
+  record: AttendanceRecord | undefined;
+  onRequestCorrection?: (date: string, record?: AttendanceRecord) => void;
+  pending: boolean;
+}
+
+function SelectedDayDetail({ date, record, onRequestCorrection, pending }: SelectedDayDetailProps) {
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const isFuture = date != null && date > today;
+  const workMinutes = record ? calcWorkMinutes(record) : 0;
+  const breakMinutes = record ? calcBreakMinutes(record) : 0;
+
+  return (
+    <Card padding="md" className="min-h-[280px]">
+      <div className="flex h-full flex-col gap-5">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className={`text-base font-semibold ${date ? 'text-stone-900 dark:text-stone-100' : 'text-stone-500 dark:text-stone-300'}`}>
+            {date ? format(parseISO(date), 'M月d日 (E)', { locale: ja }) : '日付を選択してください'}
+          </h3>
+          {pending && <Badge tone="warning">修正申請中</Badge>}
+        </div>
+
+        {date == null ? (
+          <p className="text-sm text-stone-500 dark:text-stone-300">カレンダーまたはグラフから日付を選択してください。</p>
+        ) : isFuture ? (
+          <p className="text-sm text-stone-500 dark:text-stone-300">未来の日付です</p>
+        ) : record ? (
+          <>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <p className="text-xs text-stone-500 dark:text-stone-300">出勤</p>
+                <p className="text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-100">{formatRecordTime(record.clock_in)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 dark:text-stone-300">退勤</p>
+                <p className="text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-100">{formatRecordTime(record.clock_out)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-stone-500 dark:text-stone-300">勤務</p>
+                <p className="text-2xl font-semibold tabular-nums text-stone-900 dark:text-stone-100">{formatWorkHours(workMinutes)}</p>
+              </div>
+            </div>
+            <p className="text-sm text-stone-600 dark:text-stone-300 tabular-nums">休憩 {formatWorkHours(breakMinutes)}</p>
+          </>
+        ) : (
+          <p className="text-sm text-stone-500 dark:text-stone-300">打刻記録がありません</p>
+        )}
+
+        {date && !isFuture && onRequestCorrection && (
+          <div className="mt-auto pt-2">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => onRequestCorrection(date, record)}
+              fullWidth
+            >
+              この日を修正申請する
+            </Button>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+interface MonthlyBarChartProps {
+  year: number;
+  month: number;
+  records: AttendanceRecord[];
+  onBarClick?: (date: string) => void;
+  selectedDate: string | null;
+}
+
+function MonthlyBarChart({ year, month, records, onBarClick, selectedDate }: MonthlyBarChartProps) {
+  const monthStart = startOfMonth(new Date(year, month - 1, 1));
+  const monthEnd = endOfMonth(monthStart);
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const recordMap = new Map<string, AttendanceRecord>();
+  records.forEach(record => {
+    if (record.date) recordMap.set(record.date, record);
+  });
+  const dayValues = days.map(day => {
+    const dateKey = format(day, 'yyyy-MM-dd');
+    const record = recordMap.get(dateKey);
+    return {
+      dateKey,
+      dayLabel: format(day, 'd'),
+      minutes: record ? calcWorkMinutes(record) : 0,
+    };
+  });
+  const maxMinutes = Math.max(10 * 60, ...dayValues.map(day => day.minutes));
+
+  return (
+    <Card padding="md">
+      <h3 className="text-label text-stone-500 dark:text-stone-300 mb-4">日別勤務時間</h3>
+      {records.length === 0 ? (
+        <EmptyState size="sm" title="データなし" />
+      ) : (
+        <div className="overflow-x-auto pb-2">
+          <div className="flex items-end gap-1 min-w-max h-[160px]">
+            {dayValues.map(({ dateKey, dayLabel, minutes }) => {
+              const height = maxMinutes > 0 ? Math.max(2, Math.round((minutes / maxMinutes) * 136)) : 2;
+              const isSelected = selectedDate === dateKey;
+              const isOvertime = minutes >= 8 * 60;
+              const barColor = minutes === 0
+                ? 'bg-stone-200 dark:bg-stone-700'
+                : isOvertime
+                ? 'bg-blue-600 dark:bg-blue-500'
+                : 'bg-blue-300 dark:bg-blue-400';
+
+              return (
+                <button
+                  key={dateKey}
+                  type="button"
+                  onClick={() => onBarClick?.(dateKey)}
+                  className="group flex w-7 cursor-pointer flex-col items-center justify-end gap-1 focus-visible:outline-none"
+                  aria-label={`${dayLabel}日 ${formatWorkHours(minutes)}`}
+                >
+                  <span
+                    className={`w-6 rounded-t motion-safe:transition-colors duration-150 ${barColor} ${
+                      isSelected ? 'ring-2 ring-blue-700 ring-offset-2 dark:ring-blue-300 dark:ring-offset-stone-900' : ''
+                    } group-hover:bg-blue-500 dark:group-hover:bg-blue-400 group-focus-visible:ring-2 group-focus-visible:ring-blue-500 group-focus-visible:ring-offset-2 dark:group-focus-visible:ring-offset-stone-900 cursor-pointer`}
+                    style={{ height }}
+                  />
+                  <span className="text-xs text-stone-500 dark:text-stone-300 tabular-nums">{dayLabel}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
@@ -268,6 +394,7 @@ export function HistoryPage() {
   }, []); // 初回のみ
   const [currentDate, setCurrentDate] = useState<Date>(initialDate);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [correctionModal, setCorrectionModal] = useState<CorrectionModalState>({
     isOpen: false,
     date: '',
@@ -276,6 +403,10 @@ export function HistoryPage() {
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
+
+  useEffect(() => {
+    setSelectedDate(null);
+  }, [year, month]);
 
   useEffect(() => {
     const ym = `${year}-${String(month).padStart(2, '0')}`;
@@ -365,6 +496,10 @@ export function HistoryPage() {
   
   const handleCorrection = effectiveUserId === myUserId ? handleRequestCorrection : undefined;
   const handleDeletion = effectiveUserId === myUserId ? handleRequestDeletion : undefined;
+  const selectedRecord = selectedDate ? monthlyRecords.find(r => r.date === selectedDate) : undefined;
+  const selectedDatePending = selectedDate
+    ? ownCorrectionRequests.some(r => r.status === 'pending' && r.date === selectedDate)
+    : false;
 
   const isCurrentMonthShown = (() => {
     const now = new Date();
@@ -509,12 +644,28 @@ export function HistoryPage() {
           )
         ) : (
           <>
-            <HistoryCalendar
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
+              <HistoryCalendar
+                year={year}
+                month={month}
+                records={monthlyRecords}
+                correctionRequests={ownCorrectionRequests}
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+              />
+              <SelectedDayDetail
+                date={selectedDate}
+                record={selectedRecord}
+                pending={selectedDatePending}
+                onRequestCorrection={handleCorrection}
+              />
+            </div>
+            <MonthlyBarChart
               year={year}
               month={month}
               records={monthlyRecords}
-              onRequestCorrection={handleCorrection}
-              correctionRequests={ownCorrectionRequests}
+              selectedDate={selectedDate}
+              onBarClick={setSelectedDate}
             />
             {showEmpty && (
               <EmptyState
