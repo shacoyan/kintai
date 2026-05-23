@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTenant } from '../hooks/useTenant';
 import { useStoreContext } from '../contexts/StoreContext';
 import { useAttendance } from '../hooks/useAttendance';
 import { useShift } from '../hooks/useShift';
 import { useLeave } from '../hooks/useLeave';
 import { useAuth } from '../hooks/useAuth';
+import { useTenantAdmin } from '../hooks/useTenantAdmin';
+import { useTodaysActiveAttendances } from '../hooks/useTodaysActiveAttendances';
 import { ClockButton } from '../components/Attendance/ClockButton';
 import { BreakButton } from '../components/Attendance/BreakButton';
 import { AlertTriangle, CalendarDays, ChevronRight, FileClock } from 'lucide-react';
@@ -21,6 +23,8 @@ export function DashboardPage() {
   const tenantId = currentTenant!.id;
   const { currentStore } = useStoreContext();
   const { user } = useAuth();
+  const isOwnerView = myRole === 'owner';
+  const { members: allMembers, fetchMembers } = useTenantAdmin(tenantId);
 
   const {
     todayRecords,
@@ -41,6 +45,19 @@ export function DashboardPage() {
   const { myLeaves, getMyLeaves, getRemainingPaidLeave, error: leaveError } = useLeave(tenantId);
 
   const dashboardError = (attendanceError ?? shiftError ?? leaveError)?.message ?? null;
+
+  useEffect(() => {
+    if (isOwnerView) {
+      void fetchMembers(null);
+    }
+  }, [isOwnerView, fetchMembers]);
+
+  const { byUserId: todaysActiveByUserId, workingCount: realWorkingCount } =
+    useTodaysActiveAttendances({
+      tenantId,
+      members: allMembers,
+      enabled: isOwnerView,
+    });
 
   // ヒーロー時計と勤務中の労働時間をリアルタイム更新するためのタイマー
   const [now, setNow] = useState(() => new Date());
@@ -200,33 +217,47 @@ export function DashboardPage() {
   const maxWeekHours = Math.max(...weekItems.map((item) => item.hours), 1);
   // TODO(loop-next): 未提出判定接続 (現状はダミー display)
   const showShiftUnsubmittedBanner = true;
-  // TODO(Iter 5): 全社員 打刻状況を実データ接続
-  //   - useTenantAdmin().members で全 member 取得
-  //   - 各 member の attendance_record 今日分を集計 (working/break/finished/absent)
-  //   - 会長 (owner) のみ表示の gating は維持
-  const dummyTeamMembers = [
-    { name: '中村 隆志', store: '吸暮', role: '店長', status: 'working' as const, time: '09:02' },
-    { name: '田中 由紀', store: 'KITUNE', role: '正社員', status: 'break' as const, time: '13:15' },
-    { name: '佐藤 涼介', store: 'Goodbye', role: 'バイト', status: 'off' as const, time: '退勤' },
-    { name: '高橋 美咲', store: '金魚', role: '正社員', status: 'working' as const, time: '11:30' },
-    { name: '伊藤 圭一', store: '吸暮', role: 'バイト', status: 'working' as const, time: '10:45' },
-  ];
-  const workingTeamCount = dummyTeamMembers.filter((member) => member.status === 'working').length;
+  const teamMembers = useMemo(() => {
+    const priority = (status: 'working' | 'break' | 'finished' | 'absent') =>
+      status === 'working' ? 0 : status === 'break' ? 1 : status === 'finished' ? 2 : 3;
+    const list = allMembers.map((member) => {
+      const attendance = todaysActiveByUserId.get(member.user_id);
+      return {
+        memberId: member.id,
+        userId: member.user_id,
+        name: member.display_name,
+        role: member.role,
+        status: attendance?.status ?? ('absent' as const),
+        since: attendance?.since ?? null,
+      };
+    });
+    list.sort((a, b) => {
+      const p = priority(a.status) - priority(b.status);
+      if (p !== 0) return p;
+      return a.name.localeCompare(b.name, 'ja');
+    });
+    return list;
+  }, [allMembers, todaysActiveByUserId]);
+  const visibleTeamMembers = teamMembers.slice(0, 8);
+  const teamOverflow = teamMembers.length - visibleTeamMembers.length;
+  const workingTeamCount = realWorkingCount;
   const monthStats = [
     { key: '今月予定', value: monthHoursPlanned, unit: 'h', sub: '/ 週シフト合計' },
     { key: '実績', value: monthHoursActual, unit: 'h', sub: `${monthRate}% 経過` },
     { key: '繰越有給', value: remainingPaidLeave !== null ? String(remainingPaidLeave) : '-', unit: '日', sub: `申請中 ${pendingLeaveCount} 件` },
   ];
 
-  const statusDotColor = (s: 'working' | 'break' | 'off') => {
+  const statusDotColor = (s: 'working' | 'break' | 'finished' | 'absent') => {
     if (s === 'working') return 'bg-emerald-500';
     if (s === 'break') return 'bg-orange-500';
-    return 'bg-stone-400';
+    if (s === 'finished') return 'bg-stone-400';
+    return 'bg-stone-300';
   };
-  const teamStatusLabel = (s: 'working' | 'break' | 'off') => {
+  const teamStatusLabel = (s: 'working' | 'break' | 'finished' | 'absent') => {
     if (s === 'working') return '勤務中';
     if (s === 'break') return '休憩中';
-    return '退勤済';
+    if (s === 'finished') return '退勤済';
+    return '未出勤';
   };
 
   return (
@@ -422,26 +453,30 @@ export function DashboardPage() {
                   </button>
                 </header>
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                  {dummyTeamMembers.map((member) => (
-                    <div key={member.name} className="flex items-center gap-2.5 rounded-lg border border-stone-200 bg-white p-[8px_10px] dark:border-stone-700 dark:bg-stone-900">
+                  {visibleTeamMembers.map((member) => (
+                    <div key={member.memberId} className="flex items-center gap-2.5 rounded-lg border border-stone-200 bg-white p-[8px_10px] dark:border-stone-700 dark:bg-stone-900">
                       <div className="flex h-[26px] w-[26px] flex-shrink-0 items-center justify-center rounded-full bg-stone-100 text-xs font-semibold text-stone-600 dark:bg-stone-800 dark:text-stone-300">
                         {member.name.charAt(0)}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-xs font-semibold text-stone-900 dark:text-stone-50">{member.name}</div>
-                        <div className="truncate text-[10px] text-stone-500 dark:text-stone-400">{member.store} · {member.role}</div>
+                        <div className="truncate text-[10px] text-stone-500 dark:text-stone-400">{member.role}</div>
                       </div>
                       <div className="text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <span className={`h-1.5 w-1.5 rounded-full ${statusDotColor(member.status)}`} aria-hidden="true" />
                           <span className="text-[10px] font-semibold text-stone-700 dark:text-stone-300">{teamStatusLabel(member.status)}</span>
                         </div>
-                        <div className="font-num text-[11px] text-stone-500 tabular-nums dark:text-stone-400">{member.time}</div>
+                        <div className="font-num text-[11px] text-stone-500 tabular-nums dark:text-stone-400">{member.since ?? '—'}</div>
                       </div>
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-stone-400 dark:text-stone-500">※ 表示はダミーデータ（Iter 5 で実データ接続予定）</p>
+                {teamOverflow > 0 && (
+                  <div className="text-center text-[11px] text-stone-500 dark:text-stone-400">
+                    他 {teamOverflow} 名
+                  </div>
+                )}
               </Card>
             )}
 

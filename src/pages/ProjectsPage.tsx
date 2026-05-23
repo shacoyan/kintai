@@ -9,7 +9,7 @@ import {
   ActionMenu,
   type ActionMenuItem,
 } from '../components/ui';
-import { Archive, CheckSquare, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { Archive, CheckSquare, Pencil, Plus, RotateCcw, Square, Trash2 } from 'lucide-react';
 import type { Project, ProjectStatus, Task, TaskStatus } from '../types';
 import { ProjectDialog } from '../components/Project';
 import type { ProjectInput, ProjectStoreOption } from '../components/Project';
@@ -458,6 +458,283 @@ export function ProjectsPage() {
     [stores],
   );
 
+  const getProjectViewModel = useCallback(
+    (project: Project) => {
+      const editable = canEdit(project);
+      const archivable = canArchiveOrRestore(project);
+      const deletable = canDelete(project);
+      const colorClasses = getProjectColor(project.id);
+      const projectTasks = tasksByProjectId.get(project.id) ?? [];
+      const doneTasks = projectTasks.filter((task) => task.status === 'done').length;
+      const totalTasks = projectTasks.length;
+      const openTasks = totalTasks - doneTasks;
+      const pct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
+      const assignees = Array.from(
+        new Set(
+          projectTasks
+            .map((task) => task.assignee_user_id)
+            .filter((userId): userId is string => userId !== null),
+        ),
+      ).map((userId) => ({
+        userId,
+        displayName: memberMap.get(userId) ?? '?',
+      }));
+      const visibleAssignees = assignees.slice(0, 3);
+      const hiddenAssignees = assignees.slice(3);
+      const menuItems: ActionMenuItem[] = [];
+
+      if (editable) {
+        menuItems.push({
+          key: 'edit',
+          label: '編集',
+          icon: <Pencil className="h-4 w-4" aria-hidden="true" />,
+          disabled: mutationBusy,
+          onSelect: () => openEdit(project),
+        });
+      }
+      if (archivable) {
+        menuItems.push({
+          key: 'archive',
+          label: project.status === 'active' ? 'アーカイブ' : '復活',
+          icon:
+            project.status === 'active' ? (
+              <Archive className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            ),
+          disabled: mutationBusy,
+          onSelect: () => void handleArchiveOrRestore(project),
+        });
+      }
+      if (deletable) {
+        menuItems.push({
+          key: 'delete',
+          label: '削除',
+          tone: 'danger',
+          icon: <Trash2 className="h-4 w-4" aria-hidden="true" />,
+          disabled: mutationBusy,
+          onSelect: () => {
+            setMutationError(null);
+            setDeleteTarget(project);
+          },
+        });
+      }
+
+      return {
+        colorClasses,
+        doneTasks,
+        totalTasks,
+        openTasks,
+        pct,
+        assignees,
+        visibleAssignees,
+        hiddenAssignees,
+        menuItems,
+      };
+    },
+    [
+      canEdit,
+      canArchiveOrRestore,
+      canDelete,
+      tasksByProjectId,
+      memberMap,
+      mutationBusy,
+      openEdit,
+      handleArchiveOrRestore,
+    ],
+  );
+
+  const renderProjectCard = (project: Project): JSX.Element => {
+    const {
+      colorClasses,
+      doneTasks,
+      totalTasks,
+      openTasks,
+      pct,
+      assignees,
+      visibleAssignees,
+      hiddenAssignees,
+      menuItems,
+    } = getProjectViewModel(project);
+
+    return (
+      <Card
+        key={project.id}
+        padding="sm"
+        className={`flex flex-col gap-2.5 rounded-[8px] border-t-[3px] ${colorClasses.border} transition hover:-translate-y-0.5 hover:shadow-md ${
+          project.status === 'archived' ? 'opacity-55' : ''
+        }`}
+      >
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="line-clamp-1 text-sm font-semibold leading-[1.3] text-stone-900 dark:text-stone-100">
+              {project.name}
+            </div>
+            <div className="mt-1 line-clamp-2 text-xs leading-[1.4] text-stone-500 dark:text-stone-400">
+              {project.description || '説明はありません'}
+            </div>
+          </div>
+          <ActionMenu
+            items={menuItems}
+            triggerLabel={`${project.name} の操作`}
+            triggerSize="sm"
+            bottomSheetTitle="プロジェクト操作"
+            disabled={menuItems.length === 0}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge tone={project.store_id === null ? 'primary' : 'neutral'}>
+            {getStoreLabel(project.store_id)}
+          </Badge>
+          {project.status === 'archived' && <Badge tone="warning">アーカイブ</Badge>}
+        </div>
+
+        <div className="border-t border-stone-100 dark:border-stone-800" />
+
+        <div>
+          <div className="mb-1.5 flex items-center justify-between gap-3">
+            <span className="text-xs text-stone-500 dark:text-stone-400">進捗</span>
+            <span className="num tabular-nums text-xs font-semibold text-stone-600 dark:text-stone-300">
+              {doneTasks} / {totalTasks} ({pct}%)
+            </span>
+          </div>
+          <div className="h-1 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
+            <div
+              className={`h-full rounded-full transition-[width] ${getProjectBarBg(project.id)}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400">
+          <CheckSquare className="h-3 w-3 shrink-0" aria-hidden="true" />
+          <span className="num tabular-nums">未完了 {openTasks}</span>
+          <div className="flex-1" />
+          {assignees.length > 0 && (
+            <div className="flex">
+              {visibleAssignees.map((assignee) => (
+                <div
+                  key={assignee.userId}
+                  className={`flex h-[22px] w-[22px] items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold first:ml-0 -ml-1.5 dark:border-stone-900 ${getAvatarColor(assignee.userId)}`}
+                  title={assignee.displayName}
+                  aria-label={assignee.displayName}
+                >
+                  {assignee.displayName.charAt(0)}
+                </div>
+              ))}
+              {hiddenAssignees.length > 0 && (
+                <div
+                  className="flex h-[22px] w-[22px] items-center justify-center rounded-full border-2 border-white bg-stone-200 text-[10px] font-semibold text-stone-700 -ml-1.5 dark:border-stone-900"
+                  title={hiddenAssignees.map((assignee) => assignee.displayName).join(', ')}
+                  aria-label={`他 ${hiddenAssignees.length} 人`}
+                >
+                  +{hiddenAssignees.length}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </Card>
+    );
+  };
+
+  const renderProjectListRow = (project: Project): JSX.Element => {
+    const { doneTasks, totalTasks, pct, visibleAssignees, hiddenAssignees, menuItems } =
+      getProjectViewModel(project);
+
+    return (
+      <div
+        key={project.id}
+        className={`grid items-center gap-3 border-b border-stone-100 px-4 py-2.5 last:border-b-0 hover:bg-stone-50 motion-safe:transition-colors dark:border-stone-800 dark:hover:bg-stone-800/50 ${
+          project.status === 'archived' ? 'opacity-55' : ''
+        }`}
+        style={{ gridTemplateColumns: '20px minmax(260px, 1fr) 120px 100px 100px 70px 40px' }}
+      >
+        <div className="flex items-center justify-center text-stone-400 dark:text-stone-500">
+          {pct === 100 ? (
+            <CheckSquare className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <Square className="h-4 w-4" aria-hidden="true" />
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-stone-900 dark:text-stone-50">
+            {project.name}
+          </div>
+          <div className="mt-0.5 truncate text-xs text-stone-500 dark:text-stone-400">
+            {getStoreLabel(project.store_id)}
+          </div>
+        </div>
+
+        <div>
+          <Badge
+            tone={
+              project.status === 'archived'
+                ? 'warning'
+                : project.store_id === null
+                  ? 'primary'
+                  : 'neutral'
+            }
+          >
+            {project.status === 'archived'
+              ? 'アーカイブ'
+              : project.store_id === null
+                ? '全社'
+                : 'アクティブ'}
+          </Badge>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <span className="num tabular-nums text-[11px] font-semibold text-stone-700 dark:text-stone-200">
+            {doneTasks}/{totalTasks} ({pct}%)
+          </span>
+          <div className="h-1 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
+            <div
+              className={`h-full rounded-full ${getProjectBarBg(project.id)}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="num tabular-nums text-xs text-stone-600 dark:text-stone-300">—</div>
+
+        <div className="flex">
+          {visibleAssignees.map((assignee) => (
+            <div
+              key={assignee.userId}
+              className={`flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[9px] font-semibold first:ml-0 -ml-1.5 dark:border-stone-900 ${getAvatarColor(assignee.userId)}`}
+              title={assignee.displayName}
+              aria-label={assignee.displayName}
+            >
+              {assignee.displayName.charAt(0)}
+            </div>
+          ))}
+          {hiddenAssignees.length > 0 && (
+            <div
+              className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-stone-200 text-[9px] font-semibold text-stone-700 -ml-1.5 dark:border-stone-900"
+              title={hiddenAssignees.map((assignee) => assignee.displayName).join(', ')}
+              aria-label={`他 ${hiddenAssignees.length} 人`}
+            >
+              +{hiddenAssignees.length}
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end">
+          <ActionMenu
+            items={menuItems}
+            triggerLabel={`${project.name} の操作`}
+            triggerSize="sm"
+            bottomSheetTitle="プロジェクト操作"
+            disabled={menuItems.length === 0}
+          />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="mx-auto flex max-w-[1280px] flex-col gap-3.5 px-4 py-4 md:px-6 md:py-6">
       {mutationError && (
@@ -569,150 +846,33 @@ export function ProjectsPage() {
               : '現在のフィルタに該当するプロジェクトはありません。'
           }
         />
-      ) : (
+      ) : viewMode === 'card' ? (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {visibleProjects.map((project) => {
-            const editable = canEdit(project);
-            const archivable = canArchiveOrRestore(project);
-            const deletable = canDelete(project);
-            const colorClasses = getProjectColor(project.id);
-            const projectTasks = tasksByProjectId.get(project.id) ?? [];
-            const doneTasks = projectTasks.filter((task) => task.status === 'done').length;
-            const totalTasks = projectTasks.length;
-            const openTasks = totalTasks - doneTasks;
-            const pct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
-            const assignees = Array.from(
-              new Set(
-                projectTasks
-                  .map((task) => task.assignee_user_id)
-                  .filter((userId): userId is string => userId !== null),
-              ),
-            ).map((userId) => ({
-              userId,
-              displayName: memberMap.get(userId) ?? '?',
-            }));
-            const visibleAssignees = assignees.slice(0, 3);
-            const hiddenAssignees = assignees.slice(3);
-            const menuItems: ActionMenuItem[] = [];
+          {visibleProjects.map((project) => renderProjectCard(project))}
+        </div>
+      ) : (
+        <div>
+          <div className="grid grid-cols-1 gap-3 md:hidden">
+            {visibleProjects.map((project) => renderProjectCard(project))}
+          </div>
 
-            if (editable) {
-              menuItems.push({
-                key: 'edit',
-                label: '編集',
-                icon: <Pencil className="h-4 w-4" aria-hidden="true" />,
-                disabled: mutationBusy,
-                onSelect: () => openEdit(project),
-              });
-            }
-            if (archivable) {
-              menuItems.push({
-                key: 'archive',
-                label: project.status === 'active' ? 'アーカイブ' : '復活',
-                icon:
-                  project.status === 'active' ? (
-                    <Archive className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                  ),
-                disabled: mutationBusy,
-                onSelect: () => void handleArchiveOrRestore(project),
-              });
-            }
-            if (deletable) {
-              menuItems.push({
-                key: 'delete',
-                label: '削除',
-                tone: 'danger',
-                icon: <Trash2 className="h-4 w-4" aria-hidden="true" />,
-                disabled: mutationBusy,
-                onSelect: () => {
-                  setMutationError(null);
-                  setDeleteTarget(project);
-                },
-              });
-            }
-
-            return (
-              <Card
-                key={project.id}
-                padding="sm"
-                className={`flex flex-col gap-2.5 rounded-[8px] border-t-[3px] ${colorClasses.border} transition hover:-translate-y-0.5 hover:shadow-md ${
-                  project.status === 'archived' ? 'opacity-55' : ''
-                }`}
-              >
-                <div className="flex items-start gap-2">
-                  <div className="min-w-0 flex-1">
-                    <div className="line-clamp-1 text-sm font-semibold leading-[1.3] text-stone-900 dark:text-stone-100">
-                      {project.name}
-                    </div>
-                    <div className="mt-1 line-clamp-2 text-xs leading-[1.4] text-stone-500 dark:text-stone-400">
-                      {project.description || '説明はありません'}
-                    </div>
-                  </div>
-                  <ActionMenu
-                    items={menuItems}
-                    triggerLabel={`${project.name} の操作`}
-                    triggerSize="sm"
-                    bottomSheetTitle="プロジェクト操作"
-                    disabled={menuItems.length === 0}
-                  />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge tone={project.store_id === null ? 'primary' : 'neutral'}>
-                    {getStoreLabel(project.store_id)}
-                  </Badge>
-                  {project.status === 'archived' && <Badge tone="warning">アーカイブ</Badge>}
-                </div>
-
-                <div className="border-t border-stone-100 dark:border-stone-800" />
-
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between gap-3">
-                    <span className="text-xs text-stone-500 dark:text-stone-400">進捗</span>
-                    <span className="num tabular-nums text-xs font-semibold text-stone-600 dark:text-stone-300">
-                      {doneTasks} / {totalTasks} ({pct}%)
-                    </span>
-                  </div>
-                  <div className="h-1 overflow-hidden rounded-full bg-stone-200 dark:bg-stone-800">
-                    <div
-                      className={`h-full rounded-full transition-[width] ${getProjectBarBg(project.id)}`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-xs text-stone-500 dark:text-stone-400">
-                  <CheckSquare className="h-3 w-3 shrink-0" aria-hidden="true" />
-                  <span className="num tabular-nums">未完了 {openTasks}</span>
-                  <div className="flex-1" />
-                  {assignees.length > 0 && (
-                    <div className="flex">
-                      {visibleAssignees.map((assignee) => (
-                        <div
-                          key={assignee.userId}
-                          className={`flex h-[22px] w-[22px] items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold first:ml-0 -ml-1.5 dark:border-stone-900 ${getAvatarColor(assignee.userId)}`}
-                          title={assignee.displayName}
-                          aria-label={assignee.displayName}
-                        >
-                          {assignee.displayName.charAt(0)}
-                        </div>
-                      ))}
-                      {hiddenAssignees.length > 0 && (
-                        <div
-                          className="flex h-[22px] w-[22px] items-center justify-center rounded-full border-2 border-white bg-stone-200 text-[10px] font-semibold text-stone-700 -ml-1.5 dark:border-stone-900"
-                          title={hiddenAssignees.map((assignee) => assignee.displayName).join(', ')}
-                          aria-label={`他 ${hiddenAssignees.length} 人`}
-                        >
-                          +{hiddenAssignees.length}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </Card>
-            );
-          })}
+          <div className="hidden overflow-hidden rounded-[8px] border border-stone-200 bg-white md:block dark:border-stone-700 dark:bg-stone-900">
+            <div
+              className="grid items-center gap-3 border-b border-stone-200 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-stone-500 dark:border-stone-700 dark:text-stone-400"
+              style={{
+                gridTemplateColumns: '20px minmax(260px, 1fr) 120px 100px 100px 70px 40px',
+              }}
+            >
+              <div />
+              <div>プロジェクト</div>
+              <div>ステータス</div>
+              <div>進捗</div>
+              <div>期限</div>
+              <div>メンバー</div>
+              <div />
+            </div>
+            {visibleProjects.map((project) => renderProjectListRow(project))}
+          </div>
         </div>
       )}
 
