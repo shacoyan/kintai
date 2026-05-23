@@ -59,6 +59,29 @@ export function DashboardPage() {
       enabled: isOwnerView,
     });
 
+  // Hooks 規則上 early return 前に評価必須 (Iter 5.1 hotfix)
+  const teamMembers = useMemo(() => {
+    const priority = (status: 'working' | 'break' | 'finished' | 'absent') =>
+      status === 'working' ? 0 : status === 'break' ? 1 : status === 'finished' ? 2 : 3;
+    const list = allMembers.map((member) => {
+      const attendance = todaysActiveByUserId.get(member.user_id);
+      return {
+        memberId: member.id,
+        userId: member.user_id,
+        name: member.display_name,
+        role: member.role,
+        status: attendance?.status ?? ('absent' as const),
+        since: attendance?.since ?? null,
+      };
+    });
+    list.sort((a, b) => {
+      const p = priority(a.status) - priority(b.status);
+      if (p !== 0) return p;
+      return a.name.localeCompare(b.name, 'ja');
+    });
+    return list;
+  }, [allMembers, todaysActiveByUserId]);
+
   // ヒーロー時計と勤務中の労働時間をリアルタイム更新するためのタイマー
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -217,27 +240,6 @@ export function DashboardPage() {
   const maxWeekHours = Math.max(...weekItems.map((item) => item.hours), 1);
   // TODO(loop-next): 未提出判定接続 (現状はダミー display)
   const showShiftUnsubmittedBanner = true;
-  const teamMembers = useMemo(() => {
-    const priority = (status: 'working' | 'break' | 'finished' | 'absent') =>
-      status === 'working' ? 0 : status === 'break' ? 1 : status === 'finished' ? 2 : 3;
-    const list = allMembers.map((member) => {
-      const attendance = todaysActiveByUserId.get(member.user_id);
-      return {
-        memberId: member.id,
-        userId: member.user_id,
-        name: member.display_name,
-        role: member.role,
-        status: attendance?.status ?? ('absent' as const),
-        since: attendance?.since ?? null,
-      };
-    });
-    list.sort((a, b) => {
-      const p = priority(a.status) - priority(b.status);
-      if (p !== 0) return p;
-      return a.name.localeCompare(b.name, 'ja');
-    });
-    return list;
-  }, [allMembers, todaysActiveByUserId]);
   const visibleTeamMembers = teamMembers.slice(0, 8);
   const teamOverflow = teamMembers.length - visibleTeamMembers.length;
   const workingTeamCount = realWorkingCount;
