@@ -209,7 +209,7 @@ export function ShiftPreferenceForm({
                 aria-describedby={`pref-type-${t.type}-desc`}
                 onClick={() => setPreferenceType(t.type)}
                 className={
-                  'flex flex-col items-center justify-center gap-1 h-16 rounded-lg ' +
+                  'flex flex-col items-center justify-center gap-1 h-14 sm:h-16 rounded-lg ' +
                   'motion-safe:transition-colors duration-150 ease-out focus-ring ' +
                   (isSelected
                     ? `${t.cellClass} ring-2`
@@ -218,7 +218,7 @@ export function ShiftPreferenceForm({
               >
                 <Icon className="w-5 h-5" aria-hidden="true" />
                 <span className="text-xs font-semibold">{t.label}</span>
-                <span id={`pref-type-${t.type}-desc`} className="text-xs text-stone-500 dark:text-stone-300 mt-1 block">{t.description}</span>
+                <span id={`pref-type-${t.type}-desc`} className="text-xs text-stone-500 dark:text-stone-300 mt-1 hidden sm:block">{t.description}</span>
               </button>
             );
           })}
