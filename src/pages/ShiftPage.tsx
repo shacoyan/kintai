@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addWeeks, subMonths, addMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Clock, History, Plus, ChevronRight, AlertTriangle, CalendarPlus, X } from 'lucide-react';
+import { Clock, History, Plus, ChevronLeft, ChevronRight, AlertTriangle, CalendarPlus, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Button, Card, Badge, BottomSheet, ShiftSkeleton, EmptyState, Heading } from '../components/ui';
 import { messages } from '../lib/messages';
@@ -531,35 +531,181 @@ export function ShiftPage() {
           <Heading level={1}>シフト</Heading>
         </header>
 
-        {/* 表示切替: 現在 / 履歴 (両ビュー共通) */}
-        <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-full p-1 self-start">
-          <button
-            type="button"
-            onClick={() => setPreferenceView('current')}
-            aria-pressed={preferenceView === 'current'}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-              preferenceView === 'current'
-                ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
-                : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            現在
-          </button>
-          <button
-            type="button"
-            onClick={() => setPreferenceView('history')}
-            aria-pressed={preferenceView === 'history'}
-            className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-              preferenceView === 'history'
-                ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
-                : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
-            }`}
-          >
-            <History className="w-3.5 h-3.5" />
-            履歴
-          </button>
-        </div>
+        {/* Toolbar: 表示切替 / 月ナビ / フィルタ / 一括操作 */}
+        <Card padding="md">
+          <Card.Body className="flex flex-col gap-3">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-full p-1 self-start">
+                <button
+                  type="button"
+                  onClick={() => setPreferenceView('current')}
+                  aria-pressed={preferenceView === 'current'}
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    preferenceView === 'current'
+                      ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                      : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  現在
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreferenceView('history')}
+                  aria-pressed={preferenceView === 'history'}
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    preferenceView === 'history'
+                      ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                      : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                  }`}
+                >
+                  <History className="w-3.5 h-3.5" />
+                  履歴
+                </button>
+              </div>
+
+              {preferenceView === 'current' && (
+                <>
+                  <div className="hidden sm:block w-px h-5 bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setShiftViewMonth(subMonths(shiftViewMonth, 1))}
+                      aria-label="前月"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 focus-ring"
+                    >
+                      <ChevronLeft className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                    <div className="flex min-w-[90px] flex-col items-center">
+                      <span className="text-base font-semibold text-stone-900 dark:text-stone-100 tabular-nums">
+                        {format(shiftViewMonth, 'yyyy / MM')}
+                      </span>
+                      <span className="text-[10px] text-stone-500 dark:text-stone-400">
+                        {format(shiftViewMonth, 'M月')}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShiftViewMonth(addMonths(shiftViewMonth, 1))}
+                      aria-label="次月"
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 focus-ring"
+                    >
+                      <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  </div>
+
+                  <div className="hidden sm:block w-px h-5 bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                  <div className="min-w-0 flex-1 sm:flex-none">
+                    <ShiftStatusFilter
+                      value={statusFilter}
+                      onChange={setStatusFilter}
+                      showPreferenceStatus={canManageTenant}
+                    />
+                  </div>
+
+                  <div className="hidden sm:block flex-1" aria-hidden="true" />
+                  <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:flex-wrap sm:gap-2">
+                    {storeId && !isBulkMode && (
+                      <Button
+                        variant="success"
+                        size="sm"
+                        iconLeft={<CalendarPlus className="w-4 h-4" />}
+                        onClick={handleEnterBulkMode}
+                        disabled={isDeadlinePassed && !canEditDeadline}
+                        className="shrink-0 grow sm:grow-0"
+                        aria-pressed={isBulkMode}
+                        aria-label={messages.shiftPreference.bulk.entryButtonAria}
+                      >
+                        {messages.shiftPreference.bulk.entryButton}
+                      </Button>
+                    )}
+                    {canManageTenant && (() => {
+                      const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                      const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                      const pendingInRange = preferencesForCalendar.filter(
+                        p => p.status === 'pending' && p.date >= monthStart && p.date <= monthEnd
+                      );
+                      const count = pendingInRange.length;
+                      const handleBulkRejectInRange = async () => {
+                        if (count === 0) return;
+                        // eslint-disable-next-line no-alert
+                        if (!window.confirm(`${count}件却下します。よろしいですか？`)) return;
+                        let errors = 0;
+                        for (const p of pendingInRange) {
+                          try {
+                            await rejectPreference(p.id);
+                          } catch {
+                            errors += 1;
+                          }
+                        }
+                        fetchPreferenceRange();
+                        fetchRange();
+                        if (errors > 0) {
+                          // eslint-disable-next-line no-console
+                          console.warn(`[bulkRejectInRange] ${errors} 件で却下エラーが発生しました`);
+                        }
+                      };
+                      return (
+                        /* Button component (variant=danger) に統一 — aria-label・disabled・件数表示は完全保持 */
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={handleBulkRejectInRange}
+                          disabled={count === 0}
+                          className="shrink-0 grow sm:grow-0"
+                          aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
+                        >
+                          未承認を一括却下{count > 0 ? `（${count}）` : ''}
+                        </Button>
+                      );
+                    })()}
+                    {canManageTenant && (() => {
+                      // 「仮承認を一括本承認」: 表示中の月に含まれる shift.status === 'tentative' を一括で本承認する。
+                      // - approveShift (RPC approve_shift_final) を 1 件ずつ呼ぶ。エラー件数は console.warn でログ出力。
+                      // - 「未承認を一括却下」と同じパターン (filter → confirm → for ループ → fetchRange)。
+                      const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                      const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                      const tentativeInRange = shifts.filter(
+                        s => s.status === 'tentative' && s.date >= monthStart && s.date <= monthEnd
+                      );
+                      const tCount = tentativeInRange.length;
+                      const handleBulkApproveTentative = async () => {
+                        if (tCount === 0) return;
+                        // eslint-disable-next-line no-alert
+                        if (!window.confirm(`${tCount}件を本承認します。よろしいですか？`)) return;
+                        let errors = 0;
+                        for (const s of tentativeInRange) {
+                          try {
+                            await approveShift(s.id);
+                          } catch {
+                            errors += 1;
+                          }
+                        }
+                        fetchRange();
+                        if (errors > 0) {
+                          // eslint-disable-next-line no-console
+                          console.warn(`[bulkApproveTentative] ${errors} 件で承認エラーが発生しました`);
+                        }
+                      };
+                      return (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={handleBulkApproveTentative}
+                          disabled={tCount === 0}
+                          className="shrink-0 grow col-span-2 sm:grow-0 sm:col-auto"
+                          aria-label={`表示中の期間の仮承認シフトを一括本承認（${tCount}件）`}
+                        >
+                          仮承認を一括本承認{tCount > 0 ? `（${tCount}）` : ''}
+                        </Button>
+                      );
+                    })()}
+                  </div>
+                </>
+              )}
+            </div>
+          </Card.Body>
+        </Card>
 
         {preferenceView === 'current' && (
           <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-6 lg:items-start">
@@ -603,117 +749,6 @@ export function ShiftPage() {
                   </Card.Body>
                 </Card>
               )}
-
-              {/* ShiftStatusFilter — 常時表示。pending_preference は manager のみ表示 */}
-              {/* Loop12: manager は常時「未承認を一括却下」ボタンを横並び表示 */}
-              {/* オーナー要望: 「まとめてシフト申請」→「未承認を一括却下」→「仮承認を一括本承認」の順に横並び */}
-              <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-start sm:gap-2">
-                <div className="flex-1 min-w-0">
-                  <ShiftStatusFilter
-                    value={statusFilter}
-                    onChange={setStatusFilter}
-                    showPreferenceStatus={canManageTenant}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
-                  {storeId && !isBulkMode && (
-                    <Button
-                      variant="success"
-                      size="sm"
-                      iconLeft={<CalendarPlus className="w-4 h-4" />}
-                      onClick={handleEnterBulkMode}
-                      disabled={isDeadlinePassed && !canEditDeadline}
-                      className="shrink-0 grow sm:grow-0"
-                      aria-pressed={isBulkMode}
-                      aria-label={messages.shiftPreference.bulk.entryButtonAria}
-                    >
-                      {messages.shiftPreference.bulk.entryButton}
-                    </Button>
-                  )}
-                  {canManageTenant && (() => {
-                    const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                    const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                    const pendingInRange = preferencesForCalendar.filter(
-                      p => p.status === 'pending' && p.date >= monthStart && p.date <= monthEnd
-                    );
-                    const count = pendingInRange.length;
-                    const handleBulkRejectInRange = async () => {
-                      if (count === 0) return;
-                      // eslint-disable-next-line no-alert
-                      if (!window.confirm(`${count}件却下します。よろしいですか？`)) return;
-                      let errors = 0;
-                      for (const p of pendingInRange) {
-                        try {
-                          await rejectPreference(p.id);
-                        } catch {
-                          errors += 1;
-                        }
-                      }
-                      fetchPreferenceRange();
-                      fetchRange();
-                      if (errors > 0) {
-                        // eslint-disable-next-line no-console
-                        console.warn(`[bulkRejectInRange] ${errors} 件で却下エラーが発生しました`);
-                      }
-                    };
-                    return (
-                      /* Button component (variant=danger) に統一 — aria-label・disabled・件数表示は完全保持 */
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={handleBulkRejectInRange}
-                        disabled={count === 0}
-                        className="shrink-0 grow sm:grow-0"
-                        aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
-                      >
-                        未承認を一括却下{count > 0 ? `（${count}）` : ''}
-                      </Button>
-                    );
-                  })()}
-                  {canManageTenant && (() => {
-                    // 「仮承認を一括本承認」: 表示中の月に含まれる shift.status === 'tentative' を一括で本承認する。
-                    // - approveShift (RPC approve_shift_final) を 1 件ずつ呼ぶ。エラー件数は console.warn でログ出力。
-                    // - 「未承認を一括却下」と同じパターン (filter → confirm → for ループ → fetchRange)。
-                    const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                    const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                    const tentativeInRange = shifts.filter(
-                      s => s.status === 'tentative' && s.date >= monthStart && s.date <= monthEnd
-                    );
-                    const tCount = tentativeInRange.length;
-                    const handleBulkApproveTentative = async () => {
-                      if (tCount === 0) return;
-                      // eslint-disable-next-line no-alert
-                      if (!window.confirm(`${tCount}件を本承認します。よろしいですか？`)) return;
-                      let errors = 0;
-                      for (const s of tentativeInRange) {
-                        try {
-                          await approveShift(s.id);
-                        } catch {
-                          errors += 1;
-                        }
-                      }
-                      fetchRange();
-                      if (errors > 0) {
-                        // eslint-disable-next-line no-console
-                        console.warn(`[bulkApproveTentative] ${errors} 件で承認エラーが発生しました`);
-                      }
-                    };
-                    return (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={handleBulkApproveTentative}
-                        disabled={tCount === 0}
-                        className="shrink-0 grow col-span-2 sm:grow-0 sm:col-auto"
-                        aria-label={`表示中の期間の仮承認シフトを一括本承認（${tCount}件）`}
-                      >
-                        仮承認を一括本承認{tCount > 0 ? `（${tCount}）` : ''}
-                      </Button>
-                    );
-                  })()}
-                </div>
-              </div>
-
 
               {/* Bulk Toolbar — エントリーボタンは上の StatusFilter 行に移動。ここには isBulkMode 選択中のバーのみ残す */}
               {storeId && isBulkMode && (
@@ -800,6 +835,66 @@ export function ShiftPage() {
                 currentUserId={currentUserId}
                 selectedBulkDates={isBulkMode ? selectedBulkDates : undefined}
               />
+
+              {/* Legend — desktop only */}
+              <div className="hidden lg:block">
+                <Card padding="md">
+                  <Card.Body className="flex items-center gap-4 flex-wrap text-[11px]">
+                    <div className="font-semibold text-stone-500 dark:text-stone-400">役職</div>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#7c3aed' }} />
+                      <span className="text-stone-600 dark:text-stone-300">会長 / 内勤</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#2563eb' }} />
+                      <span className="text-stone-600 dark:text-stone-300">店長</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#0d9488' }} />
+                      <span className="text-stone-600 dark:text-stone-300">正社員</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#ea580c' }} />
+                      <span className="text-stone-600 dark:text-stone-300">バイト</span>
+                    </span>
+                    <div className="hidden sm:block w-px h-4 bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                    <div className="font-semibold text-stone-500 dark:text-stone-400">雇用形態</div>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="inline-block w-3.5 h-2"
+                        style={{ background: 'rgba(13, 148, 136, 0.18)', borderLeft: '2px solid #0d9488' }}
+                      />
+                      <span className="text-stone-600 dark:text-stone-300">月給</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="inline-block w-3.5 h-2"
+                        style={{
+                          background: 'rgba(234, 88, 12, 0.12)',
+                          borderLeft: '2px solid #ea580c',
+                          borderTop: '1px dashed #ea580c88',
+                          borderBottom: '1px dashed #ea580c88',
+                        }}
+                      />
+                      <span className="text-stone-600 dark:text-stone-300">時給</span>
+                    </span>
+                    <div className="hidden sm:block w-px h-4 bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                    <div className="font-semibold text-stone-500 dark:text-stone-400">ステータス</div>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block w-3.5 h-2 rounded-sm" style={{ background: '#ecfdf5', border: '1px solid #059669' }} />
+                      <span className="text-stone-600 dark:text-stone-300">本承認</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block w-3.5 h-2 rounded-sm" style={{ background: '#fff7ed', border: '1px solid #f97316' }} />
+                      <span className="text-stone-600 dark:text-stone-300">仮承認</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block w-3.5 h-2 rounded-sm" style={{ background: '#eff6ff', border: '1px solid #2563eb' }} />
+                      <span className="text-stone-600 dark:text-stone-300">申請中</span>
+                    </span>
+                  </Card.Body>
+                </Card>
+              </div>
 
               {/* 想定人件費 Card — カレンダー直下に配置 (Loop17 改: サイドバーから移動)。
                   manager 限定: canManageTenant ガード (給与情報セキュリティ)。 */}

@@ -5,8 +5,8 @@
  *
  * 設計書: .company/engineering/docs/2026-05-22-kintai-task-kanban-phase2-techdesign.md
  *
- * 切替方式: 案 A — 両方を常時 mount し、Tailwind の `md:` (768px) breakpoint で
- *   `md:hidden` / `hidden md:block` により表示・非表示を切り替える。
+ * 切替方式: 案 A — 両方を常時 mount し、Tailwind の `lg:` (1024px) breakpoint で
+ *   `lg:hidden` / `hidden lg:block` により表示・非表示を切り替える。
  *
  * Loop 4.5 P1-3:
  *   `useKanbanDnd` を当ラッパーで 1 回だけ呼び、`DndContext` も親 1 つに集約する。
@@ -55,7 +55,7 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
   return (
     <DndContext sensors={dnd.sensors} accessibility={dnd.accessibility} onDragEnd={dnd.handleDragEnd}>
       <div>
-        <div className="md:hidden">
+        <div className="lg:hidden">
           <MobileKanban
             tasks={props.tasks}
             onTaskClick={props.onTaskClick}
@@ -69,7 +69,7 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
             dnd={dnd}
           />
         </div>
-        <div className="hidden md:block">
+        <div className="hidden lg:block">
           <KanbanBoard
             tasks={props.tasks}
             onTaskClick={props.onTaskClick}

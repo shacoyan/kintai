@@ -1,6 +1,8 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
+import { Plus } from 'lucide-react';
 import type { Task, TaskStatus } from '../../types';
+import { cn } from '../../lib/cn';
 
 /**
  * KanbanColumn — 単一列の droppable container (Phase 2 Loop 1)
@@ -19,6 +21,8 @@ export type KanbanColumnProps = {
   renderCard?: (task: Task) => React.ReactNode;
   children?: React.ReactNode;
   isDroppable?: boolean;
+  onAddInStatus?: () => void;
+  hideHeader?: boolean;
 };
 
 const statusDotColor: Record<TaskStatus, string> = {
@@ -35,6 +39,8 @@ export function KanbanColumn({
   renderCard,
   children,
   isDroppable = true,
+  onAddInStatus,
+  hideHeader = false,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `column-${status}`,
@@ -44,32 +50,47 @@ export function KanbanColumn({
   const hasChildren = React.Children.count(children) > 0;
 
   return (
-    <div className="rounded-xl border border-stone-200/60 dark:border-stone-700/60 bg-white dark:bg-stone-800 flex flex-col min-h-[400px] motion-safe:transition-colors duration-150">
+    <div
+      className={cn(
+        'flex min-h-[400px] flex-col overflow-hidden rounded-[10px] border border-stone-200/70 bg-stone-100 motion-safe:transition-colors duration-150 dark:border-stone-700/60 dark:bg-stone-900',
+        hideHeader && 'min-h-0 rounded-none border-0',
+      )}
+    >
       {/* カラムヘッダー */}
-      <div className="px-4 pt-3 pb-2 flex items-center gap-2">
-        <span aria-hidden="true" className={`inline-block w-2 h-2 rounded-full ${statusDotColor[status]}`} />
-        <span className="font-semibold text-[13px] tracking-tight text-stone-700 dark:text-stone-200">
-          {label}
-        </span>
-        <span className="ml-auto inline-flex items-center justify-center min-w-[20px] h-5 px-2 rounded-full bg-stone-100 dark:bg-stone-700 text-[11px] font-medium tabular-nums text-stone-600 dark:text-stone-300">
-          {tasks.length}
-        </span>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center gap-2 border-b border-stone-200/70 bg-white px-3 py-2.5 dark:border-stone-700/60 dark:bg-stone-800">
+          <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full ${statusDotColor[status]}`} />
+          <span className="text-[12px] font-semibold text-stone-700 dark:text-stone-200">
+            {label}
+          </span>
+          <span className="font-mono text-[11px] tabular-nums text-stone-500 dark:text-stone-400">
+            {tasks.length}
+          </span>
+          <button
+            type="button"
+            className="ml-auto inline-flex h-7 w-7 items-center justify-center rounded text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-stone-700 dark:hover:text-stone-50"
+            onClick={onAddInStatus}
+            aria-label={`${label}にタスクを追加`}
+          >
+            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
       {/* カラム本体 (droppable) */}
       <div
         ref={setNodeRef}
-        className={`flex-1 px-2 pb-2 motion-safe:transition-all duration-150 focus-within:ring-2 focus-within:ring-blue-500/40 ${
+        className={`flex min-h-[120px] flex-1 flex-col gap-2 overflow-auto p-2 motion-safe:transition-colors duration-150 focus-within:ring-2 focus-within:ring-blue-500/40 ${
           isOver
-            ? 'ring-2 ring-inset ring-blue-500/30 bg-blue-50/40 dark:bg-blue-950/20'
+            ? 'bg-blue-50/40 dark:bg-blue-950/20'
             : ''
         }`}
       >
         {hasChildren ? (
-          <div className="flex flex-col gap-2">{children}</div>
+          children
         ) : tasks.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-stone-400 dark:text-stone-500 text-xs select-none">
-            タスクなし
+          <div className="rounded-[8px] border border-dashed border-stone-300 p-8 text-center text-[11px] text-stone-400 dark:border-stone-700 dark:text-stone-500">
+            ここにドラッグ
           </div>
         ) : (
           <div className="flex flex-col gap-2">

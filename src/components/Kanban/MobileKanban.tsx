@@ -109,7 +109,7 @@ export function MobileKanban({
 
   return (
     /* DndContext は親 ResponsiveKanban で巻いている。ここではアコーディオン UI のみ。 */
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-3">
       {COLUMN_DEFINITIONS.map(({ status, label }) => {
         const columnTasks = columnMap[status] || [];
         const taskIds = columnTasks.map((task) => `task-${task.id}`);
@@ -119,22 +119,22 @@ export function MobileKanban({
         return (
           <div
             key={status}
-            className="rounded-xl border border-stone-200/60 dark:border-stone-700/60 bg-white dark:bg-stone-800 overflow-hidden motion-safe:transition-colors duration-150"
+            className="overflow-hidden rounded-[10px] border border-stone-200/70 bg-stone-100 motion-safe:transition-colors duration-150 dark:border-stone-700/60 dark:bg-stone-900"
           >
             {/* Accordion Header */}
             <button
               type="button"
-              className="w-full flex items-center justify-between px-4 py-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="flex w-full items-center justify-between border-b border-stone-200/70 bg-white px-3 py-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-stone-700/60 dark:bg-stone-800"
               onClick={() => toggleAccordion(status)}
               aria-expanded={isOpen}
               aria-controls={accordionId}
             >
               <div className="flex items-center gap-2">
                 <span aria-hidden="true" className={`inline-block w-2 h-2 rounded-full ${statusDotColor[status]}`} />
-                <span className="font-semibold text-[13px] tracking-tight text-stone-700 dark:text-stone-200">
+                <span className="text-[12px] font-semibold text-stone-700 dark:text-stone-200">
                   {label}
                 </span>
-                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-2 rounded-full bg-stone-100 dark:bg-stone-700 text-[11px] font-medium tabular-nums text-stone-600 dark:text-stone-300">
+                <span className="font-mono text-[11px] tabular-nums text-stone-500 dark:text-stone-400">
                   {columnTasks.length}
                 </span>
               </div>
@@ -160,7 +160,7 @@ export function MobileKanban({
                   : 'h-0 overflow-hidden pointer-events-none'
               }
             >
-              <KanbanColumn status={status} label={label} tasks={columnTasks}>
+              <KanbanColumn status={status} label={label} tasks={columnTasks} hideHeader>
                 <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
                   {columnTasks.map((task) => {
                     const isDraggable = canStartDrag(task);
@@ -169,8 +169,8 @@ export function MobileKanban({
                       ? memberNames?.get(task.assignee_user_id)
                       : undefined;
 
-                    const projectName = task.store_id
-                      ? projectNames?.get(task.store_id)
+                    const projectName = task.project_id
+                      ? projectNames?.get(task.project_id)
                       : undefined;
 
                     return (

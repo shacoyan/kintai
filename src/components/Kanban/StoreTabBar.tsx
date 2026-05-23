@@ -86,7 +86,7 @@ export function StoreTabBar(props: StoreTabBarProps): JSX.Element {
 
   return (
     <div
-      className="flex items-center gap-2 overflow-x-auto py-1 px-1"
+      className="flex items-center gap-1 overflow-x-auto py-1"
       role="tablist"
       aria-label="店舗タブ"
     >
@@ -102,20 +102,20 @@ export function StoreTabBar(props: StoreTabBarProps): JSX.Element {
             aria-selected={isActive}
             onClick={() => onChange(tabValue)}
             className={cn(
-              'shrink-0 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+              'shrink-0 inline-flex h-[30px] items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium whitespace-nowrap motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
               isActive
-                ? 'bg-blue-600 text-white shadow-sm hover:bg-blue-700'
-                : 'bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 border border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-700',
+                ? 'bg-stone-900 text-stone-50 border-stone-900 dark:bg-stone-50 dark:text-stone-900 dark:border-stone-50'
+                : 'bg-transparent text-stone-700 border-stone-200 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-200 dark:border-stone-700 dark:hover:bg-stone-800 dark:hover:text-stone-50',
             )}
           >
             {label}
             {count !== undefined && count > 0 && (
               isActive ? (
-                <span className="bg-white/25 text-white px-2 py-0.5 rounded-full text-[11px] font-semibold tabular-nums">
+                <span className="inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-white/15 px-1.5 text-[10px] font-mono font-medium tabular-nums text-stone-50 dark:bg-black/10 dark:text-stone-900">
                   {count}
                 </span>
               ) : (
-                <span className="bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-300 px-2 py-0.5 rounded-full text-[11px] font-medium tabular-nums">
+                <span className="inline-flex h-4 min-w-[18px] items-center justify-center rounded-full bg-black/5 px-1.5 text-[10px] font-mono font-medium tabular-nums text-stone-600 dark:bg-white/10 dark:text-stone-300">
                   {count}
                 </span>
               )

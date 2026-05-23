@@ -1,10 +1,9 @@
 import React from 'react';
 import { format, isPast, parseISO } from 'date-fns';
-import { Calendar, User } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Task, TaskPriority } from '../../types';
-import { TASK_PRIORITY_LABELS } from '../../types';
 import { getProjectColor } from '../../lib/projectColor';
 
 export interface KanbanCardProps {
@@ -22,6 +21,57 @@ const priorityDotColor: Record<TaskPriority, string> = {
   1: 'bg-stone-400',
   0: 'bg-blue-400',
 };
+
+const priorityTextColor: Record<TaskPriority, string> = {
+  3: 'text-red-500',
+  2: 'text-orange-500',
+  1: 'text-stone-500',
+  0: 'text-blue-500',
+};
+
+const priorityEnglishLabel: Record<TaskPriority, string> = {
+  3: 'URGENT',
+  2: 'HIGH',
+  1: 'NORMAL',
+  0: 'LOW',
+};
+
+const avatarColors = [
+  'bg-stone-200 text-stone-700',
+  'bg-blue-100 text-blue-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-orange-100 text-orange-700',
+  'bg-purple-100 text-purple-700',
+  'bg-cyan-100 text-cyan-700',
+  'bg-amber-100 text-amber-700',
+  'bg-indigo-100 text-indigo-700',
+];
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function getAvatarColor(userId: string | null): string {
+  if (!userId) return avatarColors[0];
+  return avatarColors[hashString(userId) % avatarColors.length];
+}
+
+function getProjectDotColor(borderClass: string): string {
+  if (borderClass.includes('border-blue-500')) return 'bg-blue-500';
+  if (borderClass.includes('border-emerald-500')) return 'bg-emerald-500';
+  if (borderClass.includes('border-orange-500')) return 'bg-orange-500';
+  if (borderClass.includes('border-purple-500')) return 'bg-purple-500';
+  if (borderClass.includes('border-pink-500')) return 'bg-pink-500';
+  if (borderClass.includes('border-cyan-500')) return 'bg-cyan-500';
+  if (borderClass.includes('border-amber-500')) return 'bg-amber-500';
+  if (borderClass.includes('border-indigo-500')) return 'bg-indigo-500';
+  return 'bg-stone-400';
+}
 
 /**
  * Kanban カラム内に表示する compact カード。
@@ -55,7 +105,6 @@ export function KanbanCard({
   const style: React.CSSProperties = {
     transform: dragTransform,
     transition,
-    opacity: isDragging ? 0.8 : undefined,
   };
 
   const isOverdue =
@@ -98,66 +147,76 @@ export function KanbanCard({
       aria-disabled={!isDraggable || undefined}
       aria-label={isClickable ? `タスク: ${task.title}` : undefined}
       className={`
+        flex flex-col gap-1.5
         bg-white dark:bg-stone-800
-        rounded-[10px]
-        border ${isDragging ? 'border-stone-300/80 dark:border-stone-600' : 'border-stone-300/80 dark:border-stone-700/60'}
+        rounded-[8px]
+        border border-stone-200/70 dark:border-stone-700/60
         border-l-[3px] ${projectColor.border}
-        ${isDragging ? 'shadow-[0_12px_28px_rgba(0,0,0,0.16)]' : 'shadow-[0_1px_2px_rgba(0,0,0,0.04)]'}
-        p-3
+        ${isDragging ? 'opacity-[0.55] rotate-[0.6deg] scale-[0.98] shadow-[0_12px_28px_rgba(0,0,0,0.16)] cursor-grabbing' : 'shadow-[0_1px_2px_rgba(0,0,0,0.04)]'}
+        p-2.5 px-3
         select-none
         motion-safe:transition-all motion-safe:duration-150 motion-safe:ease-out
         ${!isDraggable
           ? 'cursor-not-allowed opacity-90'
-          : 'cursor-grab active:cursor-grabbing motion-safe:hover:-translate-y-px hover:border-stone-300 dark:hover:border-stone-600 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]'}
+          : 'cursor-grab active:cursor-grabbing motion-safe:hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]'}
         ${isClickable ? 'focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus:outline-none' : ''}
       `}
     >
-      {/* ヘッダー: 優先度ドット + タイトル */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-2 min-w-0 flex-1">
-          <span
-            aria-hidden="true"
-            className={`inline-block w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${priorityDotColor[task.priority]}`}
-            title={TASK_PRIORITY_LABELS[task.priority]}
-          />
-          <h3 className="text-[13px] font-medium text-stone-900 dark:text-stone-100 leading-snug line-clamp-2 min-w-0">
-            {task.title}
-          </h3>
-        </div>
+      <div className="flex items-center gap-1.5">
+        <span
+          aria-hidden="true"
+          className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${priorityDotColor[task.priority]}`}
+        />
+        <span className={`text-[9px] font-semibold uppercase tracking-[0.05em] ${priorityTextColor[task.priority]}`}>
+          {priorityEnglishLabel[task.priority]}
+        </span>
+        <span className="flex-1" />
+        {task.status === 'cancelled' && (
+          <span className="inline-flex h-[18px] items-center rounded-full bg-red-50 px-1.5 text-[10px] font-medium text-red-700 dark:bg-red-950/40 dark:text-red-300">
+            中止
+          </span>
+        )}
       </div>
 
-      {/* プロジェクト名 chip (任意): プロジェクトごとの色付きで視認性を強化 */}
+      <h3 className="line-clamp-2 text-[12.5px] font-medium leading-[1.4] text-stone-900 dark:text-stone-100">
+        {task.title}
+      </h3>
+
       {projectName && (
-        <div className="mt-1.5 flex">
+        <div className="flex min-w-0">
           <span
-            className={`inline-block max-w-full truncate rounded px-1.5 py-0.5 text-[10px] font-medium leading-none ${projectColor.bg} ${projectColor.text}`}
+            className={`inline-flex h-[18px] max-w-full items-center gap-1 rounded-full px-1.5 text-[10px] font-medium ${projectColor.bg} ${projectColor.text}`}
             title={projectName}
           >
-            {projectName}
+            <span aria-hidden="true" className={`h-[5px] w-[5px] rounded-full ${getProjectDotColor(projectColor.border)}`} />
+            <span className="truncate">{projectName}</span>
           </span>
         </div>
       )}
 
-      {/* メタ情報: 期限 / 担当者 */}
+      <div className="my-0.5 h-px bg-stone-200/70 dark:bg-stone-700/70" />
+
       {(task.due_date || assigneeName) && (
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-stone-500 dark:text-stone-400 tabular-nums">
+        <div className="flex items-center gap-1.5">
           {task.due_date && (
             <span
-              className={`inline-flex items-center gap-1 ${
-                isOverdue ? 'text-red-600 dark:text-red-400 font-semibold' : ''
+              className={`inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-stone-500 dark:text-stone-400 ${
+                isOverdue ? 'font-bold text-red-600 dark:text-red-400' : ''
               }`}
             >
-              <Calendar className="w-3 h-3" aria-hidden="true" />
+              <Calendar className="h-[11px] w-[11px]" aria-hidden="true" />
               <time dateTime={task.due_date}>
-                {isOverdue ? '期限切れ ' : ''}
                 {format(parseISO(task.due_date), 'MM/dd')}
               </time>
             </span>
           )}
+          <span className="flex-1" />
           {assigneeName && (
-            <span className="inline-flex items-center gap-1 min-w-0">
-              <User className="w-3 h-3" aria-hidden="true" />
-              <span className="truncate">{assigneeName}</span>
+            <span
+              className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${getAvatarColor(task.assignee_user_id)}`}
+              title={assigneeName}
+            >
+              {assigneeName.slice(0, 1)}
             </span>
           )}
         </div>

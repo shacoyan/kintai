@@ -8,7 +8,16 @@
  */
 
 import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
-import { Plus, AlertTriangle } from 'lucide-react';
+import { format, isPast, parseISO } from 'date-fns';
+import {
+  Plus,
+  AlertTriangle,
+  Filter,
+  Info,
+  Calendar,
+  MoreHorizontal,
+  Check,
+} from 'lucide-react';
 import { useTasks, useTaskMutations, type TaskInput } from '../hooks/useTasks';
 import { useProjects } from '../hooks/useProjects';
 import { useTenant } from '../contexts/TenantContext';
@@ -24,11 +33,10 @@ import {
 } from '../components/ui';
 import type {
   Task,
+  TaskPriority,
   TaskStatus,
 } from '../types';
 import {
-  TaskCard,
-  TaskList,
   TaskFilterBar,
   TaskDialog,
   type TaskInput as ComponentsTaskInput,
@@ -46,12 +54,71 @@ import {
   writeStoreTab,
 } from '../lib/kanbanStorage';
 import type { ViewMode, StoreTabValue } from '../components/Kanban/types';
+import { getProjectColor } from '../lib/projectColor';
 
 // ─── ダイアログ状態 ──────────────────────────────────────────
 
 interface DialogState {
   mode: 'create' | 'edit';
   task?: Task;
+}
+
+const priorityDotColor: Record<TaskPriority, string> = {
+  3: 'bg-red-500',
+  2: 'bg-orange-500',
+  1: 'bg-stone-400',
+  0: 'bg-blue-400',
+};
+
+const priorityLabel: Record<TaskPriority, string> = {
+  3: '緊急',
+  2: '高',
+  1: '通常',
+  0: '低',
+};
+
+const statusMeta: Record<TaskStatus, { label: string; text: string; dot: string }> = {
+  todo: { label: '未着手', text: 'text-stone-500', dot: 'bg-stone-400' },
+  in_progress: { label: '進行中', text: 'text-blue-600', dot: 'bg-blue-500' },
+  done: { label: '完了', text: 'text-emerald-600', dot: 'bg-emerald-500' },
+  cancelled: { label: '中止', text: 'text-red-600', dot: 'bg-red-500' },
+};
+
+const avatarColors = [
+  'bg-stone-200 text-stone-700',
+  'bg-blue-100 text-blue-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-orange-100 text-orange-700',
+  'bg-purple-100 text-purple-700',
+  'bg-cyan-100 text-cyan-700',
+  'bg-amber-100 text-amber-700',
+  'bg-indigo-100 text-indigo-700',
+];
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function getAvatarColor(userId: string | null): string {
+  if (!userId) return avatarColors[0];
+  return avatarColors[hashString(userId) % avatarColors.length];
+}
+
+function getProjectDotColor(borderClass: string): string {
+  if (borderClass.includes('border-blue-500')) return 'bg-blue-500';
+  if (borderClass.includes('border-emerald-500')) return 'bg-emerald-500';
+  if (borderClass.includes('border-orange-500')) return 'bg-orange-500';
+  if (borderClass.includes('border-purple-500')) return 'bg-purple-500';
+  if (borderClass.includes('border-pink-500')) return 'bg-pink-500';
+  if (borderClass.includes('border-cyan-500')) return 'bg-cyan-500';
+  if (borderClass.includes('border-amber-500')) return 'bg-amber-500';
+  if (borderClass.includes('border-indigo-500')) return 'bg-indigo-500';
+  return 'bg-stone-400';
 }
 
 // ─── メインページ ────────────────────────────────────────────
@@ -90,6 +157,7 @@ export function TasksPage(): JSX.Element {
   // 旧実装は ['todo','in_progress'] 固定で「完了タスクが見えない」と誤解される報告があったため、
   // 既定で全件表示とし、ユーザーが必要に応じて絞り込む UX に変更。
   const [filter, setFilter] = useState<TaskFilterValue>({});
+  const [filterOpen, setFilterOpen] = useState<boolean>(false);
 
   const enabledStatuses = useMemo<TaskStatus[]>(
     () => {
@@ -199,6 +267,11 @@ export function TasksPage(): JSX.Element {
     [projects],
   );
 
+  const storeNames = useMemo(
+    () => new Map(storeOptions.map((s) => [s.id, s.name])),
+    [storeOptions],
+  );
+
   // ── ダイアログ状態 ──
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
@@ -211,7 +284,6 @@ export function TasksPage(): JSX.Element {
     if (!saving) setDialog(null);
   };
 
-  const openDeleteConfirm = (id: string): void => setDeletingTaskId(id);
   const closeDeleteConfirm = (): void => {
     if (!deleting) setDeletingTaskId(null);
   };
@@ -280,69 +352,78 @@ export function TasksPage(): JSX.Element {
 
   // ────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
       {/* ヘッダー */}
-      <header className="flex items-start justify-between gap-4">
-        <div>
+      <header className="space-y-3">
+        <div className="flex items-start justify-between gap-4">
           <Heading level={1}>タスク</Heading>
-          <p className="text-sm text-stone-500 mt-1">
-            タスクの進捗を管理します
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* View 切替トグル */}
-          <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-full p-1">
-            <button
-              type="button"
-              className={`rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                viewMode === 'kanban'
-                  ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
-                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
-              }`}
-              onClick={() => handleViewModeChange('kanban')}
-              aria-pressed={viewMode === 'kanban'}
-            >
-              ボード
-            </button>
-            <button
-              type="button"
-              className={`rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                viewMode === 'list'
-                  ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
-                  : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
-              }`}
-              onClick={() => handleViewModeChange('list')}
-              aria-pressed={viewMode === 'list'}
-            >
-              リスト
-            </button>
-          </div>
-          {!isParttime && (
-            <PrimaryActionButton onClick={openCreate} icon={<Plus size={16} aria-hidden="true" />}>
-              新規
-            </PrimaryActionButton>
+          {isParttime && (
+            <p className="inline-flex items-center gap-1.5 text-[12px] text-stone-500 dark:text-stone-400">
+              <Info className="h-3.5 w-3.5" aria-hidden="true" />
+              バイトのため自分のタスクのみ表示中
+            </p>
           )}
+        </div>
+
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="min-w-0 md:flex-1">
+            <StoreTabBar
+              stores={stores}
+              value={storeTab}
+              onChange={handleStoreTabChange}
+              counts={openTaskCountsByStore}
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-end gap-2 md:gap-3">
+            <div className="inline-flex shrink-0 items-center rounded-full bg-stone-100 p-1 dark:bg-stone-800">
+              <button
+                type="button"
+                className={`h-7 rounded-full px-3 text-[13px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  viewMode === 'kanban'
+                    ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                    : 'text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                }`}
+                onClick={() => handleViewModeChange('kanban')}
+                aria-pressed={viewMode === 'kanban'}
+              >
+                ボード
+              </button>
+              <button
+                type="button"
+                className={`h-7 rounded-full px-3 text-[13px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  viewMode === 'list'
+                    ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                    : 'text-stone-500 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                }`}
+                onClick={() => handleViewModeChange('list')}
+                aria-pressed={viewMode === 'list'}
+              >
+                リスト
+              </button>
+            </div>
+
+            <button
+              type="button"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-stone-200 bg-white px-3 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
+              onClick={() => setFilterOpen((prev) => !prev)}
+              aria-pressed={filterOpen}
+            >
+              <Filter className="h-4 w-4" aria-hidden="true" />
+              フィルタ
+            </button>
+
+            {!isParttime && (
+              <PrimaryActionButton onClick={openCreate} icon={<Plus size={16} aria-hidden="true" />}>
+                新規
+              </PrimaryActionButton>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* バイト自動フィルタヒント */}
-      {isParttime && (
-        <p className="text-xs text-stone-500 dark:text-stone-400">
-          バイトのため自分のタスクのみ表示中
-        </p>
-      )}
-
-      {/* StoreTabBar */}
-      <StoreTabBar
-        stores={stores}
-        value={storeTab}
-        onChange={handleStoreTabChange}
-        counts={openTaskCountsByStore}
-      />
-
-      {/* フィルタバー (List時のみ表示。Kanban時は status 列で代替) */}
-      {viewMode === 'list' && (
-        <div className="space-y-2">
+      {filterOpen && (
+        <div className="space-y-2 rounded-[10px] border border-stone-200/70 bg-white p-3 dark:border-stone-700/60 dark:bg-stone-800">
           <TaskFilterBar
             value={filter}
             onChange={setFilter}
@@ -400,31 +481,155 @@ export function TasksPage(): JSX.Element {
 
       {/* View別レンダリング: List */}
       {!tasksLoading && !tasksError && viewMode === 'list' && (
-        <TaskList
-          tasks={filteredTasks}
-          memberNames={memberNames}
-          projectNames={projectNames}
-          emptyMessage="タスクはありません"
-          renderItem={(t) => {
-            const canAct = canActOnTask(t);
-            const isDone = t.status === 'done';
-            return (
-              <TaskCard
-                key={t.id}
-                task={t}
-                onClick={canAct && !isDone ? () => openEdit(t) : undefined}
-                onComplete={canAct && !isDone ? () => handleComplete(t.id) : undefined}
-                onReopen={canManage && isDone ? () => handleReopen(t.id) : undefined}
-                onDelete={canManage ? () => openDeleteConfirm(t.id) : undefined}
-                canEdit={canAct && !isDone}
-                canComplete={canAct || canManage}
-                canDelete={canManage}
-                assigneeName={t.assignee_user_id ? memberNames.get(t.assignee_user_id) : undefined}
-                projectName={t.project_id ? projectNames.get(t.project_id) : undefined}
-              />
-            );
-          }}
-        />
+        <div className="overflow-x-auto rounded-[10px] border border-stone-200/70 bg-white dark:border-stone-700/60 dark:bg-stone-800">
+          <div className="min-w-[920px]">
+          <div className="grid grid-cols-[20px_32px_minmax(260px,1fr)_160px_80px_70px_80px_70px_40px] items-center gap-3 border-b border-stone-200/70 bg-stone-50 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-stone-500 dark:border-stone-700/60 dark:bg-stone-900 dark:text-stone-400">
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span>タイトル</span>
+            <span>プロジェクト</span>
+            <span>店舗</span>
+            <span>優先度</span>
+            <span>期限</span>
+            <span>担当</span>
+            <span aria-hidden="true" />
+          </div>
+
+          {filteredTasks.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm text-stone-500 dark:text-stone-400">
+              タスクはありません
+            </div>
+          ) : (
+            filteredTasks.map((t) => {
+              const canAct = canActOnTask(t);
+              const isDone = t.status === 'done';
+              const canOpen = isDone || t.status === 'cancelled' ? canManage : canAct;
+              const projectColor = getProjectColor(t.project_id);
+              const projectName = t.project_id ? projectNames.get(t.project_id) : undefined;
+              const assigneeName = t.assignee_user_id ? memberNames.get(t.assignee_user_id) : undefined;
+              const storeName = t.store_id ? storeNames.get(t.store_id) : '全社';
+              const meta = statusMeta[t.status];
+              const isOverdue =
+                !!t.due_date &&
+                isPast(parseISO(t.due_date)) &&
+                t.status !== 'done' &&
+                t.status !== 'cancelled';
+
+              return (
+                <div
+                  key={t.id}
+                  role={canOpen ? 'button' : undefined}
+                  tabIndex={canOpen ? 0 : undefined}
+                  onClick={canOpen ? () => openEdit(t) : undefined}
+                  onKeyDown={canOpen ? (e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      openEdit(t);
+                    }
+                  } : undefined}
+                  className={`grid grid-cols-[20px_32px_minmax(260px,1fr)_160px_80px_70px_80px_70px_40px] items-center gap-3 border-b border-l-[3px] border-b-stone-200/70 px-4 py-2.5 last:border-b-0 ${projectColor.border} ${canOpen ? 'cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-900/60' : ''}`}
+                >
+                  <button
+                    type="button"
+                    className="flex h-5 w-5 items-center justify-center rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isDone) {
+                        if (canManage) void handleReopen(t.id);
+                      } else if (canAct) {
+                        void handleComplete(t.id);
+                      }
+                    }}
+                    disabled={isDone ? !canManage : !canAct}
+                    aria-label={isDone ? 'タスクを再開' : 'タスクを完了'}
+                  >
+                    {isDone ? (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-[4px] border border-emerald-600 bg-emerald-600">
+                        <Check className="h-[11px] w-[11px] text-white" aria-hidden="true" />
+                      </span>
+                    ) : (
+                      <span className="h-4 w-4 rounded-[4px] border-[1.5px] border-stone-300 bg-transparent dark:border-stone-600" />
+                    )}
+                  </button>
+
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${meta.text}`}>
+                    <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                    <span className="sr-only">{meta.label}</span>
+                  </span>
+
+                  <span
+                    className={`truncate text-[13px] font-medium ${
+                      isDone || t.status === 'cancelled'
+                        ? 'text-stone-400 line-through'
+                        : 'text-stone-900 dark:text-stone-100'
+                    }`}
+                  >
+                    {t.title}
+                  </span>
+
+                  <span className="min-w-0">
+                    {projectName && (
+                      <span
+                        className={`inline-flex h-[18px] max-w-full items-center gap-1 rounded-full px-1.5 text-[10px] font-medium ${projectColor.bg} ${projectColor.text}`}
+                        title={projectName}
+                      >
+                        <span aria-hidden="true" className={`h-[5px] w-[5px] rounded-full ${getProjectDotColor(projectColor.border)}`} />
+                        <span className="truncate">{projectName}</span>
+                      </span>
+                    )}
+                  </span>
+
+                  <span className="truncate text-[11px] text-stone-500 dark:text-stone-400">
+                    {storeName}
+                  </span>
+
+                  <span className="inline-flex items-center gap-1.5 text-[11px] text-stone-700 dark:text-stone-300">
+                    <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${priorityDotColor[t.priority]}`} />
+                    {priorityLabel[t.priority]}
+                  </span>
+
+                  <span
+                    className={`inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-stone-500 dark:text-stone-400 ${
+                      isOverdue ? 'font-semibold text-red-600 dark:text-red-400' : ''
+                    }`}
+                  >
+                    {t.due_date && (
+                      <>
+                        <Calendar className="h-[11px] w-[11px]" aria-hidden="true" />
+                        <time dateTime={t.due_date}>{format(parseISO(t.due_date), 'MM/dd')}</time>
+                      </>
+                    )}
+                  </span>
+
+                  <span className="flex items-center">
+                    {assigneeName && (
+                      <span
+                        className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold ${getAvatarColor(t.assignee_user_id)}`}
+                        title={assigneeName}
+                      >
+                        {assigneeName.slice(0, 1)}
+                      </span>
+                    )}
+                  </span>
+
+                  <button
+                    type="button"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-stone-700 dark:hover:text-stone-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (canOpen) openEdit(t);
+                    }}
+                    aria-label="タスクを編集"
+                    disabled={!canOpen}
+                  >
+                    <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+              );
+            })
+          )}
+          </div>
+        </div>
       )}
 
       {/* 新規/編集ダイアログ */}
