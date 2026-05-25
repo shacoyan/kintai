@@ -2,8 +2,9 @@ import { format, isSameDay, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Badge } from '../ui';
 import type { Shift, ShiftPreference } from '../../types';
+import { ROLE_COLOR_HEX, ROLE_COLOR_LABEL, type RoleColorKey } from '../../utils/getRoleColor';
 
-type RoleType = 'owner' | 'manager' | 'fulltime' | 'parttime';
+type RoleType = RoleColorKey;
 type RowItem =
   | { kind: 'shift'; shift: Shift }
   | { kind: 'preference'; pref: ShiftPreference };
@@ -19,19 +20,8 @@ interface Props {
   onSeeAll?: () => void;
 }
 
-function roleColorOf(roleType?: RoleType): string {
-  if (roleType === 'owner') return '#7c3aed';
-  if (roleType === 'manager') return '#2563eb';
-  if (roleType === 'fulltime') return '#0d9488';
-  return '#ea580c';
-}
-
-function roleLabelOf(roleType?: RoleType): string {
-  if (roleType === 'owner') return '会長 / 内勤';
-  if (roleType === 'manager') return '店長';
-  if (roleType === 'fulltime') return '正社員';
-  return 'バイト';
-}
+const roleColorOf = (roleType?: RoleType): string => ROLE_COLOR_HEX[roleType ?? 'parttime'];
+const roleLabelOf = (roleType?: RoleType): string => ROLE_COLOR_LABEL[roleType ?? 'parttime'];
 
 function statusTone(status: string): 'success' | 'warning' | 'info' {
   if (status === 'approved') return 'success';
