@@ -147,7 +147,7 @@ export function LaborCostCard({
       <div className="hidden md:grid md:grid-cols-3 gap-2">
         <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2 flex flex-col items-start gap-0.5">
           <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">月給合計</div>
-          <div className="tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
+          <div className="tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18 }}>
             {monthlySplit.yenMan}
             {monthlySplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{monthlySplit.tail}</span>}
           </div>
@@ -158,7 +158,7 @@ export function LaborCostCard({
         </div>
         <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2 flex flex-col items-start gap-0.5">
           <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">時給合計</div>
-          <div className="tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
+          <div className="tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18 }}>
             {hourlySplit.yenMan}
             {hourlySplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{hourlySplit.tail}</span>}
           </div>
@@ -169,7 +169,7 @@ export function LaborCostCard({
         </div>
         <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2 flex flex-col items-start gap-0.5">
           <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">総計</div>
-          <div className="tabular-nums font-semibold text-blue-600" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
+          <div className="tabular-nums font-semibold text-blue-600" style={{ fontSize: 18 }}>
             {totalSplit.yenMan}
             {totalSplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{totalSplit.tail}</span>}
           </div>

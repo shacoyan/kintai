@@ -573,7 +573,7 @@ export function ShiftPage() {
             <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-5 lg:items-start">
               <main className="min-w-0">
                 <Card padding="none" className="overflow-hidden">
-            <div className="flex items-center gap-2 flex-wrap px-4 py-3">
+            <div className="flex items-center gap-2 flex-wrap px-4 py-2.5">
               <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
                 <button
                   type="button"
@@ -604,24 +604,6 @@ export function ShiftPage() {
               {isCurrentPreferenceView && (
                 <>
                   <div className="hidden sm:block w-px h-[20px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
-                  <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
-                    {(['week', '2week', 'month'] as const).map((v) => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => setShiftViewMode(v)}
-                        aria-pressed={shiftViewMode === v}
-                        className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                          shiftViewMode === v
-                            ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
-                            : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
-                        }`}
-                      >
-                        {v === 'week' ? '週' : v === '2week' ? '2週' : '月'}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="hidden sm:block w-px h-[20px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -650,6 +632,24 @@ export function ShiftPage() {
                   </div>
 
                   <div className="hidden sm:block w-px h-[20px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                  <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
+                    {(['week', '2week', 'month'] as const).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setShiftViewMode(v)}
+                        aria-pressed={shiftViewMode === v}
+                        className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                          shiftViewMode === v
+                            ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                            : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                        }`}
+                      >
+                        {v === 'week' ? '週' : v === '2week' ? '2週' : '月'}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="hidden sm:block w-px h-[20px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
                   <div className="min-w-0 flex-1 sm:flex-none">
                     <ShiftStatusFilter
                       value={statusFilter}
@@ -662,110 +662,114 @@ export function ShiftPage() {
                       }}
                     />
                   </div>
-
-                  <div className="hidden sm:block flex-1" aria-hidden="true" />
-                  <div className="flex flex-wrap items-center gap-2">
-                    {storeId && !isBulkMode && (
-                      <Button
-                        variant="success"
-                        size="sm"
-                        iconLeft={<Plus className="w-3.5 h-3.5" />}
-                        onClick={handleEnterBulkMode}
-                        disabled={isDeadlinePassed && !canEditDeadline}
-                        className="shrink-0 grow sm:grow-0"
-                        aria-pressed={isBulkMode}
-                        aria-label={messages.shiftPreference.bulk.entryButtonAria}
-                      >
-                        {messages.shiftPreference.bulk.entryButton}
-                      </Button>
-                    )}
-                    {canManageTenant && (() => {
-                      // Iter 2-A (Worker A) / P1: 正典準拠順序 — 申請 → 本承認 → 却下。
-                      // 「仮承認を一括本承認」: 表示中の月に含まれる shift.status === 'tentative' を一括で本承認する。
-                      // - approveShift (RPC approve_shift_final) を 1 件ずつ呼ぶ。エラー件数は console.warn でログ出力。
-                      // - 「未承認を一括却下」と同じパターン (filter → confirm → for ループ → fetchRange)。
-                      const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                      const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                      const tentativeInRange = shifts.filter(
-                        s => s.status === 'tentative' && s.date >= monthStart && s.date <= monthEnd
-                      );
-                      const tCount = tentativeInRange.length;
-                      const handleBulkApproveTentative = async () => {
-                        if (tCount === 0) return;
-                        // eslint-disable-next-line no-alert
-                        if (!window.confirm(`${tCount}件を本承認します。よろしいですか？`)) return;
-                        let errors = 0;
-                        for (const s of tentativeInRange) {
-                          try {
-                            await approveShift(s.id);
-                          } catch {
-                            errors += 1;
-                          }
-                        }
-                        fetchRange();
-                        if (errors > 0) {
-                          // eslint-disable-next-line no-console
-                          console.warn(`[bulkApproveTentative] ${errors} 件で承認エラーが発生しました`);
-                        }
-                      };
-                      return (
-                        /* Iter 2-A / P1: outline 風 */
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={handleBulkApproveTentative}
-                          disabled={tCount === 0}
-                          className="shrink-0 grow sm:grow-0 !bg-white !border !border-stone-200 !text-stone-900 hover:!bg-stone-100 dark:!bg-stone-800 dark:!border-stone-700 dark:!text-stone-100 dark:hover:!bg-stone-700"
-                          aria-label={`表示中の期間の仮承認シフトを一括本承認（${tCount}件）`}
-                        >
-                          仮承認を一括本承認{tCount > 0 ? `（${tCount}）` : ''}
-                        </Button>
-                      );
-                    })()}
-                    {canManageTenant && (() => {
-                      const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                      const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                      const pendingInRange = preferencesForCalendar.filter(
-                        p => p.status === 'pending' && p.date >= monthStart && p.date <= monthEnd
-                      );
-                      const count = pendingInRange.length;
-                      const handleBulkRejectInRange = async () => {
-                        if (count === 0) return;
-                        // eslint-disable-next-line no-alert
-                        if (!window.confirm(`${count}件却下します。よろしいですか？`)) return;
-                        let errors = 0;
-                        for (const p of pendingInRange) {
-                          try {
-                            await rejectPreference(p.id);
-                          } catch {
-                            errors += 1;
-                          }
-                        }
-                        fetchPreferenceRange();
-                        fetchRange();
-                        if (errors > 0) {
-                          // eslint-disable-next-line no-console
-                          console.warn(`[bulkRejectInRange] ${errors} 件で却下エラーが発生しました`);
-                        }
-                      };
-                      return (
-                        /* Iter 2-A / P1: ghost-danger 風 — border なし + 赤文字 + hover で淡赤背景 */
-                        <Button
-                          variant="tertiary"
-                          size="sm"
-                          onClick={handleBulkRejectInRange}
-                          disabled={count === 0}
-                          className="shrink-0 grow sm:grow-0 !text-red-700 hover:!bg-red-50 dark:!text-red-300 dark:hover:!bg-red-900/30"
-                          aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
-                        >
-                          未承認を一括却下{count > 0 ? `（${count}）` : ''}
-                        </Button>
-                      );
-                    })()}
-                  </div>
                 </>
               )}
             </div>
+
+            {isCurrentPreferenceView && (
+              <div className="border-t border-stone-100 dark:border-stone-700/60 flex flex-wrap items-center gap-2 px-4 py-2.5">
+                {storeId && !isBulkMode && (
+                  <Button
+                    variant="success"
+                    size="sm"
+                    iconLeft={<Plus className="w-3.5 h-3.5" />}
+                    onClick={handleEnterBulkMode}
+                    disabled={isDeadlinePassed && !canEditDeadline}
+                    className="shrink-0 grow sm:grow-0"
+                    aria-pressed={isBulkMode}
+                    aria-label={messages.shiftPreference.bulk.entryButtonAria}
+                  >
+                    {messages.shiftPreference.bulk.entryButton}
+                  </Button>
+                )}
+
+                <div className="flex-1" aria-hidden="true" />
+
+                {canManageTenant && (() => {
+                  // Iter 2-A (Worker A) / P1: 正典準拠順序 — 申請 → 本承認 → 却下。
+                  // 「仮承認を一括本承認」: 表示中の月に含まれる shift.status === 'tentative' を一括で本承認する。
+                  // - approveShift (RPC approve_shift_final) を 1 件ずつ呼ぶ。エラー件数は console.warn でログ出力。
+                  // - 「未承認を一括却下」と同じパターン (filter → confirm → for ループ → fetchRange)。
+                  const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                  const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                  const tentativeInRange = shifts.filter(
+                    s => s.status === 'tentative' && s.date >= monthStart && s.date <= monthEnd
+                  );
+                  const tCount = tentativeInRange.length;
+                  const handleBulkApproveTentative = async () => {
+                    if (tCount === 0) return;
+                    // eslint-disable-next-line no-alert
+                    if (!window.confirm(`${tCount}件を本承認します。よろしいですか？`)) return;
+                    let errors = 0;
+                    for (const s of tentativeInRange) {
+                      try {
+                        await approveShift(s.id);
+                      } catch {
+                        errors += 1;
+                      }
+                    }
+                    fetchRange();
+                    if (errors > 0) {
+                      // eslint-disable-next-line no-console
+                      console.warn(`[bulkApproveTentative] ${errors} 件で承認エラーが発生しました`);
+                    }
+                  };
+                  return (
+                    /* Iter 2-A / P1: outline 風 */
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleBulkApproveTentative}
+                      disabled={tCount === 0}
+                      className="shrink-0 grow sm:grow-0 !bg-white !border !border-stone-200 !text-stone-900 hover:!bg-stone-100 dark:!bg-stone-800 dark:!border-stone-700 dark:!text-stone-100 dark:hover:!bg-stone-700"
+                      aria-label={`表示中の期間の仮承認シフトを一括本承認（${tCount}件）`}
+                    >
+                      仮承認を一括本承認{tCount > 0 ? `（${tCount}）` : ''}
+                    </Button>
+                  );
+                })()}
+                {canManageTenant && (() => {
+                  const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                  const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                  const pendingInRange = preferencesForCalendar.filter(
+                    p => p.status === 'pending' && p.date >= monthStart && p.date <= monthEnd
+                  );
+                  const count = pendingInRange.length;
+                  const handleBulkRejectInRange = async () => {
+                    if (count === 0) return;
+                    // eslint-disable-next-line no-alert
+                    if (!window.confirm(`${count}件却下します。よろしいですか？`)) return;
+                    let errors = 0;
+                    for (const p of pendingInRange) {
+                      try {
+                        await rejectPreference(p.id);
+                      } catch {
+                        errors += 1;
+                      }
+                    }
+                    fetchPreferenceRange();
+                    fetchRange();
+                    if (errors > 0) {
+                      // eslint-disable-next-line no-console
+                      console.warn(`[bulkRejectInRange] ${errors} 件で却下エラーが発生しました`);
+                    }
+                  };
+                  return (
+                    /* Iter 2-A / P1: ghost-danger 風 — border なし + 赤文字 + hover で淡赤背景 */
+                    <Button
+                      variant="tertiary"
+                      size="sm"
+                      onClick={handleBulkRejectInRange}
+                      disabled={count === 0}
+                      className="shrink-0 grow sm:grow-0 !text-red-700 hover:!bg-red-50 dark:!text-red-300 dark:hover:!bg-red-900/30"
+                      aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
+                    >
+                      未承認を一括却下{count > 0 ? `（${count}）` : ''}
+                    </Button>
+                  );
+                })()}
+              </div>
+            )}
 
                   {deadlineInfo && !deadlineInfo.passed && (
                     <div className="border-t border-stone-100 dark:border-stone-700/60 px-4 py-3 bg-orange-50/60 dark:bg-orange-900/20">

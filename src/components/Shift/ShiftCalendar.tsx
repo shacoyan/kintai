@@ -196,7 +196,7 @@ export function ShiftCalendar({
                 i === 5
                   ? 'text-blue-600 dark:text-blue-400'
                   : i === 6
-                    ? 'text-red-600 dark:text-red-400'
+                    ? 'text-red-700 dark:text-red-400'
                     : 'text-stone-700 dark:text-stone-300'
               }`}
             >

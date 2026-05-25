@@ -66,7 +66,7 @@ export function ShiftMobileCalendar({
           <div
             key={label}
             className={`py-1 text-center text-[11px] font-semibold tracking-[0.04em] ${
-              i === 5 ? 'text-blue-600' : i === 6 ? 'text-red-600' : 'text-stone-500 dark:text-stone-400'
+              i === 5 ? 'text-blue-600' : i === 6 ? 'text-red-700' : 'text-stone-500 dark:text-stone-400'
             }`}
           >
             {label}
@@ -115,10 +115,10 @@ export function ShiftMobileCalendar({
                 <span
                   className={[
                     'text-[12px] tabular-nums',
-                    isToday
-                      ? 'font-bold text-stone-900 dark:text-stone-50'
-                      : isSelected
-                        ? 'font-bold text-blue-600'
+                    isSelected
+                      ? 'font-bold text-blue-600'
+                      : isToday
+                        ? 'font-bold text-stone-900 dark:text-stone-50'
                         : otherMonth
                           ? 'text-stone-400 dark:text-stone-500'
                           : 'font-medium text-stone-700 dark:text-stone-300',

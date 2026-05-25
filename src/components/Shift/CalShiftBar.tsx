@@ -69,8 +69,16 @@ export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalS
       }}
     >
       <span
-        className="text-[9.5px] font-semibold tabular-nums shrink-0"
-        style={{ color: rc }}
+        className="inline-flex items-center justify-center rounded-full font-bold shrink-0"
+        style={{
+          width: 14,
+          height: 14,
+          background: `${rc}26`,
+          color: rc,
+          fontSize: 8.5,
+          lineHeight: 1,
+        }}
+        aria-hidden
       >
         {(member?.display_name ?? '?').charAt(0).toUpperCase()}
       </span>
