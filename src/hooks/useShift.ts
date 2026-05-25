@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Shift, TenantMember, TenantRole, NotificationType } from '../types';
-import { getEffectiveMonthlySalary } from '../utils/payrollCalc';
+import type { Shift, TenantMember, TenantRole, NotificationType, MemberStorePayroll } from '../types';
+import { getMemberPayrollForStore } from '../utils/payrollCalc';
 import { getNightMinutesForShift } from '../utils/nightShift';
 import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 
@@ -249,8 +249,13 @@ export function useShift(tenantId: string, storeId: string | null) {
   const getLaborCostEstimate = useCallback((
     shifts: Shift[],
     members: TenantMember[],
-    rolesMap?: Map<string, TenantRole>
+    rolesMap?: Map<string, TenantRole>,
+    payrollsMap?: Map<string, MemberStorePayroll>
   ): LaborCostEstimate[] => {
+    // Phase 2: 店舗別人件費対応。payrollsMap が空 (= 既存呼出 / 既存テナント) のときは
+    // getMemberPayrollForStore が tenant_members.hourly_rate / monthly_salary に fallback するため
+    // 既存挙動と完全互換 (regression なし)。
+    const safePayrollsMap = payrollsMap ?? new Map<string, MemberStorePayroll>();
     const memberMap = new Map(members.map(m => [m.user_id, m]));
     const userShifts = new Map<string, Shift[]>();
 
@@ -287,15 +292,55 @@ export function useShift(tenantId: string, storeId: string | null) {
         }
       }
 
-      const payType = member.pay_type ?? 'hourly';
+      // Phase 2: 代表店舗 (repStoreId) を決定 — shift 内で最頻 store_id を選ぶ。
+      // タイブレークは最初に最大件数に到達した store_id を保持。
+      // 全 shift が store_id=null の場合は repStoreId=null (= tenant_members 既定値で fallback)。
+      const storeIdCounts = new Map<string, number>();
+      let repStoreId: string | null = null;
+      let maxCount = 0;
+      for (const s of memberShifts) {
+        if (!s.store_id) continue;
+        const currentCount = (storeIdCounts.get(s.store_id) ?? 0) + 1;
+        storeIdCounts.set(s.store_id, currentCount);
+        if (currentCount > maxCount) {
+          maxCount = currentCount;
+          repStoreId = s.store_id;
+        }
+      }
+
+      // Phase 2: 代表店舗の rate / pay_type を取得。
+      // - 月給: 代表店舗の monthlySalary をそのまま計上 (案 A: メンバー全体で 1 つの月給)
+      // - 時給: pay_type 判定だけ代表店舗で行い、実際の金額は shift 1 件ごとに rate を引き直す
+      const repPayroll = getMemberPayrollForStore(member, repStoreId, safePayrollsMap, rolesMap);
+      const payType = repPayroll.payType;
+
       let estimatedCost: number;
       if (payType === 'monthly') {
-        // rolesMap が渡されていればロール default_monthly_salary も fallback として参照
-        estimatedCost = getEffectiveMonthlySalary(member, rolesMap);
+        estimatedCost = repPayroll.monthlySalary;
       } else {
-        const rate = member.hourly_rate ?? 0;
-        const normalMin = totalMinutes - nightMinutes;
-        estimatedCost = Math.ceil((normalMin / 60) * rate + (nightMinutes / 60) * rate * 1.25);
+        // 時給メンバー: shift 単位で store_id ごとに rate を引き直して合算
+        // (店舗 A=1500, 店舗 B=1800 のような mixed パターンを正確に集計)
+        let accumulator = 0;
+        for (const s of memberShifts) {
+          const startParts = s.start_time.split(':').map(Number);
+          const endParts = s.end_time.split(':').map(Number);
+          const startMin = startParts[0] * 60 + startParts[1];
+          const endMin = endParts[0] * 60 + endParts[1];
+          const shiftMins = endMin > startMin ? endMin - startMin : (24 * 60 - startMin) + endMin;
+          if (shiftMins <= 0) continue;
+
+          const shiftNightMins = (member.night_shift_enabled !== false)
+            ? getNightMinutesForShift(s.date, s.start_time, s.end_time)
+            : 0;
+          const normalMin = shiftMins - shiftNightMins;
+
+          const shiftPayroll = getMemberPayrollForStore(member, s.store_id, safePayrollsMap, rolesMap);
+          const hourlyRate = shiftPayroll.hourlyRate;
+          const nightMultiplier = shiftPayroll.nightMultiplier;
+
+          accumulator += (normalMin / 60) * hourlyRate + (shiftNightMins / 60) * hourlyRate * nightMultiplier;
+        }
+        estimatedCost = Math.ceil(accumulator);
       }
 
       results.push({

@@ -9,13 +9,15 @@ import { useStoreContext } from '../../contexts/StoreContext';
 import { BottomSheet } from '../ui/BottomSheet';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { supabase } from '../../lib/supabase';
 import { formatSupabaseError } from '../../lib/errors';
 import { PageSkeleton } from '../ui/Skeleton';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { Search, Trash2, Pencil, Users } from 'lucide-react';
+import { Search, Trash2, Pencil, Users, Store as StoreIcon } from 'lucide-react';
 import { messages } from '../../lib/messages';
+import { MemberStorePayrollModal } from './MemberStorePayrollModal';
 
 interface MemberManagementProps {
   tenantId: string;
@@ -67,6 +69,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [filterRoleId, setFilterRoleId] = useState<string>('all');
+  const [storePayrollMemberId, setStorePayrollMemberId] = useState<string | null>(null);
+  const [memberStoreCounts, setMemberStoreCounts] = useState<Map<string, number>>(new Map());
 
   const [isMobile, setIsMobile] = useState<boolean>(() =>
     typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
@@ -86,6 +90,35 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
   useEffect(() => {
     fetchRoles();
   }, [fetchRoles]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      if (members.length === 0) {
+        setMemberStoreCounts(new Map());
+        return;
+      }
+
+      const memberIds = members.map((member) => member.id);
+      const { data, error: storeMembersError } = await supabase
+        .from('store_members')
+        .select('member_id')
+        .in('member_id', memberIds);
+
+      if (storeMembersError || cancelled) return;
+
+      const map = new Map<string, number>();
+      for (const row of data as { member_id: string }[]) {
+        map.set(row.member_id, (map.get(row.member_id) ?? 0) + 1);
+      }
+      setMemberStoreCounts(map);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [members]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
@@ -550,7 +583,17 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         <div className="flex items-center justify-center">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-label="在職" title="在職" />
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex items-center justify-end gap-1">
+                          {(memberStoreCounts.get(member.id) ?? 0) >= 2 && (
+                            <button
+                              onClick={() => setStorePayrollMemberId(member.id)}
+                              className="p-1.5 rounded-md text-stone-400 dark:text-stone-500 hover:bg-blue-50 dark:hover:bg-blue-700/30 hover:text-blue-600 dark:hover:text-blue-400 motion-safe:transition-colors"
+                              title="店舗別人件費を編集"
+                              aria-label={`${member.display_name} の店舗別人件費を編集`}
+                            >
+                              <StoreIcon className="w-4 h-4" />
+                            </button>
+                          )}
                           {member.role !== 'owner' && (
                             <button
                               onClick={() => setDeletingId(member.id)}
@@ -593,15 +636,27 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         <div className="mt-0.5 text-[11px] tabular-nums text-stone-500 dark:text-stone-400">
                           有給 {(member.paid_leave_days ?? 0) > 0 ? `${member.paid_leave_days ?? 0}日` : '未設定'}
                         </div>
-                        {member.role !== 'owner' && (
-                          <button
-                            onClick={() => setDeletingId(member.id)}
-                            className="mt-1 inline-flex p-1.5 rounded-md text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-red-600 dark:hover:text-red-400 motion-safe:transition-colors"
-                            title="メンバーを削除"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+                        <div className="mt-1 mr-1 flex items-center justify-end gap-1">
+                          {(memberStoreCounts.get(member.id) ?? 0) >= 2 && (
+                            <button
+                              onClick={() => setStorePayrollMemberId(member.id)}
+                              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-stone-400 dark:text-stone-500 hover:bg-blue-50 dark:hover:bg-blue-700/30 hover:text-blue-600 dark:hover:text-blue-400 motion-safe:transition-colors"
+                              title="店舗別人件費を編集"
+                              aria-label={`${member.display_name} の店舗別人件費を編集`}
+                            >
+                              <StoreIcon className="w-4 h-4" />
+                            </button>
+                          )}
+                          {member.role !== 'owner' && (
+                            <button
+                              onClick={() => setDeletingId(member.id)}
+                              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-700 hover:text-red-600 dark:hover:text-red-400 motion-safe:transition-colors"
+                              title="メンバーを削除"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -861,6 +916,14 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                 </BottomSheet>
               </div>
             ))}
+
+            <MemberStorePayrollModal
+              isOpen={storePayrollMemberId !== null}
+              onClose={() => setStorePayrollMemberId(null)}
+              tenantId={tenantId}
+              member={members.find((member) => member.id === storePayrollMemberId) ?? null}
+              members={members}
+            />
           </>
         )}
 

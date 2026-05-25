@@ -13,6 +13,7 @@ import { useTenant } from '../hooks/useTenant';
 import { useShift } from '../hooks/useShift';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
 import { useTenantRoles } from '../hooks/useTenantRoles';
+import { useMemberStorePayrolls } from '../hooks/useMemberStorePayrolls';
 import { useShiftPreset } from '../hooks/useShiftPreset';
 import { useShiftPreference } from '../hooks/useShiftPreference';
 import { useShiftSubmissionDeadline } from '../hooks/useShiftSubmissionDeadline';
@@ -58,6 +59,9 @@ export function ShiftPage() {
   const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift, getLaborCostEstimate } = useShift(tenantId, storeId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
   const { roles, fetchRoles } = useTenantRoles(tenantId);
+  // Phase 2: 店舗別人件費 (member_store_payrolls)。0 行のテナントでは payrollsMap が空 Map のまま →
+  // getLaborCostEstimate 内で tenant_members 既定値にフォールバック → 既存挙動完全互換。
+  const { payrollsMap: memberStorePayrollsMap, fetchMemberStorePayrolls } = useMemberStorePayrolls(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
   const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference, bulkSubmitPreferences } = useShiftPreference(tenantId, storeId);
   const { showToast } = useToast();
@@ -212,6 +216,14 @@ export function ShiftPage() {
     }
   }, [tenantId, canManageTenant, fetchRoles]);
 
+  // Phase 2: 店舗別人件費 (member_store_payrolls) を読み込む。
+  // payrollsMap 取得失敗時は空 Map のままで、getLaborCostEstimate は既存挙動にフォールバック。
+  useEffect(() => {
+    if (tenantId && canManageTenant) {
+      void fetchMemberStorePayrolls();
+    }
+  }, [tenantId, canManageTenant, fetchMemberStorePayrolls]);
+
   const shifts = canManageTenant ? allShifts : myShifts;
   const tentativeCount = useMemo(
     () => shifts.filter(s => s.status === 'tentative').length,
@@ -322,11 +334,13 @@ export function ShiftPage() {
     // P1: 「仮承認分」ラベルとの整合性確保のため status === 'tentative' のみに限定
     //   (approved は含めない)。全体見込みは monthShifts (tentative + approved) のまま。
     const tentativeShifts = monthShifts.filter(s => s.status === 'tentative');
+    // Phase 2: payrollsMap を渡し、店舗別 override を反映した人件費計算を行う。
+    // payrollsMap が空 (= 0 行テナント) では tenant_members 既定値にフォールバックし regression なし。
     return {
-      tentative: getLaborCostEstimate(tentativeShifts, payrollMembers, rolesMap),
-      all: getLaborCostEstimate(monthShifts, payrollMembers, rolesMap),
+      tentative: getLaborCostEstimate(tentativeShifts, payrollMembers, rolesMap, memberStorePayrollsMap),
+      all: getLaborCostEstimate(monthShifts, payrollMembers, rolesMap, memberStorePayrollsMap),
     };
-  }, [canManageTenant, allShifts, shiftViewMonth, getLaborCostEstimate, payrollMembers, rolesMap]);
+  }, [canManageTenant, allShifts, shiftViewMonth, getLaborCostEstimate, payrollMembers, rolesMap, memberStorePayrollsMap]);
 
   const handlePrefSubmit = async (
     date: string,
@@ -962,6 +976,7 @@ export function ShiftPage() {
                     tentativeLaborEstimates={laborEstimates.tentative}
                     allLaborEstimates={laborEstimates.all}
                     targetMonth={shiftViewMonth}
+                    payrollsMap={memberStorePayrollsMap}
                   />
                 )}
               </aside>

@@ -6,7 +6,7 @@ import { MemberAvatar } from './MemberAvatar';
 import { getEffectiveMonthlySalary } from '../../utils/payrollCalc';
 import { formatYenMan, formatYenManSplit } from '../../utils/formatYenMan';
 import { getRoleColorKey, ROLE_COLOR_HEX, ROLE_COLOR_LABEL } from '../../utils/getRoleColor';
-import type { TenantMember, TenantRole } from '../../types';
+import type { TenantMember, TenantRole, MemberStorePayroll } from '../../types';
 import type { LaborCostEstimate } from '../../hooks/useShift';
 
 // 理由: UnifiedShiftSidebar から移植した時間フォーマット helper。動作不変。
@@ -22,6 +22,8 @@ export interface LaborCostCardProps {
   tentativeLaborEstimates?: LaborCostEstimate[];
   allLaborEstimates?: LaborCostEstimate[];
   targetMonth?: Date;
+  // Phase 2: 店舗別人件費 (省略時は既存挙動 = tenant_members 既定値で計算)
+  payrollsMap?: Map<string, MemberStorePayroll>;
 }
 
 /**
@@ -36,17 +38,33 @@ export function LaborCostCard({
   tentativeLaborEstimates,
   allLaborEstimates,
   targetMonth,
+  payrollsMap,
 }: LaborCostCardProps) {
   const rolesMap = useMemo(() => new Map((roles ?? []).map(r => [r.id, r])), [roles]);
 
+  // Phase 2: 月給合計は二段構え
+  //   (a) シフトに入っている月給メンバーは allLaborEstimates の estimatedCost を採用
+  //       (getLaborCostEstimate 内で代表店舗の monthly_salary を引いた結果 = 店舗別 override 反映済)
+  //   (b) シフトに入っていない月給メンバーは getEffectiveMonthlySalary(tenant_members 既定値)
+  //       (シフト未投入でも固定費は計上する既存挙動を維持)
+  // payrollsMap 未指定時 (= Phase 1 時点 / 既存テナント) は estimatedCost が tenant_members.monthly_salary
+  // に基づくため、結果として従来計算と同値 (regression なし)。
   const laborCost = useMemo(() => {
     const ms = members ?? [];
     const isMonthly = (m: TenantMember) => (m.pay_type ?? 'hourly') === 'monthly';
-    const monthlyTotal = ms.filter(isMonthly).reduce((s, m) => s + getEffectiveMonthlySalary(m, rolesMap), 0);
+    const monthlyEstByUser = new Map<string, LaborCostEstimate>();
+    (allLaborEstimates ?? []).filter(e => e.payType === 'monthly').forEach(e => monthlyEstByUser.set(e.userId, e));
+    const monthlyTotal = ms.filter(isMonthly).reduce((s, m) => {
+      const est = monthlyEstByUser.get(m.user_id);
+      return s + (est ? est.estimatedCost : getEffectiveMonthlySalary(m, rolesMap));
+    }, 0);
     const tentativeHourlyTotal = (tentativeLaborEstimates ?? []).filter(e => e.payType === 'hourly').reduce((s, e) => s + e.estimatedCost, 0);
     const allHourlyTotal = (allLaborEstimates ?? []).filter(e => e.payType === 'hourly').reduce((s, e) => s + e.estimatedCost, 0);
     return { monthlyTotal, tentativeHourlyTotal, allHourlyTotal };
   }, [members, rolesMap, tentativeLaborEstimates, allLaborEstimates]);
+  // payrollsMap は props 経由で受けて呼出側 (ShiftPage) で getLaborCostEstimate に渡す設計。
+  // LaborCostCard 内部では allLaborEstimates 経由で間接的に反映されるため、ここでは参照しない。
+  void payrollsMap;
 
   const monthlyEstimatesMap = useMemo(() => {
     const map = new Map<string, LaborCostEstimate>();
