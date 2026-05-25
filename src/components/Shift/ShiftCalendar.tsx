@@ -1,65 +1,16 @@
 import { useState, useMemo, useEffect } from 'react';
-import { format, startOfWeek, addDays, startOfMonth, endOfMonth, addWeeks, isAfter, startOfDay, parseISO } from 'date-fns';
-import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Shift, LeaveRequest, ShiftPreference } from '../../types';
+import { format, startOfWeek, addDays, startOfMonth, endOfMonth, isAfter, startOfDay, parseISO } from 'date-fns';
+import type { Shift, LeaveRequest, ShiftPreference, TenantMember } from '../../types';
 import type { StatusFilterValue } from './unifiedShiftTypes';
-import { Button, EmptyState, IconButton } from '../ui';
+import { EmptyState } from '../ui';
+import { ChevronRight } from 'lucide-react';
 import { isJapaneseHoliday, getJapaneseHolidayName } from '../../lib/holidays';
-import { formatTimeRange } from '../../utils/formatTimeRange';
 import { getInitialShiftMonth } from '../../utils/initialShiftMonth';
+import { CalShiftBar } from './CalShiftBar';
 
 type ViewMode = 'week' | '2week' | 'month';
 
-interface ShiftCalendarProps {
-  shifts: Shift[];
-  onDateClick: (date: string) => void;
-  onShiftClick?: (shift: Shift) => void;
-  /** member display_name map for admin view */
-  memberNames?: Map<string, string>;
-  onViewMonthChange?: (date: Date) => void;
-  /** leave requests */
-  leaves?: LeaveRequest[];
-  /** shift preferences to display (pending only for separate row display) */
-  preferences?: ShiftPreference[];
-  onPreferenceClick?: (pref: ShiftPreference) => void;
-  statusFilter?: Set<StatusFilterValue>;
-  /**
-   * pending_preference の表示制御。
-   * - true: statusFilter の pending_preference エントリに従う（admin 全員モード）
-   * - false (default): UI に control が無いコンテキスト（self モード等）→ statusFilter の
-   *   pending_preference 設定を無視し、常に pending 申請を表示する。
-   */
-  showPreferenceStatus?: boolean;
-  currentUserId?: string | null;
-  /**
-   * 一括選択モードで選択中の日付集合 (yyyy-MM-dd)。
-   * 未指定または空のとき、ハイライトは付かない（通常モード互換）。
-   */
-  selectedBulkDates?: Set<string>;
-}
-
-const MEMBER_COLORS = [
-  'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
-  'bg-member-3-100 border-member-3-300 text-member-3-800 dark:bg-member-3-100/20 dark:border-member-3-300/40 dark:text-member-3-100',
-  'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
-  'bg-member-4-100 border-member-4-300 text-member-4-800 dark:bg-member-4-100/20 dark:border-member-4-300/40 dark:text-member-4-100',
-  'bg-member-6-100 border-member-6-300 text-member-6-800 dark:bg-member-6-100/20 dark:border-member-6-300/40 dark:text-member-6-100',
-  'bg-member-2-100 border-member-2-300 text-member-2-800 dark:bg-member-2-100/20 dark:border-member-2-300/40 dark:text-member-2-100',
-  'bg-member-1-100 border-member-1-300 text-member-1-800 dark:bg-member-1-100/20 dark:border-member-1-300/40 dark:text-member-1-100',
-  'bg-member-9-100 border-member-9-300 text-member-9-800 dark:bg-member-9-100/20 dark:border-member-9-300/40 dark:text-member-9-100',
-  'bg-member-5-100 border-member-5-300 text-member-5-800 dark:bg-member-5-100/20 dark:border-member-5-300/40 dark:text-member-5-100',
-  'bg-member-8-100 border-member-8-300 text-member-8-800 dark:bg-member-8-100/20 dark:border-member-8-300/40 dark:text-member-8-100',
-];
-
-const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-800/30 dark:border-orange-700 dark:text-orange-200',
-  tentative: 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
-  approved: 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-800/30 dark:border-emerald-700 dark:text-emerald-200',
-  rejected: 'bg-red-50 border-red-200 text-red-700 dark:bg-red-800/30 dark:border-red-700 dark:text-red-200',
-  modified: 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300',
-  cancelled: 'bg-stone-100 border-stone-300 text-stone-500 dark:bg-stone-700 dark:border-stone-600 dark:text-stone-300',
-};
+const WEEK_LABELS = ['月曜', '火曜', '水曜', '木曜', '金曜', '土曜', '日曜'];
 
 const LEAVE_TYPE_DOT: Record<string, string> = {
   paid: 'bg-emerald-500',
@@ -87,10 +38,50 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
   other: 'その他',
 };
 
-export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, onViewMonthChange, leaves = [], preferences, onPreferenceClick, statusFilter, showPreferenceStatus = false, currentUserId, selectedBulkDates }: ShiftCalendarProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
-  const [baseDate, setBaseDate] = useState(getInitialShiftMonth);
-  useEffect(() => { onViewMonthChange?.(baseDate); }, [baseDate, onViewMonthChange]);
+interface ShiftCalendarProps {
+  shifts: Shift[];
+  onDateClick: (date: string) => void;
+  onShiftClick?: (shift: Shift) => void;
+  memberNames?: Map<string, string>;
+  onViewMonthChange?: (date: Date) => void;
+  leaves?: LeaveRequest[];
+  preferences?: ShiftPreference[];
+  onPreferenceClick?: (pref: ShiftPreference) => void;
+  statusFilter?: Set<StatusFilterValue>;
+  showPreferenceStatus?: boolean;
+  currentUserId?: string | null;
+  selectedBulkDates?: Set<string>;
+  viewMode?: ViewMode;
+  onViewModeChange?: (v: ViewMode) => void;
+  baseDate?: Date;
+  membersById?: Map<string, TenantMember>;
+}
+
+export function ShiftCalendar({
+  shifts,
+  onDateClick,
+  onShiftClick,
+  memberNames,
+  onViewMonthChange,
+  leaves = [],
+  preferences,
+  onPreferenceClick,
+  statusFilter,
+  showPreferenceStatus = false,
+  currentUserId,
+  selectedBulkDates,
+  viewMode: viewModeProp,
+  baseDate: baseDateProp,
+  membersById,
+}: ShiftCalendarProps) {
+  const [internalViewMode] = useState<ViewMode>('month');
+  const [internalBaseDate, setInternalBaseDate] = useState(getInitialShiftMonth);
+  const viewMode = viewModeProp ?? internalViewMode;
+  const baseDate = baseDateProp ?? internalBaseDate;
+
+  useEffect(() => {
+    onViewMonthChange?.(baseDate);
+  }, [baseDate, onViewMonthChange]);
 
   const dates = useMemo(() => {
     const result: Date[] = [];
@@ -106,30 +97,16 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
     } else {
       const weekStart = startOfWeek(baseDate, { weekStartsOn: 1 });
       const days = viewMode === 'week' ? 7 : 14;
-      for (let i = 0; i < days; i++) {
-        result.push(addDays(weekStart, i));
-      }
+      for (let i = 0; i < days; i += 1) result.push(addDays(weekStart, i));
     }
     return result;
   }, [viewMode, baseDate]);
-
-  const userColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    const pendingPrefs = (preferences ?? []).filter(p => p.status === 'pending');
-    const uniqueUsers = [...new Set([...shifts.map(s => s.user_id), ...pendingPrefs.map(p => p.user_id)])];
-    uniqueUsers.forEach((uid, i) => {
-      map.set(uid, MEMBER_COLORS[i % MEMBER_COLORS.length]);
-    });
-    return map;
-  }, [shifts, preferences]);
 
   const shiftsByDate = useMemo(() => {
     const map = new Map<string, Shift[]>();
     for (const s of shifts) {
       const passesFilter =
-        s.status === 'pending' ||
-        !statusFilter ||
-        statusFilter.has(s.status as StatusFilterValue);
+        s.status === 'pending' || !statusFilter || statusFilter.has(s.status as StatusFilterValue);
       if (passesFilter) {
         const arr = map.get(s.date) || [];
         arr.push(s);
@@ -166,21 +143,11 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
     return map;
   }, [leaves]);
 
-  const navigate = (dir: number) => {
-    if (viewMode === 'month') {
-      setBaseDate(prev => new Date(prev.getFullYear(), prev.getMonth() + dir, 1));
-    } else if (viewMode === '2week') {
-      setBaseDate(prev => addWeeks(prev, dir * 2));
-    } else {
-      setBaseDate(prev => addWeeks(prev, dir));
-    }
-  };
-
   const isCurrentMonthEmpty = useMemo(() => {
     if (viewMode !== 'month') return false;
     const monthStart = startOfMonth(baseDate);
     const monthEnd = endOfMonth(baseDate);
-    return !shifts.some(s => {
+    return !shifts.some((s) => {
       const shiftDate = parseISO(s.date);
       return !isAfter(monthStart, shiftDate) && !isAfter(shiftDate, monthEnd);
     });
@@ -188,103 +155,57 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
 
   const navigateToNextShiftMonth = () => {
     const baseDateStart = startOfDay(baseDate);
-    const futureShifts = shifts.filter(s => isAfter(parseISO(s.date), baseDateStart));
+    const futureShifts = shifts.filter((s) => isAfter(parseISO(s.date), baseDateStart));
     if (futureShifts.length === 0) return;
-    const nearestShift = futureShifts.reduce((nearest, current) => {
-      const currentDate = parseISO(current.date);
-      const nearestDate = parseISO(nearest.date);
-      return isAfter(nearestDate, currentDate) ? current : nearest;
-    });
+    const nearestShift = futureShifts.reduce((nearest, current) =>
+      isAfter(parseISO(nearest.date), parseISO(current.date)) ? current : nearest,
+    );
     const nextDate = parseISO(nearestShift.date);
-    setBaseDate(new Date(nextDate.getFullYear(), nextDate.getMonth(), 1));
+    const nextMonth = new Date(nextDate.getFullYear(), nextDate.getMonth(), 1);
+    if (baseDateProp === undefined) setInternalBaseDate(nextMonth);
+    onViewMonthChange?.(nextMonth);
   };
 
   const today = format(new Date(), 'yyyy-MM-dd');
-  const weekDays = ['月', '火', '水', '木', '金', '土', '日'];
 
   return (
     <div className="space-y-3">
-      {/* Controls */}
-      <div className="flex flex-row items-center gap-1.5 justify-between sm:gap-2">
-        <div className="flex items-center gap-1 sm:gap-2 flex-1 sm:flex-none min-w-0">
-          <IconButton
-            icon={<ChevronLeft className="w-5 h-5" />}
-            aria-label="前月"
-            variant="ghost"
-            size="md"
-            onClick={() => navigate(-1)}
-          />
-          <span className="text-sm font-semibold text-stone-900 dark:text-stone-100 min-w-[90px] sm:min-w-[120px] text-center">
-            {viewMode === 'month'
-              ? format(baseDate, 'yyyy年M月', { locale: ja })
-              : `${format(dates[0], 'M/d')} - ${format(dates[dates.length - 1], 'M/d')}`
-            }
-          </span>
-          <IconButton
-            icon={<ChevronRight className="w-5 h-5" />}
-            aria-label="次月"
-            variant="ghost"
-            size="md"
-            onClick={() => navigate(1)}
-          />
-          <Button
-            variant="tertiary"
-            size="sm"
-            onClick={() => setBaseDate(new Date())}
-            className="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50"
-          >
-            今日
-          </Button>
-        </div>
-
-        {/* 理由: ViewMode タブ切替の装飾。border 削除し shadow で枠を表現 */}
-        <div className="flex rounded-md overflow-hidden shadow-sm shrink-0" role="tablist">
-          {(['week', '2week', 'month'] as ViewMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setViewMode(mode)}
-              role="tab"
-              aria-selected={viewMode === mode}
-              className={`px-3 py-2 text-xs sm:py-1 font-medium motion-safe:transition-colors duration-150 ease-out ${
-                viewMode === mode
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-700'
-              }`}
-            >
-              {mode === 'week' ? '週' : mode === '2week' ? '2週' : '月'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Loop16-A: メンバー一覧凡例は削除。userColorMap はカレンダー内アイテムの色付けで継続利用。 */}
-
-      {/* Empty state banner */}
       {isCurrentMonthEmpty && (
         <EmptyState
           tone="info"
           title="今月のシフトはまだありません"
-          action={shifts.some(s => isAfter(parseISO(s.date), startOfDay(baseDate))) ? { label: '次のシフトがある月へ', onClick: navigateToNextShiftMonth, iconRight: <ChevronRight className="w-4 h-4" />, variant: 'tertiary' } : undefined}
+          action={
+            shifts.some((s) => isAfter(parseISO(s.date), startOfDay(baseDate)))
+              ? {
+                  label: '次のシフトがある月へ',
+                  onClick: navigateToNextShiftMonth,
+                  iconRight: <ChevronRight className="w-4 h-4" />,
+                  variant: 'tertiary',
+                }
+              : undefined
+          }
         />
       )}
 
-      {/* Calendar grid */}
-      <div className="bg-white dark:bg-stone-800 rounded-lg shadow overflow-hidden">
-        {/* 理由: 曜日ヘッダーとセル領域の divider */}
-        {/* Header */}
-        <div className="grid grid-cols-7 bg-stone-50 dark:bg-stone-700 border-b border-stone-200 dark:border-stone-700">
-          {weekDays.map((d, i) => (
-            <div key={i} className={`text-center py-2 text-xs font-medium ${
-              i === 5 ? 'text-blue-600 dark:text-blue-400' : i === 6 ? 'text-red-600 dark:text-red-400' : 'text-stone-500 dark:text-stone-300'
-            }`}>
-              {d}
+      <div className="rounded-[10px] overflow-hidden border border-stone-200/70 dark:border-stone-700/70 bg-stone-200/70 dark:bg-stone-700/70">
+        <div className="grid grid-cols-7 gap-px bg-stone-200/70 dark:bg-stone-700/70">
+          {WEEK_LABELS.map((w, i) => (
+            <div
+              key={w}
+              className={`bg-stone-50 dark:bg-stone-800 py-2 px-2.5 text-[11px] font-semibold tracking-[0.04em] ${
+                i === 5
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : i === 6
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-stone-700 dark:text-stone-300'
+              }`}
+            >
+              {w}
             </div>
           ))}
         </div>
 
-        {/* Cells */}
-        {/* 理由: カレンダーセル間の divider grid */}
-        <div className="grid grid-cols-7" role="grid" aria-label="シフトカレンダー">
+        <div className="grid grid-cols-7 gap-px bg-stone-200/70 dark:bg-stone-700/70" role="grid" aria-label="シフトカレンダー">
           {dates.map((d) => {
             const dateStr = format(d, 'yyyy-MM-dd');
             const isToday = dateStr === today;
@@ -295,19 +216,30 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
             const dayOfWeek = d.getDay();
             const isHoliday = isJapaneseHoliday(d);
             const holidayName = isHoliday ? getJapaneseHolidayName(d) : null;
-
-            const leaveTooltip = dayLeaves.map(l => {
-              const typeLabel = LEAVE_TYPE_LABEL[l.leave_type] || 'その他';
-              const name = memberNames?.get(l.user_id) || '';
-              return name ? `${typeLabel} - ${name}` : typeLabel;
-            }).join('\n');
-
-            // 一括選択モード: selectedBulkDates が渡されている場合、選択中の日付セルに
-            //   ring-2 + bg-blue を付与して視認性を上げる。aria-pressed/aria-selected も併設。
+            const leaveTooltip = dayLeaves
+              .map((l) => {
+                const typeLabel = LEAVE_TYPE_LABEL[l.leave_type] || 'その他';
+                const name = memberNames?.get(l.user_id) || '';
+                return name ? `${typeLabel} - ${name}` : typeLabel;
+              })
+              .join('\n');
             const isBulkSelected = !!selectedBulkDates && selectedBulkDates.has(dateStr);
-            const bulkSelectedClass = isBulkSelected
-              ? 'ring-2 ring-blue-500 ring-inset bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100'
-              : '';
+            const totalItems = dayShifts.length + dayPendingPreferences.length;
+            const allItems: Array<{ kind: 'shift'; data: Shift } | { kind: 'pref'; data: ShiftPreference }> = [
+              ...dayShifts.map((s) => ({ kind: 'shift' as const, data: s })),
+              ...dayPendingPreferences.map((p) => ({ kind: 'pref' as const, data: p })),
+            ];
+            const visible = allItems.slice(0, 8);
+            const overflow = allItems.length - visible.length;
+            const cellBg = !isCurrentMonth ? 'bg-stone-50 dark:bg-stone-800' : 'bg-white dark:bg-stone-900';
+            const weekendTint =
+              isCurrentMonth && isHoliday
+                ? 'bg-red-50/40 dark:bg-red-900/15'
+                : isCurrentMonth && dayOfWeek === 6
+                  ? 'bg-blue-50/30 dark:bg-blue-900/10'
+                  : isCurrentMonth && dayOfWeek === 0
+                    ? 'bg-red-50/30 dark:bg-red-900/10'
+                    : '';
 
             return (
               <div
@@ -324,115 +256,77 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                     onDateClick(dateStr);
                   }
                 }}
-                className={`relative min-h-[80px] sm:min-h-[80px] border-b border-r border-stone-100 dark:border-stone-700 p-1 cursor-pointer motion-safe:transition-colors duration-150 ease-out ${
-                  !isCurrentMonth ? 'bg-stone-50 dark:bg-stone-700/50 opacity-50' : ''
-                } ${
-                  isCurrentMonth && isHoliday ? 'bg-weekend-holiday-50 dark:bg-weekend-holiday-900/30' : ''
-                } ${
-                  isCurrentMonth && !isHoliday && dayOfWeek === 6 ? 'bg-weekend-saturday-50 dark:bg-weekend-saturday-900/30' : ''
-                } ${
-                  isCurrentMonth && !isHoliday && dayOfWeek === 0 ? 'bg-weekend-sunday-50 dark:bg-weekend-sunday-900/30' : ''
-                } ${
-                  isCurrentMonth ? 'hover:bg-stone-50 dark:hover:bg-stone-700' : ''
-                } ${bulkSelectedClass}`}
+                className={`relative ${cellBg} ${weekendTint} p-1 cursor-pointer motion-safe:transition-colors duration-150 ease-out
+                  min-h-[80px] lg:min-h-[130px]
+                  ${isToday ? 'border-t-2 border-blue-600 dark:border-blue-400' : ''}
+                  ${isCurrentMonth ? 'hover:bg-stone-50 dark:hover:bg-stone-800' : ''}
+                  ${isBulkSelected ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/60 dark:bg-blue-900/30' : ''}
+                `}
               >
-                <div className={`text-xs font-medium mb-0.5 ${
-                  isToday
-                    ? 'bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center'
-                    : isHoliday && isCurrentMonth
-                      ? 'text-weekend-holiday-700 dark:text-weekend-holiday-100'
-                      : 'text-stone-700 dark:text-stone-300'
-                }`}>
-                  {format(d, 'd')}
+                <div className="flex items-center gap-1 px-0.5 pb-0.5">
+                  <span
+                    className={`text-[11px] tabular-nums ${
+                      !isCurrentMonth
+                        ? 'text-stone-400 dark:text-stone-500'
+                        : isToday
+                          ? 'text-blue-600 dark:text-blue-400 font-bold'
+                          : isHoliday
+                            ? 'text-red-600 dark:text-red-400 font-medium'
+                            : dayOfWeek === 6
+                              ? 'text-blue-600 dark:text-blue-400 font-medium'
+                              : dayOfWeek === 0
+                                ? 'text-red-600 dark:text-red-400 font-medium'
+                                : 'text-stone-700 dark:text-stone-300 font-medium'
+                    }`}
+                  >
+                    {format(d, 'd')}
+                  </span>
+                  {totalItems > 0 && isCurrentMonth && (
+                    <span className="ml-auto text-[9px] text-stone-400 dark:text-stone-500 tabular-nums">{totalItems}人</span>
+                  )}
                 </div>
-                <div className="space-y-0.5">
-                  {dayShifts.map((s) => {
-                    const colorClass = memberNames
-                      ? userColorMap.get(s.user_id) || MEMBER_COLORS[0]
-                      : STATUS_COLORS[s.status];
-                    const isMine = !!currentUserId && !!memberNames && s.user_id === currentUserId;
-                    const fullTime = formatTimeRange(s.start_time, s.end_time, { compactNextDay: true });
-                    const spTime = s.start_time?.slice(0, 5) ?? '';
-                    // 理由: shift バーの rounded border は member 色チップの枠線（MEMBER_COLORS の border 色とセット）
-                    return (
-                      <div
-                        key={s.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => { e.stopPropagation(); onShiftClick?.(s); }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
+
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  {visible.map((it) => {
+                    if (it.kind === 'shift') {
+                      const s = it.data;
+                      const member = membersById?.get(s.user_id);
+                      const isMine = !!currentUserId && s.user_id === currentUserId;
+                      return (
+                        <CalShiftBar
+                          key={`s-${s.id}`}
+                          shift={s}
+                          member={member}
+                          isMine={isMine}
+                          onClick={(e) => {
                             e.stopPropagation();
-                            e.preventDefault();
                             onShiftClick?.(s);
-                          }
-                        }}
-                        className={`text-xs sm:text-[10px] leading-tight min-h-[28px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded-md border truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorClass} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
-                      >
-                        {memberNames ? (
-                          <span title={memberNames.get(s.user_id) ?? ''}>
-                            <span className="hidden sm:inline">{memberNames.get(s.user_id) ?? '不明'} </span>
-                            <span className="sm:hidden tabular-nums">{spTime}</span>
-                            <span className="hidden sm:inline">{fullTime}</span>
-                          </span>
-                        ) : (
-                          <span>
-                            <span className="sm:hidden tabular-nums">{spTime}</span>
-                            <span className="hidden sm:inline">{fullTime}</span>
-                          </span>
-                        )}
-                        {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
-                        {isMine && (
-                          <span className="ml-1 hidden sm:inline-block bg-blue-600 text-white text-[10px] sm:text-[8px] px-1 rounded-md" aria-label="自分のシフト">あなた</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {dayPendingPreferences.map((p) => {
-                    const colorBase = userColorMap.get(p.user_id) || MEMBER_COLORS[0];
-                    const timeDisplay = (p.start_time && p.end_time)
-                      ? formatTimeRange(p.start_time, p.end_time, { compactNextDay: true })
-                      : '終日';
-                    const spTime = p.start_time ? p.start_time.slice(0, 5) : '終日';
-                    const isMine = !!currentUserId && !!memberNames && p.user_id === currentUserId;
-                    // 理由: preference バーの border border-dashed は申請の視覚識別（pending）に使用
+                          }}
+                        />
+                      );
+                    }
+
+                    const p = it.data;
+                    const member = membersById?.get(p.user_id);
+                    const isMine = !!currentUserId && p.user_id === currentUserId;
                     return (
-                      <div
-                        key={'pref-' + p.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => { e.stopPropagation(); onPreferenceClick?.(p); }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            onPreferenceClick?.(p);
-                          }
+                      <CalShiftBar
+                        key={`p-${p.id}`}
+                        preference={p}
+                        member={member}
+                        isMine={isMine}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onPreferenceClick?.(p);
                         }}
-                        className={`text-xs sm:text-[10px] leading-tight min-h-[28px] sm:min-h-0 px-1.5 sm:px-1 py-1 sm:py-0.5 rounded-md border border-dashed truncate cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 ease-out ${colorBase} ${isMine ? 'border-l-4 border-l-blue-600 dark:border-l-blue-400 font-semibold' : ''}`}
-                      >
-                        {memberNames ? (
-                          <span title={memberNames.get(p.user_id) ?? ''}>
-                            <span className="hidden sm:inline">{memberNames.get(p.user_id) ?? '不明'} </span>
-                            <span className="sm:hidden tabular-nums">{spTime}</span>
-                            <span className="hidden sm:inline">{timeDisplay}</span>
-                          </span>
-                        ) : (
-                          <span>
-                            <span className="sm:hidden tabular-nums">{spTime}</span>
-                            <span className="hidden sm:inline">{timeDisplay}</span>
-                          </span>
-                        )}
-                        {/* 理由: 自分のシフト/preference を他メンバーと視覚的に区別するため左ボーダー強調 (§4.3.2) */}
-                        {isMine && (
-                          <span className="ml-1 hidden sm:inline-block bg-blue-600 text-white text-[10px] sm:text-[8px] px-1 rounded-md" aria-label="自分の申請">あなた</span>
-                        )}
-                        <span className="sm:hidden inline-block w-1.5 h-1.5 rounded-full bg-orange-500 ml-1 align-middle" aria-label="申請中" />
-                        <span className="hidden sm:inline-block bg-orange-50 text-orange-700 dark:bg-orange-800/40 dark:text-orange-200 text-[10px] sm:text-[8px] px-1 rounded-md">申請</span>
-                      </div>
+                      />
                     );
                   })}
+                  {overflow > 0 && (
+                    <div className="text-[9px] text-stone-500 dark:text-stone-400 px-1 leading-tight">+ {overflow} 件</div>
+                  )}
                 </div>
+
                 {dayLeaves.length > 0 && (
                   <div title={leaveTooltip} className="absolute bottom-1 right-1 flex items-center gap-0.5">
                     {dayLeaves.slice(0, 4).map((l) => (
@@ -444,9 +338,7 @@ export function ShiftCalendar({ shifts, onDateClick, onShiftClick, memberNames, 
                       />
                     ))}
                     {dayLeaves.length > 4 && (
-                      <span className="text-[10px] sm:text-[8px] text-stone-500 dark:text-stone-300 leading-none">
-                        +{dayLeaves.length - 4}
-                      </span>
+                      <span className="text-[9px] text-stone-500 dark:text-stone-300 leading-none">+{dayLeaves.length - 4}</span>
                     )}
                   </div>
                 )}

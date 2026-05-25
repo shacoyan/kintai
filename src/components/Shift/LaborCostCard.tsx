@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Card } from '../ui';
+import { MoreHorizontal } from 'lucide-react';
+import { Badge, Card } from '../ui';
 import { getEffectiveMonthlySalary } from '../../utils/payrollCalc';
+import { formatYenMan, formatYenManSplit } from '../../utils/formatYenMan';
 import type { TenantMember, TenantRole } from '../../types';
 import type { LaborCostEstimate } from '../../hooks/useShift';
 
@@ -64,6 +66,12 @@ export function LaborCostCard({
   }, [allLaborEstimates]);
 
   const showDetailTable = monthlyMembers.length > 0 || hourlyEstimates.length > 0;
+  const monthlyCount = monthlyMembers.length;
+  const hourlyCount = hourlyEstimates.length;
+  const totalCost = laborCost.monthlyTotal + laborCost.allHourlyTotal;
+  const monthlySplit = formatYenManSplit(laborCost.monthlyTotal);
+  const hourlySplit = formatYenManSplit(laborCost.allHourlyTotal);
+  const totalSplit = formatYenManSplit(totalCost);
 
   const detailTotals = useMemo(() => {
     if (!showDetailTable) return { normal: 0, night: 0, total: 0, cost: 0 };
@@ -98,8 +106,23 @@ export function LaborCostCard({
 
   return (
     <Card padding="sm">
-      <div className="text-sm font-bold mb-3">
-        {targetMonth ? `${format(targetMonth, 'yyyy年M月', { locale: ja })} の想定人件費` : '想定人件費'}
+      <div className="flex items-center gap-2 mb-3">
+        <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">
+          {targetMonth ? `${format(targetMonth, 'yyyy年M月', { locale: ja })} の想定人件費` : '想定人件費'}
+        </h3>
+        {targetMonth && (
+          <Badge tone="warning" className="text-[10px]">
+            確定前 ({format(targetMonth, 'M月', { locale: ja })})
+          </Badge>
+        )}
+        <div className="flex-1" />
+        <button
+          type="button"
+          aria-label="詳細"
+          className="inline-flex items-center justify-center w-7 h-7 rounded-md text-stone-500 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-stone-800 motion-safe:transition-colors"
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
       </div>
       {/* SP: details で折畳 (md 未満のみ表示) */}
       <details className="md:hidden group" open>
@@ -111,50 +134,59 @@ export function LaborCostCard({
             <span className="text-xs text-stone-900 dark:text-stone-50 font-semibold">総計</span>
           </span>
           <span className="text-stone-900 dark:text-stone-50 tabular-nums font-extrabold text-xl">
-            ¥{(laborCost.monthlyTotal + laborCost.allHourlyTotal).toLocaleString()}
+            {formatYenMan(totalCost)}
           </span>
         </summary>
         <div className="mt-2 flex flex-col gap-2">
           <div className="bg-indigo-50 dark:bg-indigo-900/30 rounded-md p-3">
             <div className="text-xs text-indigo-900 dark:text-indigo-100">月給合計 (固定費)</div>
             <div className="text-indigo-900 dark:text-indigo-100 tabular-nums font-bold text-xl">
-              ¥{laborCost.monthlyTotal.toLocaleString()}
+              {formatYenMan(laborCost.monthlyTotal)}
             </div>
           </div>
           <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-md p-3">
             <div className="text-xs text-emerald-900 dark:text-emerald-100">時給合計</div>
             <div className="text-emerald-900 dark:text-emerald-100 tabular-nums font-bold text-xl">
-              ¥{laborCost.allHourlyTotal.toLocaleString()}
+              {formatYenMan(laborCost.allHourlyTotal)}
             </div>
             <div className="text-xs text-emerald-900/80 dark:text-emerald-100/80 mt-0.5">
-              仮承認分 ¥{laborCost.tentativeHourlyTotal.toLocaleString()}
+              仮承認分 {formatYenMan(laborCost.tentativeHourlyTotal)}
             </div>
           </div>
         </div>
       </details>
 
-      {/* md 以上: 既存の横並び 3 カード */}
-      <div className="hidden md:flex flex-wrap gap-2">
-        <div className="flex-1 basis-full sm:basis-auto sm:min-w-[150px] bg-indigo-50 dark:bg-indigo-900/30 rounded-md p-3">
-          <div className="text-xs text-indigo-900 dark:text-indigo-100">月給合計 (固定費)</div>
-          <div className="text-indigo-900 dark:text-indigo-100 tabular-nums font-bold text-xl sm:text-lg">
-            ¥{laborCost.monthlyTotal.toLocaleString()}
+      {/* md 以上: CostStat 風 3 tile */}
+      <div className="hidden md:grid md:grid-cols-3 gap-2">
+        <div className="rounded-md border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
+          <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">月給合計</div>
+          <div className="mt-0.5 tabular-nums text-stone-900 dark:text-stone-100 font-semibold tracking-tight" style={{ fontSize: 18 }}>
+            {monthlySplit.yenMan}
+            {monthlySplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{monthlySplit.tail}</span>}
+          </div>
+          <div className="mt-1 flex items-center gap-1.5 text-[10px] text-stone-500 dark:text-stone-400">
+            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: '#0d9488' }} />
+            {monthlyCount} 名
           </div>
         </div>
-        <div className="flex-1 basis-full sm:basis-auto sm:min-w-[150px] bg-emerald-50 dark:bg-emerald-900/30 rounded-md p-3">
-          <div className="text-xs text-emerald-900 dark:text-emerald-100">時給合計</div>
-          <div className="text-emerald-900 dark:text-emerald-100 tabular-nums font-bold text-xl sm:text-lg">
-            ¥{laborCost.allHourlyTotal.toLocaleString()}
+        <div className="rounded-md border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
+          <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">時給合計</div>
+          <div className="mt-0.5 tabular-nums text-stone-900 dark:text-stone-100 font-semibold tracking-tight" style={{ fontSize: 18 }}>
+            {hourlySplit.yenMan}
+            {hourlySplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{hourlySplit.tail}</span>}
           </div>
-          <div className="text-xs text-emerald-900/80 dark:text-emerald-100/80 mt-0.5">
-            仮承認分 ¥{laborCost.tentativeHourlyTotal.toLocaleString()}
+          <div className="mt-1 flex items-center gap-1.5 text-[10px] text-stone-500 dark:text-stone-400">
+            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: '#ea580c' }} />
+            {hourlyCount} 名
           </div>
         </div>
-        <div className="flex-1 basis-full sm:basis-auto sm:min-w-[150px] bg-stone-50 dark:bg-stone-700/40 rounded-md p-3">
-          <div className="text-xs text-stone-900 dark:text-stone-50">総計</div>
-          <div className="text-stone-900 dark:text-stone-50 tabular-nums font-extrabold text-2xl sm:text-xl">
-            ¥{(laborCost.monthlyTotal + laborCost.allHourlyTotal).toLocaleString()}
+        <div className="rounded-md border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
+          <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">総計</div>
+          <div className="mt-0.5 tabular-nums text-blue-600 dark:text-blue-400 font-semibold tracking-tight" style={{ fontSize: 18 }}>
+            {totalSplit.yenMan}
+            {totalSplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{totalSplit.tail}</span>}
           </div>
+          <div className="mt-1 text-[10px] text-stone-500 dark:text-stone-400">月給 + 時給</div>
         </div>
       </div>
       <div className="text-[10px] text-stone-600 dark:text-stone-300 mt-2">

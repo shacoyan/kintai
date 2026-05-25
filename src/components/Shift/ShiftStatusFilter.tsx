@@ -66,15 +66,19 @@ interface ShiftStatusFilterProps {
    * false (default): 非表示
    */
   showPreferenceStatus?: boolean;
+  /** chip 右端に件数を出す (オプション)。未指定は従来通り件数なし */
+  counts?: Partial<Record<StatusFilterValue, number>>;
 }
 
 function StatusChip({
   status,
   isActive,
+  count,
   onToggle,
 }: {
   status: StatusFilterValue;
   isActive: boolean;
+  count?: number;
   onToggle: () => void;
 }) {
   return (
@@ -90,6 +94,15 @@ function StatusChip({
     >
       <span className={`inline-block w-2 h-2 rounded-full ${STATUS_FILTER_DOT_CLASS[status]}`} />
       <span>{STATUS_FILTER_LABELS[status]}</span>
+      {typeof count === 'number' && (
+        <span
+          className={`tabular-nums text-[10px] ${
+            isActive ? 'opacity-80' : 'text-stone-400 dark:text-stone-500'
+          }`}
+        >
+          {count}
+        </span>
+      )}
     </button>
   );
 }
@@ -105,6 +118,7 @@ export function ShiftStatusFilter({
   value,
   onChange,
   showPreferenceStatus = false,
+  counts,
 }: ShiftStatusFilterProps) {
   const toggle = useCallback(
     (status: StatusFilterValue) => {
@@ -153,6 +167,7 @@ export function ShiftStatusFilter({
             key={status}
             status={status}
             isActive={value.has(status)}
+            count={counts?.[status]}
             onToggle={() => toggle(status)}
           />
         ))}
@@ -172,6 +187,7 @@ export function ShiftStatusFilter({
               key={status}
               status={status}
               isActive={value.has(status)}
+              count={counts?.[status]}
               onToggle={() => toggle(status)}
             />
           ))}
