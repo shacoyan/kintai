@@ -4,7 +4,6 @@ import { Sun, Moon, Monitor, User, LogOut, ArrowLeftRight } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTenant } from '../../hooks/useTenant';
-import { useStoreContext } from '../../contexts/StoreContext';
 import { Badge, Button } from '../ui';
 import { StoreSelector } from '../Store/StoreSelector';
 import { TenantSwitcher } from '../Tenant/TenantSwitcher';
@@ -48,7 +47,6 @@ export function TopBar({
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
   const { myRole } = useTenant();
-  const { currentStore } = useStoreContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -88,45 +86,15 @@ export function TopBar({
 
   return (
     <div className="flex items-center w-full gap-4 flex-wrap">
-      <TenantSwitcher />
-      {currentStore?.name && (
-        <span
-          className="hidden md:inline-flex items-center gap-1 text-sm text-stone-600 dark:text-stone-300 max-w-[20ch] min-w-0"
-          data-testid="topbar-current-store"
-        >
-          <span aria-hidden="true" className="text-stone-400 dark:text-stone-500">/</span>
-          <span className="truncate" title={currentStore.name}>{currentStore.name}</span>
-        </span>
-      )}
       {title && (
         <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-100 truncate">
           {title}
         </h1>
       )}
-      {showRoleBadge && (myRole === 'owner' || myRole === 'manager') && (
-        <span className="hidden lg:inline-flex">
-          {myRole === 'owner' ? (
-            <Badge tone="primary" withDot>Owner</Badge>
-          ) : (
-            <Badge tone="info" withDot>Manager</Badge>
-          )}
-        </span>
-      )}
       <div className="flex-1" />
       {rightSlot}
       {showNotificationBell && <NotificationBell />}
       {showStoreSelector && <StoreSelector />}
-      {showThemeToggle && (
-        <button
-          type="button"
-          aria-label={`テーマ切替（現在: ${THEME_CURRENT_LABELS[theme as ThemeValue]} / クリックで ${THEME_CURRENT_LABELS[nextTheme]}）`}
-          title={`現在: ${THEME_CURRENT_LABELS[theme as ThemeValue]} → クリックで ${THEME_CURRENT_LABELS[nextTheme]}`}
-          onClick={() => setTheme(nextTheme)}
-          className="p-2 rounded-md text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 motion-safe:transition-colors duration-150 ease-out shrink-0"
-        >
-          <ThemeIcon size={18} aria-hidden="true" />
-        </button>
-      )}
       {showUserMenu && (
         <div className="relative shrink-0" ref={menuRef}>
           <button
@@ -147,9 +115,22 @@ export function TopBar({
               role="menu"
               className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-white shadow-[0_12px_28px_rgba(0,0,0,0.16)] border border-stone-200 dark:bg-stone-900 dark:border-stone-800 py-2 z-50"
             >
+              <div className="px-4 py-2 text-xs text-stone-500 dark:text-stone-400" role="menuitem">
+                <TenantSwitcher />
+              </div>
+              <div className="border-t border-stone-200 dark:border-stone-800 my-1" aria-hidden="true" />
               {user?.email && (
                 <div className="px-4 py-2 text-sm text-stone-700 dark:text-stone-300 truncate" role="menuitem">
                   {user.email}
+                </div>
+              )}
+              {showRoleBadge && (myRole === 'owner' || myRole === 'manager') && (
+                <div className="px-4 py-1.5" role="menuitem">
+                  {myRole === 'owner' ? (
+                    <Badge tone="primary" withDot>Owner</Badge>
+                  ) : (
+                    <Badge tone="info" withDot>Manager</Badge>
+                  )}
                 </div>
               )}
               <div className="border-t border-stone-200 dark:border-stone-800 my-1" aria-hidden="true" />
@@ -162,6 +143,19 @@ export function TopBar({
                 <ArrowLeftRight size={16} aria-hidden="true" />
                 ワークスペースを切替
               </Link>
+              {showThemeToggle && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  aria-label={`テーマ切替（現在: ${THEME_CURRENT_LABELS[theme as ThemeValue]} / クリックで ${THEME_CURRENT_LABELS[nextTheme]}）`}
+                  title={`現在: ${THEME_CURRENT_LABELS[theme as ThemeValue]} → クリックで ${THEME_CURRENT_LABELS[nextTheme]}`}
+                  onClick={() => setTheme(nextTheme)}
+                  className="flex items-center gap-2 w-full px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 motion-safe:transition-colors duration-150 ease-out"
+                >
+                  <ThemeIcon size={16} aria-hidden="true" />
+                  テーマ: {THEME_CURRENT_LABELS[theme as ThemeValue]} → {THEME_CURRENT_LABELS[nextTheme]}
+                </button>
+              )}
               <div className="px-4 py-2" role="menuitem">
                 <LeaveTenantButton />
               </div>

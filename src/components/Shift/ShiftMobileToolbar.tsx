@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Props {
@@ -44,12 +44,14 @@ export function ShiftMobileToolbar({
         <button
           type="button"
           onClick={onFilterClick}
-          aria-label="フィルタ"
-          className="inline-flex items-center gap-1 h-7 px-2 rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 text-xs font-medium hover:bg-stone-100 dark:hover:bg-stone-700 focus-ring"
+          aria-label={pendingFilterCount && pendingFilterCount > 0 ? `フィルタ (${pendingFilterCount})` : 'フィルタ'}
+          className="relative inline-flex h-7 w-7 items-center justify-center rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700 focus-ring"
         >
-          <SlidersHorizontal className="w-3.5 h-3.5" />
+          <Filter className="w-3.5 h-3.5" />
           {pendingFilterCount && pendingFilterCount > 0 ? (
-            <span className="tabular-nums">{pendingFilterCount}</span>
+            <span className="absolute -top-1 -right-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-white text-[9px] font-semibold tabular-nums">
+              {pendingFilterCount}
+            </span>
           ) : null}
         </button>
       )}

@@ -102,32 +102,43 @@ export function ShiftMobileCalendar({
                 }
               }}
               className={[
-                'min-h-[54px] p-1 flex flex-col items-center gap-[3px]',
+                'min-h-[60px] p-1 flex flex-col items-center gap-[2px]',
                 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset',
                 'motion-safe:transition-colors duration-150',
                 otherMonth ? 'bg-stone-50 dark:bg-stone-900' : 'bg-white dark:bg-stone-800',
                 isToday ? 'border-t-2 border-blue-600' : '',
                 isBulkSelected ? 'ring-2 ring-blue-600 ring-inset bg-blue-50 dark:bg-blue-900/30' : '',
-                isSelected ? 'ring-2 ring-blue-600 ring-inset' : '',
               ].join(' ')}
             >
-              <div
-                className={[
-                  'text-[11px] tabular-nums',
-                  otherMonth ? 'text-stone-400 dark:text-stone-500' : '',
-                  isToday ? 'font-bold text-blue-600' : 'font-medium text-stone-700 dark:text-stone-300',
-                ].join(' ')}
-              >
-                {d.getDate()}
+              <div className="flex flex-col items-center leading-none">
+                <span
+                  className={[
+                    'text-[12px] tabular-nums',
+                    isToday
+                      ? 'font-bold text-blue-600'
+                      : isSelected
+                        ? 'font-semibold text-blue-600'
+                        : otherMonth
+                          ? 'text-stone-400 dark:text-stone-500'
+                          : 'font-medium text-stone-700 dark:text-stone-300',
+                  ].join(' ')}
+                >
+                  {d.getDate()}
+                </span>
+                {isSelected && <div className="w-5 h-0.5 bg-blue-600 mt-0.5 rounded-full" aria-hidden="true" />}
               </div>
-              {!otherMonth && isMine && (
-                <div className="w-[18px] h-1 rounded-sm bg-blue-600" aria-hidden="true" />
-              )}
-              {!otherMonth && count > 0 && !isMine && (
-                <div className="w-1 h-1 rounded-full bg-stone-400 dark:bg-stone-500" aria-hidden="true" />
+              {!otherMonth && count > 0 && (
+                <div
+                  className={`w-6 h-[3px] rounded-sm ${
+                    isMine ? 'bg-blue-600' : 'bg-stone-300 dark:bg-stone-600'
+                  }`}
+                  aria-hidden="true"
+                />
               )}
               {!otherMonth && count > 0 && (
-                <div className="text-[9px] text-stone-500 dark:text-stone-400 tabular-nums">{count}人</div>
+                <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400 tabular-nums leading-none">
+                  {count}人
+                </div>
               )}
             </div>
           );

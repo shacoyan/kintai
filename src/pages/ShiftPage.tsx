@@ -558,14 +558,16 @@ export function ShiftPage() {
       <div className="flex flex-col gap-4 pb-16">
         {/* ヘッダー: 「シフト」見出しのみ (月表示 + pending 件数バッジ削除) */}
         <header className="flex flex-col gap-1">
-          <Heading level={1}>シフト</Heading>
+          <Heading level={1}>
+            <span className="lg:hidden">シフト</span>
+            <span className="hidden lg:inline">シフト管理</span>
+          </Heading>
         </header>
 
-        {/* Toolbar: 表示切替 / 月ナビ / フィルタ / 一括操作
-            SP では ShiftMobileToolbar が代替するため hidden lg:block で PC 限定化 (Worker C) */}
+        {/* Iter 5-A: PC 統合 Card (Toolbar + Calendar + Legend) */}
         <div className="hidden lg:block">
-        <Card padding="md">
-          <Card.Body className="flex items-center gap-2 p-3 flex-wrap">
+          <Card padding="none" className="overflow-hidden">
+            <div className="flex items-center gap-2 flex-wrap px-4 py-3">
               <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
                 <button
                   type="button"
@@ -757,8 +759,109 @@ export function ShiftPage() {
                   </div>
                 </>
               )}
-          </Card.Body>
-        </Card>
+            </div>
+
+            {preferenceView === 'current' && (
+              <>
+                <div className="border-t border-stone-100 dark:border-stone-700/60">
+                  <ShiftCalendar
+                    shifts={shifts}
+                    preferences={preferencesForCalendar}
+                    viewMode={shiftViewMode}
+                    baseDate={shiftViewMonth}
+                    onDateClick={(date) => {
+                      if (isBulkMode) {
+                        handleToggleBulkDate(date);
+                      } else {
+                        // Iter 2-A (Worker A) / P0 fix:
+                        // PC は DayDetailModal を起動する。新規申請は modal 内 Quick Add ボタンから。
+                        setSelectedDate(date);
+                      }
+                    }}
+                    onShiftClick={(shift) => setSelectedShift(shift)}
+                    onPreferenceClick={(p) => {
+                      // Loop15 + Loop16-B (+ Reviewer P1 fix):
+                      // - 自分の preference は時間変更モーダル
+                      // - 他人 + 当該店舗の manager (= isManagerOf(p.store_id), owner は常に true) は管理アクションモーダル
+                      // - 他人 + 一般スタッフ or 他店舗 manager は何もしない
+                      //   ※ canManageTenant のみで判定すると店舗 A の manager が店舗 B の preference を承認可能になる。
+                      //   PreferenceActionRow と同じ canManageStore 相当のガードで揃える。
+                      if (currentUserId && p.user_id === currentUserId) {
+                        setSelectedPreference(p);
+                      } else if (canManageTenant && p.store_id && isManagerOf(p.store_id)) {
+                        setAdminTargetPreference(p);
+                      }
+                    }}
+                    memberNames={canManageTenant ? memberNames : undefined}
+                    statusFilter={statusFilter}
+                    showPreferenceStatus={canManageTenant}
+                    leaves={leaves}
+                    onViewMonthChange={setShiftViewMonth}
+                    currentUserId={currentUserId}
+                    selectedBulkDates={isBulkMode ? selectedBulkDates : undefined}
+                    membersById={membersById}
+                  />
+                </div>
+
+                <div className="border-t border-stone-100 dark:border-stone-700/60 px-4 py-3">
+                  <div className="flex items-center gap-[18px] flex-wrap text-[11px]">
+                    <div className="font-semibold text-stone-500 dark:text-stone-400">役職</div>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#7c3aed' }} />
+                      <span className="text-stone-600 dark:text-stone-300">会長 / 内勤</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#2563eb' }} />
+                      <span className="text-stone-600 dark:text-stone-300">店長</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#0d9488' }} />
+                      <span className="text-stone-600 dark:text-stone-300">正社員</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ background: '#ea580c' }} />
+                      <span className="text-stone-600 dark:text-stone-300">バイト</span>
+                    </span>
+                    <div className="hidden sm:block w-px h-4 bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                    <div className="font-semibold text-stone-500 dark:text-stone-400">雇用形態</div>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="inline-block w-3.5 h-2"
+                        style={{ background: 'rgba(13, 148, 136, 0.18)', borderLeft: '2px solid #0d9488' }}
+                      />
+                      <span className="text-stone-600 dark:text-stone-300">月給</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span
+                        className="inline-block w-3.5 h-2"
+                        style={{
+                          background: 'rgba(234, 88, 12, 0.12)',
+                          borderLeft: '2px solid #ea580c',
+                          borderTop: '1px dashed #ea580c88',
+                          borderBottom: '1px dashed #ea580c88',
+                        }}
+                      />
+                      <span className="text-stone-600 dark:text-stone-300">時給</span>
+                    </span>
+                    <div className="hidden sm:block w-px h-4 bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                    <div className="font-semibold text-stone-500 dark:text-stone-400">ステータス</div>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block w-3.5 h-2 rounded-sm" style={{ background: '#ecfdf5', border: '1px solid #059669' }} />
+                      <span className="text-stone-600 dark:text-stone-300">本承認</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block w-3.5 h-2 rounded-sm" style={{ background: '#fff7ed', border: '1px solid #f97316' }} />
+                      <span className="text-stone-600 dark:text-stone-300">仮承認</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block w-3.5 h-2 rounded-sm" style={{ background: '#eff6ff', border: '1px solid #2563eb' }} />
+                      <span className="text-stone-600 dark:text-stone-300">申請中</span>
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+          </Card>
         </div>
 
         {preferenceView === 'current' && (
@@ -857,46 +960,6 @@ export function ShiftPage() {
                 </div>
               )}
 
-              <div className="hidden lg:block">
-                <ShiftCalendar
-                  shifts={shifts}
-                  preferences={preferencesForCalendar}
-                  viewMode={shiftViewMode}
-                  baseDate={shiftViewMonth}
-                  onDateClick={(date) => {
-                    if (isBulkMode) {
-                      handleToggleBulkDate(date);
-                    } else {
-                      // Iter 2-A (Worker A) / P0 fix:
-                      // PC は DayDetailModal を起動する。新規申請は modal 内 Quick Add ボタンから。
-                      setSelectedDate(date);
-                    }
-                  }}
-                  onShiftClick={(shift) => setSelectedShift(shift)}
-                  onPreferenceClick={(p) => {
-                    // Loop15 + Loop16-B (+ Reviewer P1 fix):
-                    // - 自分の preference は時間変更モーダル
-                    // - 他人 + 当該店舗の manager (= isManagerOf(p.store_id), owner は常に true) は管理アクションモーダル
-                    // - 他人 + 一般スタッフ or 他店舗 manager は何もしない
-                    //   ※ canManageTenant のみで判定すると店舗 A の manager が店舗 B の preference を承認可能になる。
-                    //   PreferenceActionRow と同じ canManageStore 相当のガードで揃える。
-                    if (currentUserId && p.user_id === currentUserId) {
-                      setSelectedPreference(p);
-                    } else if (canManageTenant && p.store_id && isManagerOf(p.store_id)) {
-                      setAdminTargetPreference(p);
-                    }
-                  }}
-                  memberNames={canManageTenant ? memberNames : undefined}
-                  statusFilter={statusFilter}
-                  showPreferenceStatus={canManageTenant}
-                  leaves={leaves}
-                  onViewMonthChange={setShiftViewMonth}
-                  currentUserId={currentUserId}
-                  selectedBulkDates={isBulkMode ? selectedBulkDates : undefined}
-                  membersById={membersById}
-                />
-              </div>
-
               {/* SP モバイル UI — Worker C 担当 */}
               <div className="lg:hidden flex flex-col gap-3">
                 <ShiftMobileToolbar
@@ -938,66 +1001,6 @@ export function ShiftPage() {
                     setMobileSheetDate(target);
                   }}
                 />
-              </div>
-
-              {/* Legend — desktop only */}
-              <div className="hidden lg:block">
-                <Card padding="md">
-                  <Card.Body className="flex items-center gap-[18px] flex-wrap text-[11px]">
-                    <div className="font-semibold text-stone-500 dark:text-stone-400">役職</div>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full" style={{ background: '#7c3aed' }} />
-                      <span className="text-stone-600 dark:text-stone-300">会長 / 内勤</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full" style={{ background: '#2563eb' }} />
-                      <span className="text-stone-600 dark:text-stone-300">店長</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full" style={{ background: '#0d9488' }} />
-                      <span className="text-stone-600 dark:text-stone-300">正社員</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full" style={{ background: '#ea580c' }} />
-                      <span className="text-stone-600 dark:text-stone-300">バイト</span>
-                    </span>
-                    <div className="hidden sm:block w-px h-4 bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
-                    <div className="font-semibold text-stone-500 dark:text-stone-400">雇用形態</div>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span
-                        className="inline-block w-3.5 h-2"
-                        style={{ background: 'rgba(13, 148, 136, 0.18)', borderLeft: '2px solid #0d9488' }}
-                      />
-                      <span className="text-stone-600 dark:text-stone-300">月給</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span
-                        className="inline-block w-3.5 h-2"
-                        style={{
-                          background: 'rgba(234, 88, 12, 0.12)',
-                          borderLeft: '2px solid #ea580c',
-                          borderTop: '1px dashed #ea580c88',
-                          borderBottom: '1px dashed #ea580c88',
-                        }}
-                      />
-                      <span className="text-stone-600 dark:text-stone-300">時給</span>
-                    </span>
-                    <div className="hidden sm:block w-px h-4 bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
-                    <div className="font-semibold text-stone-500 dark:text-stone-400">ステータス</div>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="inline-block w-3.5 h-2 rounded-sm" style={{ background: '#ecfdf5', border: '1px solid #059669' }} />
-                      <span className="text-stone-600 dark:text-stone-300">本承認</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="inline-block w-3.5 h-2 rounded-sm" style={{ background: '#fff7ed', border: '1px solid #f97316' }} />
-                      <span className="text-stone-600 dark:text-stone-300">仮承認</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="inline-block w-3.5 h-2 rounded-sm" style={{ background: '#eff6ff', border: '1px solid #2563eb' }} />
-                      <span className="text-stone-600 dark:text-stone-300">申請中</span>
-                    </span>
-                  </Card.Body>
-                </Card>
               </div>
 
               {/* SP BottomSheet: Unified Sidebar inline component */}
@@ -1109,7 +1112,7 @@ export function ShiftPage() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-[110px_1fr] gap-2">
+                  <div className="grid grid-cols-[96px_1fr] gap-2">
                     <Button
                       variant="secondary"
                       size="lg"

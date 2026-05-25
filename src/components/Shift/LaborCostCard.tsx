@@ -1,8 +1,7 @@
 import { useMemo, type CSSProperties } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Badge, Card } from '../ui';
-import { ActionMenu, type ActionMenuItem } from '../ui/ActionMenu';
+import { Card } from '../ui';
 import { MemberAvatar } from './MemberAvatar';
 import { getEffectiveMonthlySalary } from '../../utils/payrollCalc';
 import { formatYenMan, formatYenManSplit } from '../../utils/formatYenMan';
@@ -104,42 +103,14 @@ export function LaborCostCard({
     };
   }, [showDetailTable, hourlyEstimates, monthlyMembers, monthlyEstimatesMap, laborCost.monthlyTotal]);
 
-  const moreItems: ActionMenuItem[] = [
-    {
-      key: 'csv',
-      label: 'CSV エクスポート',
-      onSelect: () => console.info('[LaborCostCard] CSV export (準備中)'),
-    },
-    {
-      key: 'detail',
-      label: '詳細を表示',
-      onSelect: () => console.info('[LaborCostCard] detail toggle (準備中)'),
-    },
-  ];
-
   if ((members?.length ?? 0) === 0) return null;
 
   return (
     <Card padding="md">
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-[15px] font-semibold text-stone-900 dark:text-stone-100">
-            {targetMonth ? `${format(targetMonth, 'yyyy年M月', { locale: ja })} の想定人件費` : '想定人件費'}
-          </h3>
-          {targetMonth && (
-            <Badge tone="warning" className="text-[10px]">
-              確定前 ({format(targetMonth, 'M月', { locale: ja })})
-            </Badge>
-          )}
-          <div className="flex-1" />
-          <ActionMenu
-            items={moreItems}
-            triggerLabel="人件費メニュー"
-            triggerSize="sm"
-            align="end"
-            bottomSheetTitle="人件費メニュー"
-          />
-        </div>
+        <h3 className="text-[15px] font-semibold text-stone-900 dark:text-stone-100">
+          {targetMonth ? `${format(targetMonth, 'yyyy年M月', { locale: ja })} の想定人件費` : '想定人件費'}
+        </h3>
         {/* SP: details で折畳 (md 未満のみ表示) */}
         <details className="md:hidden group" open>
         <summary className="flex items-baseline justify-between gap-2 cursor-pointer list-none rounded-md bg-stone-50 dark:bg-stone-700/40 p-3 [&::-webkit-details-marker]:hidden">
