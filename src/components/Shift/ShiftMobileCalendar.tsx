@@ -116,7 +116,7 @@ export function ShiftMobileCalendar({
                   className={[
                     'text-[12px] tabular-nums',
                     isToday
-                      ? 'font-bold text-blue-600'
+                      ? 'font-bold text-stone-900 dark:text-stone-50'
                       : isSelected
                         ? 'font-bold text-blue-600'
                         : otherMonth

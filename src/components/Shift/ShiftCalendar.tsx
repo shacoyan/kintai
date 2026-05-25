@@ -275,7 +275,7 @@ export function ShiftCalendar({
                       !isCurrentMonth
                         ? 'text-stone-400 dark:text-stone-500'
                         : isToday
-                          ? 'text-blue-600 dark:text-blue-400 font-bold'
+                          ? 'text-stone-900 dark:text-stone-50 font-bold'
                           : isHoliday
                             ? 'text-red-600 dark:text-red-400 font-medium'
                             : dayOfWeek === 6

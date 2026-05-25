@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeftRight, LogOut, Monitor, Moon, Sun, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -35,6 +35,7 @@ export function UserMenuPopover({
   showStoreSelector = true,
   showThemeToggle = true,
 }: UserMenuPopoverProps): JSX.Element {
+  const menuId = useId();
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
   const { myRole } = useTenant();
@@ -83,34 +84,36 @@ export function UserMenuPopover({
         aria-label="ユーザーメニュー"
         className="p-2 rounded-md text-stone-600 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 motion-safe:transition-colors duration-150 ease-out"
         onClick={() => setIsMenuOpen(!isMenuOpen)}
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         aria-expanded={isMenuOpen}
-        aria-controls="user-menu-popover"
+        aria-controls={menuId}
       >
         <User size={18} />
       </button>
       {isMenuOpen && (
         <div
-          id="user-menu-popover"
-          role="menu"
-          className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-white shadow-[0_12px_28px_rgba(0,0,0,0.16)] border border-stone-200 dark:bg-stone-900 dark:border-stone-800 py-2 z-50"
+          id={menuId}
+          role="dialog"
+          aria-modal="false"
+          aria-label="ユーザーメニュー"
+          className="absolute right-0 top-full mt-2 w-72 rounded-xl bg-white shadow-[0_12px_28px_rgba(0,0,0,0.16)] border border-stone-200 dark:bg-stone-900 dark:border-stone-800 py-2 z-50"
         >
-          <div className="px-4 py-2 text-xs text-stone-500 dark:text-stone-400" role="menuitem">
+          <div className="px-4 py-2 text-xs text-stone-500 dark:text-stone-400">
             <TenantSwitcher />
           </div>
           {showStoreSelector && (
-            <div className="px-4 py-2" role="menuitem">
+            <div className="px-4 py-2">
               <StoreSelector />
             </div>
           )}
           <div className="border-t border-stone-200 dark:border-stone-800 my-1" aria-hidden="true" />
           {user?.email && (
-            <div className="px-4 py-2 text-sm text-stone-700 dark:text-stone-300 truncate" role="menuitem">
+            <div className="px-4 py-2 text-sm text-stone-700 dark:text-stone-300 truncate">
               {user.email}
             </div>
           )}
           {showRoleBadge && (myRole === 'owner' || myRole === 'manager') && (
-            <div className="px-4 py-1.5" role="menuitem">
+            <div className="px-4 py-1.5">
               {myRole === 'owner' ? (
                 <Badge tone="primary" withDot>
                   Owner
@@ -145,11 +148,11 @@ export function UserMenuPopover({
               テーマ: {THEME_CURRENT_LABELS[theme as ThemeValue]} → {THEME_CURRENT_LABELS[nextTheme]}
             </button>
           )}
-          <div className="px-4 py-2" role="menuitem">
+          <div className="px-4 py-2 whitespace-nowrap">
             <LeaveTenantButton />
           </div>
           <div className="border-t border-stone-200 dark:border-stone-800 my-1" aria-hidden="true" />
-          <div className="px-4 py-2" role="menuitem">
+          <div className="px-4 py-2">
             <Button
               variant="tertiary"
               size="sm"

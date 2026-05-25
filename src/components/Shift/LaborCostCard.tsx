@@ -145,35 +145,35 @@ export function LaborCostCard({
 
       {/* md 以上: CostStat 風 3 tile */}
       <div className="hidden md:grid md:grid-cols-3 gap-2">
-        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2">
+        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2 flex flex-col items-start gap-0.5">
           <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">月給合計</div>
-          <div className="mt-0.5 tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
+          <div className="tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
             {monthlySplit.yenMan}
             {monthlySplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{monthlySplit.tail}</span>}
           </div>
-          <div className="mt-0.5 flex items-center gap-1 text-[10px]" style={{ color: '#0d9488' }}>
+          <div className="flex items-center gap-1 text-[10px]" style={{ color: '#0d9488' }}>
             <span className="inline-block rounded-full" style={{ width: 5, height: 5, background: '#0d9488' }} />
             {monthlyCount} 名
           </div>
         </div>
-        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2">
+        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2 flex flex-col items-start gap-0.5">
           <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">時給合計</div>
-          <div className="mt-0.5 tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
+          <div className="tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
             {hourlySplit.yenMan}
             {hourlySplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{hourlySplit.tail}</span>}
           </div>
-          <div className="mt-0.5 flex items-center gap-1 text-[10px]" style={{ color: '#ea580c' }}>
+          <div className="flex items-center gap-1 text-[10px]" style={{ color: '#ea580c' }}>
             <span className="inline-block rounded-full" style={{ width: 5, height: 5, background: '#ea580c' }} />
             {hourlyCount} 名
           </div>
         </div>
-        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2">
+        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2 flex flex-col items-start gap-0.5">
           <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">総計</div>
-          <div className="mt-0.5 tabular-nums font-semibold text-blue-600" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
+          <div className="tabular-nums font-semibold text-blue-600" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
             {totalSplit.yenMan}
             {totalSplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{totalSplit.tail}</span>}
           </div>
-          <div className="mt-0.5 text-[10px] text-stone-500 dark:text-stone-400">月給 + 時給</div>
+          <div className="text-[10px] text-stone-500 dark:text-stone-400">月給 + 時給</div>
         </div>
       </div>
       <div className="text-[10px] text-stone-500 dark:text-stone-400 mt-2">

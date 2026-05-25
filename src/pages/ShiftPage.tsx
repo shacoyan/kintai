@@ -1262,7 +1262,7 @@ export function ShiftPage() {
                 </BottomSheet>
               )}
 
-              <div className="lg:hidden sticky bottom-16 md:bottom-0 -mx-4 px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-white/92 dark:bg-stone-900/92 backdrop-blur-md border-t border-stone-200 dark:border-stone-700 z-20">
+              <div className="lg:hidden mt-3 rounded-md px-3 py-3">
                 {isBulkMode ? (
                   <div className="flex items-center gap-2">
                     <Button
@@ -1284,10 +1284,11 @@ export function ShiftPage() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-[96px_1fr] gap-2">
+                  <div className="grid grid-cols-[112px_1fr] gap-2">
                     <Button
                       variant="secondary"
                       size="lg"
+                      className="whitespace-nowrap"
                       onClick={() => setMobilePresetSheetOpen(true)}
                       disabled={isDeadlinePassed && !canEditDeadline}
                     >
