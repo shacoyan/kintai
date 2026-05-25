@@ -554,7 +554,7 @@ export function ShiftPage() {
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-[1200px] mx-auto px-5 py-6 space-y-6">
       <div className="flex flex-col gap-4 pb-16">
         {/* ヘッダー: 「シフト」見出しのみ (月表示 + pending 件数バッジ削除) */}
         <header className="flex flex-col gap-1">
@@ -571,7 +571,7 @@ export function ShiftPage() {
                   type="button"
                   onClick={() => setPreferenceView('current')}
                   aria-pressed={preferenceView === 'current'}
-                  className={`inline-flex items-center rounded-md px-3 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     preferenceView === 'current'
                       ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
                       : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
@@ -583,7 +583,7 @@ export function ShiftPage() {
                   type="button"
                   onClick={() => setPreferenceView('history')}
                   aria-pressed={preferenceView === 'history'}
-                  className={`inline-flex items-center rounded-md px-3 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     preferenceView === 'history'
                       ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
                       : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
@@ -595,7 +595,7 @@ export function ShiftPage() {
 
               {preferenceView === 'current' && (
                 <>
-                  <div className="hidden sm:block w-px h-[22px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                  <div className="hidden sm:block w-px h-[20px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
                   <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
                     {(['week', '2week', 'month'] as const).map((v) => (
                       <button
@@ -603,7 +603,7 @@ export function ShiftPage() {
                         type="button"
                         onClick={() => setShiftViewMode(v)}
                         aria-pressed={shiftViewMode === v}
-                        className={`inline-flex items-center rounded-md px-3 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                        className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                           shiftViewMode === v
                             ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
                             : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
@@ -613,17 +613,17 @@ export function ShiftPage() {
                       </button>
                     ))}
                   </div>
-                  <div className="hidden sm:block w-px h-[22px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                  <div className="hidden sm:block w-px h-[20px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => setShiftViewMonth(subMonths(shiftViewMonth, 1))}
                       aria-label="前月"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 focus-ring"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 focus-ring"
                     >
                       <ChevronLeft className="w-4 h-4" aria-hidden="true" />
                     </button>
-                    <div className="flex min-w-[90px] flex-col items-center">
+                    <div className="flex min-w-[80px] flex-col items-center">
                       <span className="text-base font-semibold text-stone-900 dark:text-stone-100 tabular-nums">
                         {format(shiftViewMonth, 'yyyy / MM')}
                       </span>
@@ -635,13 +635,13 @@ export function ShiftPage() {
                       type="button"
                       onClick={() => setShiftViewMonth(addMonths(shiftViewMonth, 1))}
                       aria-label="次月"
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 focus-ring"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 focus-ring"
                     >
                       <ChevronRight className="w-4 h-4" aria-hidden="true" />
                     </button>
                   </div>
 
-                  <div className="hidden sm:block w-px h-[22px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                  <div className="hidden sm:block w-px h-[20px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
                   <div className="min-w-0 flex-1 sm:flex-none">
                     <ShiftStatusFilter
                       value={statusFilter}
@@ -763,7 +763,7 @@ export function ShiftPage() {
 
         {preferenceView === 'current' && (
           <>
-          <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-5 lg:items-start">
+          <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-5 lg:items-start">
             <div className="flex flex-col gap-4">
               {prefLoading && (
                 <div className="flex items-center justify-center py-6">
@@ -1109,7 +1109,7 @@ export function ShiftPage() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-[110px_1fr] gap-2">
                     <Button
                       variant="secondary"
                       size="lg"

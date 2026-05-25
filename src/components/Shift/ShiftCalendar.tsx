@@ -192,7 +192,7 @@ export function ShiftCalendar({
           {WEEK_LABELS.map((w, i) => (
             <div
               key={w}
-              className={`bg-stone-50 dark:bg-stone-800 py-2 px-2.5 text-[11px] font-semibold tracking-[0.04em] ${
+              className={`bg-stone-50 dark:bg-stone-800 py-1.5 px-2.5 text-[11px] font-semibold tracking-[0.04em] ${
                 i === 5
                   ? 'text-blue-600 dark:text-blue-400'
                   : i === 6

@@ -123,7 +123,7 @@ export function LaborCostCard({
     <Card padding="md">
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">
+          <h3 className="text-[15px] font-semibold text-stone-900 dark:text-stone-100">
             {targetMonth ? `${format(targetMonth, 'yyyy年M月', { locale: ja })} の想定人件費` : '想定人件費'}
           </h3>
           {targetMonth && (
@@ -173,8 +173,8 @@ export function LaborCostCard({
       </details>
 
       {/* md 以上: CostStat 風 3 tile */}
-      <div className="hidden md:grid md:grid-cols-3 gap-2.5">
-        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
+      <div className="hidden md:grid md:grid-cols-3 gap-2">
+        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2">
           <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">月給合計</div>
           <div className="mt-0.5 tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
             {monthlySplit.yenMan}
@@ -185,7 +185,7 @@ export function LaborCostCard({
             {monthlyCount} 名
           </div>
         </div>
-        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
+        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2">
           <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">時給合計</div>
           <div className="mt-0.5 tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
             {hourlySplit.yenMan}
@@ -196,7 +196,7 @@ export function LaborCostCard({
             {hourlyCount} 名
           </div>
         </div>
-        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
+        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-2.5 py-2">
           <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">総計</div>
           <div className="mt-0.5 tabular-nums font-semibold text-blue-600" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
             {totalSplit.yenMan}
@@ -314,16 +314,16 @@ export function LaborCostCard({
                 return (
                   <li
                     key={m.id}
-                    className="flex items-center gap-2 py-1.5 border-t border-stone-200/70 dark:border-stone-700"
+                    className="flex items-center gap-2 py-2 border-t border-stone-200/70 dark:border-stone-700"
                     style={{ '--role-color': roleColor } as CSSProperties}
                   >
-                    <MemberAvatar member={m} size={22} />
+                    <MemberAvatar member={m} size={24} />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[12px] font-medium text-stone-900 dark:text-stone-50 truncate">{m.display_name}</div>
-                      <div className="text-[10px] text-stone-500 dark:text-stone-400 truncate">{roleLabel} · 月給制</div>
+                      <div className="text-[13px] font-medium text-stone-900 dark:text-stone-50 truncate">{m.display_name}</div>
+                      <div className="text-[11px] text-stone-500 dark:text-stone-400 truncate">{roleLabel} · 月給制</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-[12px] font-semibold tabular-nums text-stone-900 dark:text-stone-50">¥{cost.toLocaleString()}</div>
+                      <div className="text-[13px] font-semibold tabular-nums text-stone-900 dark:text-stone-50">¥{cost.toLocaleString()}</div>
                       <div className="text-[10px] text-stone-500 dark:text-stone-400 tabular-nums">{hours}h</div>
                     </div>
                   </li>
@@ -338,16 +338,16 @@ export function LaborCostCard({
                 return (
                   <li
                     key={e.userId}
-                    className="flex items-center gap-2 py-1.5 border-t border-stone-200/70 dark:border-stone-700"
+                    className="flex items-center gap-2 py-2 border-t border-stone-200/70 dark:border-stone-700"
                     style={{ '--role-color': roleColor } as CSSProperties}
                   >
-                    <MemberAvatar member={member} size={22} />
+                    <MemberAvatar member={member} size={24} />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[12px] font-medium text-stone-900 dark:text-stone-50 truncate">{e.displayName}</div>
-                      <div className="text-[10px] text-stone-500 dark:text-stone-400 truncate">{roleLabel} · 時給制</div>
+                      <div className="text-[13px] font-medium text-stone-900 dark:text-stone-50 truncate">{e.displayName}</div>
+                      <div className="text-[11px] text-stone-500 dark:text-stone-400 truncate">{roleLabel} · 時給制</div>
                     </div>
                     <div className="text-right shrink-0">
-                      <div className="text-[12px] font-semibold tabular-nums text-stone-900 dark:text-stone-50">¥{e.estimatedCost.toLocaleString()}</div>
+                      <div className="text-[13px] font-semibold tabular-nums text-stone-900 dark:text-stone-50">¥{e.estimatedCost.toLocaleString()}</div>
                       <div className="text-[10px] text-stone-500 dark:text-stone-400 tabular-nums">{hours}h</div>
                     </div>
                   </li>

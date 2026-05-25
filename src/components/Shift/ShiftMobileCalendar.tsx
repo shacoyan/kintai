@@ -65,7 +65,7 @@ export function ShiftMobileCalendar({
         {WEEK_LABELS.map((label, i) => (
           <div
             key={label}
-            className={`py-1 text-center text-[10px] font-semibold tracking-[0.04em] ${
+            className={`py-1 text-center text-[11px] font-semibold tracking-[0.04em] ${
               i === 5 ? 'text-blue-600' : i === 6 ? 'text-red-600' : 'text-stone-500 dark:text-stone-400'
             }`}
           >
@@ -102,7 +102,7 @@ export function ShiftMobileCalendar({
                 }
               }}
               className={[
-                'min-h-[52px] p-1 flex flex-col items-center gap-[3px]',
+                'min-h-[54px] p-1 flex flex-col items-center gap-[3px]',
                 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset',
                 'motion-safe:transition-colors duration-150',
                 otherMonth ? 'bg-stone-50 dark:bg-stone-900' : 'bg-white dark:bg-stone-800',

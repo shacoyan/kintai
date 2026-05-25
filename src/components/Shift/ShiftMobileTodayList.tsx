@@ -102,10 +102,10 @@ export function ShiftMobileTodayList({
               return (
                 <li key={`pref-${pref.id}`}>
                   <div
-                    className="w-full text-left flex items-center gap-2.5 rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 py-2.5 px-3"
+                    className="w-full text-left flex items-center gap-3 rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 py-3 px-3"
                     style={{ borderLeftWidth: 3, borderLeftColor: roleColor }}
                   >
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold text-stone-900 dark:text-stone-100 bg-stone-200 dark:bg-stone-700 shrink-0">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-stone-900 dark:text-stone-100 bg-stone-200 dark:bg-stone-700 shrink-0">
                       {initial}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -142,10 +142,10 @@ export function ShiftMobileTodayList({
                 <button
                   type="button"
                   onClick={() => onShiftClick?.(shift)}
-                  className="w-full text-left flex items-center gap-2.5 rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 py-2.5 px-3 hover:bg-stone-50 dark:hover:bg-stone-700/40 focus-ring motion-safe:transition-colors duration-150"
+                  className="w-full text-left flex items-center gap-3 rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 py-3 px-3 hover:bg-stone-50 dark:hover:bg-stone-700/40 focus-ring motion-safe:transition-colors duration-150"
                   style={{ borderLeftWidth: 3, borderLeftColor: roleColor }}
                 >
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold text-stone-900 dark:text-stone-100 bg-stone-200 dark:bg-stone-700 shrink-0">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-stone-900 dark:text-stone-100 bg-stone-200 dark:bg-stone-700 shrink-0">
                     {initial}
                   </div>
                   <div className="flex-1 min-w-0">
