@@ -47,16 +47,45 @@ const SHORT_LABEL: Partial<Record<StatusFilterValue, string>> = {
   approved: '本承認',
 };
 
+/** status ごとの ON 時のスタイル (bg / border / text / dot) */
+const STATUS_ON_STYLES: Partial<Record<StatusFilterValue, {
+  chip: string;
+  dot: string;
+  count: string;
+}>> = {
+  pending_preference: {
+    chip: 'bg-blue-50 border-blue-600 text-blue-700 dark:bg-blue-900/30 dark:border-blue-400 dark:text-blue-300',
+    dot: 'bg-blue-600 dark:bg-blue-400',
+    count: 'text-blue-700 dark:text-blue-300',
+  },
+  tentative: {
+    chip: 'bg-orange-50 border-orange-500 text-orange-700 dark:bg-orange-900/30 dark:border-orange-400 dark:text-orange-300',
+    dot: 'bg-orange-500 dark:bg-orange-400',
+    count: 'text-orange-700 dark:text-orange-300',
+  },
+  approved: {
+    chip: 'bg-emerald-50 border-emerald-600 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-400 dark:text-emerald-300',
+    dot: 'bg-emerald-600 dark:bg-emerald-400',
+    count: 'text-emerald-700 dark:text-emerald-300',
+  },
+};
+
+/** デフォルト (modified/rejected/cancelled 用) */
+const STATUS_ON_DEFAULT = {
+  chip: 'bg-stone-100 border-stone-400 text-stone-900 dark:bg-stone-700 dark:border-stone-500 dark:text-stone-100',
+  dot: 'bg-stone-500 dark:bg-stone-400',
+  count: 'text-stone-700 dark:text-stone-300',
+};
+
+/** OFF 時 (共通) */
+const STATUS_OFF = {
+  chip: 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-300',
+  dot: 'bg-stone-400 dark:bg-stone-500',
+  count: 'text-stone-500 dark:text-stone-400',
+};
+
 const CHIP_BASE_CLASS =
-  'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 sm:px-3 sm:py-1 text-xs font-medium motion-safe:transition-colors duration-150 cursor-pointer select-none';
-const CHIP_ON_CLASS =
-  'bg-blue-50 border-blue-600 text-blue-700 dark:bg-blue-900/30 dark:border-blue-400 dark:text-blue-300';
-const CHIP_OFF_CLASS =
-  'bg-white border-stone-300 text-stone-600 hover:bg-stone-50 dark:bg-stone-800 dark:border-stone-600 dark:text-stone-300';
-const COUNT_ON_CLASS =
-  'bg-blue-600 text-white tabular-nums text-[10px] px-1.5 py-0.5 rounded-full ml-1';
-const COUNT_OFF_CLASS =
-  'bg-stone-200 text-stone-600 tabular-nums text-[10px] px-1.5 py-0.5 rounded-full ml-1 dark:bg-stone-700 dark:text-stone-300';
+  'inline-flex items-center gap-1.5 rounded-full border h-[28px] px-[10px] text-xs font-medium motion-safe:transition-colors duration-150 cursor-pointer select-none';
 
 export interface ShiftStatusFilterProps {
   value: Set<StatusFilterValue>;
@@ -81,6 +110,8 @@ function StatusChip({
   count?: number;
   onToggle: () => void;
 }) {
+  const onStyle = STATUS_ON_STYLES[status] ?? STATUS_ON_DEFAULT;
+  const style = isActive ? onStyle : STATUS_OFF;
   return (
     <button
       type="button"
@@ -88,11 +119,16 @@ function StatusChip({
       aria-checked={isActive}
       aria-label={STATUS_FILTER_LABELS[status]}
       onClick={onToggle}
-      className={`${CHIP_BASE_CLASS} ${isActive ? CHIP_ON_CLASS : CHIP_OFF_CLASS}`}
+      className={`${CHIP_BASE_CLASS} ${style.chip}`}
     >
+      {/* status dot — 左端 */}
+      <span
+        aria-hidden="true"
+        className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`}
+      />
       <span>{SHORT_LABEL[status] ?? STATUS_FILTER_LABELS[status]}</span>
       {typeof count === 'number' && (
-        <span className={isActive ? COUNT_ON_CLASS : COUNT_OFF_CLASS}>
+        <span className={`tabular-nums text-[10px] font-semibold ml-0.5 ${style.count}`}>
           {count}
         </span>
       )}

@@ -264,7 +264,7 @@ export function ShiftCalendar({
                 }}
                 className={`relative ${cellBg} ${weekendTint} p-1 cursor-pointer motion-safe:transition-colors duration-150 ease-out
                   min-h-[80px] lg:min-h-[130px]
-                  ${isToday ? 'border-t-2 border-blue-600 dark:border-blue-400' : ''}
+                  ${isToday ? 'border-t-2 border-blue-600 dark:border-blue-400 bg-blue-600/[0.04] dark:bg-blue-500/10' : ''}
                   ${isCurrentMonth ? 'hover:bg-stone-50 dark:hover:bg-stone-800' : ''}
                   ${isBulkSelected ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/60 dark:bg-blue-900/30' : ''}
                 `}

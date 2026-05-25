@@ -17,12 +17,12 @@ export function ShiftMobileToolbar({
   pendingFilterCount,
 }: Props) {
   return (
-    <div className="sticky -top-3 z-10 bg-stone-50/95 dark:bg-stone-900/95 backdrop-blur px-3 pt-2 pb-2.5 flex items-center gap-2 border-b border-stone-200/70 dark:border-stone-700/70 -mx-4 lg:hidden">
+    <div className="sticky -top-3 z-10 bg-stone-50/95 dark:bg-stone-900/95 backdrop-blur px-3 pt-2 pb-2.5 flex items-center gap-2 -mx-4 lg:hidden">
       <button
         type="button"
         onClick={onPrevMonth}
         aria-label="前月"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 focus-ring"
+        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 focus-ring"
       >
         <ChevronLeft className="w-4 h-4" />
       </button>
@@ -35,7 +35,7 @@ export function ShiftMobileToolbar({
         type="button"
         onClick={onNextMonth}
         aria-label="次月"
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 focus-ring"
+        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 focus-ring"
       >
         <ChevronRight className="w-4 h-4" />
       </button>
@@ -45,7 +45,7 @@ export function ShiftMobileToolbar({
           type="button"
           onClick={onFilterClick}
           aria-label="フィルタ"
-          className="inline-flex items-center gap-1 h-8 px-2 rounded-md border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 text-xs font-medium hover:bg-stone-100 dark:hover:bg-stone-800 focus-ring"
+          className="inline-flex items-center gap-1 h-7 px-2 rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200 text-xs font-medium hover:bg-stone-100 dark:hover:bg-stone-700 focus-ring"
         >
           <SlidersHorizontal className="w-3.5 h-3.5" />
           {pendingFilterCount && pendingFilterCount > 0 ? (

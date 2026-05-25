@@ -126,8 +126,8 @@ export function ShiftMobileCalendar({
               {!otherMonth && count > 0 && !isMine && (
                 <div className="w-1 h-1 rounded-full bg-stone-400 dark:bg-stone-500" aria-hidden="true" />
               )}
-              {!otherMonth && count > 4 && (
-                <div className="text-[8px] text-stone-400 dark:text-stone-500 tabular-nums">{count}人</div>
+              {!otherMonth && count > 0 && (
+                <div className="text-[9px] text-stone-500 dark:text-stone-400 tabular-nums">{count}人</div>
               )}
             </div>
           );

@@ -61,7 +61,7 @@ export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalS
         isMine ? 'ring-1 ring-blue-500 dark:ring-blue-400 ring-inset' : ''
       }`}
       style={{
-        padding: '1px 4px 1px 5px',
+        padding: '1px 3px 1px 5px',
         background: visual.bg,
         borderLeft: `2px solid ${rc}`,
         borderTop: hourly ? `1px dashed ${rc}88` : undefined,
@@ -69,13 +69,13 @@ export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalS
       }}
     >
       <span
-        className="text-[10px] font-semibold tabular-nums shrink-0"
+        className="text-[9.5px] font-semibold tabular-nums shrink-0"
         style={{ color: rc }}
       >
         {(member?.display_name ?? '?').charAt(0).toUpperCase()}
       </span>
       <span
-        className="text-[10px] tabular-nums text-stone-700 dark:text-stone-200 leading-[1.2] truncate flex-shrink-0"
+        className="text-[9px] tabular-nums text-stone-700 dark:text-stone-200 leading-[1.25] truncate flex-shrink-0"
         style={{ fontVariantNumeric: 'tabular-nums' }}
       >
         {fmt(start)}–{fmt(end)}

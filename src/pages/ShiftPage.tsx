@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks, subMonths, addMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Clock, History, Plus, ChevronLeft, ChevronRight, AlertTriangle, CalendarPlus, X } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, AlertTriangle, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Button, Card, Badge, BottomSheet, ShiftSkeleton, EmptyState, Heading } from '../components/ui';
 import { messages } from '../lib/messages';
@@ -565,48 +565,45 @@ export function ShiftPage() {
             SP では ShiftMobileToolbar が代替するため hidden lg:block で PC 限定化 (Worker C) */}
         <div className="hidden lg:block">
         <Card padding="md">
-          <Card.Body className="flex flex-col gap-3">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-full p-1 self-start">
+          <Card.Body className="flex items-center gap-2 p-3 flex-wrap">
+              <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
                 <button
                   type="button"
                   onClick={() => setPreferenceView('current')}
                   aria-pressed={preferenceView === 'current'}
-                  className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  className={`inline-flex items-center rounded-md px-3 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     preferenceView === 'current'
                       ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
                       : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
                   }`}
                 >
-                  <Clock className="w-3.5 h-3.5" />
                   現在
                 </button>
                 <button
                   type="button"
                   onClick={() => setPreferenceView('history')}
                   aria-pressed={preferenceView === 'history'}
-                  className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                  className={`inline-flex items-center rounded-md px-3 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     preferenceView === 'history'
                       ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
                       : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
                   }`}
                 >
-                  <History className="w-3.5 h-3.5" />
                   履歴
                 </button>
               </div>
 
               {preferenceView === 'current' && (
                 <>
-                  <div className="hidden sm:block w-px h-5 bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
-                  <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-full p-1 self-start">
+                  <div className="hidden sm:block w-px h-[22px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                  <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
                     {(['week', '2week', 'month'] as const).map((v) => (
                       <button
                         key={v}
                         type="button"
                         onClick={() => setShiftViewMode(v)}
                         aria-pressed={shiftViewMode === v}
-                        className={`inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                        className={`inline-flex items-center rounded-md px-3 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                           shiftViewMode === v
                             ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
                             : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
@@ -616,7 +613,7 @@ export function ShiftPage() {
                       </button>
                     ))}
                   </div>
-                  <div className="hidden sm:block w-px h-5 bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                  <div className="hidden sm:block w-px h-[22px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -644,7 +641,7 @@ export function ShiftPage() {
                     </button>
                   </div>
 
-                  <div className="hidden sm:block w-px h-5 bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
+                  <div className="hidden sm:block w-px h-[22px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
                   <div className="min-w-0 flex-1 sm:flex-none">
                     <ShiftStatusFilter
                       value={statusFilter}
@@ -659,12 +656,12 @@ export function ShiftPage() {
                   </div>
 
                   <div className="hidden sm:block flex-1" aria-hidden="true" />
-                  <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:flex-wrap sm:gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {storeId && !isBulkMode && (
                       <Button
                         variant="success"
                         size="sm"
-                        iconLeft={<CalendarPlus className="w-4 h-4" />}
+                        iconLeft={<Plus className="w-3.5 h-3.5" />}
                         onClick={handleEnterBulkMode}
                         disabled={isDeadlinePassed && !canEditDeadline}
                         className="shrink-0 grow sm:grow-0"
@@ -704,13 +701,13 @@ export function ShiftPage() {
                         }
                       };
                       return (
-                        /* Iter 2-A / P1: outline 風 — bg 透過 + 青 border + 青文字 */
+                        /* Iter 2-A / P1: outline 風 */
                         <Button
                           variant="secondary"
                           size="sm"
                           onClick={handleBulkApproveTentative}
                           disabled={tCount === 0}
-                          className="shrink-0 grow sm:grow-0 !bg-transparent !border !border-blue-600 !text-blue-700 hover:!bg-blue-50 dark:!border-blue-400 dark:!text-blue-300 dark:hover:!bg-blue-900/30"
+                          className="shrink-0 grow sm:grow-0 !bg-white !border !border-stone-200 !text-stone-900 hover:!bg-stone-100 dark:!bg-stone-800 dark:!border-stone-700 dark:!text-stone-100 dark:hover:!bg-stone-700"
                           aria-label={`表示中の期間の仮承認シフトを一括本承認（${tCount}件）`}
                         >
                           仮承認を一括本承認{tCount > 0 ? `（${tCount}）` : ''}
@@ -750,7 +747,7 @@ export function ShiftPage() {
                           size="sm"
                           onClick={handleBulkRejectInRange}
                           disabled={count === 0}
-                          className="shrink-0 grow col-span-2 sm:grow-0 sm:col-auto !text-red-600 hover:!bg-red-50 dark:!text-red-400 dark:hover:!bg-red-900/30"
+                          className="shrink-0 grow sm:grow-0 !text-red-700 hover:!bg-red-50 dark:!text-red-300 dark:hover:!bg-red-900/30"
                           aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
                         >
                           未承認を一括却下{count > 0 ? `（${count}）` : ''}
@@ -760,7 +757,6 @@ export function ShiftPage() {
                   </div>
                 </>
               )}
-            </div>
           </Card.Body>
         </Card>
         </div>

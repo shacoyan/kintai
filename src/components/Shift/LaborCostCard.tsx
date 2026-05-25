@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Badge, Card } from '../ui';
 import { ActionMenu, type ActionMenuItem } from '../ui/ActionMenu';
+import { MemberAvatar } from './MemberAvatar';
 import { getEffectiveMonthlySalary } from '../../utils/payrollCalc';
 import { formatYenMan, formatYenManSplit } from '../../utils/formatYenMan';
+import { getRoleColorKey, ROLE_COLOR_HEX, ROLE_COLOR_LABEL } from '../../utils/getRoleColor';
 import type { TenantMember, TenantRole } from '../../types';
 import type { LaborCostEstimate } from '../../hooks/useShift';
 
@@ -118,27 +120,28 @@ export function LaborCostCard({
   if ((members?.length ?? 0) === 0) return null;
 
   return (
-    <Card padding="sm">
-      <div className="flex items-center gap-2 mb-3">
-        <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">
-          {targetMonth ? `${format(targetMonth, 'yyyy年M月', { locale: ja })} の想定人件費` : '想定人件費'}
-        </h3>
-        {targetMonth && (
-          <Badge tone="warning" className="text-[10px]">
-            確定前 ({format(targetMonth, 'M月', { locale: ja })})
-          </Badge>
-        )}
-        <div className="flex-1" />
-        <ActionMenu
-          items={moreItems}
-          triggerLabel="人件費メニュー"
-          triggerSize="sm"
-          align="end"
-          bottomSheetTitle="人件費メニュー"
-        />
-      </div>
-      {/* SP: details で折畳 (md 未満のみ表示) */}
-      <details className="md:hidden group" open>
+    <Card padding="md">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-semibold text-stone-900 dark:text-stone-100">
+            {targetMonth ? `${format(targetMonth, 'yyyy年M月', { locale: ja })} の想定人件費` : '想定人件費'}
+          </h3>
+          {targetMonth && (
+            <Badge tone="warning" className="text-[10px]">
+              確定前 ({format(targetMonth, 'M月', { locale: ja })})
+            </Badge>
+          )}
+          <div className="flex-1" />
+          <ActionMenu
+            items={moreItems}
+            triggerLabel="人件費メニュー"
+            triggerSize="sm"
+            align="end"
+            bottomSheetTitle="人件費メニュー"
+          />
+        </div>
+        {/* SP: details で折畳 (md 未満のみ表示) */}
+        <details className="md:hidden group" open>
         <summary className="flex items-baseline justify-between gap-2 cursor-pointer list-none rounded-md bg-stone-50 dark:bg-stone-700/40 p-3 [&::-webkit-details-marker]:hidden">
           <span className="flex items-baseline gap-2">
             <svg className="w-4 h-4 text-stone-600 dark:text-stone-200 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -170,44 +173,42 @@ export function LaborCostCard({
       </details>
 
       {/* md 以上: CostStat 風 3 tile */}
-      <div className="hidden md:grid md:grid-cols-3 gap-2">
-        <div className="rounded-md border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
-          <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">月給合計</div>
-          <div className="mt-0.5 tabular-nums text-stone-900 dark:text-stone-100 font-semibold tracking-tight" style={{ fontSize: 18 }}>
+      <div className="hidden md:grid md:grid-cols-3 gap-2.5">
+        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
+          <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">月給合計</div>
+          <div className="mt-0.5 tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
             {monthlySplit.yenMan}
             {monthlySplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{monthlySplit.tail}</span>}
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-[10px] text-stone-500 dark:text-stone-400">
-            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: '#0d9488' }} />
+          <div className="mt-0.5 flex items-center gap-1 text-[10px]" style={{ color: '#0d9488' }}>
+            <span className="inline-block rounded-full" style={{ width: 5, height: 5, background: '#0d9488' }} />
             {monthlyCount} 名
           </div>
         </div>
-        <div className="rounded-md border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
-          <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">時給合計</div>
-          <div className="mt-0.5 tabular-nums text-stone-900 dark:text-stone-100 font-semibold tracking-tight" style={{ fontSize: 18 }}>
+        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
+          <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">時給合計</div>
+          <div className="mt-0.5 tabular-nums font-semibold text-stone-900 dark:text-stone-100" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
             {hourlySplit.yenMan}
             {hourlySplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{hourlySplit.tail}</span>}
           </div>
-          <div className="mt-1 flex items-center gap-1.5 text-[10px] text-stone-500 dark:text-stone-400">
-            <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: '#ea580c' }} />
+          <div className="mt-0.5 flex items-center gap-1 text-[10px]" style={{ color: '#ea580c' }}>
+            <span className="inline-block rounded-full" style={{ width: 5, height: 5, background: '#ea580c' }} />
             {hourlyCount} 名
           </div>
         </div>
-        <div className="rounded-md border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
-          <div className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">総計</div>
-          <div className="mt-0.5 tabular-nums text-blue-600 dark:text-blue-400 font-semibold tracking-tight" style={{ fontSize: 18 }}>
+        <div className="rounded-[8px] border border-stone-200/70 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 px-3 py-2.5">
+          <div className="text-[10px] font-medium text-stone-500 dark:text-stone-400">総計</div>
+          <div className="mt-0.5 tabular-nums font-semibold text-blue-600" style={{ fontSize: 18, letterSpacing: '-0.02em' }}>
             {totalSplit.yenMan}
             {totalSplit.tail && <span className="text-[10px] opacity-60 ml-0.5">{totalSplit.tail}</span>}
           </div>
-          <div className="mt-1 text-[10px] text-stone-500 dark:text-stone-400">月給 + 時給</div>
+          <div className="mt-0.5 text-[10px] text-stone-500 dark:text-stone-400">月給 + 時給</div>
         </div>
       </div>
-      <div className="text-[10px] text-stone-600 dark:text-stone-300 mt-2">
+      <div className="text-[10px] text-stone-500 dark:text-stone-400 mt-2">
         ※ 月給は固定費として全月給メンバー分を計上
       </div>
       {showDetailTable && (
-        // 理由: オーナー要望によりスクロール撤廃。max-h と overflow-y を削除し、
-        // 全員常時表示。横幅対応の overflow-x-auto のみ残す。
         <>
           <ul className="md:hidden mt-3 space-y-2">
             {monthlyMembers.length > 0 && (
@@ -298,65 +299,65 @@ export function LaborCostCard({
               </div>
             </li>
           </ul>
-          <div className="mt-3 overflow-x-auto hidden md:block">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-left text-stone-600 dark:text-stone-300">
-                  <th className="px-3 py-2 font-medium sticky left-0 bg-white dark:bg-stone-800 z-10 sm:static sm:bg-transparent">スタッフ名</th>
-                  <th className="px-3 py-2 font-medium text-right tabular-nums">通常時間</th>
-                  <th className="px-3 py-2 font-medium text-right tabular-nums">深夜時間</th>
-                  <th className="px-3 py-2 font-medium text-right tabular-nums">合計時間</th>
-                  <th className="px-3 py-2 font-medium text-right tabular-nums">支払い予定人件費</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-200 dark:divide-stone-700">
-              {monthlyMembers.length > 0 && (
-                <>
-                  <tr>
-                    <td colSpan={5} className="px-3 py-2 bg-stone-50 dark:bg-stone-700/40 text-xs font-semibold text-stone-700 dark:text-stone-300">月給メンバー</td>
-                  </tr>
-                  {monthlyMembers.map(m => {
-                    const estimate = monthlyEstimatesMap.get(m.user_id);
-                    return (
-                      <tr key={m.id}>
-                        <td className="px-3 py-2 text-left sticky left-0 bg-white dark:bg-stone-800 z-10 sm:static sm:bg-transparent">{m.display_name}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{estimate ? fmtTime(estimate.shiftMinutes - estimate.nightMinutes) : '-'}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{estimate ? fmtTime(estimate.nightMinutes) : '-'}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">{estimate ? fmtTime(estimate.shiftMinutes) : '-'}</td>
-                        <td className="px-3 py-2 text-right tabular-nums">¥{getEffectiveMonthlySalary(m, rolesMap).toLocaleString()}</td>
-                      </tr>
-                    );
-                  })}
-                </>
-              )}
-              {hourlyEstimates.length > 0 && (
-                <>
-                  <tr>
-                    <td colSpan={5} className="px-3 py-2 bg-stone-50 dark:bg-stone-700/40 text-xs font-semibold text-stone-700 dark:text-stone-300">時給メンバー</td>
-                  </tr>
-                  {hourlyEstimates.map(e => (
-                    <tr key={e.userId}>
-                      <td className="px-3 py-2 text-left sticky left-0 bg-white dark:bg-stone-800 z-10 sm:static sm:bg-transparent">{e.displayName}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{fmtTime(e.shiftMinutes - e.nightMinutes)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{fmtTime(e.nightMinutes)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">{fmtTime(e.shiftMinutes)}</td>
-                      <td className="px-3 py-2 text-right tabular-nums">¥{e.estimatedCost.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </>
-              )}
-              <tr className="bg-stone-100 dark:bg-stone-700/40 font-bold">
-                <td className="px-3 py-2 text-left sticky left-0 bg-stone-100 dark:bg-stone-700/40 z-10 sm:static">合計</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmtTime(detailTotals.normal)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmtTime(detailTotals.night)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{fmtTime(detailTotals.total)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">¥{detailTotals.cost.toLocaleString()}</td>
-              </tr>
-              </tbody>
-            </table>
+          <div className="hidden md:flex md:flex-col">
+            <div className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider py-1.5">
+              スタッフ別
+            </div>
+            <ul className="flex flex-col">
+              {monthlyMembers.map(m => {
+                const estimate = monthlyEstimatesMap.get(m.user_id);
+                const cost = getEffectiveMonthlySalary(m, rolesMap);
+                const hours = estimate ? Math.round(estimate.shiftMinutes / 60) : 0;
+                const colorKey = getRoleColorKey(m);
+                const roleColor = ROLE_COLOR_HEX[colorKey];
+                const roleLabel = ROLE_COLOR_LABEL[colorKey];
+                return (
+                  <li
+                    key={m.id}
+                    className="flex items-center gap-2 py-1.5 border-t border-stone-200/70 dark:border-stone-700"
+                    style={{ '--role-color': roleColor } as CSSProperties}
+                  >
+                    <MemberAvatar member={m} size={22} />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12px] font-medium text-stone-900 dark:text-stone-50 truncate">{m.display_name}</div>
+                      <div className="text-[10px] text-stone-500 dark:text-stone-400 truncate">{roleLabel} · 月給制</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[12px] font-semibold tabular-nums text-stone-900 dark:text-stone-50">¥{cost.toLocaleString()}</div>
+                      <div className="text-[10px] text-stone-500 dark:text-stone-400 tabular-nums">{hours}h</div>
+                    </div>
+                  </li>
+                );
+              })}
+              {hourlyEstimates.map(e => {
+                const member = (members ?? []).find(mm => mm.user_id === e.userId);
+                const hours = Math.round(e.shiftMinutes / 60);
+                const colorKey = member ? getRoleColorKey(member) : 'parttime';
+                const roleColor = ROLE_COLOR_HEX[colorKey];
+                const roleLabel = ROLE_COLOR_LABEL[colorKey];
+                return (
+                  <li
+                    key={e.userId}
+                    className="flex items-center gap-2 py-1.5 border-t border-stone-200/70 dark:border-stone-700"
+                    style={{ '--role-color': roleColor } as CSSProperties}
+                  >
+                    <MemberAvatar member={member} size={22} />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[12px] font-medium text-stone-900 dark:text-stone-50 truncate">{e.displayName}</div>
+                      <div className="text-[10px] text-stone-500 dark:text-stone-400 truncate">{roleLabel} · 時給制</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[12px] font-semibold tabular-nums text-stone-900 dark:text-stone-50">¥{e.estimatedCost.toLocaleString()}</div>
+                      <div className="text-[10px] text-stone-500 dark:text-stone-400 tabular-nums">{hours}h</div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </>
       )}
+      </div>
     </Card>
   );
 }
