@@ -4,5 +4,7 @@ export { Sidebar } from './Sidebar';
 export { TopBar } from './TopBar';
 export type { TopBarProps } from './TopBar';
 export { MobileHeader } from './MobileHeader';
+export { UserMenuPopover } from './UserMenuPopover';
+export type { UserMenuPopoverProps } from './UserMenuPopover';
 export { BottomNav } from './BottomNav';
 export { Layout } from './Layout';

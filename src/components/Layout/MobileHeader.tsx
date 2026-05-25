@@ -1,7 +1,6 @@
-import { StoreSelector } from '../Store/StoreSelector';
-import { TenantSwitcher } from '../Tenant/TenantSwitcher';
 import { BrandMark } from '../ui';
 import { NotificationBell } from '../Notification/NotificationBell';
+import { UserMenuPopover } from './UserMenuPopover';
 
 export function MobileHeader() {
   return (
@@ -12,12 +11,9 @@ export function MobileHeader() {
           kintai
         </span>
       </div>
-      <TenantSwitcher compact />
       <div className="flex-1" />
       <NotificationBell />
-      <div className="max-w-[160px]">
-        <StoreSelector />
-      </div>
+      <UserMenuPopover showStoreSelector showRoleBadge showThemeToggle />
     </div>
   );
 }

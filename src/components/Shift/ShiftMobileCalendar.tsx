@@ -107,6 +107,7 @@ export function ShiftMobileCalendar({
                 'motion-safe:transition-colors duration-150',
                 otherMonth ? 'bg-stone-50 dark:bg-stone-900' : 'bg-white dark:bg-stone-800',
                 isToday ? 'border-t-2 border-blue-600' : '',
+                isSelected ? 'bg-blue-50 dark:bg-blue-900/30' : '',
                 isBulkSelected ? 'ring-2 ring-blue-600 ring-inset bg-blue-50 dark:bg-blue-900/30' : '',
               ].join(' ')}
             >
@@ -117,7 +118,7 @@ export function ShiftMobileCalendar({
                     isToday
                       ? 'font-bold text-blue-600'
                       : isSelected
-                        ? 'font-semibold text-blue-600'
+                        ? 'font-bold text-blue-600'
                         : otherMonth
                           ? 'text-stone-400 dark:text-stone-500'
                           : 'font-medium text-stone-700 dark:text-stone-300',
@@ -125,7 +126,7 @@ export function ShiftMobileCalendar({
                 >
                   {d.getDate()}
                 </span>
-                {isSelected && <div className="w-5 h-0.5 bg-blue-600 mt-0.5 rounded-full" aria-hidden="true" />}
+                {isSelected && <div className="w-full h-[2px] bg-blue-600 mt-0.5 rounded-sm" aria-hidden="true" />}
               </div>
               {!otherMonth && count > 0 && (
                 <div

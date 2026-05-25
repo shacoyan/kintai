@@ -553,6 +553,9 @@ export function ShiftPage() {
     );
   }
 
+  const isCurrentPreferenceView = preferenceView === 'current';
+  const isHistoryPreferenceView = preferenceView === 'history';
+
   return (
     <div className="max-w-[1200px] mx-auto px-5 py-6 space-y-6">
       <div className="flex flex-col gap-4 pb-16">
@@ -564,17 +567,20 @@ export function ShiftPage() {
           </Heading>
         </header>
 
-        {/* Iter 5-A: PC 統合 Card (Toolbar + Calendar + Legend) */}
-        <div className="hidden lg:block">
-          <Card padding="none" className="overflow-hidden">
+        {/* PC レイアウト: 統合 Card + Right rail */}
+        {isCurrentPreferenceView && (
+          <div className="hidden lg:block">
+            <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-5 lg:items-start">
+              <main className="min-w-0">
+                <Card padding="none" className="overflow-hidden">
             <div className="flex items-center gap-2 flex-wrap px-4 py-3">
               <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
                 <button
                   type="button"
                   onClick={() => setPreferenceView('current')}
-                  aria-pressed={preferenceView === 'current'}
+                  aria-pressed={isCurrentPreferenceView}
                   className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                    preferenceView === 'current'
+                    isCurrentPreferenceView
                       ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
                       : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
                   }`}
@@ -584,9 +590,9 @@ export function ShiftPage() {
                 <button
                   type="button"
                   onClick={() => setPreferenceView('history')}
-                  aria-pressed={preferenceView === 'history'}
+                  aria-pressed={isHistoryPreferenceView}
                   className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
-                    preferenceView === 'history'
+                    isHistoryPreferenceView
                       ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
                       : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
                   }`}
@@ -595,7 +601,7 @@ export function ShiftPage() {
                 </button>
               </div>
 
-              {preferenceView === 'current' && (
+              {isCurrentPreferenceView && (
                 <>
                   <div className="hidden sm:block w-px h-[20px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
                   <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
@@ -761,8 +767,44 @@ export function ShiftPage() {
               )}
             </div>
 
-            {preferenceView === 'current' && (
-              <>
+                  {deadlineInfo && !deadlineInfo.passed && (
+                    <div className="border-t border-stone-100 dark:border-stone-700/60 px-4 py-3 bg-orange-50/60 dark:bg-orange-900/20">
+                      <div role="status" aria-live="polite" className="flex items-start gap-3 border-l-4 border-orange-500 dark:border-orange-400 pl-3">
+                        <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400 mt-0.5 shrink-0" aria-hidden="true" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-orange-700 dark:text-orange-100">
+                            シフト申請の提出締切: {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })}
+                          </p>
+                          <p className="text-xs text-orange-700 dark:text-orange-200 mt-1 tabular-nums">
+                            残り {deadlineInfo.remainingLabel}（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {deadlineInfo && deadlineInfo.passed && (
+                    <div className="border-t border-stone-100 dark:border-stone-700/60 px-4 py-3 bg-red-50/60 dark:bg-red-900/20">
+                      <div role="status" aria-live="polite" className="flex items-start gap-3 border-l-4 border-red-500 dark:border-red-400 pl-3">
+                        <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 shrink-0" aria-hidden="true" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-red-700 dark:text-red-100">
+                            締切過ぎ — 提出には管理者承認が必要です
+                          </p>
+                          <p className="text-xs text-red-700 dark:text-red-200 mt-1 tabular-nums">
+                            {format(deadlineInfo.deadline, 'M月d日(E) HH:mm', { locale: ja })} に締め切られました（{format(deadlineInfo.targetMonth, 'yyyy年M月', { locale: ja })} 分）
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {(prefLoading || shiftLoading) && (
+                    <div className="border-t border-stone-100 dark:border-stone-700/60 flex items-center justify-center py-6">
+                      <Spinner size="md" label="読み込み中" showLabel />
+                    </div>
+                  )}
+
                 <div className="border-t border-stone-100 dark:border-stone-700/60">
                   <ShiftCalendar
                     shifts={shifts}
@@ -859,14 +901,144 @@ export function ShiftPage() {
                     </span>
                   </div>
                 </div>
-              </>
-            )}
-          </Card>
-        </div>
+                </Card>
 
-        {preferenceView === 'current' && (
+                {storeId && isBulkMode && (
+                  /* 理由: 一括選択モード active 状態の枠線強調 (例外③) */
+                  <div
+                    role="region"
+                    aria-label="一括シフト申請 選択モード"
+                    className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 flex-wrap rounded-md border border-blue-100 dark:border-blue-700 bg-blue-50 dark:bg-blue-800/30 px-3 py-2 static shadow-none"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-blue-700 dark:text-blue-100 tabular-nums">
+                        {messages.shiftPreference.bulk.selectedCount(selectedBulkDates.size)}
+                      </span>
+                      {selectedBulkDates.size > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleClearAllBulkDates}
+                          className="text-xs font-semibold text-blue-700 dark:text-blue-200 hover:underline focus-ring"
+                        >
+                          {messages.shiftPreference.bulk.clearAll}
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        iconLeft={<X className="w-4 h-4" />}
+                        onClick={handleCancelBulkMode}
+                        className="grow sm:grow-0"
+                      >
+                        {messages.shiftPreference.bulk.cancelMode}
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={handleProceedBulkDialog}
+                        disabled={selectedBulkDates.size === 0}
+                        className="grow sm:grow-0"
+                      >
+                        {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </main>
+
+              <aside
+                aria-label="シフトページ Right rail"
+                className="lg:flex lg:flex-col lg:gap-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto"
+              >
+                {canManageTenant && payrollMembers.length > 0 && (
+                  <LaborCostCard
+                    members={payrollMembers}
+                    roles={roles}
+                    tentativeLaborEstimates={laborEstimates.tentative}
+                    allLaborEstimates={laborEstimates.all}
+                    targetMonth={shiftViewMonth}
+                  />
+                )}
+              </aside>
+            </div>
+          </div>
+        )}
+
+        {isHistoryPreferenceView && (
+          <div className="hidden lg:block">
+            <Card padding="none" className="overflow-hidden">
+              <div className="flex items-center gap-2 flex-wrap px-4 py-3">
+                <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
+                  <button
+                    type="button"
+                    onClick={() => setPreferenceView('current')}
+                    aria-pressed={isCurrentPreferenceView}
+                    className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                      isCurrentPreferenceView
+                        ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                        : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                    }`}
+                  >
+                    現在
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreferenceView('history')}
+                    aria-pressed={isHistoryPreferenceView}
+                    className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                      isHistoryPreferenceView
+                        ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                        : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                    }`}
+                  >
+                    履歴
+                  </button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {isHistoryPreferenceView && (
+          <div className="lg:hidden">
+            <Card padding="none" className="overflow-hidden">
+              <div className="flex items-center gap-2 flex-wrap px-4 py-3">
+                <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
+                  <button
+                    type="button"
+                    onClick={() => setPreferenceView('current')}
+                    aria-pressed={isCurrentPreferenceView}
+                    className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                      isCurrentPreferenceView
+                        ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                        : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                    }`}
+                  >
+                    現在
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreferenceView('history')}
+                    aria-pressed={isHistoryPreferenceView}
+                    className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                      isHistoryPreferenceView
+                        ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
+                        : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-stone-100'
+                    }`}
+                  >
+                    履歴
+                  </button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {isCurrentPreferenceView && (
           <>
-          <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-5 lg:items-start">
+          <div className="lg:hidden">
             <div className="flex flex-col gap-4">
               {prefLoading && (
                 <div className="flex items-center justify-center py-6">
@@ -1133,24 +1305,7 @@ export function ShiftPage() {
                 )}
               </div>
             </div>
-
-              {isDesktop && (
-                <aside
-                  aria-label="シフトページ Right rail"
-                  className="hidden lg:flex lg:flex-col lg:gap-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto"
-                >
-                  {canManageTenant && payrollMembers.length > 0 && (
-                    <LaborCostCard
-                      members={payrollMembers}
-                      roles={roles}
-                      tentativeLaborEstimates={laborEstimates.tentative}
-                      allLaborEstimates={laborEstimates.all}
-                      targetMonth={shiftViewMonth}
-                    />
-                  )}
-                </aside>
-              )}
-            </div>
+          </div>
 
             {isDesktop && (
               <DayDetailModal
@@ -1199,7 +1354,7 @@ export function ShiftPage() {
           </>
           )}
 
-          {preferenceView === 'history' && (
+          {isHistoryPreferenceView && (
             <>
               {canManageTenant && (
                 <div className="mt-2">
