@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { X, Plus } from 'lucide-react';
 import { Button } from '../ui';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { UnifiedShiftSidebar, type UnifiedShiftSidebarProps } from './UnifiedShiftSidebar';
 
 export interface DayDetailModalProps extends Omit<UnifiedShiftSidebarProps, 'selectedDate'> {
@@ -21,6 +22,13 @@ export interface DayDetailModalProps extends Omit<UnifiedShiftSidebarProps, 'sel
  */
 export function DayDetailModal(props: DayDetailModalProps) {
   const { selectedDate, onSelectedDateChange, onQuickAdd, ...rest } = props;
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  useFocusTrap(modalRef, {
+    active: !!selectedDate,
+    initialFocus: () => closeBtnRef.current,
+  });
 
   useEffect(() => {
     if (!selectedDate) return;
@@ -60,6 +68,7 @@ export function DayDetailModal(props: DayDetailModalProps) {
       className="fixed inset-0 z-30 bg-stone-900/30 backdrop-blur-[2px] flex items-center justify-center p-6 motion-safe:animate-[fadeIn_120ms_ease-out]"
     >
       <div
+        ref={modalRef}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-[480px] max-h-[85vh] bg-white dark:bg-stone-900 rounded-xl shadow-2xl flex flex-col overflow-hidden motion-safe:animate-[zoomIn_150ms_ease-out]"
       >
@@ -90,6 +99,7 @@ export function DayDetailModal(props: DayDetailModalProps) {
             </Button>
           )}
           <button
+            ref={closeBtnRef}
             type="button"
             onClick={() => onSelectedDateChange(null)}
             aria-label="閉じる"

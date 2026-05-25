@@ -1,13 +1,17 @@
 import { format, isSameDay, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Badge } from '../ui';
-import type { Shift } from '../../types';
+import type { Shift, ShiftPreference } from '../../types';
 
 type RoleType = 'owner' | 'manager' | 'fulltime' | 'parttime';
+type RowItem =
+  | { kind: 'shift'; shift: Shift }
+  | { kind: 'preference'; pref: ShiftPreference };
 
 interface Props {
   selectedDate: string | null;
   shifts: Shift[];
+  preferences?: ShiftPreference[];
   memberNames: Map<string, string>;
   storeNames?: Map<string, string>;
   roleTypeMap?: Map<string, RoleType>;
@@ -41,13 +45,26 @@ function statusLabel(status: string): string {
   return '申請中';
 }
 
+function preferenceBadge(pref: ShiftPreference): { tone: 'warning' | 'info'; label: string } {
+  if (pref.preference_type === 'unavailable') return { tone: 'warning', label: '休み希望' };
+  if (pref.status === 'approved') return { tone: 'warning', label: '仮承認(希望)' };
+  return { tone: 'info', label: '申請中(希望)' };
+}
+
 function formatHHmm(time: string): string {
   return time.slice(0, 5);
+}
+
+function preferenceTimeLabel(pref: ShiftPreference): string {
+  if (pref.preference_type === 'unavailable') return '休み希望';
+  if (pref.start_time && pref.end_time) return `${formatHHmm(pref.start_time)}-${formatHHmm(pref.end_time)}`;
+  return '時刻未指定';
 }
 
 export function ShiftMobileTodayList({
   selectedDate,
   shifts,
+  preferences,
   memberNames,
   roleTypeMap,
   onShiftClick,
@@ -55,28 +72,79 @@ export function ShiftMobileTodayList({
 }: Props) {
   const targetDate = selectedDate ?? format(new Date(), 'yyyy-MM-dd');
   const dayShifts = shifts.filter((shift) => shift.date === targetDate);
+  const dayPrefs = (preferences ?? []).filter((pref) => pref.date === targetDate);
+  const shiftUserIds = new Set(dayShifts.map((shift) => shift.user_id));
+  const standalonePrefs = dayPrefs.filter((pref) => !shiftUserIds.has(pref.user_id));
+  const rows: RowItem[] = [
+    ...dayShifts.map((shift) => ({ kind: 'shift' as const, shift })),
+    ...standalonePrefs.map((pref) => ({ kind: 'preference' as const, pref })),
+  ];
   const isToday = isSameDay(parseISO(targetDate), new Date());
-  const visible = dayShifts.slice(0, 6);
-  const overflow = dayShifts.length - visible.length;
+  const visible = rows.slice(0, 6);
+  const overflow = rows.length - visible.length;
 
   return (
     <div className="lg:hidden mt-4">
       <div className="flex items-center mb-2 gap-2">
         <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 tabular-nums">
-          {format(parseISO(targetDate), 'M/d (E)', { locale: ja })} — {dayShifts.length}名
+          {format(parseISO(targetDate), 'M/d (E)', { locale: ja })} — {rows.length}件
         </h3>
         <div className="flex-1" />
         {isToday && (
           <span className="text-[11px] text-stone-500 dark:text-stone-400">本日</span>
         )}
       </div>
-      {dayShifts.length === 0 ? (
+      {rows.length === 0 ? (
         <div className="rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 p-4 text-xs text-stone-500 dark:text-stone-400 text-center">
           この日のシフトはありません
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
-          {visible.map((shift) => {
+          {visible.map((row) => {
+            if (row.kind === 'preference') {
+              const pref = row.pref;
+              const roleType = roleTypeMap?.get(pref.user_id);
+              const roleColor = roleColorOf(roleType);
+              const name = memberNames.get(pref.user_id) ?? '—';
+              const initial = name.slice(0, 1);
+              const badge = preferenceBadge(pref);
+
+              return (
+                <li key={`pref-${pref.id}`}>
+                  <div
+                    className="w-full text-left flex items-center gap-2.5 rounded-md border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5"
+                    style={{ borderLeftWidth: 3, borderLeftColor: roleColor }}
+                  >
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold text-white shrink-0"
+                      style={{ background: roleColor }}
+                    >
+                      {initial}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] font-semibold text-stone-900 dark:text-stone-100 truncate">
+                        {name}
+                      </div>
+                      <div className="text-[10px] text-stone-500 dark:text-stone-400">
+                        {roleLabelOf(roleType)}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[12px] font-semibold tabular-nums text-stone-900 dark:text-stone-100">
+                        {preferenceTimeLabel(pref)}
+                      </div>
+                      <div className="mt-1">
+                        <Badge tone={badge.tone} withDot>
+                          {badge.label}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              );
+            }
+
+            const shift = row.shift;
             const roleType = roleTypeMap?.get(shift.user_id);
             const roleColor = roleColorOf(roleType);
             const name = memberNames.get(shift.user_id) ?? '—';

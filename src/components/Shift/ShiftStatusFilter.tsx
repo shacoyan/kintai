@@ -3,7 +3,6 @@ import type { StatusFilterValue } from './unifiedShiftTypes';
 import {
   ALL_STATUS_FILTER_VALUES,
   STATUS_FILTER_LABELS,
-  STATUS_FILTER_DOT_CLASS,
   STATUS_FILTER_STORAGE_KEY,
   DEFAULT_STATUS_FILTER,
 } from './unifiedShiftTypes';
@@ -42,23 +41,24 @@ export function writeStatusFilter(set: Set<StatusFilterValue>): void {
   }
 }
 
-/**
- * Tailwind JIT は動的クラス文字列を検出できないため、
- * status ごとに完全なクラス文字列を Record で持つ必要がある。
- */
-const STATUS_CHIP_ON_CLASS: Record<StatusFilterValue, string> = {
-  pending_preference: 'bg-orange-50 ring-2 ring-orange-500 text-orange-700 dark:bg-orange-800/40 dark:ring-orange-400 dark:text-orange-200',
-  tentative: 'bg-blue-100 ring-2 ring-blue-500 text-blue-800 dark:bg-blue-900/40 dark:ring-blue-400 dark:text-blue-300',
-  approved: 'bg-emerald-50 ring-2 ring-emerald-500 text-emerald-700 dark:bg-emerald-800/40 dark:ring-emerald-400 dark:text-emerald-200',
-  modified: 'bg-blue-100 ring-2 ring-blue-500 text-blue-800 dark:bg-blue-900/40 dark:ring-blue-400 dark:text-blue-300',
-  rejected: 'bg-red-50 ring-2 ring-red-500 text-red-700 dark:bg-red-800/40 dark:ring-red-400 dark:text-red-200',
-  cancelled: 'bg-stone-200 ring-2 ring-stone-500 text-stone-800 dark:bg-stone-700 dark:ring-stone-400 dark:text-stone-100',
+const SHORT_LABEL: Partial<Record<StatusFilterValue, string>> = {
+  pending_preference: '申請中',
+  tentative: '仮承認',
+  approved: '本承認',
 };
 
+const CHIP_BASE_CLASS =
+  'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 sm:px-3 sm:py-1 text-xs font-medium motion-safe:transition-colors duration-150 cursor-pointer select-none';
+const CHIP_ON_CLASS =
+  'bg-blue-50 border-blue-600 text-blue-700 dark:bg-blue-900/30 dark:border-blue-400 dark:text-blue-300';
 const CHIP_OFF_CLASS =
-  'bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 ring-1 ring-transparent';
+  'bg-white border-stone-300 text-stone-600 hover:bg-stone-50 dark:bg-stone-800 dark:border-stone-600 dark:text-stone-300';
+const COUNT_ON_CLASS =
+  'bg-blue-600 text-white tabular-nums text-[10px] px-1.5 py-0.5 rounded-full ml-1';
+const COUNT_OFF_CLASS =
+  'bg-stone-200 text-stone-600 tabular-nums text-[10px] px-1.5 py-0.5 rounded-full ml-1 dark:bg-stone-700 dark:text-stone-300';
 
-interface ShiftStatusFilterProps {
+export interface ShiftStatusFilterProps {
   value: Set<StatusFilterValue>;
   onChange: (next: Set<StatusFilterValue>) => void;
   /**
@@ -88,18 +88,11 @@ function StatusChip({
       aria-checked={isActive}
       aria-label={STATUS_FILTER_LABELS[status]}
       onClick={onToggle}
-      className={`inline-flex items-center gap-1.5 px-4 py-2.5 sm:px-3 sm:py-1.5 rounded-full text-sm sm:text-xs font-medium motion-safe:transition-colors duration-150 ease-out cursor-pointer select-none ${
-        isActive ? STATUS_CHIP_ON_CLASS[status] : CHIP_OFF_CLASS
-      }`}
+      className={`${CHIP_BASE_CLASS} ${isActive ? CHIP_ON_CLASS : CHIP_OFF_CLASS}`}
     >
-      <span className={`inline-block w-2 h-2 rounded-full ${STATUS_FILTER_DOT_CLASS[status]}`} />
-      <span>{STATUS_FILTER_LABELS[status]}</span>
+      <span>{SHORT_LABEL[status] ?? STATUS_FILTER_LABELS[status]}</span>
       {typeof count === 'number' && (
-        <span
-          className={`tabular-nums text-[10px] ${
-            isActive ? 'opacity-80' : 'text-stone-400 dark:text-stone-500'
-          }`}
-        >
+        <span className={isActive ? COUNT_ON_CLASS : COUNT_OFF_CLASS}>
           {count}
         </span>
       )}

@@ -19,6 +19,7 @@ import { useShiftSubmissionDeadline } from '../hooks/useShiftSubmissionDeadline'
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftMobileCalendar } from '../components/Shift/ShiftMobileCalendar';
+import { ShiftMobilePresetSheet } from '../components/Shift/ShiftMobilePresetSheet';
 import { ShiftMobileTodayList } from '../components/Shift/ShiftMobileTodayList';
 import { ShiftMobileToolbar } from '../components/Shift/ShiftMobileToolbar';
 import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
@@ -87,6 +88,11 @@ export function ShiftPage() {
 
   const [selectedShift, setSelectedShift] = useState<import('../types').Shift | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  // Iter 2-B (Worker B): SP BottomSheet を SP 日付タップで自動 open しないよう
+  // selectedDate と分離。BottomSheet は「+N 件すべて見る」or 明示的トリガーから開く。
+  const [mobileSheetDate, setMobileSheetDate] = useState<string | null>(null);
+  // Iter 2-B (Worker B): SP「プリセット」ボタンで開く preset chooser sheet。
+  const [mobilePresetSheetOpen, setMobilePresetSheetOpen] = useState<boolean>(false);
   // Loop15: カレンダーの自分の preference を直接押したときに開く時間変更モーダル用 state。
   const [selectedPreference, setSelectedPreference] = useState<import('../types').ShiftPreference | null>(null);
   // Loop16-B: 他人の preference を直接押したときの管理アクションモーダル用 state。
@@ -208,6 +214,14 @@ export function ShiftPage() {
   }, [tenantId, canManageTenant, fetchRoles]);
 
   const shifts = canManageTenant ? allShifts : myShifts;
+  const tentativeCount = useMemo(
+    () => shifts.filter(s => s.status === 'tentative').length,
+    [shifts]
+  );
+  const approvedCount = useMemo(
+    () => shifts.filter(s => s.status === 'approved').length,
+    [shifts]
+  );
   const leaves = canManageTenant ? [] : []; // Leave removed, but keep variable if needed elsewhere or remove. Removing all leave logic.
 
   const memberNames = useMemo(() => {
@@ -638,6 +652,8 @@ export function ShiftPage() {
                       showPreferenceStatus={canManageTenant}
                       counts={{
                         pending_preference: pendingPreferenceCount,
+                        tentative: tentativeCount,
+                        approved: approvedCount,
                       }}
                     />
                   </div>
@@ -659,46 +675,7 @@ export function ShiftPage() {
                       </Button>
                     )}
                     {canManageTenant && (() => {
-                      const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                      const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
-                      const pendingInRange = preferencesForCalendar.filter(
-                        p => p.status === 'pending' && p.date >= monthStart && p.date <= monthEnd
-                      );
-                      const count = pendingInRange.length;
-                      const handleBulkRejectInRange = async () => {
-                        if (count === 0) return;
-                        // eslint-disable-next-line no-alert
-                        if (!window.confirm(`${count}件却下します。よろしいですか？`)) return;
-                        let errors = 0;
-                        for (const p of pendingInRange) {
-                          try {
-                            await rejectPreference(p.id);
-                          } catch {
-                            errors += 1;
-                          }
-                        }
-                        fetchPreferenceRange();
-                        fetchRange();
-                        if (errors > 0) {
-                          // eslint-disable-next-line no-console
-                          console.warn(`[bulkRejectInRange] ${errors} 件で却下エラーが発生しました`);
-                        }
-                      };
-                      return (
-                        /* Button component (variant=danger) に統一 — aria-label・disabled・件数表示は完全保持 */
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={handleBulkRejectInRange}
-                          disabled={count === 0}
-                          className="shrink-0 grow sm:grow-0"
-                          aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
-                        >
-                          未承認を一括却下{count > 0 ? `（${count}）` : ''}
-                        </Button>
-                      );
-                    })()}
-                    {canManageTenant && (() => {
+                      // Iter 2-A (Worker A) / P1: 正典準拠順序 — 申請 → 本承認 → 却下。
                       // 「仮承認を一括本承認」: 表示中の月に含まれる shift.status === 'tentative' を一括で本承認する。
                       // - approveShift (RPC approve_shift_final) を 1 件ずつ呼ぶ。エラー件数は console.warn でログ出力。
                       // - 「未承認を一括却下」と同じパターン (filter → confirm → for ループ → fetchRange)。
@@ -727,15 +704,56 @@ export function ShiftPage() {
                         }
                       };
                       return (
+                        /* Iter 2-A / P1: outline 風 — bg 透過 + 青 border + 青文字 */
                         <Button
-                          variant="primary"
+                          variant="secondary"
                           size="sm"
                           onClick={handleBulkApproveTentative}
                           disabled={tCount === 0}
-                          className="shrink-0 grow col-span-2 sm:grow-0 sm:col-auto"
+                          className="shrink-0 grow sm:grow-0 !bg-transparent !border !border-blue-600 !text-blue-700 hover:!bg-blue-50 dark:!border-blue-400 dark:!text-blue-300 dark:hover:!bg-blue-900/30"
                           aria-label={`表示中の期間の仮承認シフトを一括本承認（${tCount}件）`}
                         >
                           仮承認を一括本承認{tCount > 0 ? `（${tCount}）` : ''}
+                        </Button>
+                      );
+                    })()}
+                    {canManageTenant && (() => {
+                      const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                      const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
+                      const pendingInRange = preferencesForCalendar.filter(
+                        p => p.status === 'pending' && p.date >= monthStart && p.date <= monthEnd
+                      );
+                      const count = pendingInRange.length;
+                      const handleBulkRejectInRange = async () => {
+                        if (count === 0) return;
+                        // eslint-disable-next-line no-alert
+                        if (!window.confirm(`${count}件却下します。よろしいですか？`)) return;
+                        let errors = 0;
+                        for (const p of pendingInRange) {
+                          try {
+                            await rejectPreference(p.id);
+                          } catch {
+                            errors += 1;
+                          }
+                        }
+                        fetchPreferenceRange();
+                        fetchRange();
+                        if (errors > 0) {
+                          // eslint-disable-next-line no-console
+                          console.warn(`[bulkRejectInRange] ${errors} 件で却下エラーが発生しました`);
+                        }
+                      };
+                      return (
+                        /* Iter 2-A / P1: ghost-danger 風 — border なし + 赤文字 + hover で淡赤背景 */
+                        <Button
+                          variant="tertiary"
+                          size="sm"
+                          onClick={handleBulkRejectInRange}
+                          disabled={count === 0}
+                          className="shrink-0 grow col-span-2 sm:grow-0 sm:col-auto !text-red-600 hover:!bg-red-50 dark:!text-red-400 dark:hover:!bg-red-900/30"
+                          aria-label={`表示中の期間の未承認 preference を一括却下（${count}件）`}
+                        >
+                          未承認を一括却下{count > 0 ? `（${count}）` : ''}
                         </Button>
                       );
                     })()}
@@ -853,8 +871,9 @@ export function ShiftPage() {
                     if (isBulkMode) {
                       handleToggleBulkDate(date);
                     } else {
-                      // Loop16-C: 空白セルクリックは直接「自分の新規申請モーダル」を開く。
-                      setNewPreferenceDate(date);
+                      // Iter 2-A (Worker A) / P0 fix:
+                      // PC は DayDetailModal を起動する。新規申請は modal 内 Quick Add ボタンから。
+                      setSelectedDate(date);
                     }
                   }}
                   onShiftClick={(shift) => setSelectedShift(shift)}
@@ -905,6 +924,8 @@ export function ShiftPage() {
                       handleToggleBulkDate(date);
                     } else {
                       setSelectedDate(date);
+                      // Iter 2-B (Worker B): SP では BottomSheet を自動 open しない。
+                      // ShiftMobileTodayList が selectedDate に切り替わって表示される。
                     }
                   }}
                 />
@@ -912,11 +933,13 @@ export function ShiftPage() {
                 <ShiftMobileTodayList
                   selectedDate={selectedDate}
                   shifts={shifts}
+                  preferences={preferencesForCalendar}
                   memberNames={memberNames}
                   roleTypeMap={spRoleTypeMap}
                   onShiftClick={(shift) => setSelectedShift(shift)}
                   onSeeAll={() => {
-                    if (!selectedDate) setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
+                    const target = selectedDate ?? format(new Date(), 'yyyy-MM-dd');
+                    setMobileSheetDate(target);
                   }}
                 />
               </div>
@@ -924,7 +947,7 @@ export function ShiftPage() {
               {/* Legend — desktop only */}
               <div className="hidden lg:block">
                 <Card padding="md">
-                  <Card.Body className="flex items-center gap-4 flex-wrap text-[11px]">
+                  <Card.Body className="flex items-center gap-[18px] flex-wrap text-[11px]">
                     <div className="font-semibold text-stone-500 dark:text-stone-400">役職</div>
                     <span className="inline-flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full" style={{ background: '#7c3aed' }} />
@@ -984,16 +1007,16 @@ export function ShiftPage() {
               {/* SP BottomSheet: Unified Sidebar inline component */}
               {!isDesktop && (
                 <BottomSheet
-                  isOpen={!!selectedDate}
-                  onClose={() => setSelectedDate(null)}
-                  title={selectedDate ? `${selectedDate} のシフト・申請` : undefined}
+                  isOpen={!!mobileSheetDate}
+                  onClose={() => setMobileSheetDate(null)}
+                  title={mobileSheetDate ? `${mobileSheetDate} のシフト・申請` : undefined}
                 >
-                  {selectedDate && (
+                  {mobileSheetDate && (
                     <UnifiedShiftSidebar
                       mode={canManageTenant ? "manager" : "staff"}
                       currentUserId={currentUserId}
-                      selectedDate={selectedDate}
-                      onSelectedDateChange={setSelectedDate}
+                      selectedDate={mobileSheetDate}
+                      onSelectedDateChange={setMobileSheetDate}
                       shifts={canManageTenant ? allShifts : myShifts}
                       preferences={canManageTenant ? allPreferences : myPreferences}
                       myPreferences={myPreferences}
@@ -1028,6 +1051,26 @@ export function ShiftPage() {
               )}
 
               {!isDesktop && (
+                <ShiftMobilePresetSheet
+                  isOpen={mobilePresetSheetOpen}
+                  onClose={() => setMobilePresetSheetOpen(false)}
+                  presets={presets}
+                  targetDate={selectedDate ?? format(new Date(), 'yyyy-MM-dd')}
+                  disabled={isDeadlinePassed && !canEditDeadline}
+                  onSelect={async (preset) => {
+                    try {
+                      const targetDateStr = selectedDate ?? format(new Date(), 'yyyy-MM-dd');
+                      await submitPreference(targetDateStr, 'preferred', preset.start_time, preset.end_time, undefined, undefined);
+                      fetchPreferenceRange();
+                      setMobilePresetSheetOpen(false);
+                    } catch {
+                      // submitPreference already reports the error.
+                    }
+                  }}
+                />
+              )}
+
+              {!isDesktop && (
                 <BottomSheet
                   isOpen={mobileFilterOpen}
                   onClose={() => setMobileFilterOpen(false)}
@@ -1038,6 +1081,11 @@ export function ShiftPage() {
                       value={statusFilter}
                       onChange={setStatusFilter}
                       showPreferenceStatus={canManageTenant}
+                      counts={{
+                        pending_preference: pendingPreferenceCount,
+                        tentative: tentativeCount,
+                        approved: approvedCount,
+                      }}
                     />
                   </div>
                 </BottomSheet>
@@ -1069,7 +1117,7 @@ export function ShiftPage() {
                     <Button
                       variant="secondary"
                       size="lg"
-                      onClick={handleEnterBulkMode}
+                      onClick={() => setMobilePresetSheetOpen(true)}
                       disabled={isDeadlinePassed && !canEditDeadline}
                     >
                       プリセット
@@ -1111,6 +1159,14 @@ export function ShiftPage() {
                 currentUserId={currentUserId}
                 selectedDate={selectedDate}
                 onSelectedDateChange={setSelectedDate}
+                onQuickAdd={() => {
+                  // Iter 2-A (Worker A) / P0 fix:
+                  // DayDetailModal の「+ 追加」ボタン経由で新規申請モーダルへ。
+                  if (selectedDate) {
+                    setNewPreferenceDate(selectedDate);
+                    setSelectedDate(null);
+                  }
+                }}
                 shifts={canManageTenant ? allShifts : myShifts}
                 preferences={canManageTenant ? allPreferences : myPreferences}
                 myPreferences={myPreferences}

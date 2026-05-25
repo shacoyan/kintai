@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { MoreHorizontal } from 'lucide-react';
 import { Badge, Card } from '../ui';
+import { ActionMenu, type ActionMenuItem } from '../ui/ActionMenu';
 import { getEffectiveMonthlySalary } from '../../utils/payrollCalc';
 import { formatYenMan, formatYenManSplit } from '../../utils/formatYenMan';
 import type { TenantMember, TenantRole } from '../../types';
@@ -102,6 +102,19 @@ export function LaborCostCard({
     };
   }, [showDetailTable, hourlyEstimates, monthlyMembers, monthlyEstimatesMap, laborCost.monthlyTotal]);
 
+  const moreItems: ActionMenuItem[] = [
+    {
+      key: 'csv',
+      label: 'CSV エクスポート',
+      onSelect: () => console.info('[LaborCostCard] CSV export (準備中)'),
+    },
+    {
+      key: 'detail',
+      label: '詳細を表示',
+      onSelect: () => console.info('[LaborCostCard] detail toggle (準備中)'),
+    },
+  ];
+
   if ((members?.length ?? 0) === 0) return null;
 
   return (
@@ -116,13 +129,13 @@ export function LaborCostCard({
           </Badge>
         )}
         <div className="flex-1" />
-        <button
-          type="button"
-          aria-label="詳細"
-          className="inline-flex items-center justify-center w-7 h-7 rounded-md text-stone-500 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-stone-800 motion-safe:transition-colors"
-        >
-          <MoreHorizontal className="w-4 h-4" />
-        </button>
+        <ActionMenu
+          items={moreItems}
+          triggerLabel="人件費メニュー"
+          triggerSize="sm"
+          align="end"
+          bottomSheetTitle="人件費メニュー"
+        />
       </div>
       {/* SP: details で折畳 (md 未満のみ表示) */}
       <details className="md:hidden group" open>

@@ -106,7 +106,7 @@ export function ShiftCalendar({
     const map = new Map<string, Shift[]>();
     for (const s of shifts) {
       const passesFilter =
-        s.status === 'pending' || !statusFilter || statusFilter.has(s.status as StatusFilterValue);
+        !statusFilter || statusFilter.has(s.status as StatusFilterValue);
       if (passesFilter) {
         const arr = map.get(s.date) || [];
         arr.push(s);
@@ -224,7 +224,13 @@ export function ShiftCalendar({
               })
               .join('\n');
             const isBulkSelected = !!selectedBulkDates && selectedBulkDates.has(dateStr);
-            const totalItems = dayShifts.length + dayPendingPreferences.length;
+            // 正典準拠: 人数 badge は user_id の Set サイズで算出 (重複 shift/preference を 1 名と数える)
+            const uniqueHeadcount = (() => {
+              const ids = new Set<string>();
+              for (const s of dayShifts) ids.add(s.user_id);
+              for (const p of dayPendingPreferences) ids.add(p.user_id);
+              return ids.size;
+            })();
             const allItems: Array<{ kind: 'shift'; data: Shift } | { kind: 'pref'; data: ShiftPreference }> = [
               ...dayShifts.map((s) => ({ kind: 'shift' as const, data: s })),
               ...dayPendingPreferences.map((p) => ({ kind: 'pref' as const, data: p })),
@@ -281,8 +287,8 @@ export function ShiftCalendar({
                   >
                     {format(d, 'd')}
                   </span>
-                  {totalItems > 0 && isCurrentMonth && (
-                    <span className="ml-auto text-[9px] text-stone-400 dark:text-stone-500 tabular-nums">{totalItems}人</span>
+                  {uniqueHeadcount > 0 && isCurrentMonth && (
+                    <span className="ml-auto text-[9px] text-stone-400 dark:text-stone-500 tabular-nums">{uniqueHeadcount}人</span>
                   )}
                 </div>
 

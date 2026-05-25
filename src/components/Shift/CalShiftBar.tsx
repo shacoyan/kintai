@@ -1,6 +1,6 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
 import type { Shift, ShiftPreference, TenantMember } from '../../types';
-import { MemberAvatar } from './MemberAvatar';
+import { getRoleColorHex } from '../../utils/getRoleColor';
 
 interface CalShiftBarProps {
   shift?: Shift;
@@ -11,11 +11,7 @@ interface CalShiftBarProps {
 }
 
 export function getRoleColor(member: TenantMember | undefined): string {
-  if (!member) return '#78716c';
-  if (member.role === 'owner') return '#7c3aed';
-  if (member.role === 'manager') return '#2563eb';
-  if (member.pay_type === 'monthly') return '#0d9488';
-  return '#ea580c';
+  return getRoleColorHex(member);
 }
 
 export function isHourlyMember(member: TenantMember | undefined): boolean {
@@ -72,7 +68,12 @@ export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalS
         borderBottom: hourly ? `1px dashed ${rc}88` : undefined,
       }}
     >
-      <MemberAvatar member={member} size={14} />
+      <span
+        className="text-[10px] font-semibold tabular-nums shrink-0"
+        style={{ color: rc }}
+      >
+        {(member?.display_name ?? '?').charAt(0).toUpperCase()}
+      </span>
       <span
         className="text-[10px] tabular-nums text-stone-700 dark:text-stone-200 leading-[1.2] truncate flex-shrink-0"
         style={{ fontVariantNumeric: 'tabular-nums' }}
