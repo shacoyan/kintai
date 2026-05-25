@@ -157,6 +157,41 @@ export interface StoreMember {
   created_at: string;
 }
 
+// 店舗別人件費 (Phase 1a)
+// 該当 (user_id, store_id) 行が存在しない場合は tenant_members.hourly_rate /
+// monthly_salary をフォールバックとして使用する。
+export interface MemberStorePayroll {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  store_id: string;
+  pay_type: 'hourly' | 'monthly';
+  hourly_rate: number | null;
+  monthly_salary: number | null;
+  night_shift_rate_multiplier: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MemberStorePayrollUpsertPayload {
+  tenant_id: string;
+  user_id: string;
+  store_id: string;
+  pay_type: 'hourly' | 'monthly';
+  hourly_rate?: number | null;
+  monthly_salary?: number | null;
+  night_shift_rate_multiplier?: number;
+}
+
+export interface MemberStoreRate {
+  pay_type: 'hourly' | 'monthly';
+  hourly_rate: number | null;
+  monthly_salary: number | null;
+  night_shift_rate_multiplier: number;
+  // どこから値を取ったか (デバッグ/UI 表示用)
+  source: 'store_override' | 'member_default';
+}
+
 export type ShiftPreferenceType = 'preferred' | 'unavailable';
 
 export interface ShiftPreference {

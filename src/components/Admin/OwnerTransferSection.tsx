@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTenant } from '../../contexts/TenantContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useToast } from '../../contexts/ToastContext';
 import { BottomSheet } from '../ui/BottomSheet';
@@ -14,6 +15,8 @@ interface OwnerTransferSectionProps {
 }
 
 export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tenantId }) => {
+  const { user } = useAuth();
+  const authUserId = user?.id ?? '';
   const { transferOwnership, isOwner } = useTenant();
   const { members, loading, fetchMembers } = useTenantAdmin(tenantId);
   const { showToast } = useToast();
@@ -21,6 +24,22 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [isConfirmOpen, setIsConfirmOpen] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+
+  const transferCandidates = useMemo(() => {
+    return members
+      .filter((m) => m.role !== 'owner' && m.user_id !== authUserId)
+      .sort((a, b) => {
+        if (a.role === 'manager' && b.role === 'staff') return -1;
+        if (a.role === 'staff' && b.role === 'manager') return 1;
+        return a.display_name.localeCompare(b.display_name, 'ja');
+      });
+  }, [members, authUserId]);
+
+  const selectedMember = useMemo(() => {
+    return transferCandidates.find((m) => m.user_id === selectedUserId);
+  }, [transferCandidates, selectedUserId]);
+
+  const selectedRole = selectedMember?.role;
 
   useEffect(() => {
     fetchMembers();
@@ -34,8 +53,6 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
       </div>
     );
   }
-
-  const managerCandidates = members.filter((m) => m.role === 'manager');
 
   const handleOpenConfirm = (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,12 +98,12 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
     <>
       <div className="bg-white dark:bg-stone-900 rounded-lg shadow p-4">
         <Heading level={2} as="h3" className="mb-4">オーナー権限の移譲</Heading>
-        
+
         {loading ? (
           <div className="text-sm text-stone-500 dark:text-stone-300"><Spinner size="sm" inline showLabel label="読み込み中" /></div>
-        ) : managerCandidates.length === 0 ? (
+        ) : transferCandidates.length === 0 ? (
           <div className="text-center py-6">
-            <p className="text-stone-500 dark:text-stone-300 text-sm">先にスタッフを店長 (manager) に昇格させてください</p>
+            <p className="text-stone-500 dark:text-stone-300 text-sm">移譲できるメンバーがいません（オーナー以外のメンバーが必要です）</p>
           </div>
         ) : (
           <form onSubmit={handleOpenConfirm} className="space-y-4">
@@ -102,11 +119,11 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-stone-300 dark:border-stone-700 focus:outline-none focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 sm:text-sm rounded-md border"
               >
                 <option value="" disabled>
-                  店長を選択してください
+                  移譲先メンバーを選択してください
                 </option>
-                {managerCandidates.map((m) => (
+                {transferCandidates.map((m) => (
                   <option key={m.user_id} value={m.user_id}>
-                    {m.display_name}
+                    {m.display_name} ({m.role === 'manager' ? '店長' : 'スタッフ'})
                   </option>
                 ))}
               </select>
@@ -130,10 +147,19 @@ export const OwnerTransferSection: React.FC<OwnerTransferSectionProps> = ({ tena
         title="オーナー権限の移譲確認"
         footer={confirmFooter}
       >
-        <div className="p-4 text-sm bg-orange-50 dark:bg-orange-800/30 border-l-4 border-orange-400 dark:border-orange-600 text-stone-700 dark:text-stone-200">
-          <p>
-            権限を移譲すると、あなたは店長 (manager) に降格します。元に戻すには新オーナーの操作が必要です。本当に移譲しますか？
-          </p>
+        <div className="space-y-4">
+          <div className="p-4 text-sm bg-orange-50 dark:bg-orange-800/30 border-l-4 border-orange-400 dark:border-orange-600 text-stone-700 dark:text-stone-200">
+            <p>
+              権限を移譲すると、あなたは店長 (manager) に降格します。元に戻すには新オーナーの操作が必要です。
+            </p>
+          </div>
+          {selectedRole === 'staff' && (
+            <div className="p-4 text-sm bg-red-50 dark:bg-red-800/30 border-l-4 border-red-400 dark:border-red-600 text-stone-700 dark:text-stone-200">
+              <p>
+                選択中のメンバーは現在スタッフです。スタッフ権限のままだとオーナー機能の多くを使えません。オーナーに昇格させてもよろしいですか？
+              </p>
+            </div>
+          )}
         </div>
       </BottomSheet>
     </>

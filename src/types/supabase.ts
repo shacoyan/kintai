@@ -279,6 +279,60 @@ export type Database = {
           },
         ]
       }
+      member_store_payrolls: {
+        Row: {
+          created_at: string
+          hourly_rate: number | null
+          id: string
+          monthly_salary: number | null
+          night_shift_rate_multiplier: number
+          pay_type: string
+          store_id: string
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          monthly_salary?: number | null
+          night_shift_rate_multiplier?: number
+          pay_type: string
+          store_id: string
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          monthly_salary?: number | null
+          night_shift_rate_multiplier?: number
+          pay_type?: string
+          store_id?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_store_payrolls_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "member_store_payrolls_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
