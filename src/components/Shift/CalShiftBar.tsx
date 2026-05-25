@@ -57,45 +57,36 @@ export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalS
       }}
       title={member?.display_name ?? ''}
       aria-label={`${member?.display_name ?? ''} ${fmt(start)}-${fmt(end)} ${isPreference ? '申請中' : status === 'approved' ? '本承認' : status === 'tentative' ? '仮承認' : '申請中'}${isMine ? ' (自分)' : ''}`}
-      className={`group flex items-center gap-1 cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 min-w-0 rounded-[3px] ${
+      className={`group flex flex-col cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 min-w-0 rounded-[3px] ${
         isMine ? 'ring-1 ring-blue-500 dark:ring-blue-400 ring-inset' : ''
       }`}
       style={{
-        padding: '1px 3px 1px 5px',
+        padding: '2px 3px 2px 5px',
         background: visual.bg,
         borderLeft: `2px solid ${rc}`,
         borderTop: hourly ? `1px dashed ${rc}88` : undefined,
         borderBottom: hourly ? `1px dashed ${rc}88` : undefined,
       }}
     >
-      <span
-        className="inline-flex items-center justify-center rounded-full font-bold shrink-0"
-        style={{
-          width: 14,
-          height: 14,
-          background: `${rc}26`,
-          color: rc,
-          fontSize: 8.5,
-          lineHeight: 1,
-        }}
-        aria-hidden
-      >
-        {(member?.display_name ?? '?').charAt(0).toUpperCase()}
+      <span className="text-[10px] leading-[1.2] text-stone-900 dark:text-stone-100 truncate font-medium">
+        {member?.display_name ?? '?'}
       </span>
-      <span
-        className="text-[9px] tabular-nums text-stone-700 dark:text-stone-200 leading-[1.25] truncate flex-shrink-0"
-        style={{ fontVariantNumeric: 'tabular-nums' }}
-      >
-        {fmt(start)}–{fmt(end)}
-      </span>
-      {/* 正典: approved 以外は右端に status dot 1 個 */}
-      {status !== 'approved' && (
+      <div className="flex items-center gap-1">
         <span
-          className="ml-auto inline-block w-1 h-1 rounded-full flex-shrink-0"
-          style={{ background: visual.bar }}
-          aria-hidden
-        />
-      )}
+          className="text-[9px] tabular-nums text-stone-700 dark:text-stone-200 leading-[1.2] truncate flex-shrink-0"
+          style={{ fontVariantNumeric: 'tabular-nums' }}
+        >
+          {fmt(start)}–{fmt(end)}
+        </span>
+        {/* 正典: approved 以外は右端に status dot 1 個 */}
+        {status !== 'approved' && (
+          <span
+            className="ml-auto inline-block w-1 h-1 rounded-full flex-shrink-0"
+            style={{ background: visual.bar }}
+            aria-hidden
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -235,7 +235,7 @@ export function ShiftCalendar({
               ...dayShifts.map((s) => ({ kind: 'shift' as const, data: s })),
               ...dayPendingPreferences.map((p) => ({ kind: 'pref' as const, data: p })),
             ];
-            const visible = allItems.slice(0, 8);
+            const visible = allItems.slice(0, 5);
             const overflow = allItems.length - visible.length;
             const cellBg = !isCurrentMonth ? 'bg-stone-50 dark:bg-stone-800' : 'bg-white dark:bg-stone-900';
             const weekendTint =

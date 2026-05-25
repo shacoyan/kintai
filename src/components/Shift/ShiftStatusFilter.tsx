@@ -140,7 +140,7 @@ function StatusChip({
  * シフトカレンダーのステータスフィルタ (controlled component)
  * - PC: 横並び pill チェックボックス列
  * - SP: <details> で collapsible
- * - 全 OFF 時は警告バナー
+ * - 全 OFF 時はフィルタなしとして扱う
  * - localStorage 永続化は親が readStatusFilter / writeStatusFilter を介して行う
  */
 export function ShiftStatusFilter({
@@ -181,8 +181,10 @@ export function ShiftStatusFilter({
     .filter((s) => value.has(s))
     .map((s) => STATUS_FILTER_LABELS[s]);
 
-  const isAllOff = displayedStatuses.length > 0 && activeStatusLabels.length === 0;
-  const summaryText = `${activeStatusLabels.length}/${displayedStatuses.length} 表示`;
+  const summaryText =
+    activeStatusLabels.length === 0
+      ? 'すべて表示'
+      : `${activeStatusLabels.length}/${displayedStatuses.length} 表示`;
 
   return (
     <div>
@@ -223,14 +225,6 @@ export function ShiftStatusFilter({
         </fieldset>
       </details>
 
-      {isAllOff && (
-        <div
-          role="status"
-          className="mt-2 px-3 py-2 bg-orange-50 dark:bg-orange-800/30 text-orange-700 dark:text-orange-200 text-xs rounded-md"
-        >
-          すべてのステータスが非表示です。少なくとも 1 つのステータスを選択してください。
-        </div>
-      )}
     </div>
   );
 }

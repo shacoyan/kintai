@@ -3,6 +3,7 @@ import { ja } from 'date-fns/locale';
 import { Badge } from '../ui';
 import type { Shift, ShiftPreference } from '../../types';
 import { ROLE_COLOR_HEX, ROLE_COLOR_LABEL, type RoleColorKey } from '../../utils/getRoleColor';
+import type { StatusFilterValue } from './unifiedShiftTypes';
 
 type RoleType = RoleColorKey;
 type RowItem =
@@ -16,6 +17,8 @@ interface Props {
   memberNames: Map<string, string>;
   storeNames?: Map<string, string>;
   roleTypeMap?: Map<string, RoleType>;
+  statusFilter?: Set<StatusFilterValue>;
+  showPreferenceStatus?: boolean;
   onShiftClick?: (shift: Shift) => void;
   onSeeAll?: () => void;
 }
@@ -57,12 +60,22 @@ export function ShiftMobileTodayList({
   preferences,
   memberNames,
   roleTypeMap,
+  statusFilter,
+  showPreferenceStatus,
   onShiftClick,
   onSeeAll,
 }: Props) {
   const targetDate = selectedDate ?? format(new Date(), 'yyyy-MM-dd');
-  const dayShifts = shifts.filter((shift) => shift.date === targetDate);
-  const dayPrefs = (preferences ?? []).filter((pref) => pref.date === targetDate);
+  const allDayShifts = shifts.filter((shift) => shift.date === targetDate);
+  const dayShifts = allDayShifts.filter((shift) =>
+    !statusFilter || statusFilter.has(shift.status as StatusFilterValue)
+  );
+  const allDayPrefs = (preferences ?? []).filter((pref) => pref.date === targetDate);
+  // PC と同じ: preference は pending かつ (showPreferenceStatus off or pending_preference filter on) のみ表示
+  const showPendingPreference = !showPreferenceStatus || !statusFilter || statusFilter.has('pending_preference');
+  const dayPrefs = showPendingPreference
+    ? allDayPrefs.filter((pref) => pref.status === 'pending')
+    : [];
   const shiftUserIds = new Set(dayShifts.map((shift) => shift.user_id));
   const standalonePrefs = dayPrefs.filter((pref) => !shiftUserIds.has(pref.user_id));
   const rows: RowItem[] = [

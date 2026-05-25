@@ -101,7 +101,6 @@ export function ShiftPage() {
   const [newPreferenceDate, setNewPreferenceDate] = useState<string | null>(null);
   const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
   const [statusFilter, setStatusFilter] = useState<Set<StatusFilterValue>>(() => readStatusFilter());
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   // 一括シフト申請 (Engineer C / §4): 選択モード on/off, 選択 Set, ダイアログ表示
   const [isBulkMode, setIsBulkMode] = useState<boolean>(false);
@@ -1136,15 +1135,27 @@ export function ShiftPage() {
                 </div>
               )}
 
-              {/* SP モバイル UI — Worker C 担当 */}
+              {/* SP モバイル UI — Worker C / D 担当 */}
               <div className="lg:hidden flex flex-col gap-3">
                 <ShiftMobileToolbar
                   shiftViewMonth={shiftViewMonth}
                   onPrevMonth={() => setShiftViewMonth(subMonths(shiftViewMonth, 1))}
                   onNextMonth={() => setShiftViewMonth(addMonths(shiftViewMonth, 1))}
-                  onFilterClick={() => setMobileFilterOpen(true)}
-                  pendingFilterCount={statusFilter.size > 0 ? statusFilter.size : undefined}
                 />
+
+                {/* Iter 9-D: SP フィルター chip を Toolbar 直下に直接表示 */}
+                <div className="-mx-1 px-1 overflow-x-auto">
+                  <ShiftStatusFilter
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    showPreferenceStatus={canManageTenant}
+                    counts={{
+                      pending_preference: pendingPreferenceCount,
+                      tentative: tentativeCount,
+                      approved: approvedCount,
+                    }}
+                  />
+                </div>
 
                 <ShiftMobileCalendar
                   shiftViewMonth={shiftViewMonth}
@@ -1154,13 +1165,12 @@ export function ShiftPage() {
                   selectedDate={selectedDate}
                   selectedBulkDates={isBulkMode ? selectedBulkDates : undefined}
                   isBulkMode={isBulkMode}
+                  statusFilter={statusFilter}
                   onDateClick={(date) => {
                     if (isBulkMode) {
                       handleToggleBulkDate(date);
                     } else {
                       setSelectedDate(date);
-                      // Iter 2-B (Worker B): SP では BottomSheet を自動 open しない。
-                      // ShiftMobileTodayList が selectedDate に切り替わって表示される。
                     }
                   }}
                 />
@@ -1171,6 +1181,8 @@ export function ShiftPage() {
                   preferences={preferencesForCalendar}
                   memberNames={memberNames}
                   roleTypeMap={spRoleTypeMap}
+                  statusFilter={statusFilter}
+                  showPreferenceStatus={canManageTenant}
                   onShiftClick={(shift) => setSelectedShift(shift)}
                   onSeeAll={() => {
                     const target = selectedDate ?? format(new Date(), 'yyyy-MM-dd');
@@ -1243,27 +1255,6 @@ export function ShiftPage() {
                     }
                   }}
                 />
-              )}
-
-              {!isDesktop && (
-                <BottomSheet
-                  isOpen={mobileFilterOpen}
-                  onClose={() => setMobileFilterOpen(false)}
-                  title="フィルタ"
-                >
-                  <div className="p-4">
-                    <ShiftStatusFilter
-                      value={statusFilter}
-                      onChange={setStatusFilter}
-                      showPreferenceStatus={canManageTenant}
-                      counts={{
-                        pending_preference: pendingPreferenceCount,
-                        tentative: tentativeCount,
-                        approved: approvedCount,
-                      }}
-                    />
-                  </div>
-                </BottomSheet>
               )}
 
               <div className="lg:hidden mt-3 rounded-md px-3 py-3">

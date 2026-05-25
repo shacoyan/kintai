@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { addDays, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from 'date-fns';
 import type { Shift, ShiftPreference } from '../../types';
+import type { StatusFilterValue } from './unifiedShiftTypes';
 
 const WEEK_LABELS = ['月', '火', '水', '木', '金', '土', '日'];
 
@@ -12,6 +13,7 @@ interface Props {
   selectedDate: string | null;
   selectedBulkDates?: Set<string>;
   isBulkMode: boolean;
+  statusFilter?: Set<StatusFilterValue>;
   onDateClick: (date: string) => void;
 }
 
@@ -23,6 +25,7 @@ export function ShiftMobileCalendar({
   selectedDate,
   selectedBulkDates,
   isBulkMode,
+  statusFilter,
   onDateClick,
 }: Props) {
   const days = useMemo(() => {
@@ -42,20 +45,24 @@ export function ShiftMobileCalendar({
   const dayInfo = useMemo(() => {
     const map = new Map<string, { count: number; isMine: boolean }>();
     for (const shift of shifts) {
+      const passesFilter = !statusFilter || statusFilter.has(shift.status as StatusFilterValue);
+      if (!passesFilter) continue;
       const entry = map.get(shift.date) ?? { count: 0, isMine: false };
       entry.count += 1;
       if (currentUserId && shift.user_id === currentUserId) entry.isMine = true;
       map.set(shift.date, entry);
     }
     for (const preference of preferences) {
-      if (currentUserId && preference.user_id === currentUserId && preference.preference_type === 'preferred') {
+      if (preference.preference_type !== 'preferred') continue;
+      if (currentUserId && preference.user_id === currentUserId) {
+        // 自分の preferred は常時表示 (PC と同じ「自分マーカー」)
         const entry = map.get(preference.date) ?? { count: 0, isMine: false };
         entry.isMine = true;
         map.set(preference.date, entry);
       }
     }
     return map;
-  }, [shifts, preferences, currentUserId]);
+  }, [shifts, preferences, currentUserId, statusFilter]);
 
   const today = new Date();
 
