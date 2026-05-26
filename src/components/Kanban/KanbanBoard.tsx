@@ -31,6 +31,8 @@ interface KanbanBoardProps {
   onError?: (msg: string) => void;
   /** 親 (ResponsiveKanban) で 1 回だけ呼んだ useKanbanDnd の結果。 */
   dnd: UseKanbanDndResult;
+  /** カラム右上 + ボタン押下時の callback (status 指定で新規作成 dialog 起動) */
+  onAddInStatus?: (status: TaskStatus) => void;
 }
 
 const COLUMN_DEFINITIONS: { status: TaskStatus; label: string }[] = [
@@ -46,6 +48,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   memberNames,
   projectNames,
   dnd,
+  onAddInStatus,
 }) => {
   const { optimisticOverrides, canStartDrag } = dnd;
 
@@ -93,7 +96,13 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         const taskIds = columnTasks.map((task) => `task-${task.id}`);
 
         return (
-          <KanbanColumn key={status} status={status} label={label} tasks={columnTasks}>
+          <KanbanColumn
+            key={status}
+            status={status}
+            label={label}
+            tasks={columnTasks}
+            onAddInStatus={onAddInStatus ? () => onAddInStatus(status) : undefined}
+          >
             <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
               {columnTasks.map((task) => {
                 const isDraggable = canStartDrag(task);

@@ -24,6 +24,8 @@ export interface TaskDialogProps {
   tenantId: string;
   defaultStoreId?: string | null;
   defaultAssigneeUserId?: string | null;
+  /** create mode の初期 status (kanban カラム + ボタンから渡す) */
+  initialStatus?: TaskStatus;
 }
 
 const STATUS_OPTIONS = (Object.keys(TASK_STATUS_LABELS) as TaskStatus[]).map((s) => ({
@@ -49,6 +51,7 @@ export function TaskDialog({
   tenantId,
   defaultStoreId = null,
   defaultAssigneeUserId = null,
+  initialStatus,
 }: TaskDialogProps): JSX.Element | null {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -79,14 +82,14 @@ export function TaskDialog({
       setDescription('');
       setProjectId(null);
       setStoreId(defaultStoreId);
-      setStatus('todo');
+      setStatus(initialStatus ?? 'todo');
       setPriority(1);
       setAssigneeUserId(defaultAssigneeUserId);
       setDueDate(null);
     }
     setError(null);
     setLoading(false);
-  }, [open, mode, task, defaultStoreId, defaultAssigneeUserId]);
+  }, [open, mode, task, defaultStoreId, defaultAssigneeUserId, initialStatus]);
 
   const trimmedTitle = title.trim();
   const titleError = (() => {

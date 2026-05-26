@@ -61,6 +61,8 @@ import { getProjectColor } from '../lib/projectColor';
 interface DialogState {
   mode: 'create' | 'edit';
   task?: Task;
+  /** create mode で kanban カラム + ボタンから渡された初期 status */
+  initialStatus?: TaskStatus;
 }
 
 const priorityDotColor: Record<TaskPriority, string> = {
@@ -278,7 +280,7 @@ export function TasksPage(): JSX.Element {
   const [saving, setSaving] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
 
-  const openCreate = (): void => setDialog({ mode: 'create' });
+  const openCreate = (initialStatus?: TaskStatus): void => setDialog({ mode: 'create', initialStatus });
   const openEdit = (task: Task): void => setDialog({ mode: 'edit', task });
   const closeDialog = (): void => {
     if (!saving) setDialog(null);
@@ -414,7 +416,7 @@ export function TasksPage(): JSX.Element {
             </button>
 
             {!isParttime && (
-              <PrimaryActionButton onClick={openCreate} icon={<Plus size={16} aria-hidden="true" />}>
+              <PrimaryActionButton onClick={() => openCreate()} icon={<Plus size={16} aria-hidden="true" />}>
                 新規
               </PrimaryActionButton>
             )}
@@ -477,6 +479,7 @@ export function TasksPage(): JSX.Element {
             onSuccess={(m) => showToast(m, 'success')}
             onError={(m) => showToast(m, 'error')}
             onMutationSuccess={refetch}
+            onAddInStatus={(status) => openCreate(status)}
           />
         </div>
       )}
@@ -647,6 +650,7 @@ export function TasksPage(): JSX.Element {
         canEditAll={dialog !== null && (!isParttime || dialog.mode === 'create')}
         defaultStoreId={currentStore?.id ?? null}
         defaultAssigneeUserId={null}
+        initialStatus={dialog?.mode === 'create' ? dialog.initialStatus : undefined}
         onSave={async (input: ComponentsTaskInput) => {
           setSaving(true);
           try {

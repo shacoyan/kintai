@@ -38,6 +38,8 @@ interface ResponsiveKanbanProps {
    * server 状態を同期し、カード表示のちらつきを防ぐ。
    */
   onMutationSuccess?: () => void | Promise<void>;
+  /** カラム右上 + ボタン押下時 (PC kanban のみ、status 指定で新規作成 dialog 起動) */
+  onAddInStatus?: (status: import('../../types').TaskStatus) => void;
 }
 
 export function ResponsiveKanban(props: ResponsiveKanbanProps) {
@@ -81,6 +83,7 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
             onSuccess={props.onSuccess}
             onError={props.onError}
             dnd={dnd}
+            onAddInStatus={props.onAddInStatus}
           />
         </div>
       </div>
