@@ -1,3 +1,4 @@
+import { AddMemberShiftForm } from './AddMemberShiftForm';
 import { useMemo, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -8,7 +9,7 @@ import { ShiftActionRow } from './ShiftActionRow';
 import { ShiftPreferenceForm } from './ShiftPreferenceForm';
 import { formatTimeRange } from '../../utils/formatTimeRange';
 import { buildTentativeShiftMap, getEffectiveTime } from '../../utils/preferenceEffectiveTime';
-import type { Shift, ShiftPreference, ShiftPreset, Store, ShiftPreferenceType } from '../../types';
+import type { Shift, ShiftPreference, ShiftPreset, Store, ShiftPreferenceType, TenantMember } from '../../types';
 
 export type UnifiedShiftSidebarMode = 'manager' | 'staff';
 
@@ -66,6 +67,14 @@ export interface UnifiedShiftSidebarProps {
   // 締切ガード (staff モードのみ)
   isDeadlinePassed?: boolean;
   canBypassDeadline?: boolean;
+
+  // AddMemberShiftForm
+  allMembers?: TenantMember[];
+  canManageTenant?: boolean;
+  onAddShiftForMember?: (
+    date: string, userId: string, storeId: string,
+    startTime: string, endTime: string
+  ) => Promise<void>;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -148,6 +157,10 @@ export function UnifiedShiftSidebar({
 
   isDeadlinePassed,
   canBypassDeadline,
+
+  allMembers,
+  canManageTenant,
+  onAddShiftForMember,
 }: UnifiedShiftSidebarProps) {
   const sidebarRef = useRef<HTMLElement | null>(null);
 
@@ -208,6 +221,13 @@ export function UnifiedShiftSidebar({
     });
     return map;
   }, [shifts, preferences]);
+
+  const availableMembers = useMemo(() => {
+    if (!allMembers || !selectedDate) return [];
+    const userIdsWithShift = new Set(dateFilteredShifts.map(s => s.user_id));
+    const userIdsWithPref = new Set(dateFilteredPendingPreferences.map(p => p.user_id));
+    return allMembers.filter(m => !userIdsWithShift.has(m.user_id) && !userIdsWithPref.has(m.user_id));
+  }, [allMembers, selectedDate, dateFilteredShifts, dateFilteredPendingPreferences]);
 
   const handleFormSubmit = async (
     date: string,
@@ -378,6 +398,19 @@ export function UnifiedShiftSidebar({
                     </ul>
                   )}
                 </>
+              )}
+
+              {canManageTenant && selectedDate && onAddShiftForMember && allMembers && (
+                <AddMemberShiftForm
+                  availableMembers={availableMembers}
+                  stores={stores}
+                  defaultStoreId={defaultStoreId}
+                  presets={presets}
+                  onAdd={(userId, storeId, startTime, endTime) =>
+                    onAddShiftForMember(selectedDate, userId, storeId, startTime, endTime)
+                  }
+                  onSuccess={onMutated}
+                />
               )}
             </>
           </Card>

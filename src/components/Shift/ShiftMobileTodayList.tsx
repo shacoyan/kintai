@@ -71,11 +71,14 @@ export function ShiftMobileTodayList({
     !statusFilter || statusFilter.has(shift.status as StatusFilterValue)
   );
   const allDayPrefs = (preferences ?? []).filter((pref) => pref.date === targetDate);
-  // PC と同じ: preference は pending かつ (showPreferenceStatus off or pending_preference filter on) のみ表示
-  const showPendingPreference = !showPreferenceStatus || !statusFilter || statusFilter.has('pending_preference');
-  const dayPrefs = showPendingPreference
-    ? allDayPrefs.filter((pref) => pref.status === 'pending')
-    : [];
+  const dayPrefs = allDayPrefs.filter((pref) => {
+    if (pref.status !== 'pending') return false;
+    if (!showPreferenceStatus) return true;
+    if (!statusFilter) return true;
+    const filterKey: StatusFilterValue =
+      pref.preference_type === 'unavailable' ? 'unavailable_preference' : 'pending_preference';
+    return statusFilter.has(filterKey);
+  });
   const shiftUserIds = new Set(dayShifts.map((shift) => shift.user_id));
   const standalonePrefs = dayPrefs.filter((pref) => !shiftUserIds.has(pref.user_id));
   const rows: RowItem[] = [

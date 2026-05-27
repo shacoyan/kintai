@@ -120,6 +120,28 @@ export function useShift(tenantId: string, storeId: string | null) {
     if (e) throw new Error(`シフトの作成に失敗しました: ${e.message}`);
   }, [tenantId, storeId]);
 
+  const addShiftForMember = useCallback(async (date: string, userId: string, storeId: string, startTime: string, endTime: string, note?: string): Promise<Shift> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+    const { data, error: e } = await supabase
+      .from('shifts')
+      .insert({
+        tenant_id: tenantId,
+        user_id: userId,
+        store_id: storeId,
+        date,
+        start_time: startTime,
+        end_time: endTime,
+        status: 'tentative',
+        note: note ?? null,
+      })
+      .select()
+      .single();
+    if (e) throw new Error(`シフトの追加に失敗しました: ${e.message}`);
+    if (!data) throw new Error('シフトの追加に失敗しました: データが返されませんでした');
+    return data as Shift;
+  }, [tenantId]);
+
   const deleteShift = useCallback(async (shiftId: string) => {
     const { error: e } = await supabase
       .from('shifts')
@@ -364,6 +386,7 @@ export function useShift(tenantId: string, storeId: string | null) {
     getMyShifts,
     getAllShifts,
     submitShift,
+    addShiftForMember,
     deleteShift,
     cancelShift,
     approveShift,

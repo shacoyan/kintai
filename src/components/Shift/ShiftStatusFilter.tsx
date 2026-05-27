@@ -43,6 +43,7 @@ export function writeStatusFilter(set: Set<StatusFilterValue>): void {
 
 const SHORT_LABEL: Partial<Record<StatusFilterValue, string>> = {
   pending_preference: '申請中',
+  unavailable_preference: '出勤不可',
   tentative: '仮承認',
   approved: '本承認',
 };
@@ -57,6 +58,11 @@ const STATUS_ON_STYLES: Partial<Record<StatusFilterValue, {
     chip: 'bg-blue-50 border-blue-600 text-blue-700 dark:bg-blue-900/30 dark:border-blue-400 dark:text-blue-300',
     dot: 'bg-blue-600 dark:bg-blue-400',
     count: 'text-blue-700 dark:text-blue-300',
+  },
+  unavailable_preference: {
+    chip: 'bg-red-50 border-red-600 text-red-700 dark:bg-red-900/30 dark:border-red-400 dark:text-red-300',
+    dot: 'bg-red-600 dark:bg-red-400',
+    count: 'text-red-700 dark:text-red-300',
   },
   tentative: {
     chip: 'bg-orange-50 border-orange-500 text-orange-700 dark:bg-orange-900/30 dark:border-orange-400 dark:text-orange-300',
@@ -174,7 +180,7 @@ export function ShiftStatusFilter({
   const displayedStatuses = ALL_STATUS_FILTER_VALUES.filter(
     (s) =>
       !HIDDEN_STATUSES.has(s) &&
-      (showPreferenceStatus || s !== 'pending_preference')
+      (showPreferenceStatus || (s !== 'pending_preference' && s !== 'unavailable_preference'))
   );
 
   const activeStatusLabels = displayedStatuses

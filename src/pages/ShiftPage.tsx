@@ -56,7 +56,7 @@ export function ShiftPage() {
   // 走ってしまう症状を根治する。Tailwind の lg ブレークポイントと一致させる。
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift, getLaborCostEstimate } = useShift(tenantId, storeId);
+  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift, getLaborCostEstimate, addShiftForMember } = useShift(tenantId, storeId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
   const { roles, fetchRoles } = useTenantRoles(tenantId);
   // Phase 2: 店舗別人件費 (member_store_payrolls)。0 行のテナントでは payrollsMap が空 Map のまま →
@@ -127,7 +127,11 @@ export function ShiftPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pendingPreferenceCount = useMemo(
-    () => allPreferences.filter(p => p.status === 'pending').length,
+    () => allPreferences.filter(p => p.status === 'pending' && p.preference_type !== 'unavailable').length,
+    [allPreferences]
+  );
+  const unavailablePreferenceCount = useMemo(
+    () => allPreferences.filter(p => p.status === 'pending' && p.preference_type === 'unavailable').length,
     [allPreferences]
   );
 
@@ -376,6 +380,19 @@ export function ShiftPage() {
     await revertPreference(id);
     fetchPreferenceRange();
     fetchRange();
+  };
+
+  // 店長以上が空白セルから他メンバーのシフトを直接 INSERT (status=tentative)
+  const handleAddShiftForMember = async (
+    date: string,
+    userId: string,
+    targetStoreId: string,
+    startTime: string,
+    endTime: string,
+  ) => {
+    await addShiftForMember(date, userId, targetStoreId, startTime, endTime);
+    fetchRange();
+    fetchPreferenceRange();
   };
 
   // 一括選択モードの自動 OFF (§4.1 + P2-INT-2):
@@ -670,6 +687,7 @@ export function ShiftPage() {
                       showPreferenceStatus={canManageTenant}
                       counts={{
                         pending_preference: pendingPreferenceCount,
+                        unavailable_preference: unavailablePreferenceCount,
                         tentative: tentativeCount,
                         approved: approvedCount,
                       }}
@@ -1166,6 +1184,7 @@ export function ShiftPage() {
                     showPreferenceStatus={canManageTenant}
                     counts={{
                       pending_preference: pendingPreferenceCount,
+                      unavailable_preference: unavailablePreferenceCount,
                       tentative: tentativeCount,
                       approved: approvedCount,
                     }}
@@ -1217,6 +1236,9 @@ export function ShiftPage() {
                     <UnifiedShiftSidebar
                       mode={canManageTenant ? "manager" : "staff"}
                       currentUserId={currentUserId}
+                      canManageTenant={canManageTenant}
+                      allMembers={payrollMembers}
+                      onAddShiftForMember={handleAddShiftForMember}
                       selectedDate={mobileSheetDate}
                       onSelectedDateChange={setMobileSheetDate}
                       shifts={canManageTenant ? allShifts : myShifts}
@@ -1322,6 +1344,9 @@ export function ShiftPage() {
               <DayDetailModal
                 mode={canManageTenant ? "manager" : "staff"}
                 currentUserId={currentUserId}
+                canManageTenant={canManageTenant}
+                allMembers={payrollMembers}
+                onAddShiftForMember={handleAddShiftForMember}
                 selectedDate={selectedDate}
                 onSelectedDateChange={setSelectedDate}
                 onQuickAdd={() => {

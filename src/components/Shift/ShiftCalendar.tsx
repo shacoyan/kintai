@@ -121,7 +121,10 @@ export function ShiftCalendar({
     if (!preferences) return map;
     for (const p of preferences) {
       if (p.status !== 'pending') continue;
-      const showByFilter = !showPreferenceStatus || !statusFilter || statusFilter.has('pending_preference');
+      // preferred は 'pending_preference' chip でゲート、unavailable は 'unavailable_preference' chip でゲート
+      const filterKey: StatusFilterValue =
+        p.preference_type === 'unavailable' ? 'unavailable_preference' : 'pending_preference';
+      const showByFilter = !showPreferenceStatus || !statusFilter || statusFilter.has(filterKey);
       if (showByFilter) {
         const arr = map.get(p.date) || [];
         arr.push(p);

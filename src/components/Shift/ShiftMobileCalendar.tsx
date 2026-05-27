@@ -55,8 +55,11 @@ export function ShiftMobileCalendar({
     for (const preference of preferences) {
       const entry = map.get(preference.date) ?? { count: 0, isMine: false, hasUnavailable: false };
       if (preference.preference_type === 'unavailable') {
-        // 出勤不可: count に含めず hasUnavailable フラグだけ立てる
-        entry.hasUnavailable = true;
+        // 出勤不可 chip が ON のときのみ赤ドット表示
+        const showUnavailable = !statusFilter || statusFilter.has('unavailable_preference');
+        if (showUnavailable) {
+          entry.hasUnavailable = true;
+        }
         if (currentUserId && preference.user_id === currentUserId) entry.isMine = true;
         map.set(preference.date, entry);
         continue;
