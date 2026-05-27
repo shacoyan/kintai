@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { ActionMenu, type ActionMenuItem } from '../ui/ActionMenu';
 import { Spinner } from '../ui/Spinner';
 import type { Shift } from '../../types';
@@ -35,7 +35,8 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 const stripBorder = (cls: string) =>
   cls.split(/\s+/).filter(c => !c.startsWith('border-') && !c.startsWith('dark:border-')).join(' ');
 
-export function ShiftActionRow(props: ShiftActionRowProps) {
+// Perf: モーダル/サイドバー内で多数並ぶ row。親再 render 時に prop 浅比較で skip させるため React.memo。
+function ShiftActionRowInner(props: ShiftActionRowProps) {
   const {
     shift,
     memberName,
@@ -188,3 +189,5 @@ export function ShiftActionRow(props: ShiftActionRowProps) {
     </div>
   );
 }
+
+export const ShiftActionRow = memo(ShiftActionRowInner);

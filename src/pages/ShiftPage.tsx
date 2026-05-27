@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, startTransition } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks, subMonths, addMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Plus, ChevronLeft, ChevronRight, AlertTriangle, X } from 'lucide-react';
@@ -346,7 +346,9 @@ export function ShiftPage() {
     };
   }, [canManageTenant, allShifts, shiftViewMonth, getLaborCostEstimate, payrollMembers, rolesMap, memberStorePayrollsMap]);
 
-  const handlePrefSubmit = async (
+  // Perf: モーダル子コンポーネントの React.memo 効果を維持するため useCallback 化。
+  // 依存は最小限 (DB 操作 fn + fetchRange/fetchPreferenceRange) のみ。setX 系 setter は安定参照のため依存に入れない。
+  const handlePrefSubmit = useCallback(async (
     date: string,
     type: ShiftPreferenceType,
     startTime?: string,
@@ -357,33 +359,33 @@ export function ShiftPage() {
     await submitPreference(date, type, startTime, endTime, note, storeIdOverride);
     setSelectedDate(null);
     fetchPreferenceRange();
-  };
+  }, [submitPreference, fetchPreferenceRange]);
 
-  const handlePrefDelete = async (id: string) => {
+  const handlePrefDelete = useCallback(async (id: string) => {
     await deletePreference(id);
     setSelectedDate(null);
     fetchPreferenceRange();
-  };
+  }, [deletePreference, fetchPreferenceRange]);
 
-  const handleApprovePreference = async (id: string, startTime?: string, endTime?: string) => {
+  const handleApprovePreference = useCallback(async (id: string, startTime?: string, endTime?: string) => {
     await approvePreference(id, startTime, endTime);
     fetchPreferenceRange();
     fetchRange();
-  };
+  }, [approvePreference, fetchPreferenceRange, fetchRange]);
 
-  const handleRejectPreference = async (id: string) => {
+  const handleRejectPreference = useCallback(async (id: string) => {
     await rejectPreference(id);
     fetchPreferenceRange();
-  };
+  }, [rejectPreference, fetchPreferenceRange]);
 
-  const handleRevertPreference = async (id: string) => {
+  const handleRevertPreference = useCallback(async (id: string) => {
     await revertPreference(id);
     fetchPreferenceRange();
     fetchRange();
-  };
+  }, [revertPreference, fetchPreferenceRange, fetchRange]);
 
   // 店長以上が空白セルから他メンバーのシフトを直接 INSERT (status=tentative)
-  const handleAddShiftForMember = async (
+  const handleAddShiftForMember = useCallback(async (
     date: string,
     userId: string,
     targetStoreId: string,
@@ -393,7 +395,58 @@ export function ShiftPage() {
     await addShiftForMember(date, userId, targetStoreId, startTime, endTime);
     fetchRange();
     fetchPreferenceRange();
-  };
+  }, [addShiftForMember, fetchRange, fetchPreferenceRange]);
+
+  // Perf: モーダル側 (UnifiedShiftSidebar / DayDetailModal) の props identity を安定させるため、
+  //   1) 個別 inline lambda (revert/restore/modify, canManageStore, onMutated, onShiftClick 等) を全部 useCallback 化
+  //   2) onDateClick (PC/SP) も useCallback
+  //   3) setSelectedDate は startTransition で wrap → click 即時反応 + state 更新を低優先度化
+  const handleRevertShiftToTentative = useCallback(async (id: string) => {
+    await revertShiftToTentative(id);
+  }, [revertShiftToTentative]);
+
+  const handleRestoreShift = useCallback(async (id: string) => {
+    await restoreShift(id);
+  }, [restoreShift]);
+
+  const handleModifyShift = useCallback((s: import('../types').Shift) => {
+    setSelectedShift(s);
+  }, []);
+
+  const handleShiftClick = useCallback((shift: import('../types').Shift) => {
+    setSelectedShift(shift);
+  }, []);
+
+  const handleCanManageStore = useCallback((sid: string | null | undefined) => {
+    return sid ? isManagerOf(sid) : false;
+  }, [isManagerOf]);
+
+  const handleMutated = useCallback(() => {
+    fetchPreferenceRange();
+    fetchRange();
+  }, [fetchPreferenceRange, fetchRange]);
+
+  const handleQuickAdd = useCallback(() => {
+    if (selectedDate) {
+      setNewPreferenceDate(selectedDate);
+      setSelectedDate(null);
+    }
+  }, [selectedDate]);
+
+  // 自分の preference は時間変更モーダル、他人 + 当該店舗 manager は管理アクションモーダル、それ以外は no-op。
+  const handlePreferenceClick = useCallback((p: import('../types').ShiftPreference) => {
+    if (currentUserId && p.user_id === currentUserId) {
+      setSelectedPreference(p);
+    } else if (canManageTenant && p.store_id && isManagerOf(p.store_id)) {
+      setAdminTargetPreference(p);
+    }
+  }, [currentUserId, canManageTenant, isManagerOf]);
+
+  // SP「+N 件すべて見る」ハンドラ (selectedDate 確定 → mobileSheetDate へ転写)。
+  const handleSeeAllMobile = useCallback(() => {
+    const target = selectedDate ?? format(new Date(), 'yyyy-MM-dd');
+    setMobileSheetDate(target);
+  }, [selectedDate]);
 
   // 一括選択モードの自動 OFF (§4.1 + P2-INT-2):
   //   storeId null / preferenceView !== 'current'
@@ -467,6 +520,20 @@ export function ShiftPage() {
     },
     [showToast],
   );
+
+  // PC ShiftCalendar / SP ShiftMobileCalendar から呼ばれる日付クリックハンドラ。
+  // - bulk mode 中はトグル
+  // - 通常は selectedDate を startTransition で更新 → DayDetailModal の重い再 render を低優先度化、
+  //   click ハンドラ自体は即時 return → スクロール/ボタンの体感が改善する。
+  const handleCalendarDateClick = useCallback((date: string) => {
+    if (isBulkMode) {
+      handleToggleBulkDate(date);
+    } else {
+      startTransition(() => {
+        setSelectedDate(date);
+      });
+    }
+  }, [isBulkMode, handleToggleBulkDate]);
 
   const handleEnterBulkMode = useCallback(() => {
     setIsBulkMode(true);
@@ -846,29 +913,9 @@ export function ShiftPage() {
                     preferences={preferencesForCalendar}
                     viewMode={shiftViewMode}
                     baseDate={shiftViewMonth}
-                    onDateClick={(date) => {
-                      if (isBulkMode) {
-                        handleToggleBulkDate(date);
-                      } else {
-                        // Iter 2-A (Worker A) / P0 fix:
-                        // PC は DayDetailModal を起動する。新規申請は modal 内 Quick Add ボタンから。
-                        setSelectedDate(date);
-                      }
-                    }}
-                    onShiftClick={(shift) => setSelectedShift(shift)}
-                    onPreferenceClick={(p) => {
-                      // Loop15 + Loop16-B (+ Reviewer P1 fix):
-                      // - 自分の preference は時間変更モーダル
-                      // - 他人 + 当該店舗の manager (= isManagerOf(p.store_id), owner は常に true) は管理アクションモーダル
-                      // - 他人 + 一般スタッフ or 他店舗 manager は何もしない
-                      //   ※ canManageTenant のみで判定すると店舗 A の manager が店舗 B の preference を承認可能になる。
-                      //   PreferenceActionRow と同じ canManageStore 相当のガードで揃える。
-                      if (currentUserId && p.user_id === currentUserId) {
-                        setSelectedPreference(p);
-                      } else if (canManageTenant && p.store_id && isManagerOf(p.store_id)) {
-                        setAdminTargetPreference(p);
-                      }
-                    }}
+                    onDateClick={handleCalendarDateClick}
+                    onShiftClick={handleShiftClick}
+                    onPreferenceClick={handlePreferenceClick}
                     memberNames={canManageTenant ? memberNames : undefined}
                     statusFilter={statusFilter}
                     showPreferenceStatus={canManageTenant}
@@ -1200,13 +1247,7 @@ export function ShiftPage() {
                   selectedBulkDates={isBulkMode ? selectedBulkDates : undefined}
                   isBulkMode={isBulkMode}
                   statusFilter={statusFilter}
-                  onDateClick={(date) => {
-                    if (isBulkMode) {
-                      handleToggleBulkDate(date);
-                    } else {
-                      setSelectedDate(date);
-                    }
-                  }}
+                  onDateClick={handleCalendarDateClick}
                 />
 
                 <ShiftMobileTodayList
@@ -1217,11 +1258,8 @@ export function ShiftPage() {
                   roleTypeMap={spRoleTypeMap}
                   statusFilter={statusFilter}
                   showPreferenceStatus={canManageTenant}
-                  onShiftClick={(shift) => setSelectedShift(shift)}
-                  onSeeAll={() => {
-                    const target = selectedDate ?? format(new Date(), 'yyyy-MM-dd');
-                    setMobileSheetDate(target);
-                  }}
+                  onShiftClick={handleShiftClick}
+                  onSeeAll={handleSeeAllMobile}
                 />
               </div>
 
@@ -1250,20 +1288,20 @@ export function ShiftPage() {
                       onRejectShift={rejectShift}
                       onTentativeApproveShift={tentativeApproveShift}
                       onCancelShiftTentative={cancelShiftTentative}
-                      onRevertShiftToTentative={async(id)=>{await revertShiftToTentative(id);}}
-                      onRestoreShift={async(id)=>{await restoreShift(id);}}
-                      onModifyShift={(s)=>setSelectedShift(s)}
+                      onRevertShiftToTentative={handleRevertShiftToTentative}
+                      onRestoreShift={handleRestoreShift}
+                      onModifyShift={handleModifyShift}
                       onDeleteShift={deleteShift}
                       onApprovePreference={handleApprovePreference}
                       onRejectPreference={handleRejectPreference}
                       onRevertPreference={handleRevertPreference}
                       onSubmitPreference={handlePrefSubmit}
                       onDeletePreference={handlePrefDelete}
-                      canManageStore={(sid)=>sid?isManagerOf(sid):false}
+                      canManageStore={handleCanManageStore}
                       presets={presets}
                       stores={stores}
                       defaultStoreId={storeId}
-                      onMutated={() => { fetchPreferenceRange(); fetchRange(); }}
+                      onMutated={handleMutated}
                       adminSummary={adminSummary}
                       preferenceSummary={preferenceSummary}
                       pendingPreferenceCount={pendingPreferenceCount}
@@ -1349,14 +1387,7 @@ export function ShiftPage() {
                 onAddShiftForMember={handleAddShiftForMember}
                 selectedDate={selectedDate}
                 onSelectedDateChange={setSelectedDate}
-                onQuickAdd={() => {
-                  // Iter 2-A (Worker A) / P0 fix:
-                  // DayDetailModal の「+ 追加」ボタン経由で新規申請モーダルへ。
-                  if (selectedDate) {
-                    setNewPreferenceDate(selectedDate);
-                    setSelectedDate(null);
-                  }
-                }}
+                onQuickAdd={handleQuickAdd}
                 shifts={canManageTenant ? allShifts : myShifts}
                 preferences={canManageTenant ? allPreferences : myPreferences}
                 myPreferences={myPreferences}
@@ -1366,20 +1397,20 @@ export function ShiftPage() {
                 onRejectShift={rejectShift}
                 onTentativeApproveShift={tentativeApproveShift}
                 onCancelShiftTentative={cancelShiftTentative}
-                onRevertShiftToTentative={async(id)=>{await revertShiftToTentative(id);}}
-                onRestoreShift={async(id)=>{await restoreShift(id);}}
-                onModifyShift={(s)=>setSelectedShift(s)}
+                onRevertShiftToTentative={handleRevertShiftToTentative}
+                onRestoreShift={handleRestoreShift}
+                onModifyShift={handleModifyShift}
                 onDeleteShift={deleteShift}
                 onApprovePreference={handleApprovePreference}
                 onRejectPreference={handleRejectPreference}
                 onRevertPreference={handleRevertPreference}
                 onSubmitPreference={handlePrefSubmit}
                 onDeletePreference={handlePrefDelete}
-                canManageStore={(sid)=>sid?isManagerOf(sid):false}
+                canManageStore={handleCanManageStore}
                 presets={presets}
                 stores={stores}
                 defaultStoreId={storeId}
-                onMutated={() => { fetchPreferenceRange(); fetchRange(); }}
+                onMutated={handleMutated}
                 adminSummary={adminSummary}
                 preferenceSummary={preferenceSummary}
                 pendingPreferenceCount={pendingPreferenceCount}
@@ -1405,7 +1436,7 @@ export function ShiftPage() {
                     onRefresh={fetchPreferenceRange}
                     stores={adminListStores}
                     historyMode
-                    canManageStore={(sid) => sid ? isManagerOf(sid) : false}
+                    canManageStore={handleCanManageStore}
                   />
                 </div>
               )}

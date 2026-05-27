@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, memo } from 'react';
 import { format, startOfWeek, addDays, startOfMonth, endOfMonth, isAfter, startOfDay, parseISO } from 'date-fns';
 import type { Shift, LeaveRequest, ShiftPreference, TenantMember } from '../../types';
 import type { StatusFilterValue } from './unifiedShiftTypes';
@@ -57,7 +57,9 @@ interface ShiftCalendarProps {
   membersById?: Map<string, TenantMember>;
 }
 
-export function ShiftCalendar({
+// Perf: 親 (ShiftPage) の頻繁な再 render に追従させないため React.memo でラップ。
+// 親側で handler/ data を useCallback / useMemo 化済みなので、prop 浅比較で skip できる。
+function ShiftCalendarInner({
   shifts,
   onDateClick,
   onShiftClick,
@@ -360,3 +362,5 @@ export function ShiftCalendar({
     </div>
   );
 }
+
+export const ShiftCalendar = memo(ShiftCalendarInner);

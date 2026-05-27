@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { addDays, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from 'date-fns';
 import type { Shift, ShiftPreference } from '../../types';
 import type { StatusFilterValue } from './unifiedShiftTypes';
@@ -17,7 +17,8 @@ interface Props {
   onDateClick: (date: string) => void;
 }
 
-export function ShiftMobileCalendar({
+// Perf: 親の頻繁な再 render に追従させないため React.memo でラップ。
+function ShiftMobileCalendarInner({
   shiftViewMonth,
   shifts,
   preferences,
@@ -172,3 +173,5 @@ export function ShiftMobileCalendar({
     </div>
   );
 }
+
+export const ShiftMobileCalendar = memo(ShiftMobileCalendarInner);

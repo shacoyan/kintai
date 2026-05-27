@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useId } from 'react';
+import React, { useEffect, useRef, useId, memo } from 'react';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
@@ -14,7 +14,9 @@ interface BottomSheetProps {
   children: React.ReactNode;
 }
 
-export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, description, footer, children }) => {
+// Perf: 親 (ShiftPage) の頻繁な再 render に追従させないため React.memo でラップ。
+// children は通常 children element も親側で安定化されていれば skip 効果あり。
+const BottomSheetInner: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, description, footer, children }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
   const reactId = useId();
   const titleId = title ? `bottomsheet-title-${reactId}` : undefined;
@@ -97,3 +99,5 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({ isOpen, onClose, title
     </div>
   );
 };
+
+export const BottomSheet = memo(BottomSheetInner);

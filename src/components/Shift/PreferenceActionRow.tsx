@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Check, X, CheckCircle2, XCircle, RotateCcw, Clock } from 'lucide-react';
 import type { ShiftPreference } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
@@ -49,7 +49,8 @@ interface CardState {
   editEnd: string;
 }
 
-export function PreferenceActionRow({
+// Perf: モーダル/サイドバー内で多数並ぶ row。親再 render 時に prop 浅比較で skip させるため React.memo。
+function PreferenceActionRowInner({
   preference,
   memberName,
   onApprove,
@@ -502,3 +503,5 @@ export function PreferenceActionRow({
     </div>
   );
 }
+
+export const PreferenceActionRow = memo(PreferenceActionRowInner);

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { X, Plus } from 'lucide-react';
@@ -20,7 +20,7 @@ export interface DayDetailModalProps extends Omit<UnifiedShiftSidebarProps, 'sel
  * kintai の既存 `UnifiedShiftSidebar` を本体に流用することで
  * 編集/承認/却下/フォームの機能を完全に保持する。
  */
-export function DayDetailModal(props: DayDetailModalProps) {
+export const DayDetailModal = memo(function DayDetailModal(props: DayDetailModalProps) {
   const { selectedDate, onSelectedDateChange, onQuickAdd, ...rest } = props;
   const modalRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -119,4 +119,4 @@ export function DayDetailModal(props: DayDetailModalProps) {
       </div>
     </div>
   );
-}
+});

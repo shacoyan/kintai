@@ -1,5 +1,5 @@
 import { AddMemberShiftForm } from './AddMemberShiftForm';
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, useCallback, memo } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Plus } from 'lucide-react';
@@ -121,7 +121,7 @@ function ShiftStatusReadonly({ shift }: { shift: Shift }) {
   );
 }
 
-export function UnifiedShiftSidebar({
+export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
   mode,
   selectedDate,
   onSelectedDateChange,
@@ -229,7 +229,7 @@ export function UnifiedShiftSidebar({
     return allMembers.filter(m => !userIdsWithShift.has(m.user_id) && !userIdsWithPref.has(m.user_id));
   }, [allMembers, selectedDate, dateFilteredShifts, dateFilteredPendingPreferences]);
 
-  const handleFormSubmit = async (
+  const handleFormSubmit = useCallback(async (
     date: string,
     type: ShiftPreferenceType,
     startTime?: string,
@@ -241,18 +241,34 @@ export function UnifiedShiftSidebar({
     await onSubmitPreference(date, type, startTime, endTime, note, storeIdOverride);
     onSelectedDateChange(null);
     onMutated();
-  };
+  }, [onSubmitPreference, onSelectedDateChange, onMutated]);
 
-  const handleFormDelete = async (id: string) => {
+  const handleFormDelete = useCallback(async (id: string) => {
     if (!onDeletePreference) return;
     await onDeletePreference(id);
     onSelectedDateChange(null);
     onMutated();
-  };
+  }, [onDeletePreference, onSelectedDateChange, onMutated]);
 
-  const handleFormCancel = () => {
+  const handleFormCancel = useCallback(() => {
     onSelectedDateChange(null);
-  };
+  }, [onSelectedDateChange]);
+
+  const canShowPreferenceList = useMemo(() => {
+    return !!onApprovePreference && !!onRejectPreference;
+  }, [onApprovePreference, onRejectPreference]);
+
+  const otherSectionShifts = useMemo(() => {
+    return otherShifts;
+  }, [otherShifts]);
+
+  const otherSectionPending = useMemo(() => {
+    return canShowPreferenceList ? otherPendingPreferences : [];
+  }, [canShowPreferenceList, otherPendingPreferences]);
+
+  const showOtherSection = useMemo(() => {
+    return otherSectionShifts.length > 0 || otherSectionPending.length > 0;
+  }, [otherSectionShifts, otherSectionPending]);
 
   // click outside listener (manager mode のみ)
   useEffect(() => {
@@ -275,12 +291,6 @@ export function UnifiedShiftSidebar({
   }, [mode, selectedDate, onSelectedDateChange]);
 
   if (mode === 'manager') {
-    const canShowPreferenceList = !!onApprovePreference && !!onRejectPreference;
-
-    const otherSectionShifts = otherShifts;
-    const otherSectionPending = canShowPreferenceList ? otherPendingPreferences : [];
-    const showOtherSection = otherSectionShifts.length > 0 || otherSectionPending.length > 0;
-
     return (
       <aside
         ref={sidebarRef}
@@ -466,4 +476,4 @@ export function UnifiedShiftSidebar({
       </Card>
     </aside>
   );
-}
+});

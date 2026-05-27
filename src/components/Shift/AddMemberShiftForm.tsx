@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, memo } from 'react';
 import { Plus } from 'lucide-react';
 import { Button, Select, ErrorBanner } from '../ui';
 import { TenantMember, Store, ShiftPreset } from '../../types';
@@ -20,7 +20,7 @@ interface AddMemberShiftFormProps {
   onSuccess?: () => void;
 }
 
-export const AddMemberShiftForm: React.FC<AddMemberShiftFormProps> = ({
+export const AddMemberShiftForm = memo<AddMemberShiftFormProps>(({
   availableMembers,
   stores,
   defaultStoreId,
@@ -182,4 +182,4 @@ export const AddMemberShiftForm: React.FC<AddMemberShiftFormProps> = ({
       </div>
     </details>
   );
-};
+});
