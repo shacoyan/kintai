@@ -120,7 +120,8 @@ export function ShiftCalendar({
     const map = new Map<string, ShiftPreference[]>();
     if (!preferences) return map;
     for (const p of preferences) {
-      if (p.status !== 'pending') continue;
+      // 出勤不可 (unavailable) は自動承認されるため status 不問で表示、preferred は pending のみ
+      if (p.preference_type !== 'unavailable' && p.status !== 'pending') continue;
       // preferred は 'pending_preference' chip でゲート、unavailable は 'unavailable_preference' chip でゲート
       const filterKey: StatusFilterValue =
         p.preference_type === 'unavailable' ? 'unavailable_preference' : 'pending_preference';

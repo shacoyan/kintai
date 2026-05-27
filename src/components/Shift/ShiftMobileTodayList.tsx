@@ -72,7 +72,8 @@ export function ShiftMobileTodayList({
   );
   const allDayPrefs = (preferences ?? []).filter((pref) => pref.date === targetDate);
   const dayPrefs = allDayPrefs.filter((pref) => {
-    if (pref.status !== 'pending') return false;
+    // 出勤不可 (unavailable) は自動承認されるため status 不問、preferred は pending のみ
+    if (pref.preference_type !== 'unavailable' && pref.status !== 'pending') return false;
     if (!showPreferenceStatus) return true;
     if (!statusFilter) return true;
     const filterKey: StatusFilterValue =
