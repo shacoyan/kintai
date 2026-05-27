@@ -43,20 +43,26 @@ export function ShiftMobileCalendar({
   }, [shiftViewMonth]);
 
   const dayInfo = useMemo(() => {
-    const map = new Map<string, { count: number; isMine: boolean }>();
+    const map = new Map<string, { count: number; isMine: boolean; hasUnavailable: boolean }>();
     for (const shift of shifts) {
       const passesFilter = !statusFilter || statusFilter.has(shift.status as StatusFilterValue);
       if (!passesFilter) continue;
-      const entry = map.get(shift.date) ?? { count: 0, isMine: false };
+      const entry = map.get(shift.date) ?? { count: 0, isMine: false, hasUnavailable: false };
       entry.count += 1;
       if (currentUserId && shift.user_id === currentUserId) entry.isMine = true;
       map.set(shift.date, entry);
     }
     for (const preference of preferences) {
-      if (preference.preference_type !== 'preferred') continue;
+      const entry = map.get(preference.date) ?? { count: 0, isMine: false, hasUnavailable: false };
+      if (preference.preference_type === 'unavailable') {
+        // 出勤不可: count に含めず hasUnavailable フラグだけ立てる
+        entry.hasUnavailable = true;
+        if (currentUserId && preference.user_id === currentUserId) entry.isMine = true;
+        map.set(preference.date, entry);
+        continue;
+      }
       if (currentUserId && preference.user_id === currentUserId) {
         // 自分の preferred は常時表示 (PC と同じ「自分マーカー」)
-        const entry = map.get(preference.date) ?? { count: 0, isMine: false };
         entry.isMine = true;
         map.set(preference.date, entry);
       }
@@ -92,6 +98,7 @@ export function ShiftMobileCalendar({
           const info = dayInfo.get(dateStr);
           const count = info?.count ?? 0;
           const isMine = !!info?.isMine;
+          const hasUnavailable = !!info?.hasUnavailable;
           const isSelected = !isBulkMode && selectedDate === dateStr;
           const isBulkSelected = isBulkMode && selectedBulkDates?.has(dateStr);
 
@@ -141,6 +148,13 @@ export function ShiftMobileCalendar({
                     isMine ? 'bg-blue-600' : 'bg-stone-300 dark:bg-stone-600'
                   }`}
                   aria-hidden="true"
+                />
+              )}
+              {!otherMonth && hasUnavailable && (
+                <div
+                  className="w-2 h-2 rounded-full bg-red-600 dark:bg-red-500"
+                  title="出勤不可あり"
+                  aria-label="出勤不可あり"
                 />
               )}
               {!otherMonth && count > 0 && (

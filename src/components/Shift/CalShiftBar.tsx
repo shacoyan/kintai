@@ -34,7 +34,10 @@ export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalS
   const status = shift?.status ?? (preference ? 'pending' : 'tentative');
   const start = shift?.start_time ?? preference?.start_time ?? '';
   const end = shift?.end_time ?? preference?.end_time ?? '';
-  const visual = statusVisual(status);
+  const isUnavailable = !!preference && preference.preference_type === 'unavailable';
+  const visual = isUnavailable
+    ? { bg: 'rgba(220, 38, 38, 0.08)', bar: '#dc2626' }
+    : statusVisual(status);
   const rc = getRoleColor(member);
   const hourly = isHourlyMember(member);
   const fmt = (t: string) => {
@@ -43,6 +46,9 @@ export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalS
     return m === '00' ? h : `${h}:${m}`;
   };
   const isPreference = !!preference && !shift;
+  const timeLabel = isUnavailable
+    ? '出勤不可'
+    : `${fmt(start)}–${fmt(end)}`;
 
   return (
     <div
@@ -56,30 +62,30 @@ export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalS
         }
       }}
       title={member?.display_name ?? ''}
-      aria-label={`${member?.display_name ?? ''} ${fmt(start)}-${fmt(end)} ${isPreference ? '申請中' : status === 'approved' ? '本承認' : status === 'tentative' ? '仮承認' : '申請中'}${isMine ? ' (自分)' : ''}`}
+      aria-label={`${member?.display_name ?? ''} ${timeLabel} ${isUnavailable ? '出勤不可' : isPreference ? '申請中' : status === 'approved' ? '本承認' : status === 'tentative' ? '仮承認' : '申請中'}${isMine ? ' (自分)' : ''}`}
       className={`group flex flex-col cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 min-w-0 rounded-[3px] ${
         isMine ? 'ring-1 ring-blue-500 dark:ring-blue-400 ring-inset' : ''
       }`}
       style={{
         padding: '2px 3px 2px 5px',
         background: visual.bg,
-        borderLeft: `2px solid ${rc}`,
-        borderTop: hourly ? `1px dashed ${rc}88` : undefined,
-        borderBottom: hourly ? `1px dashed ${rc}88` : undefined,
+        borderLeft: `2px solid ${isUnavailable ? '#dc2626' : rc}`,
+        borderTop: hourly && !isUnavailable ? `1px dashed ${rc}88` : undefined,
+        borderBottom: hourly && !isUnavailable ? `1px dashed ${rc}88` : undefined,
       }}
     >
-      <span className="text-[10px] leading-[1.2] text-stone-900 dark:text-stone-100 truncate font-medium">
+      <span className={`text-[10px] leading-[1.2] truncate font-medium ${isUnavailable ? 'text-red-700 dark:text-red-300 line-through' : 'text-stone-900 dark:text-stone-100'}`}>
         {member?.display_name ?? '?'}
       </span>
       <div className="flex items-center gap-1">
         <span
-          className="text-[9px] tabular-nums text-stone-700 dark:text-stone-200 leading-[1.2] truncate flex-shrink-0"
+          className={`text-[9px] tabular-nums leading-[1.2] truncate flex-shrink-0 ${isUnavailable ? 'text-red-700 dark:text-red-300 font-semibold' : 'text-stone-700 dark:text-stone-200'}`}
           style={{ fontVariantNumeric: 'tabular-nums' }}
         >
-          {fmt(start)}–{fmt(end)}
+          {timeLabel}
         </span>
-        {/* 正典: approved 以外は右端に status dot 1 個 */}
-        {status !== 'approved' && (
+        {/* approved 以外は右端に status dot 1 個 (出勤不可は赤 dot で識別) */}
+        {(status !== 'approved' || isUnavailable) && (
           <span
             className="ml-auto inline-block w-1 h-1 rounded-full flex-shrink-0"
             style={{ background: visual.bar }}
