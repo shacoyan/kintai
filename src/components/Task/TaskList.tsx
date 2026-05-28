@@ -41,9 +41,10 @@ function buildCardProps(
     canEdit: props.canEdit,
     canComplete: props.canComplete,
     canDelete: props.canDelete,
-    assigneeName: task.assignee_user_id
-      ? props.memberNames?.get(task.assignee_user_id)
-      : undefined,
+    assignees: (task.assignee_user_ids ?? []).map((id) => ({
+      userId: id,
+      name: props.memberNames?.get(id) ?? '?',
+    })),
     projectName: task.project_id
       ? props.projectNames?.get(task.project_id)
       : undefined,

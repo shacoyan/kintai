@@ -198,7 +198,11 @@ export function TasksPage(): JSX.Element {
     assigneeUserId: effectiveMineOnly ? user?.id : filter.assigneeUserId,
   });
 
-  const { projects } = useProjects({ tenantId, storeId: currentStore?.id });
+  // Issue1: 選択肢用と名前解決用を 1 回の全件取得で賄う。storeId を渡さず全件取得し、
+  // 名前解決 (projectNames) は全件、ダイアログ/フィルタの選択肢 (selectableProjects) は
+  // 「現在店舗 + 全社 (active のみ)」をクライアント側 memo で切り出す。
+  // 他テナント混入は RLS (projects_select) で防がれるため全件保持で安全。
+  const { projects } = useProjects({ tenantId });
 
   const {
     createTask,
@@ -267,6 +271,17 @@ export function TasksPage(): JSX.Element {
   const projectNames = useMemo(
     () => new Map(projects.map((p) => [p.id, p.name])),
     [projects],
+  );
+
+  // Issue1: ダイアログ/フィルタの選択肢用。現在店舗 + 全社 (store_id === null) の
+  // active プロジェクトのみ。他店舗は除外。currentStore 未確定時は全社のみが残る。
+  // 名前解決 (projectNames) は全件 Map のままなので他店舗/全社タスクのバッジ表示は壊れない。
+  const selectableProjects = useMemo(
+    () =>
+      projects.filter(
+        (p) => p.status === 'active' && (p.store_id === null || p.store_id === currentStore?.id),
+      ),
+    [projects, currentStore?.id],
   );
 
   const storeNames = useMemo(
@@ -340,7 +355,7 @@ export function TasksPage(): JSX.Element {
     (t: Task): boolean => {
       if (canManage) return true;
       if (!user?.id) return false;
-      return t.assignee_user_id === user.id;
+      return (t.assignee_user_ids ?? []).includes(user.id);
     },
     [canManage, user?.id],
   );
@@ -429,7 +444,7 @@ export function TasksPage(): JSX.Element {
           <TaskFilterBar
             value={filter}
             onChange={setFilter}
-            projects={projects}
+            projects={selectableProjects}
             members={memberOptions}
             showStoreFilter={false}
           />
@@ -511,7 +526,10 @@ export function TasksPage(): JSX.Element {
               const canOpen = isDone || t.status === 'cancelled' ? canManage : canAct;
               const projectColor = getProjectColor(t.project_id);
               const projectName = t.project_id ? projectNames.get(t.project_id) : undefined;
-              const assigneeName = t.assignee_user_id ? memberNames.get(t.assignee_user_id) : undefined;
+              const assignees = (t.assignee_user_ids ?? []).map((id) => ({
+                userId: id,
+                name: memberNames.get(id) ?? '?',
+              }));
               const storeName = t.store_id ? storeNames.get(t.store_id) : '全社';
               const meta = statusMeta[t.status];
               const isOverdue =
@@ -606,13 +624,22 @@ export function TasksPage(): JSX.Element {
                     )}
                   </span>
 
-                  <span className="flex items-center">
-                    {assigneeName && (
+                  <span className="flex items-center -space-x-1.5">
+                    {assignees.slice(0, 3).map((a) => (
                       <span
-                        className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold ${getAvatarColor(t.assignee_user_id)}`}
-                        title={assigneeName}
+                        key={a.userId}
+                        className={`inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold dark:border-stone-900 ${getAvatarColor(a.userId)}`}
+                        title={a.name}
                       >
-                        {assigneeName.slice(0, 1)}
+                        {a.name.slice(0, 1)}
+                      </span>
+                    ))}
+                    {assignees.length > 3 && (
+                      <span
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-stone-200 text-[10px] font-semibold text-stone-600 dark:border-stone-900 dark:bg-stone-700 dark:text-stone-300"
+                        title={assignees.slice(3).map((a) => a.name).join(', ')}
+                      >
+                        +{assignees.length - 3}
                       </span>
                     )}
                   </span>
@@ -644,7 +671,8 @@ export function TasksPage(): JSX.Element {
         mode={dialog?.mode ?? 'create'}
         task={dialog?.mode === 'edit' ? dialog.task : undefined}
         tenantId={tenantId}
-        projects={projects}
+        projects={selectableProjects}
+        projectNames={projectNames}
         members={memberOptions}
         stores={storeOptions}
         canEditAll={dialog !== null && (!isParttime || dialog.mode === 'create')}
@@ -663,7 +691,9 @@ export function TasksPage(): JSX.Element {
                   projectId: dialog?.task?.project_id ?? null,
                   storeId: dialog?.task?.store_id ?? null,
                   priority: dialog?.task?.priority ?? 1,
-                  assigneeUserId: dialog?.task?.assignee_user_id ?? null,
+                  // parttime は担当者を編集できない（UI も無効）→ 担当者は触らず
+                  // undefined のままにして set_task_assignees RPC をスキップさせる。
+                  assigneeUserIds: undefined,
                   dueDate: dialog?.task?.due_date ?? null,
                 };
 

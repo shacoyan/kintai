@@ -13,6 +13,8 @@ export interface TaskInput {
   status?: TaskStatus;
   priority?: TaskPriority;
   assigneeUserId?: string | null;
+  /** 複数担当者 (Issue2)。新規はこちらを使う */
+  assigneeUserIds?: string[];
   dueDate?: string | null;
 }
 

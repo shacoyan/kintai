@@ -16,6 +16,8 @@ export interface TaskDialogProps {
   mode: 'create' | 'edit';
   task?: Task;
   projects: Project[];
+  /** 全件プロジェクト名解決用 (選択肢に無い既存 project_id の表示名補完に使用) */
+  projectNames?: Map<string, string>;
   members: MemberOption[];
   stores: StoreOption[];
   onSave: (input: TaskInput) => Promise<void>;
@@ -26,6 +28,13 @@ export interface TaskDialogProps {
   defaultAssigneeUserId?: string | null;
   /** create mode の初期 status (kanban カラム + ボタンから渡す) */
   initialStatus?: TaskStatus;
+}
+
+/** 担当者集合が等しいか（順序非依存） */
+function sameAssignees(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const setB = new Set(b);
+  return a.every((id) => setB.has(id));
 }
 
 const STATUS_OPTIONS = (Object.keys(TASK_STATUS_LABELS) as TaskStatus[]).map((s) => ({
@@ -44,6 +53,7 @@ export function TaskDialog({
   mode,
   task,
   projects,
+  projectNames,
   members,
   stores,
   onSave,
@@ -59,7 +69,7 @@ export function TaskDialog({
   const [storeId, setStoreId] = useState<string | null>(null);
   const [status, setStatus] = useState<TaskStatus>('todo');
   const [priority, setPriority] = useState<TaskPriority>(1);
-  const [assigneeUserId, setAssigneeUserId] = useState<string | null>(null);
+  const [assigneeUserIds, setAssigneeUserIds] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +85,7 @@ export function TaskDialog({
       setStoreId(task.store_id);
       setStatus(task.status);
       setPriority(task.priority);
-      setAssigneeUserId(task.assignee_user_id);
+      setAssigneeUserIds(task.assignee_user_ids ?? []);
       setDueDate(task.due_date);
     } else {
       setTitle('');
@@ -84,7 +94,7 @@ export function TaskDialog({
       setStoreId(defaultStoreId);
       setStatus(initialStatus ?? 'todo');
       setPriority(1);
-      setAssigneeUserId(defaultAssigneeUserId);
+      setAssigneeUserIds(defaultAssigneeUserId ? [defaultAssigneeUserId] : []);
       setDueDate(null);
     }
     setError(null);
@@ -111,6 +121,13 @@ export function TaskDialog({
     setLoading(true);
     setError(null);
 
+    // create: 常に担当者を replace（作成権限者しか作れない）。
+    // edit: 担当者集合が編集前から変わった時だけ含める（未変更なら undefined にして
+    //       updateTask の set_task_assignees RPC をスキップ → 担当者本人の
+    //       parttime/他店舗 staff でもステータス/説明のみ編集で保存できる）。
+    const assigneesChanged =
+      mode === 'create' || !sameAssignees(assigneeUserIds, task?.assignee_user_ids ?? []);
+
     const input: TaskInput = {
       tenantId,
       title: trimmedTitle,
@@ -119,7 +136,7 @@ export function TaskDialog({
       storeId,
       status,
       priority,
-      assigneeUserId,
+      assigneeUserIds: assigneesChanged ? assigneeUserIds : undefined,
       dueDate: dueDate && dueDate.length > 0 ? dueDate : null,
     };
 
@@ -134,6 +151,8 @@ export function TaskDialog({
     }
   }, [
     canSubmit,
+    mode,
+    task,
     tenantId,
     trimmedTitle,
     description,
@@ -141,7 +160,7 @@ export function TaskDialog({
     storeId,
     status,
     priority,
-    assigneeUserId,
+    assigneeUserIds,
     dueDate,
     onSave,
     onOpenChange,
@@ -199,6 +218,15 @@ export function TaskDialog({
               {p.name}
             </option>
           ))}
+          {/* 編集中タスクの project_id が選択肢 (現在店舗+全社/active) に無い場合
+              (他店舗/archived プロジェクトに紐付く既存タスク) は、その 1 件だけ
+              末尾に補完表示する。これにより値が空表示にならず、保存時の意図しない
+              null 化を防ぐ。 */}
+          {projectId && !projects.some((p) => p.id === projectId) && (
+            <option key={projectId} value={projectId}>
+              {projectNames?.get(projectId) ?? '(対象外プロジェクト)'}
+            </option>
+          )}
         </Select>
 
         <Select
@@ -241,19 +269,42 @@ export function TaskDialog({
           ))}
         </Select>
 
-        <Select
-          label="担当者"
-          value={assigneeUserId ?? ''}
-          onChange={(e) => setAssigneeUserId(e.target.value || null)}
+        <fieldset
+          className="rounded-md border border-stone-300 p-3 dark:border-stone-600"
           disabled={isReadonly || loading}
         >
-          <option value="">未割当</option>
-          {members.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </Select>
+          <legend className="px-1 text-sm font-medium text-stone-700 dark:text-stone-200">
+            担当者
+          </legend>
+          {members.length === 0 ? (
+            <p className="pt-1 text-sm text-stone-400 dark:text-stone-500">
+              選択できるメンバーがいません
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
+              {members.map((m) => (
+                <label
+                  key={m.id}
+                  className="flex cursor-pointer items-center gap-1.5 text-stone-600 dark:text-stone-300"
+                >
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-stone-300 text-stone-800 focus:ring-stone-500 disabled:cursor-not-allowed disabled:opacity-50 dark:border-stone-600"
+                    checked={assigneeUserIds.includes(m.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setAssigneeUserIds((prev) => [...prev, m.id]);
+                      } else {
+                        setAssigneeUserIds((prev) => prev.filter((id) => id !== m.id));
+                      }
+                    }}
+                  />
+                  <span className="text-sm">{m.name}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </fieldset>
 
         <Input
           label="期限日"

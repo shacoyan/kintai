@@ -11,7 +11,7 @@ export interface KanbanCardProps {
   onClick?: () => void;
   /** false の場合はドラッグ不可 (権限不足等)。default true */
   isDraggable?: boolean;
-  assigneeName?: string;
+  assignees?: { userId: string; name: string }[];
   projectName?: string;
 }
 
@@ -82,7 +82,7 @@ export function KanbanCard({
   task,
   onClick,
   isDraggable = true,
-  assigneeName,
+  assignees,
   projectName,
 }: KanbanCardProps): JSX.Element {
   const {
@@ -196,7 +196,7 @@ export function KanbanCard({
 
       <div className="my-0.5 h-px bg-stone-200/70 dark:bg-stone-700/70" />
 
-      {(task.due_date || assigneeName) && (
+      {(task.due_date || (assignees && assignees.length > 0)) && (
         <div className="flex items-center gap-1.5">
           {task.due_date && (
             <span
@@ -211,13 +211,26 @@ export function KanbanCard({
             </span>
           )}
           <span className="flex-1" />
-          {assigneeName && (
-            <span
-              className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${getAvatarColor(task.assignee_user_id)}`}
-              title={assigneeName}
-            >
-              {assigneeName.slice(0, 1)}
-            </span>
+          {assignees && assignees.length > 0 && (
+            <div className="flex -space-x-1.5">
+              {assignees.slice(0, 3).map((a) => (
+                <span
+                  key={a.userId}
+                  className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold dark:border-stone-800 ${getAvatarColor(a.userId)}`}
+                  title={a.name}
+                >
+                  {a.name.slice(0, 1)}
+                </span>
+              ))}
+              {assignees.length > 3 && (
+                <span
+                  className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-white bg-stone-200 text-[10px] font-semibold text-stone-600 dark:border-stone-800 dark:bg-stone-700 dark:text-stone-300"
+                  title={assignees.slice(3).map((a) => a.name).join(', ')}
+                >
+                  +{assignees.length - 3}
+                </span>
+              )}
+            </div>
           )}
         </div>
       )}

@@ -165,9 +165,10 @@ export function MobileKanban({
                   {columnTasks.map((task) => {
                     const isDraggable = canStartDrag(task);
 
-                    const assigneeName = task.assignee_user_id
-                      ? memberNames?.get(task.assignee_user_id)
-                      : undefined;
+                    const assignees = (task.assignee_user_ids ?? []).map((id) => ({
+                      userId: id,
+                      name: memberNames?.get(id) ?? '?',
+                    }));
 
                     const projectName = task.project_id
                       ? projectNames?.get(task.project_id)
@@ -178,7 +179,7 @@ export function MobileKanban({
                         key={task.id}
                         task={task}
                         isDraggable={isDraggable}
-                        assigneeName={assigneeName}
+                        assignees={assignees}
                         projectName={projectName}
                         onClick={onTaskClick ? () => onTaskClick(task) : undefined}
                       />

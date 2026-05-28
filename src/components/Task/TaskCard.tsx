@@ -1,11 +1,34 @@
 import React from 'react';
 import { format, isPast, parseISO } from 'date-fns';
-import { Calendar, User } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import type { Task, TaskPriority, TaskStatus } from '../../types';
 import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from '../../types';
 import { Badge } from '../ui/Badge';
 import type { BadgeTone } from '../ui/Badge';
 import { Button } from '../ui/Button';
+
+const avatarColors = [
+  'bg-stone-200 text-stone-700',
+  'bg-blue-100 text-blue-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-orange-100 text-orange-700',
+  'bg-purple-100 text-purple-700',
+  'bg-cyan-100 text-cyan-700',
+  'bg-amber-100 text-amber-700',
+  'bg-indigo-100 text-indigo-700',
+];
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+function getAvatarColor(userId: string): string {
+  if (!userId) return avatarColors[0];
+  return avatarColors[hashString(userId) % avatarColors.length];
+}
 
 export interface TaskCardProps {
   task: Task;
@@ -16,7 +39,7 @@ export interface TaskCardProps {
   canEdit?: boolean;
   canComplete?: boolean;
   canDelete?: boolean;
-  assigneeName?: string;
+  assignees?: { userId: string; name: string }[];
   projectName?: string;
 }
 
@@ -43,7 +66,7 @@ export function TaskCard({
   canEdit = false,
   canComplete = false,
   canDelete = false,
-  assigneeName,
+  assignees,
   projectName,
 }: TaskCardProps): JSX.Element {
   const isClickable = canEdit || !!onClick;
@@ -63,6 +86,9 @@ export function TaskCard({
       onClick();
     }
   };
+
+  const visibleAssignees = assignees ? assignees.slice(0, 3) : [];
+  const remainingAssignees = assignees ? assignees.slice(3) : [];
 
   return (
     <div
@@ -106,7 +132,7 @@ export function TaskCard({
         )}
 
         {/* メタ情報: 期限 / 担当者 */}
-        {(task.due_date || assigneeName) && (
+        {(task.due_date || (assignees && assignees.length > 0)) && (
           <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-stone-500 dark:text-stone-400">
             {task.due_date && (
               <span
@@ -121,11 +147,26 @@ export function TaskCard({
                 </time>
               </span>
             )}
-            {assigneeName && (
-              <span className="inline-flex items-center gap-1">
-                <User className="w-3.5 h-3.5" aria-hidden="true" />
-                {assigneeName}
-              </span>
+            {assignees && assignees.length > 0 && (
+              <div className="flex items-center -space-x-1.5">
+                {visibleAssignees.map((assignee) => (
+                  <div
+                    key={assignee.userId}
+                    title={assignee.name}
+                    className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-medium border-2 border-white dark:border-stone-800 ${getAvatarColor(assignee.userId)}`}
+                  >
+                    {assignee.name.slice(0, 1)}
+                  </div>
+                ))}
+                {remainingAssignees.length > 0 && (
+                  <div
+                    title={remainingAssignees.map((a) => a.name).join(', ')}
+                    className="h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-medium border-2 border-white dark:border-stone-800 bg-stone-200 text-stone-700 dark:bg-stone-600 dark:text-stone-200"
+                  >
+                    +{remainingAssignees.length}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

@@ -188,7 +188,8 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
       // parttime は最優先で判定 (myRole が staff でも parttime フラグが立つことがある)
       if (isParttime) {
         const isAssignee =
-          currentUserId !== undefined && task.assignee_user_id === currentUserId;
+          currentUserId !== undefined &&
+          (task.assignee_user_ids ?? []).includes(currentUserId);
         const isValidFrom = from === 'todo' || from === 'in_progress';
         const isValidTo = to === 'done';
         return isAssignee && isValidFrom && isValidTo;

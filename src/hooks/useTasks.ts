@@ -34,6 +34,7 @@ export interface TaskInput {
   priority?: TaskPriority;
   status?: TaskStatus;
   assigneeUserId?: string | null;
+  assigneeUserIds?: string[];
   dueDate?: string | null; // YYYY-MM-DD
 }
 
@@ -55,6 +56,20 @@ export interface UseTasksResult {
   isLoading: boolean;
   error: FriendlyError | null;
   refetch: () => Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// task_assignees ネストから assignee_user_ids 配列を組み立てる共通ヘルパ
+// (created_at 昇順 → user_id。無ければ空配列。詰め忘れ厳禁)
+// ---------------------------------------------------------------------------
+
+type RawAssignee = { user_id: string; created_at: string };
+
+function buildAssigneeUserIds(raw: RawAssignee[] | null | undefined): string[] {
+  return (raw ?? [])
+    .slice()
+    .sort((a, b) => (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0))
+    .map((a) => a.user_id);
 }
 
 // ---------------------------------------------------------------------------
@@ -81,6 +96,13 @@ const BULK_ASSIGN_MESSAGES: Record<string, string> = {
   '42501': '権限がありません。',
   '22023': 'アサインが無効です。',
   P0002: '対象のタスクが見つかりません。',
+};
+
+/** set_task_assignees の SQLSTATE → ユーザー向け文言 */
+const SET_TASK_ASSIGNEES_MESSAGES: Record<string, string> = {
+  '42501': '権限がありません',
+  P0002: '対象タスクが見つかりません',
+  '23514': 'テナントに所属しないメンバーは指定できません',
 };
 
 /**
@@ -112,6 +134,8 @@ function translateRpcError(err: unknown, codeMap: Record<string, string>): Error
  *
  * - opts.status を渡さない場合は全 status 取得 (RLS による絞り込みのみ)
  * - 並び順は priority DESC, due_date ASC NULLS LAST, created_at DESC (設計書 §2-2 INDEX 準拠)
+ * - 担当者フィルタ (assigneeUserId) は task_assignees を含む複数担当に対し
+ *   「含む」判定でクライアントフィルタ (取得は全件)。
  */
 export function useTasks(opts?: UseTasksOptions): UseTasksResult {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -135,7 +159,7 @@ export function useTasks(opts?: UseTasksOptions): UseTasksResult {
     try {
       let query = supabase
         .from('tasks')
-        .select('*')
+        .select('*, task_assignees(user_id, created_at)')
         .eq('tenant_id', opts.tenantId);
 
       // storeId の 3 状態:
@@ -146,9 +170,6 @@ export function useTasks(opts?: UseTasksOptions): UseTasksResult {
         query = query.eq('store_id', opts.storeId);
       } else if (opts.storeId === null) {
         query = query.is('store_id', null);
-      }
-      if (opts.assigneeUserId) {
-        query = query.eq('assignee_user_id', opts.assigneeUserId);
       }
       if (opts.status && opts.status.length > 0) {
         query = query.in('status', opts.status);
@@ -162,7 +183,19 @@ export function useTasks(opts?: UseTasksOptions): UseTasksResult {
 
       const { data, error: e } = await query;
       if (e) throw e;
-      setTasks((data as Task[]) ?? []);
+
+      // task_assignees ネストを assignee_user_ids 配列へ集約 (created_at 昇順 / 空配列保証)
+      const mapped = ((data as unknown as Record<string, unknown>[]) ?? []).map((row) => {
+        const { task_assignees, ...rest } = row as { task_assignees?: RawAssignee[] | null } & Record<string, unknown>;
+        return { ...rest, assignee_user_ids: buildAssigneeUserIds(task_assignees) } as Task;
+      });
+
+      // 担当者フィルタ: 複数担当に対し「含む」判定でクライアント側で絞る
+      const filtered = opts.assigneeUserId
+        ? mapped.filter((task) => task.assignee_user_ids.includes(opts.assigneeUserId!))
+        : mapped;
+
+      setTasks(filtered);
     } catch (err: unknown) {
       setError(formatSupabaseError(err));
       setTasks([]);
@@ -203,6 +236,9 @@ export interface UseTaskMutationsResult {
  *
  * - 0 行検知: RLS で弾かれた場合 supabase-js は silent success を返すため
  *   .select() で RETURNING を取り、null/空配列なら明示エラー化する。
+ * - 担当者の書込は set_task_assignees RPC (SECURITY DEFINER) に集約。RPC は
+ *   delete+insert で replace し、cross-tenant 等を RAISE EXCEPTION するので
+ *   フロントは SQLSTATE を翻訳して throw する。
  * - RPC エラーは SQLSTATE を翻訳して throw する。呼び出し元の try/catch で受ける想定。
  */
 export function useTaskMutations(): UseTaskMutationsResult {
@@ -212,6 +248,8 @@ export function useTaskMutations(): UseTaskMutationsResult {
     } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
+    // assignee_user_id は primary (後方互換) で task_assignees のトリガ同期に委ねる。
+    // 新規担当は set_task_assignees RPC で replace するため insert では null 固定。
     const insertRow: TaskInsert = {
       tenant_id: input.tenantId,
       project_id: input.projectId ?? null,
@@ -220,7 +258,7 @@ export function useTaskMutations(): UseTaskMutationsResult {
       description: input.description ?? null,
       priority: input.priority ?? 1,
       status: input.status ?? 'todo',
-      assignee_user_id: input.assigneeUserId ?? null,
+      assignee_user_id: null,
       due_date: input.dueDate ?? null,
       created_by: user.id,
     };
@@ -232,7 +270,15 @@ export function useTaskMutations(): UseTaskMutationsResult {
       .single();
     if (error) throw new Error(`タスクの作成に失敗しました: ${error.message}`);
     if (!data) throw new Error('タスクの作成に失敗しました (RETURNING 0 行)');
-    return data as Task;
+
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('set_task_assignees', {
+      p_task_id: data.id,
+      p_user_ids: input.assigneeUserIds ?? [],
+    });
+    if (rpcErr) throw translateRpcError(rpcErr, SET_TASK_ASSIGNEES_MESSAGES);
+
+    const assignee_user_ids = buildAssigneeUserIds(rpcData as RawAssignee[] | null);
+    return { ...data, assignee_user_ids } as Task;
   }, []);
 
   const updateTask = useCallback(
@@ -244,8 +290,7 @@ export function useTaskMutations(): UseTaskMutationsResult {
       if (patch.description !== undefined) updateRow.description = patch.description;
       if (patch.priority !== undefined) updateRow.priority = patch.priority;
       if (patch.status !== undefined) updateRow.status = patch.status;
-      if (patch.assigneeUserId !== undefined)
-        updateRow.assignee_user_id = patch.assigneeUserId;
+      // assignee_user_id (primary) は task_assignees トリガ同期に委ねるため直接書かない。
       if (patch.dueDate !== undefined) updateRow.due_date = patch.dueDate;
 
       const { data, error } = await supabase
@@ -264,7 +309,32 @@ export function useTaskMutations(): UseTaskMutationsResult {
       if (!data) {
         throw new Error('タスクが見つかりません、または権限がありません。');
       }
-      return data as Task;
+
+      if (patch.assigneeUserIds !== undefined) {
+        // 担当者指定あり → set_task_assignees で replace し RPC の返りから集約
+        const { data: rpcData, error: rpcErr } = await supabase.rpc('set_task_assignees', {
+          p_task_id: taskId,
+          p_user_ids: patch.assigneeUserIds,
+        });
+        if (rpcErr) throw translateRpcError(rpcErr, SET_TASK_ASSIGNEES_MESSAGES);
+
+        const assignee_user_ids = buildAssigneeUserIds(rpcData as RawAssignee[] | null);
+        return { ...data, assignee_user_ids } as Task;
+      }
+
+      // 担当者未指定 → 担当者は触らず、現状の task_assignees を再取得して詰める
+      const { data: selectData, error: selectError } = await supabase
+        .from('tasks')
+        .select('*, task_assignees(user_id, created_at)')
+        .eq('id', taskId)
+        .single();
+
+      if (selectError || !selectData) {
+        return { ...data, assignee_user_ids: [] } as Task;
+      }
+
+      const { task_assignees, ...rest } = selectData as { task_assignees?: RawAssignee[] | null } & Record<string, unknown>;
+      return { ...rest, assignee_user_ids: buildAssigneeUserIds(task_assignees) } as Task;
     },
     [],
   );

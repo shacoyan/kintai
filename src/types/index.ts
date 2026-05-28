@@ -328,9 +328,15 @@ export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'cancelled';
 // priority は SMALLINT (0=low / 1=normal / 2=high / 3=urgent) CHECK BETWEEN 0 AND 3
 export type TaskPriority = 0 | 1 | 2 | 3;
 
+// task_assignees 中間テーブル (067)。tasks.assignee_user_id は primary (後方互換) として残置。
+export type TaskAssigneeRow = Database['public']['Tables']['task_assignees']['Row'];
+
 export type Task = Omit<TaskRow, 'status' | 'priority'> & {
   status: TaskStatus;
   priority: TaskPriority;
+  // task_assignees から集約した担当者 user_id 配列 (created_at 昇順)。
+  // DB Row には無い派生フィールド。useTasks が詰める。空配列 = 未割当。
+  assignee_user_ids: string[];
 };
 export type TaskInsert = Omit<Database['public']['Tables']['tasks']['Insert'], 'status' | 'priority'> & {
   status?: TaskStatus;

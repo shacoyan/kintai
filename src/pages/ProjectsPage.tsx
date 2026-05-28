@@ -470,11 +470,7 @@ export function ProjectsPage() {
       const openTasks = totalTasks - doneTasks;
       const pct = totalTasks ? Math.round((doneTasks / totalTasks) * 100) : 0;
       const assignees = Array.from(
-        new Set(
-          projectTasks
-            .map((task) => task.assignee_user_id)
-            .filter((userId): userId is string => userId !== null),
-        ),
+        new Set(projectTasks.flatMap((task) => task.assignee_user_ids ?? [])),
       ).map((userId) => ({
         userId,
         displayName: memberMap.get(userId) ?? '?',
