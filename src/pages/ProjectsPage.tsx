@@ -815,8 +815,12 @@ export function ProjectsPage() {
           </button>
         </div>
         {managerial && !readonly && (
-          <Button variant="primary" size="md" onClick={openCreate}>
-            <Plus className="h-4 w-4" aria-hidden="true" />
+          <Button
+            variant="primary"
+            size="md"
+            onClick={openCreate}
+            iconLeft={<Plus className="h-4 w-4" aria-hidden="true" />}
+          >
             新規プロジェクト
           </Button>
         )}
