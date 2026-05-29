@@ -706,7 +706,7 @@ export function ShiftPage() {
                       type="button"
                       onClick={() => setShiftViewMonth(subMonths(shiftViewMonth, 1))}
                       aria-label="前月"
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 focus-ring"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     >
                       <ChevronLeft className="w-4 h-4" aria-hidden="true" />
                     </button>
@@ -714,15 +714,12 @@ export function ShiftPage() {
                       <span className="text-base font-semibold text-stone-900 dark:text-stone-100 tabular-nums">
                         {format(shiftViewMonth, 'yyyy / MM')}
                       </span>
-                      <span className="text-[10px] text-stone-500 dark:text-stone-400">
-                        {format(shiftViewMonth, 'M月')}
-                      </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setShiftViewMonth(addMonths(shiftViewMonth, 1))}
                       aria-label="次月"
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 focus-ring"
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-500 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                     >
                       <ChevronRight className="w-4 h-4" aria-hidden="true" />
                     </button>

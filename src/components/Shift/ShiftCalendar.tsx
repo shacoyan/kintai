@@ -1,9 +1,7 @@
 import { useState, useMemo, useEffect, memo } from 'react';
-import { format, startOfWeek, addDays, startOfMonth, endOfMonth, isAfter, startOfDay, parseISO } from 'date-fns';
+import { format, startOfWeek, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import type { Shift, LeaveRequest, ShiftPreference, TenantMember } from '../../types';
 import type { StatusFilterValue } from './unifiedShiftTypes';
-import { EmptyState } from '../ui';
-import { ChevronRight } from 'lucide-react';
 import { isJapaneseHoliday, getJapaneseHolidayName } from '../../lib/holidays';
 import { getInitialShiftMonth } from '../../utils/initialShiftMonth';
 import { CalShiftBar } from './CalShiftBar';
@@ -77,7 +75,7 @@ function ShiftCalendarInner({
   membersById,
 }: ShiftCalendarProps) {
   const [internalViewMode] = useState<ViewMode>('month');
-  const [internalBaseDate, setInternalBaseDate] = useState(getInitialShiftMonth);
+  const [internalBaseDate] = useState(getInitialShiftMonth);
   const viewMode = viewModeProp ?? internalViewMode;
   const baseDate = baseDateProp ?? internalBaseDate;
 
@@ -149,50 +147,10 @@ function ShiftCalendarInner({
     return map;
   }, [leaves]);
 
-  const isCurrentMonthEmpty = useMemo(() => {
-    if (viewMode !== 'month') return false;
-    const monthStart = startOfMonth(baseDate);
-    const monthEnd = endOfMonth(baseDate);
-    return !shifts.some((s) => {
-      const shiftDate = parseISO(s.date);
-      return !isAfter(monthStart, shiftDate) && !isAfter(shiftDate, monthEnd);
-    });
-  }, [viewMode, baseDate, shifts]);
-
-  const navigateToNextShiftMonth = () => {
-    const baseDateStart = startOfDay(baseDate);
-    const futureShifts = shifts.filter((s) => isAfter(parseISO(s.date), baseDateStart));
-    if (futureShifts.length === 0) return;
-    const nearestShift = futureShifts.reduce((nearest, current) =>
-      isAfter(parseISO(nearest.date), parseISO(current.date)) ? current : nearest,
-    );
-    const nextDate = parseISO(nearestShift.date);
-    const nextMonth = new Date(nextDate.getFullYear(), nextDate.getMonth(), 1);
-    if (baseDateProp === undefined) setInternalBaseDate(nextMonth);
-    onViewMonthChange?.(nextMonth);
-  };
-
   const today = format(new Date(), 'yyyy-MM-dd');
 
   return (
     <div className="space-y-3">
-      {isCurrentMonthEmpty && (
-        <EmptyState
-          tone="info"
-          title="今月のシフトはまだありません"
-          action={
-            shifts.some((s) => isAfter(parseISO(s.date), startOfDay(baseDate)))
-              ? {
-                  label: '次のシフトがある月へ',
-                  onClick: navigateToNextShiftMonth,
-                  iconRight: <ChevronRight className="w-4 h-4" />,
-                  variant: 'tertiary',
-                }
-              : undefined
-          }
-        />
-      )}
-
       <div className="rounded-[10px] overflow-hidden border border-stone-200/70 dark:border-stone-700/70 bg-stone-200/70 dark:bg-stone-700/70">
         <div className="grid grid-cols-7 gap-px bg-stone-200/70 dark:bg-stone-700/70">
           {WEEK_LABELS.map((w, i) => (
