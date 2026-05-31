@@ -1542,6 +1542,15 @@ export function ShiftPage() {
             await handlePrefDelete(id);
             setSelectedPreference(null);
           }}
+          canApprove={canManageTenant && !!selectedPreference.store_id && isManagerOf(selectedPreference.store_id)}
+          onApprove={async (id) => {
+            await handleApprovePreference(id);
+            setSelectedPreference(null);
+          }}
+          onApproveWithTime={async (id, startTime, endTime) => {
+            await handleApprovePreference(id, startTime, endTime);
+            setSelectedPreference(null);
+          }}
           onClose={() => setSelectedPreference(null)}
         />
       )}
