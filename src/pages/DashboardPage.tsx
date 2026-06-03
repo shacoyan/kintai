@@ -238,8 +238,6 @@ export function DashboardPage() {
     };
   });
   const maxWeekHours = Math.max(...weekItems.map((item) => item.hours), 1);
-  // TODO(loop-next): 未提出判定接続 (現状はダミー display)
-  const showShiftUnsubmittedBanner = true;
   const visibleTeamMembers = teamMembers.slice(0, 8);
   const teamOverflow = teamMembers.length - visibleTeamMembers.length;
   const workingTeamCount = realWorkingCount;
@@ -329,16 +327,6 @@ export function DashboardPage() {
           </Card>
 
           <div className="flex flex-col gap-4">
-            {showShiftUnsubmittedBanner && (
-              <div className="flex items-center gap-2.5 rounded-lg bg-orange-50 px-3.5 py-2.5 text-[13px] text-orange-700 dark:bg-orange-900/20 dark:text-orange-200">
-                <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-                <span className="flex-1">6月分のシフト希望がまだ未提出です。締切 5/28 23:59</span>
-                <a href="/shift" className="text-xs font-semibold text-inherit hover:underline">
-                  確認 →
-                </a>
-              </div>
-            )}
-
             <Card padding="md" className="flex flex-col gap-3.5">
               <header className="flex items-center gap-2">
                 <span className="text-base font-semibold">本日の記録</span>
