@@ -40,6 +40,8 @@ interface ResponsiveKanbanProps {
   onMutationSuccess?: () => void | Promise<void>;
   /** カラム右上 + ボタン押下時 (PC kanban のみ、status 指定で新規作成 dialog 起動) */
   onAddInStatus?: (status: import('../../types').TaskStatus) => void;
+  /** カードメニューからの削除 (削除確認を開く) */
+  onTaskDelete?: (task: Task) => void;
 }
 
 export function ResponsiveKanban(props: ResponsiveKanbanProps) {
@@ -69,6 +71,7 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
             onSuccess={props.onSuccess}
             onError={props.onError}
             dnd={dnd}
+            onTaskDelete={props.onTaskDelete}
           />
         </div>
         <div className="hidden lg:block">
@@ -84,6 +87,7 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
             onError={props.onError}
             dnd={dnd}
             onAddInStatus={props.onAddInStatus}
+            onTaskDelete={props.onTaskDelete}
           />
         </div>
       </div>

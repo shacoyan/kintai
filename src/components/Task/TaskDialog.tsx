@@ -28,6 +28,10 @@ export interface TaskDialogProps {
   defaultAssigneeUserId?: string | null;
   /** create mode の初期 status (kanban カラム + ボタンから渡す) */
   initialStatus?: TaskStatus;
+  /** create mode で子タスクとして作成する場合の親 task id (edit では付け替えない) */
+  parentTaskId?: string | null;
+  /** create mode の初期 project (子タスクで親 project を継承させる用) */
+  defaultProjectId?: string | null;
 }
 
 /** 担当者集合が等しいか（順序非依存） */
@@ -62,6 +66,8 @@ export function TaskDialog({
   defaultStoreId = null,
   defaultAssigneeUserId = null,
   initialStatus,
+  parentTaskId = null,
+  defaultProjectId = null,
 }: TaskDialogProps): JSX.Element | null {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -90,7 +96,7 @@ export function TaskDialog({
     } else {
       setTitle('');
       setDescription('');
-      setProjectId(null);
+      setProjectId(defaultProjectId);
       setStoreId(defaultStoreId);
       setStatus(initialStatus ?? 'todo');
       setPriority(1);
@@ -99,7 +105,7 @@ export function TaskDialog({
     }
     setError(null);
     setLoading(false);
-  }, [open, mode, task, defaultStoreId, defaultAssigneeUserId, initialStatus]);
+  }, [open, mode, task, defaultStoreId, defaultAssigneeUserId, initialStatus, defaultProjectId]);
 
   const trimmedTitle = title.trim();
   const titleError = (() => {
@@ -138,6 +144,8 @@ export function TaskDialog({
       priority,
       assigneeUserIds: assigneesChanged ? assigneeUserIds : undefined,
       dueDate: dueDate && dueDate.length > 0 ? dueDate : null,
+      // create で子タスクとして作成する場合のみ親 id を載せる。edit では付け替えない。
+      parentTaskId: mode === 'create' ? (parentTaskId ?? null) : undefined,
     };
 
     try {
@@ -162,13 +170,17 @@ export function TaskDialog({
     priority,
     assigneeUserIds,
     dueDate,
+    parentTaskId,
     onSave,
     onOpenChange,
   ]);
 
   if (!open) return null;
 
-  const dialogTitle = mode === 'create' ? 'タスク新規作成' : 'タスク編集';
+  const dialogTitle =
+    mode === 'create'
+      ? (parentTaskId ? '子タスク作成' : 'タスク新規作成')
+      : 'タスク編集';
 
   const footer = (
     <div className="flex items-center justify-end gap-3 px-4 py-3 border-t border-stone-200 dark:border-stone-700">

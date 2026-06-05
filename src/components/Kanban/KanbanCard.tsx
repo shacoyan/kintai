@@ -1,10 +1,11 @@
 import React from 'react';
 import { format, isPast, parseISO } from 'date-fns';
-import { Calendar } from 'lucide-react';
+import { Calendar, ListChecks } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Task, TaskPriority } from '../../types';
 import { getProjectColor } from '../../lib/projectColor';
+import { ActionMenu, type ActionMenuItem } from '../ui';
 
 export interface KanbanCardProps {
   task: Task;
@@ -13,6 +14,10 @@ export interface KanbanCardProps {
   isDraggable?: boolean;
   assignees?: { userId: string; name: string }[];
   projectName?: string;
+  /** カードメニューからの削除 (削除確認を開く) */
+  onDelete?: () => void;
+  /** 削除可否 (権限)。default false */
+  canDelete?: boolean;
 }
 
 const priorityDotColor: Record<TaskPriority, string> = {
@@ -84,6 +89,8 @@ export function KanbanCard({
   isDraggable = true,
   assignees,
   projectName,
+  onDelete,
+  canDelete = false,
 }: KanbanCardProps): JSX.Element {
   const {
     attributes,
@@ -117,6 +124,20 @@ export function KanbanCard({
 
   // プロジェクトごとの色 (左 border + chip)。projectId なしは neutral。
   const projectColor = getProjectColor(task.project_id);
+
+  const menuItems: ActionMenuItem[] = [];
+  if (canDelete && onDelete) {
+    menuItems.push({ key: 'delete', label: '削除', tone: 'danger', onSelect: onDelete });
+  }
+
+  // 子タスク進捗 pill (parent のみ subtask_total > 0)
+  const subtaskTotal = task.subtask_total ?? 0;
+  const subtaskDone = task.subtask_done ?? 0;
+  const hasSubtasks = subtaskTotal > 0;
+  const subtaskPillTone =
+    subtaskDone === subtaskTotal
+      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+      : 'bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300';
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // ドラッグ後のクリック誤発火を避ける
@@ -176,6 +197,23 @@ export function KanbanCard({
             中止
           </span>
         )}
+        {menuItems.length > 0 && (
+          <span
+            className="-my-2 -mr-1.5 flex items-center justify-center"
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
+          >
+            <ActionMenu
+              items={menuItems}
+              triggerSize="sm"
+              align="end"
+              triggerLabel="タスク操作"
+              bottomSheetTitle="タスク操作"
+            />
+          </span>
+        )}
       </div>
 
       <h3 className="line-clamp-2 text-[12.5px] font-medium leading-[1.4] text-stone-900 dark:text-stone-100">
@@ -196,7 +234,7 @@ export function KanbanCard({
 
       <div className="my-0.5 h-px bg-stone-200/70 dark:bg-stone-700/70" />
 
-      {(task.due_date || (assignees && assignees.length > 0)) && (
+      {(task.due_date || hasSubtasks || (assignees && assignees.length > 0)) && (
         <div className="flex items-center gap-1.5">
           {task.due_date && (
             <span
@@ -208,6 +246,15 @@ export function KanbanCard({
               <time dateTime={task.due_date}>
                 {format(parseISO(task.due_date), 'MM/dd')}
               </time>
+            </span>
+          )}
+          {hasSubtasks && (
+            <span
+              className={`inline-flex h-[18px] items-center gap-1 rounded-full px-1.5 text-[10px] font-medium tabular-nums ${subtaskPillTone}`}
+              aria-label={`子タスク${subtaskTotal}件中${subtaskDone}件完了`}
+            >
+              <ListChecks className="h-[11px] w-[11px]" aria-hidden="true" />
+              {subtaskDone}/{subtaskTotal}
             </span>
           )}
           <span className="flex-1" />

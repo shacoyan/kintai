@@ -7,7 +7,7 @@
  * 設計書: .company/engineering/docs/2026-05-22-kintai-task-kanban-phase2-techdesign.md §3-6
  */
 
-import { useState, useMemo, useCallback, type ChangeEvent } from 'react';
+import { useState, useMemo, useCallback, useEffect, type ChangeEvent } from 'react';
 import { format, isPast, parseISO } from 'date-fns';
 import {
   Plus,
@@ -15,8 +15,9 @@ import {
   Filter,
   Info,
   Calendar,
-  MoreHorizontal,
   Check,
+  ChevronRight,
+  ListChecks,
 } from 'lucide-react';
 import { useTasks, useTaskMutations, type TaskInput } from '../hooks/useTasks';
 import { useProjects } from '../hooks/useProjects';
@@ -30,6 +31,8 @@ import {
   Card,
   Heading,
   Spinner,
+  ActionMenu,
+  type ActionMenuItem,
 } from '../components/ui';
 import type {
   Task,
@@ -39,6 +42,7 @@ import type {
 import {
   TaskFilterBar,
   TaskDialog,
+  SubtaskSection,
   type TaskInput as ComponentsTaskInput,
   type TaskFilterValue,
   type MemberOption,
@@ -63,6 +67,24 @@ interface DialogState {
   task?: Task;
   /** create mode で kanban カラム + ボタンから渡された初期 status */
   initialStatus?: TaskStatus;
+  /** create mode で子タスクとして作成する場合の親 task id */
+  parentTaskId?: string | null;
+  /** create mode の初期 store (子タスクで親 store を継承) */
+  initialStoreId?: string | null;
+  /** create mode の初期 project (子タスクで親 project を継承) */
+  initialProjectId?: string | null;
+}
+
+function buildTaskMenuItems(args: {
+  canEdit: boolean;
+  canDelete: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}): ActionMenuItem[] {
+  const items: ActionMenuItem[] = [];
+  if (args.canEdit) items.push({ key: 'edit', label: '編集', onSelect: args.onEdit });
+  if (args.canDelete) items.push({ key: 'delete', label: '削除', tone: 'danger', onSelect: args.onDelete });
+  return items;
 }
 
 const priorityDotColor: Record<TaskPriority, string> = {
@@ -210,6 +232,7 @@ export function TasksPage(): JSX.Element {
     deleteTask,
     completeTask,
     reopenTask,
+    countChildren,
   } = useTaskMutations();
 
   // プロジェクトフィルタはクライアントサイドで適用
@@ -217,6 +240,25 @@ export function TasksPage(): JSX.Element {
     if (!filter.projectId) return tasks;
     return tasks.filter((t) => t.project_id === filter.projectId);
   }, [tasks, filter.projectId]);
+
+  // list / kanban のトップレベル表示は親タスクのみ (子は親展開内 / Dialog 内でのみ表示)
+  const parentTasks = useMemo<Task[]>(
+    () => filteredTasks.filter((t) => !t.parent_task_id),
+    [filteredTasks],
+  );
+
+  // 子タスクは「全件 tasks」(フィルタ前) から親 id で再構築。
+  // project/store/assignee フィルタで子が落ちても親展開内に出すため (設計 §6-2)。
+  const childrenByParentId = useMemo<Map<string, Task[]>>(() => {
+    const map = new Map<string, Task[]>();
+    for (const t of tasks) {
+      if (!t.parent_task_id) continue;
+      const arr = map.get(t.parent_task_id);
+      if (arr) arr.push(t);
+      else map.set(t.parent_task_id, [t]);
+    }
+    return map;
+  }, [tasks]);
 
   // ── 件数バッジ (未完了タスク数を各タブで集計) ──
   // Loop 4.5 P2-7: 元実装は Map<StoreTabValue, number> だったが、
@@ -292,11 +334,34 @@ export function TasksPage(): JSX.Element {
   // ── ダイアログ状態 ──
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  // CASCADE 削除される実際の子件数 (status/store/assignee 非依存・サーバ count)。
+  // 'loading' = 取得中, number = 件数, null = 未取得 or 取得失敗。
+  const [deleteChildCount, setDeleteChildCount] = useState<number | null | 'loading'>(null);
   const [saving, setSaving] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
 
+  // ── 子タスク展開状態 (list) ──
+  const [expandedParentIds, setExpandedParentIds] = useState<Set<string>>(new Set());
+  const toggleExpanded = useCallback((parentId: string): void => {
+    setExpandedParentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(parentId)) next.delete(parentId);
+      else next.add(parentId);
+      return next;
+    });
+  }, []);
+
   const openCreate = (initialStatus?: TaskStatus): void => setDialog({ mode: 'create', initialStatus });
   const openEdit = (task: Task): void => setDialog({ mode: 'edit', task });
+  // 親タスクの store/project を継承して子タスク作成ダイアログを開く
+  const openCreateChild = useCallback((parent: Task): void => {
+    setDialog({
+      mode: 'create',
+      parentTaskId: parent.id,
+      initialStoreId: parent.store_id ?? null,
+      initialProjectId: parent.project_id ?? null,
+    });
+  }, []);
   const closeDialog = (): void => {
     if (!saving) setDialog(null);
   };
@@ -333,6 +398,23 @@ export function TasksPage(): JSX.Element {
     },
     [reopenTask, refetch, showToast],
   );
+
+  // 削除確認モーダルを開いたら、CASCADE 対象の実子件数をサーバから取得。
+  // list の status 絞り込み中でも実際に消える子数を正しく警告するため。
+  useEffect(() => {
+    if (!deletingTaskId) {
+      setDeleteChildCount(null);
+      return;
+    }
+    let cancelled = false;
+    setDeleteChildCount('loading');
+    countChildren(deletingTaskId).then((count) => {
+      if (!cancelled) setDeleteChildCount(count);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [deletingTaskId, countChildren]);
 
   const handleDelete = useCallback(async () => {
     if (!deletingTaskId) return;
@@ -483,7 +565,7 @@ export function TasksPage(): JSX.Element {
       {!tasksLoading && !tasksError && viewMode === 'kanban' && (
         <div className="min-h-[calc(100vh-260px)]">
           <ResponsiveKanban
-            tasks={filteredTasks}
+            tasks={parentTasks}
             onTaskClick={(task) => setDialog({ mode: 'edit', task })}
             myRole={myRoleNarrow}
             isParttime={isParttime}
@@ -495,6 +577,7 @@ export function TasksPage(): JSX.Element {
             onError={(m) => showToast(m, 'error')}
             onMutationSuccess={refetch}
             onAddInStatus={(status) => openCreate(status)}
+            onTaskDelete={(task) => setDeletingTaskId(task.id)}
           />
         </div>
       )}
@@ -515,15 +598,20 @@ export function TasksPage(): JSX.Element {
             <span aria-hidden="true" />
           </div>
 
-          {filteredTasks.length === 0 ? (
+          {parentTasks.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-stone-500 dark:text-stone-400">
               タスクはありません
             </div>
           ) : (
-            filteredTasks.map((t) => {
+            parentTasks.map((t) => {
               const canAct = canActOnTask(t);
               const isDone = t.status === 'done';
               const canOpen = isDone || t.status === 'cancelled' ? canManage : canAct;
+              const subtaskTotal = t.subtask_total ?? 0;
+              const subtaskDone = t.subtask_done ?? 0;
+              const hasSubtasks = subtaskTotal > 0;
+              const isExpanded = expandedParentIds.has(t.id);
+              const expandRowId = `subtasks-${t.id}`;
               const projectColor = getProjectColor(t.project_id);
               const projectName = t.project_id ? projectNames.get(t.project_id) : undefined;
               const assignees = (t.assignee_user_ids ?? []).map((id) => ({
@@ -539,8 +627,8 @@ export function TasksPage(): JSX.Element {
                 t.status !== 'cancelled';
 
               return (
+                <div key={t.id}>
                 <div
-                  key={t.id}
                   role={canOpen ? 'button' : undefined}
                   tabIndex={canOpen ? 0 : undefined}
                   onClick={canOpen ? () => openEdit(t) : undefined}
@@ -580,14 +668,49 @@ export function TasksPage(): JSX.Element {
                     <span className="sr-only">{meta.label}</span>
                   </span>
 
-                  <span
-                    className={`truncate text-[13px] font-medium ${
-                      isDone || t.status === 'cancelled'
-                        ? 'text-stone-400 line-through'
-                        : 'text-stone-900 dark:text-stone-100'
-                    }`}
-                  >
-                    {t.title}
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    {hasSubtasks ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpanded(t.id);
+                        }}
+                        aria-expanded={isExpanded}
+                        aria-controls={expandRowId}
+                        aria-label={isExpanded ? '子タスクを折りたたむ' : '子タスクを展開'}
+                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-stone-400 hover:bg-stone-100 hover:text-stone-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-stone-700 dark:hover:text-stone-300"
+                      >
+                        <ChevronRight
+                          className={`h-3.5 w-3.5 motion-safe:transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                          aria-hidden="true"
+                        />
+                      </button>
+                    ) : (
+                      <span className="h-5 w-5 shrink-0" aria-hidden="true" />
+                    )}
+                    <span
+                      className={`truncate text-[13px] font-medium ${
+                        isDone || t.status === 'cancelled'
+                          ? 'text-stone-400 line-through'
+                          : 'text-stone-900 dark:text-stone-100'
+                      }`}
+                    >
+                      {t.title}
+                    </span>
+                    {hasSubtasks && (
+                      <span
+                        className={`inline-flex h-[18px] shrink-0 items-center gap-1 rounded-full px-1.5 text-[10px] font-medium tabular-nums ${
+                          subtaskDone === subtaskTotal
+                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            : 'bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300'
+                        }`}
+                        aria-label={`子タスク${subtaskTotal}件中${subtaskDone}件完了`}
+                      >
+                        <ListChecks className="h-[11px] w-[11px]" aria-hidden="true" />
+                        {subtaskDone}/{subtaskTotal}
+                      </span>
+                    )}
                   </span>
 
                   <span className="min-w-0">
@@ -644,18 +767,55 @@ export function TasksPage(): JSX.Element {
                     )}
                   </span>
 
-                  <button
-                    type="button"
-                    className="inline-flex h-7 w-7 items-center justify-center rounded text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-stone-700 dark:hover:text-stone-50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (canOpen) openEdit(t);
-                    }}
-                    aria-label="タスクを編集"
-                    disabled={!canOpen}
+                  <span
+                    className="flex items-center justify-center"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
                   >
-                    <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-                  </button>
+                    {(() => {
+                      const canEdit = canOpen;
+                      const canDelete = canManage || t.created_by === user?.id;
+                      const menuItems = buildTaskMenuItems({
+                        canEdit,
+                        canDelete,
+                        onEdit: () => openEdit(t),
+                        onDelete: () => setDeletingTaskId(t.id),
+                      });
+                      if (menuItems.length === 0) return null;
+                      return (
+                        <ActionMenu
+                          items={menuItems}
+                          triggerSize="sm"
+                          align="end"
+                          triggerLabel="タスク操作"
+                          bottomSheetTitle="タスク操作"
+                        />
+                      );
+                    })()}
+                  </span>
+                </div>
+
+                {hasSubtasks && isExpanded && (
+                  <div
+                    id={expandRowId}
+                    className="border-b border-l-[3px] border-b-stone-200/70 bg-stone-50/50 px-4 py-1 dark:border-b-stone-700/60 dark:bg-stone-900/30"
+                    style={{ borderLeftColor: 'transparent' }}
+                  >
+                    <SubtaskSection
+                      parentTask={t}
+                      children={childrenByParentId.get(t.id) ?? []}
+                      memberNames={memberNames}
+                      onComplete={(id) => void handleComplete(id)}
+                      onReopen={(id) => void handleReopen(id)}
+                      onEditChild={(child) => openEdit(child)}
+                      onDeleteChild={(child) => setDeletingTaskId(child.id)}
+                      onAddChild={() => openCreateChild(t)}
+                      canAct={canActOnTask}
+                      canManage={canManage}
+                      currentUserId={user?.id}
+                    />
+                  </div>
+                )}
                 </div>
               );
             })
@@ -676,7 +836,13 @@ export function TasksPage(): JSX.Element {
         members={memberOptions}
         stores={storeOptions}
         canEditAll={dialog !== null && (!isParttime || dialog.mode === 'create')}
-        defaultStoreId={currentStore?.id ?? null}
+        defaultStoreId={
+          dialog?.mode === 'create' && dialog.parentTaskId
+            ? (dialog.initialStoreId ?? null)
+            : (currentStore?.id ?? null)
+        }
+        defaultProjectId={dialog?.mode === 'create' ? (dialog.initialProjectId ?? null) : null}
+        parentTaskId={dialog?.mode === 'create' ? (dialog.parentTaskId ?? null) : null}
         defaultAssigneeUserId={null}
         initialStatus={dialog?.mode === 'create' ? dialog.initialStatus : undefined}
         onSave={async (input: ComponentsTaskInput) => {
@@ -728,6 +894,30 @@ export function TasksPage(): JSX.Element {
             <Card>
               <Card.Header>タスクを削除しますか？</Card.Header>
               <Card.Body>
+                {(() => {
+                  if (deleteChildCount === 'loading') {
+                    return (
+                      <p className="mb-2 text-sm text-stone-500 dark:text-stone-400">
+                        子タスクの件数を確認しています…
+                      </p>
+                    );
+                  }
+                  if (deleteChildCount === null) {
+                    // 取得失敗時は安全側に倒し、件数なしで CASCADE を明示警告する
+                    return (
+                      <p className="mb-2 flex items-start gap-1.5 text-sm font-medium text-red-600 dark:text-red-400">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span>表示されていない子タスクも含め、関連する子タスクはすべて一緒に削除されます。</span>
+                      </p>
+                    );
+                  }
+                  return deleteChildCount > 0 ? (
+                    <p className="mb-2 flex items-start gap-1.5 text-sm font-medium text-red-600 dark:text-red-400">
+                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span>このタスクには子タスクが {deleteChildCount} 件あります。削除すると子タスクもすべて一緒に削除されます。</span>
+                    </p>
+                  ) : null;
+                })()}
                 <p className="text-sm text-stone-600 dark:text-stone-300">
                   この操作は取り消せません。本当に削除してもよろしいですか？
                 </p>
@@ -743,6 +933,7 @@ export function TasksPage(): JSX.Element {
                 <Button
                   variant="danger"
                   loading={deleting}
+                  disabled={deleting || deleteChildCount === 'loading'}
                   onClick={handleDelete}
                 >
                   削除

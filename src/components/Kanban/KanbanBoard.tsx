@@ -33,6 +33,8 @@ interface KanbanBoardProps {
   dnd: UseKanbanDndResult;
   /** カラム右上 + ボタン押下時の callback (status 指定で新規作成 dialog 起動) */
   onAddInStatus?: (status: TaskStatus) => void;
+  /** カードメニューからの削除 (削除確認を開く) */
+  onTaskDelete?: (task: Task) => void;
 }
 
 const COLUMN_DEFINITIONS: { status: TaskStatus; label: string }[] = [
@@ -45,12 +47,16 @@ const COLUMN_DEFINITIONS: { status: TaskStatus; label: string }[] = [
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   tasks,
   onTaskClick,
+  myRole,
+  currentUserId,
   memberNames,
   projectNames,
   dnd,
   onAddInStatus,
+  onTaskDelete,
 }) => {
   const { optimisticOverrides, canStartDrag } = dnd;
+  const canManage = myRole === 'owner' || myRole === 'manager';
 
   const columnMap = useMemo(() => {
     const map: Record<TaskStatus, Task[]> = {
@@ -124,6 +130,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     assignees={assignees}
                     projectName={projectName}
                     onClick={onTaskClick ? () => onTaskClick(task) : undefined}
+                    canDelete={canManage || task.created_by === currentUserId}
+                    onDelete={onTaskDelete ? () => onTaskDelete(task) : undefined}
                   />
                 );
               })}

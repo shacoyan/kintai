@@ -337,6 +337,10 @@ export type Task = Omit<TaskRow, 'status' | 'priority'> & {
   // task_assignees から集約した担当者 user_id 配列 (created_at 昇順)。
   // DB Row には無い派生フィールド。useTasks が詰める。空配列 = 未割当。
   assignee_user_ids: string[];
+  // ▼ 068 子タスク: parent_task_id は TaskRow に含まれる (生成型)。
+  // subtask_total/done は DB 列ではない派生フィールド (親のみ意味を持つ。useTasks が集計して詰める)。
+  subtask_total?: number; // 子タスク総数 (cancelled 含む。分母除外したい場合は useTasks 集計を参照)
+  subtask_done?: number; // 完了 (status==='done') の子タスク数
 };
 export type TaskInsert = Omit<Database['public']['Tables']['tasks']['Insert'], 'status' | 'priority'> & {
   status?: TaskStatus;

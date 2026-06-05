@@ -34,6 +34,8 @@ interface MobileKanbanProps {
   onError?: (msg: string) => void;
   /** 親 (ResponsiveKanban) で 1 回だけ呼んだ useKanbanDnd の結果。 */
   dnd: UseKanbanDndResult;
+  /** カードメニューからの削除 (削除確認を開く) */
+  onTaskDelete?: (task: Task) => void;
 }
 
 const COLUMN_DEFINITIONS: { status: TaskStatus; label: string }[] = [
@@ -53,10 +55,14 @@ const statusDotColor: Record<TaskStatus, string> = {
 export function MobileKanban({
   tasks,
   onTaskClick,
+  myRole,
+  currentUserId,
   memberNames,
   projectNames,
   dnd,
+  onTaskDelete,
 }: MobileKanbanProps) {
+  const canManage = myRole === 'owner' || myRole === 'manager';
   const [accordionState, setAccordionState] = useState<Record<TaskStatus, boolean>>({
     todo: true,
     in_progress: true,
@@ -182,6 +188,8 @@ export function MobileKanban({
                         assignees={assignees}
                         projectName={projectName}
                         onClick={onTaskClick ? () => onTaskClick(task) : undefined}
+                        canDelete={canManage || task.created_by === currentUserId}
+                        onDelete={onTaskDelete ? () => onTaskDelete(task) : undefined}
                       />
                     );
                   })}

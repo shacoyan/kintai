@@ -16,6 +16,8 @@ export interface TaskInput {
   /** 複数担当者 (Issue2)。新規はこちらを使う */
   assigneeUserIds?: string[];
   dueDate?: string | null;
+  /** 068 子タスク作成時のみ指定する親タスク id。createTask 専用 (updateTask では付け替えしない) */
+  parentTaskId?: string | null;
 }
 
 /**

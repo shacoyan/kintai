@@ -36,6 +36,7 @@ export interface TaskInput {
   assigneeUserId?: string | null;
   assigneeUserIds?: string[];
   dueDate?: string | null; // YYYY-MM-DD
+  parentTaskId?: string | null; // 068: 子タスク作成時のみ指定 (createTask 専用)
 }
 
 export interface UseTasksOptions {
@@ -190,10 +191,32 @@ export function useTasks(opts?: UseTasksOptions): UseTasksResult {
         return { ...rest, assignee_user_ids: buildAssigneeUserIds(task_assignees) } as Task;
       });
 
+      // 068 子タスク: 親ごとに子を集計し subtask_total/done を親へ付与 (クライアント集計)。
+      // 集計はフィルタ前の全件 (mapped) で行う — assignee フィルタで子が落ちても親の進捗が狂わないように。
+      const childrenByParent = new Map<string, Task[]>();
+      for (const t of mapped) {
+        if (t.parent_task_id) {
+          const arr = childrenByParent.get(t.parent_task_id) ?? [];
+          arr.push(t);
+          childrenByParent.set(t.parent_task_id, arr);
+        }
+      }
+      const withCounts = mapped.map((t) => {
+        if (t.parent_task_id) return t; // 子は集計対象外
+        const children = childrenByParent.get(t.id) ?? [];
+        // 分母: cancelled も含む全子数 (デフォルト)。除外したい場合は
+        //   children.filter((c) => c.status !== 'cancelled').length に変更可。
+        return {
+          ...t,
+          subtask_total: children.length,
+          subtask_done: children.filter((c) => c.status === 'done').length,
+        };
+      });
+
       // 担当者フィルタ: 複数担当に対し「含む」判定でクライアント側で絞る
       const filtered = opts.assigneeUserId
-        ? mapped.filter((task) => task.assignee_user_ids.includes(opts.assigneeUserId!))
-        : mapped;
+        ? withCounts.filter((task) => task.assignee_user_ids.includes(opts.assigneeUserId!))
+        : withCounts;
 
       setTasks(filtered);
     } catch (err: unknown) {
@@ -229,6 +252,7 @@ export interface UseTaskMutationsResult {
   completeTask: (taskId: string) => Promise<Task>;
   reopenTask: (taskId: string) => Promise<Task>;
   bulkAssignTasks: (taskIds: string[], assigneeUserId: string) => Promise<Task[]>;
+  countChildren: (parentTaskId: string) => Promise<number | null>;
 }
 
 /**
@@ -260,6 +284,7 @@ export function useTaskMutations(): UseTaskMutationsResult {
       status: input.status ?? 'todo',
       assignee_user_id: null,
       due_date: input.dueDate ?? null,
+      parent_task_id: input.parentTaskId ?? null, // 068: 子タスク作成時のみ非 null
       created_by: user.id,
     };
 
@@ -352,6 +377,19 @@ export function useTaskMutations(): UseTaskMutationsResult {
     }
   }, []);
 
+  const countChildren = useCallback(async (parentTaskId: string): Promise<number | null> => {
+    try {
+      const { count, error } = await supabase
+        .from('tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('parent_task_id', parentTaskId);
+      if (error || count == null) return null;
+      return count;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const completeTask = useCallback(async (taskId: string): Promise<Task> => {
     const { data, error } = await supabase.rpc('complete_task', {
       p_task_id: taskId,
@@ -393,5 +431,6 @@ export function useTaskMutations(): UseTaskMutationsResult {
     completeTask,
     reopenTask,
     bulkAssignTasks,
+    countChildren,
   };
 }
