@@ -6,6 +6,7 @@ import {
   Calendar,
   LayoutDashboard,
   CheckSquare,
+  TrendingUp,
   FolderKanban,
   MoreHorizontal,
   type LucideIcon,
@@ -19,12 +20,13 @@ interface NavItemDef {
   label: string;
 }
 
-// 主 4 列固定 (全 role 共通)
+// 主 5 列固定 (全 role 共通)
 const PRIMARY_ITEMS: NavItemDef[] = [
   { to: '/', icon: Clock, label: '打刻' },
   { to: '/history', icon: List, label: '履歴' },
   { to: '/shift', icon: Calendar, label: 'シフト' },
   { to: '/tasks', icon: CheckSquare, label: 'タスク' },
+  { to: '/sales', icon: TrendingUp, label: '売上' },
 ];
 
 // 「もっと」drawer 内の項目 (全 role 表示)
@@ -47,12 +49,12 @@ export function BottomNav() {
     ? [...MORE_ITEMS_ALL, ...MORE_ITEMS_MANAGERIAL]
     : MORE_ITEMS_ALL;
 
-  // 主 4 列のいずれかに該当するルートか
+  // 主 5 列のいずれかに該当するルートか
   const isMoreActive = moreItems.some((item) => pathname === item.to);
 
   return (
     <>
-      <ul className="grid h-full grid-cols-5 pb-[env(safe-area-inset-bottom)]">
+      <ul className="grid h-full grid-cols-6 pb-[env(safe-area-inset-bottom)]">
         {PRIMARY_ITEMS.map((item) => {
           const active = pathname === item.to;
           const Icon = item.icon;
