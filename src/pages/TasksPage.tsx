@@ -610,6 +610,8 @@ export function TasksPage(): JSX.Element {
               const subtaskTotal = t.subtask_total ?? 0;
               const subtaskDone = t.subtask_done ?? 0;
               const hasSubtasks = subtaskTotal > 0;
+              const canAddChild = canManage || canAct;
+              const showExpandToggle = hasSubtasks || canAddChild;
               const isExpanded = expandedParentIds.has(t.id);
               const expandRowId = `subtasks-${t.id}`;
               const projectColor = getProjectColor(t.project_id);
@@ -669,7 +671,7 @@ export function TasksPage(): JSX.Element {
                   </span>
 
                   <span className="flex min-w-0 items-center gap-1.5">
-                    {hasSubtasks ? (
+                    {showExpandToggle ? (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -795,7 +797,7 @@ export function TasksPage(): JSX.Element {
                   </span>
                 </div>
 
-                {hasSubtasks && isExpanded && (
+                {isExpanded && (
                   <div
                     id={expandRowId}
                     className="border-b border-l-[3px] border-b-stone-200/70 bg-stone-50/50 px-4 py-1 dark:border-b-stone-700/60 dark:bg-stone-900/30"
