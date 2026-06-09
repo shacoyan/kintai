@@ -847,6 +847,25 @@ export function TasksPage(): JSX.Element {
         parentTaskId={dialog?.mode === 'create' ? (dialog.parentTaskId ?? null) : null}
         defaultAssigneeUserId={null}
         initialStatus={dialog?.mode === 'create' ? dialog.initialStatus : undefined}
+        subtaskSection={(() => {
+          const editingParent = dialog?.mode === 'edit' ? dialog.task : undefined;
+          if (!editingParent || editingParent.parent_task_id) return undefined;
+          return (
+            <SubtaskSection
+              parentTask={editingParent}
+              children={childrenByParentId.get(editingParent.id) ?? []}
+              memberNames={memberNames}
+              onComplete={(id) => void handleComplete(id)}
+              onReopen={(id) => void handleReopen(id)}
+              onEditChild={(child) => openEdit(child)}
+              onDeleteChild={(child) => setDeletingTaskId(child.id)}
+              onAddChild={() => openCreateChild(editingParent)}
+              canAct={canActOnTask}
+              canManage={canManage}
+              currentUserId={user?.id}
+            />
+          );
+        })()}
         onSave={async (input: ComponentsTaskInput) => {
           setSaving(true);
           try {

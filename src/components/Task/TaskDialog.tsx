@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
@@ -32,6 +32,13 @@ export interface TaskDialogProps {
   parentTaskId?: string | null;
   /** create mode の初期 project (子タスクで親 project を継承させる用) */
   defaultProjectId?: string | null;
+  /**
+   * edit mode かつ親になりうるタスク（parent_task_id 無し）の場合に、
+   * 期限日フィールドの下へ描画する子タスクセクション。
+   * 呼び出し側で <SubtaskSection .../> を組み立てて渡す。
+   * 未指定（list の旧経路・create・子タスク編集時）は非表示。
+   */
+  subtaskSection?: ReactNode;
 }
 
 /** 担当者集合が等しいか（順序非依存） */
@@ -68,6 +75,7 @@ export function TaskDialog({
   initialStatus,
   parentTaskId = null,
   defaultProjectId = null,
+  subtaskSection,
 }: TaskDialogProps): JSX.Element | null {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -325,6 +333,15 @@ export function TaskDialog({
           onChange={(e) => setDueDate(e.target.value || null)}
           disabled={isReadonly || loading}
         />
+
+        {subtaskSection && (
+          <div className="border-t border-stone-200 pt-4 dark:border-stone-700">
+            <p className="mb-1 px-1 text-sm font-medium text-stone-700 dark:text-stone-200">
+              子タスク
+            </p>
+            {subtaskSection}
+          </div>
+        )}
       </div>
     </BottomSheet>
   );
