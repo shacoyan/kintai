@@ -12,11 +12,15 @@ interface BottomSheetProps {
   description?: string;
   footer?: React.ReactNode;
   children: React.ReactNode;
+  /** Sheet 本体の最大幅クラス。未指定なら従来の 'md:max-w-lg'（512px）。後方互換のため必ず任意。 */
+  widthClassName?: string;
+  /** title 無しダイアログの aria-label。未指定なら従来の 'ダイアログ'。後方互換のため任意。 */
+  ariaLabel?: string;
 }
 
 // Perf: 親 (ShiftPage) の頻繁な再 render に追従させないため React.memo でラップ。
 // children は通常 children element も親側で安定化されていれば skip 効果あり。
-const BottomSheetInner: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, description, footer, children }) => {
+const BottomSheetInner: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, description, footer, children, widthClassName, ariaLabel }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
   const reactId = useId();
   const titleId = title ? `bottomsheet-title-${reactId}` : undefined;
@@ -47,7 +51,7 @@ const BottomSheetInner: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, 
       ariaProps['aria-describedby'] = descId;
     }
   } else {
-    ariaProps['aria-label'] = 'ダイアログ';
+    ariaProps['aria-label'] = ariaLabel ?? 'ダイアログ';
   }
 
   return (
@@ -64,7 +68,7 @@ const BottomSheetInner: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, 
         role="dialog"
         aria-modal="true"
         {...ariaProps}
-        className="relative w-full md:max-w-lg bg-white dark:bg-stone-900 rounded-t-2xl md:rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] max-h-[90vh] flex flex-col overflow-hidden motion-safe:animate-slide-up md:animate-none motion-safe:transition-transform duration-200 ease-out"
+        className={`relative w-full ${widthClassName ?? 'md:max-w-lg'} bg-white dark:bg-stone-900 rounded-t-2xl md:rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] max-h-[90vh] flex flex-col overflow-hidden motion-safe:animate-slide-up md:animate-none motion-safe:transition-transform duration-200 ease-out`}
       >
         {/* Handle bar (mobile only) */}
         <div className="md:hidden flex justify-center flex-shrink-0">

@@ -16,7 +16,6 @@ import {
   Info,
   Calendar,
   Check,
-  ChevronRight,
   ListChecks,
 } from 'lucide-react';
 import { useTasks, useTaskMutations, type TaskInput } from '../hooks/useTasks';
@@ -42,12 +41,14 @@ import type {
 import {
   TaskFilterBar,
   TaskDialog,
+  TaskDetailDialog,
   SubtaskSection,
   type TaskInput as ComponentsTaskInput,
   type TaskFilterValue,
   type MemberOption,
   type StoreOption,
 } from '../components/Task';
+import { statusMeta } from '../components/Task/taskStatusMeta';
 import { ResponsiveKanban } from '../components/Kanban/ResponsiveKanban';
 import { StoreTabBar } from '../components/Kanban/StoreTabBar';
 import { PrimaryActionButton } from '../components/Kanban/PrimaryActionButton';
@@ -63,7 +64,7 @@ import { getProjectColor } from '../lib/projectColor';
 // ─── ダイアログ状態 ──────────────────────────────────────────
 
 interface DialogState {
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'detail';
   task?: Task;
   /** create mode で kanban カラム + ボタンから渡された初期 status */
   initialStatus?: TaskStatus;
@@ -99,13 +100,6 @@ const priorityLabel: Record<TaskPriority, string> = {
   2: '高',
   1: '通常',
   0: '低',
-};
-
-const statusMeta: Record<TaskStatus, { label: string; text: string; dot: string }> = {
-  todo: { label: '未着手', text: 'text-stone-500', dot: 'bg-stone-400' },
-  in_progress: { label: '進行中', text: 'text-blue-600', dot: 'bg-blue-500' },
-  done: { label: '完了', text: 'text-emerald-600', dot: 'bg-emerald-500' },
-  cancelled: { label: '中止', text: 'text-red-600', dot: 'bg-red-500' },
 };
 
 const avatarColors = [
@@ -340,19 +334,10 @@ export function TasksPage(): JSX.Element {
   const [saving, setSaving] = useState<boolean>(false);
   const [deleting, setDeleting] = useState<boolean>(false);
 
-  // ── 子タスク展開状態 (list) ──
-  const [expandedParentIds, setExpandedParentIds] = useState<Set<string>>(new Set());
-  const toggleExpanded = useCallback((parentId: string): void => {
-    setExpandedParentIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(parentId)) next.delete(parentId);
-      else next.add(parentId);
-      return next;
-    });
-  }, []);
-
   const openCreate = (initialStatus?: TaskStatus): void => setDialog({ mode: 'create', initialStatus });
   const openEdit = (task: Task): void => setDialog({ mode: 'edit', task });
+  // タスククリック → 詳細ビュー（看板付き）。編集は詳細内の「編集」ボタンから。
+  const openDetail = (task: Task): void => setDialog({ mode: 'detail', task });
   // 親タスクの store/project を継承して子タスク作成ダイアログを開く
   const openCreateChild = useCallback((parent: Task): void => {
     setDialog({
@@ -566,7 +551,7 @@ export function TasksPage(): JSX.Element {
         <div className="min-h-[calc(100vh-260px)]">
           <ResponsiveKanban
             tasks={parentTasks}
-            onTaskClick={(task) => setDialog({ mode: 'edit', task })}
+            onTaskClick={(task) => openDetail(task)}
             myRole={myRoleNarrow}
             isParttime={isParttime}
             currentUserId={user?.id}
@@ -610,10 +595,6 @@ export function TasksPage(): JSX.Element {
               const subtaskTotal = t.subtask_total ?? 0;
               const subtaskDone = t.subtask_done ?? 0;
               const hasSubtasks = subtaskTotal > 0;
-              const canAddChild = canManage || canAct;
-              const showExpandToggle = hasSubtasks || canAddChild;
-              const isExpanded = expandedParentIds.has(t.id);
-              const expandRowId = `subtasks-${t.id}`;
               const projectColor = getProjectColor(t.project_id);
               const projectName = t.project_id ? projectNames.get(t.project_id) : undefined;
               const assignees = (t.assignee_user_ids ?? []).map((id) => ({
@@ -631,16 +612,16 @@ export function TasksPage(): JSX.Element {
               return (
                 <div key={t.id}>
                 <div
-                  role={canOpen ? 'button' : undefined}
-                  tabIndex={canOpen ? 0 : undefined}
-                  onClick={canOpen ? () => openEdit(t) : undefined}
-                  onKeyDown={canOpen ? (e) => {
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openDetail(t)}
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      openEdit(t);
+                      openDetail(t);
                     }
-                  } : undefined}
-                  className={`grid grid-cols-[20px_32px_minmax(260px,1fr)_160px_80px_70px_80px_70px_40px] items-center gap-3 border-b border-l-[3px] border-b-stone-200/70 px-4 py-2.5 last:border-b-0 ${projectColor.border} ${canOpen ? 'cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-900/60' : ''}`}
+                  }}
+                  className={`grid grid-cols-[20px_32px_minmax(260px,1fr)_160px_80px_70px_80px_70px_40px] items-center gap-3 border-b border-l-[3px] border-b-stone-200/70 px-4 py-2.5 last:border-b-0 ${projectColor.border} cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-900/60`}
                 >
                   <button
                     type="button"
@@ -671,26 +652,7 @@ export function TasksPage(): JSX.Element {
                   </span>
 
                   <span className="flex min-w-0 items-center gap-1.5">
-                    {showExpandToggle ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleExpanded(t.id);
-                        }}
-                        aria-expanded={isExpanded}
-                        aria-controls={expandRowId}
-                        aria-label={isExpanded ? '子タスクを折りたたむ' : '子タスクを展開'}
-                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-stone-400 hover:bg-stone-100 hover:text-stone-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:bg-stone-700 dark:hover:text-stone-300"
-                      >
-                        <ChevronRight
-                          className={`h-3.5 w-3.5 motion-safe:transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                          aria-hidden="true"
-                        />
-                      </button>
-                    ) : (
-                      <span className="h-5 w-5 shrink-0" aria-hidden="true" />
-                    )}
+                    <span className="h-5 w-5 shrink-0" aria-hidden="true" />
                     <span
                       className={`truncate text-[13px] font-medium ${
                         isDone || t.status === 'cancelled'
@@ -796,28 +758,6 @@ export function TasksPage(): JSX.Element {
                     })()}
                   </span>
                 </div>
-
-                {isExpanded && (
-                  <div
-                    id={expandRowId}
-                    className="border-b border-l-[3px] border-b-stone-200/70 bg-stone-50/50 px-4 py-1 dark:border-b-stone-700/60 dark:bg-stone-900/30"
-                    style={{ borderLeftColor: 'transparent' }}
-                  >
-                    <SubtaskSection
-                      parentTask={t}
-                      children={childrenByParentId.get(t.id) ?? []}
-                      memberNames={memberNames}
-                      onComplete={(id) => void handleComplete(id)}
-                      onReopen={(id) => void handleReopen(id)}
-                      onEditChild={(child) => openEdit(child)}
-                      onDeleteChild={(child) => setDeletingTaskId(child.id)}
-                      onAddChild={() => openCreateChild(t)}
-                      canAct={canActOnTask}
-                      canManage={canManage}
-                      currentUserId={user?.id}
-                    />
-                  </div>
-                )}
                 </div>
               );
             })
@@ -826,11 +766,45 @@ export function TasksPage(): JSX.Element {
         </div>
       )}
 
+      {/* 詳細ビュー（看板付き・閲覧主体）。detail のみ描画。 */}
+      {dialog?.mode === 'detail' && dialog.task && (() => {
+        // P1: dialog.task は detail を開いた時点のスナップショット。子の完了/再開/削除 →
+        // refetch() で tasks（subtask_total/subtask_done 含む）は最新化されるため、
+        // id 解決で最新の親タスクを使い進捗バーの stale を防ぐ。
+        const detailTask = tasks.find((t) => t.id === dialog.task!.id) ?? dialog.task;
+        // P2: 旧 list 行の canOpen と同式で編集ボタンの出し分けを踏襲。
+        const canEdit =
+          detailTask.status === 'done' || detailTask.status === 'cancelled'
+            ? canManage
+            : canActOnTask(detailTask);
+        return (
+          <TaskDetailDialog
+            open
+            onClose={closeDialog}
+            task={detailTask}
+            children={childrenByParentId.get(detailTask.id) ?? []}
+            memberNames={memberNames}
+            projectNames={projectNames}
+            storeNames={storeNames}
+            onEdit={() => openEdit(detailTask)}
+            canEdit={canEdit}
+            onCompleteChild={(childId) => void handleComplete(childId)}
+            onReopenChild={(childId) => void handleReopen(childId)}
+            onEditChild={(child) => openEdit(child)}
+            onDeleteChild={(child) => setDeletingTaskId(child.id)}
+            onAddChild={() => openCreateChild(detailTask)}
+            canAct={canActOnTask}
+            canManage={canManage}
+            currentUserId={user?.id}
+          />
+        );
+      })()}
+
       {/* 新規/編集ダイアログ */}
       <TaskDialog
-        open={dialog !== null}
+        open={dialog?.mode === 'edit' || dialog?.mode === 'create'}
         onOpenChange={(o) => { if (!o) closeDialog(); }}
-        mode={dialog?.mode ?? 'create'}
+        mode={dialog?.mode === 'edit' ? 'edit' : 'create'}
         task={dialog?.mode === 'edit' ? dialog.task : undefined}
         tenantId={tenantId}
         projects={selectableProjects}
