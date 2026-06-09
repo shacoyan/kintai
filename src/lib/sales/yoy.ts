@@ -387,11 +387,17 @@ export function buildYoYResultFromResponses(args: {
         lastYearTotals.staff_customer_count
       : null;
 
+  // 売上 YoY は未決済 (open) 込みの母数を使う。
+  // 決済済フィールド total_amount に open_total_amount を加えた値を当年・前年とも用いる。
+  const currentSalesTotal =
+    currentTotals.total_amount + currentTotals.open_total_amount;
+  const lastYearSalesTotal =
+    lastYearTotals != null
+      ? lastYearTotals.total_amount + lastYearTotals.open_total_amount
+      : null;
+
   const yoy = {
-    total_amount: calculateYoY(
-      currentTotals.total_amount,
-      lastYearTotals?.total_amount ?? null,
-    ),
+    total_amount: calculateYoY(currentSalesTotal, lastYearSalesTotal),
     transaction_count: calculateYoY(
       currentTotals.transaction_count,
       lastYearTotals?.transaction_count ?? null,

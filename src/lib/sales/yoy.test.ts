@@ -450,4 +450,48 @@ describe('buildYoYResultFromResponses', () => {
     expect(res.byDate[0].lastYear).not.toBeNull();
     expect(res.byDate[1].lastYear).toBeNull();
   });
+
+  it('売上 YoY 母数は未決済 (open) 込み（total_amount + open_total_amount）で当年・前年とも計算する', () => {
+    // current: 決済済 200 + open 50 = 250。4 セグ合計 = 10+5+3+2 = 20。
+    const current: SalesRangeLike = {
+      byDate: {
+        '2026-05-01': day({
+          total_amount: 200,
+          open_total_amount: 50,
+          new_customer_count: 10,
+          repeat_customer_count: 5,
+          regular_customer_count: 3,
+          staff_customer_count: 2,
+        }),
+      },
+    };
+    // lastYear: 決済済 100 + open 20 = 120。4 セグ合計 = 5+3+1+1 = 10（有効データ扱い）。
+    const lastYear: SalesRangeLike = {
+      byDate: {
+        '2025-05-01': day({
+          total_amount: 100,
+          open_total_amount: 20,
+          new_customer_count: 5,
+          repeat_customer_count: 3,
+          regular_customer_count: 1,
+          staff_customer_count: 1,
+        }),
+      },
+    };
+
+    const res = buildYoYResultFromResponses({
+      start_date: '2026-05-01',
+      end_date: '2026-05-01',
+      currentRes: current,
+      lastYearRes: lastYear,
+    });
+
+    // 売上 YoY 母数は open 込み: current 250 vs lastYear 120 = +108.33%。
+    expect(res.yoy.total_amount.current).toBe(250);
+    expect(res.yoy.total_amount.lastYear).toBe(120);
+    expect(res.yoy.total_amount.deltaPercent).toBeCloseTo(108.33, 2);
+    expect(res.yoy.total_amount.classification).toBe('up');
+    // 決済済フィールド total_amount は open 込みに変えない（不変）。
+    expect(res.current.total_amount).toBe(200);
+  });
 });
