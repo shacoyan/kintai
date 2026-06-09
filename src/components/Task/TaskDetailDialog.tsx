@@ -7,6 +7,33 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { statusMeta } from './taskStatusMeta';
 import { SubtaskKanban } from './SubtaskKanban';
 
+// アバター色 helper（SubtaskKanban.tsx / list 行と同一実装をローカル複製）。
+// 共通化（lib/avatarColor.ts への集約）は将来課題（設計書 §6）。
+const avatarColors = [
+  'bg-stone-200 text-stone-700',
+  'bg-blue-100 text-blue-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-orange-100 text-orange-700',
+  'bg-purple-100 text-purple-700',
+  'bg-cyan-100 text-cyan-700',
+  'bg-amber-100 text-amber-700',
+  'bg-indigo-100 text-indigo-700',
+];
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function getAvatarColor(userId: string | null): string {
+  if (!userId) return avatarColors[0];
+  return avatarColors[hashString(userId) % avatarColors.length];
+}
+
 export interface TaskDetailDialogProps {
   open: boolean;
   onClose: () => void;
@@ -70,6 +97,15 @@ export function TaskDetailDialog({
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
   const showAddButton = canManage || canAct(task);
+
+  // 担当者（#7）: assignee_user_ids を memberNames で名前解決。空配列 = 未割当。
+  const assignees = (task.assignee_user_ids ?? []).map((userId) => ({
+    userId,
+    name: memberNames.get(userId) ?? '?',
+  }));
+
+  // 説明（#6）: null / trim 後空文字ならブロックごと非表示。
+  const descriptionText = task.description != null ? String(task.description).trim() : '';
 
   return (
     <BottomSheet isOpen={open} onClose={onClose} widthClassName="md:max-w-3xl" ariaLabel="タスク詳細">
@@ -147,7 +183,45 @@ export function TaskDetailDialog({
             <dt className="text-[11px] font-medium text-stone-400 dark:text-stone-500">店舗</dt>
             <dd className="text-stone-800 dark:text-stone-200">{storeName}</dd>
           </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-[11px] font-medium text-stone-400 dark:text-stone-500">担当者</dt>
+            <dd>
+              {assignees.length === 0 ? (
+                <span className="text-stone-400 dark:text-stone-500">未割当</span>
+              ) : (
+                <span className="flex items-center -space-x-1.5">
+                  {assignees.slice(0, 3).map((a) => (
+                    <span
+                      key={a.userId}
+                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold dark:border-stone-900 ${getAvatarColor(a.userId)}`}
+                      title={a.name}
+                    >
+                      {a.name.slice(0, 1)}
+                    </span>
+                  ))}
+                  {assignees.length > 3 && (
+                    <span
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-stone-200 text-[10px] font-semibold text-stone-600 dark:border-stone-900 dark:bg-stone-700 dark:text-stone-300"
+                      title={assignees.slice(3).map((a) => a.name).join(', ')}
+                    >
+                      +{assignees.length - 3}
+                    </span>
+                  )}
+                </span>
+              )}
+            </dd>
+          </div>
         </dl>
+
+        {/* 説明（#6）: 説明があるときだけ全文表示（改行保持・折返し） */}
+        {descriptionText && (
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-medium text-stone-400 dark:text-stone-500">説明</span>
+            <p className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-stone-700 dark:text-stone-300">
+              {descriptionText}
+            </p>
+          </div>
+        )}
 
         {/* 進捗バー */}
         <div className="space-y-1.5">

@@ -74,6 +74,8 @@ interface DialogState {
   initialStoreId?: string | null;
   /** create mode の初期 project (子タスクで親 project を継承) */
   initialProjectId?: string | null;
+  /** create/edit を閉じた後に詳細へ戻す親 Task。無ければボード(null)へ。 */
+  returnTo?: Task;
 }
 
 function buildTaskMenuItems(args: {
@@ -335,18 +337,33 @@ export function TasksPage(): JSX.Element {
   const [deleting, setDeleting] = useState<boolean>(false);
 
   const openCreate = (initialStatus?: TaskStatus): void => setDialog({ mode: 'create', initialStatus });
-  const openEdit = (task: Task): void => setDialog({ mode: 'edit', task });
+  // returnTo を渡すと編集の保存/キャンセル後に詳細ビュー（その親）へ戻る（#1(b)）。
+  // 省略時は従来どおりボードへ。詳細内の子編集 1 箇所のみ returnTo を渡す。
+  const openEdit = (task: Task, returnTo?: Task): void => setDialog({ mode: 'edit', task, returnTo });
   // タスククリック → 詳細ビュー（看板付き）。編集は詳細内の「編集」ボタンから。
   const openDetail = (task: Task): void => setDialog({ mode: 'detail', task });
-  // 親タスクの store/project を継承して子タスク作成ダイアログを開く
-  const openCreateChild = useCallback((parent: Task): void => {
+  // 親タスクの store/project を継承して子タスク作成ダイアログを開く。
+  // returnTo を渡すと、保存/キャンセル後に詳細ビュー（その親）へ戻る（#1）。
+  const openCreateChild = useCallback((parent: Task, returnTo?: Task): void => {
     setDialog({
       mode: 'create',
       parentTaskId: parent.id,
       initialStoreId: parent.store_id ?? null,
       initialProjectId: parent.project_id ?? null,
+      returnTo,
     });
   }, []);
+  // create/edit を閉じる際、returnTo があれば詳細へ戻し、無ければ null（ボード）。
+  // dialog クローズ判断をこの1経路に集約し、onSave 末尾の setDialog(null) と
+  // TaskDialog の onOpenChange(false) による二重 setState 競合を解消する（#1）。
+  // 関数形式 updater で prev.returnTo を読み stale クロージャを回避。
+  const closeOrReturn = useCallback((): void => {
+    if (saving) return; // 保存中の誤クローズ防止（既存 closeDialog と同等ガード）
+    setDialog((prev) => {
+      if (prev?.returnTo) return { mode: 'detail', task: prev.returnTo };
+      return null;
+    });
+  }, [saving]);
   const closeDialog = (): void => {
     if (!saving) setDialog(null);
   };
@@ -790,9 +807,9 @@ export function TasksPage(): JSX.Element {
             canEdit={canEdit}
             onCompleteChild={(childId) => void handleComplete(childId)}
             onReopenChild={(childId) => void handleReopen(childId)}
-            onEditChild={(child) => openEdit(child)}
+            onEditChild={(child) => openEdit(child, detailTask)}
             onDeleteChild={(child) => setDeletingTaskId(child.id)}
-            onAddChild={() => openCreateChild(detailTask)}
+            onAddChild={() => openCreateChild(detailTask, detailTask)}
             canAct={canActOnTask}
             canManage={canManage}
             currentUserId={user?.id}
@@ -803,7 +820,7 @@ export function TasksPage(): JSX.Element {
       {/* 新規/編集ダイアログ */}
       <TaskDialog
         open={dialog?.mode === 'edit' || dialog?.mode === 'create'}
-        onOpenChange={(o) => { if (!o) closeDialog(); }}
+        onOpenChange={(o) => { if (!o) closeOrReturn(); }}
         mode={dialog?.mode === 'edit' ? 'edit' : 'create'}
         task={dialog?.mode === 'edit' ? dialog.task : undefined}
         tenantId={tenantId}
@@ -866,7 +883,8 @@ export function TasksPage(): JSX.Element {
               showToast('タスクを更新しました', 'success');
             }
             await refetch();
-            setDialog(null);
+            // dialog クローズ/詳細復帰は TaskDialog の onOpenChange(false) →
+            // closeOrReturn に一本化（二重 setState 競合回避のため、ここでは閉じない）。
           } catch (err) {
             const fallback = dialog?.mode === 'create' ? '作成に失敗しました' : '更新に失敗しました';
             const message = err instanceof Error ? err.message : fallback;
