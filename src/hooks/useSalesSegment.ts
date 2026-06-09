@@ -12,8 +12,10 @@ import type { CustomerSegmentAnalysis, PeriodPreset } from '../lib/sales/types';
 // -----------------------------------------------------------------------------
 // 在庫の `useSalesRange`（RPC=`get_sales_range_scoped`・`withSquareSession`
 // fail-closed）と在庫の `buildSegmentAnalysisFromSalesRange`（byDate →
-// `CustomerSegmentAnalysis` 変換。客数=新規+リピート+常連+スタッフ+記載なしの
-// 5 セグ合計・二重計上回避・daily trend を granularity 集約）を繋ぐ薄い hook。
+// `CustomerSegmentAnalysis` 変換。客数=新規+リピート+常連+スタッフの 4 セグ合計
+// （記載なし=unlisted は内訳/グラフには保持するが、客数 headline・客単価分母から
+// は除外＝salesRangeAdapter.ts で 4 セグ合計に統一）・二重計上回避・daily trend を
+// granularity 集約）を繋ぐ薄い hook。
 //
 // 追補E（設計書 L574）: dates(from/to) は SalesPage 側で
 // `calculatePeriodDates` を一度算出し、`useSalesSegment` / `useSalesYoY` /

@@ -111,6 +111,10 @@ export function useSalesRange(args: UseSalesRangeArgs): UseSalesRangeResult {
 
     if (!enabled) {
       setLoading(false);
+      // stale クリア（EMPTY_RESPONSE ではなく null=未フェッチ状態に倒す）。
+      // owner→staff 切替や enabled=false 時に旧データ（他店含む）の残存表示を防ぐ。
+      setData(null);
+      setError(null);
       return;
     }
 

@@ -53,12 +53,34 @@ export function getMonthWeekCount(year: number, month: number): number {
 }
 
 /**
+ * baseDate(year/month/day) が属する「現在週 index」を返す純関数 (B4)。
+ *
+ * 正本である calculatePeriodDates の week 省略時 effectiveIndex と**全日一致**する
+ * 単一の式に統一する（getFirstWeekMonday＝月初を含む週の月曜・前月跨ぎあり起点）。
+ * SalesPage 側の独自定義（月内最初の月曜＝第1月曜）は月初が月曜でない月で 1 週
+ * ズレるため、本関数へ寄せる。1 未満は 1 にクランプし、getMonthWeekCount を上限とする。
+ */
+export function currentWeekIndex(year: number, month: number, day: number): number {
+  const firstMon = getFirstWeekMonday(year, month);
+  const baseDateUTC = Date.UTC(year, month - 1, day);
+  const days = (baseDateUTC - firstMon.getTime()) / 86400000;
+  let idx = Math.floor(days / 7) + 1;
+  if (idx < 1) idx = 1;
+  const weekCount = getMonthWeekCount(year, month);
+  if (weekCount > 0 && idx > weekCount) idx = weekCount;
+  return idx;
+}
+
+/**
  * メイン: PeriodPreset → 日付列 (YYYY-MM-DD[])
  *
  * @param period      'today' | 'week' | 'month' | 'quarter' | 'year'
  * @param baseDate    JST の YYYY-MM-DD 文字列
  * @param weekIndex   week のとき 1..N（省略時は baseDate から自動算出）
  * @param quarterIndex quarter のとき 1..4（省略時は baseDate の月から自動算出）
+ * @param startHour    「今日」上限の営業日判定に使う営業開始時刻。呼び出し側で
+ *                     営業日基準を使う場合は明示すること。省略時=0 は暦日（JST）
+ *                     基準の後方互換挙動（default 0 維持＝従来テスト契約を保護）。
  */
 export function calculatePeriodDates(
   period: PeriodPreset,

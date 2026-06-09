@@ -68,8 +68,11 @@ export function useSalesYoY(args: UseSalesYoYArgs): UseSalesYoYResult {
   });
 
   const data = useMemo<SalesRangeYoYResult | null>(() => {
-    if (!cur.data) return null;
+    // current 失敗 / 未取得は YoY 全体を null（バッジ非表示）に倒す。
+    // cur.data は fail-closed で EMPTY_RESPONSE が入り得るため、cur.error も併せて見る。
+    if (cur.error || !cur.data) return null;
     // 前年が空（byDate 0 件）なら lastYearRes=null で渡す → no_data 扱い（部分成功）。
+    // ly.error 時も EMPTY_RESPONSE（byDate 空）が入るため同判定で null に倒れる。
     const lastYearRes =
       ly.data && Object.keys(ly.data.byDate).length > 0 ? ly.data : null;
     return buildYoYResultFromResponses({
@@ -78,7 +81,7 @@ export function useSalesYoY(args: UseSalesYoYArgs): UseSalesYoYResult {
       currentRes: cur.data,
       lastYearRes,
     });
-  }, [cur.data, ly.data, from, to]);
+  }, [cur.error, cur.data, ly.data, from, to]);
 
   return {
     data,

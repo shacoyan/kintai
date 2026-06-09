@@ -18,11 +18,15 @@ import {
   SegmentTrendChart,
   AcquisitionChart,
   LocationBarChart,
+  WeekdayBarChart,
 } from '../components/sales/charts';
 import { formatYen } from '../components/sales/utils';
 import { getBusinessDate } from '../lib/sales/businessDate';
-import { calculatePeriodDates, getMonthWeekCount } from '../lib/sales/periodDates';
+import { calculatePeriodDates, getMonthWeekCount, currentWeekIndex } from '../lib/sales/periodDates';
+import { granularityFor, cardTitleByGranularity } from '../lib/sales/trendAggregation';
+import { aggregateByWeekday } from '../lib/sales/weekdayAggregation';
 import type { PeriodPreset } from '../lib/sales/types';
+import { calculateYoY } from '../lib/sales/yoy';
 import type { YoYDelta, DailyTotalPoint, SalesRangeYoYResult } from '../lib/sales/yoy';
 
 // =============================================================================
@@ -43,6 +47,16 @@ import type { YoYDelta, DailyTotalPoint, SalesRangeYoYResult } from '../lib/sale
 const ALL_VALUE = '__ALL__';
 // SABABA 全 7 店は営業開始 11:00（営業日区切り 11 時）。
 const STORE_START_HOUR = 11;
+
+// セグメント別 KPI カードのラベル定義（B7）。new/repeat/regular/staff=客数+YoY、
+// unlisted=売上額のみ（YoY なし）。yoy.data に unlisted 客数 YoY が無いため出さない。
+const SEGMENT_LABELS = [
+  { key: 'new', label: '新規' },
+  { key: 'repeat', label: 'リピート' },
+  { key: 'regular', label: '常連' },
+  { key: 'staff', label: 'スタッフ' },
+  { key: 'unlisted', label: '記載なし' },
+] as const;
 
 /**
  * YoY 系列を描いてよいか（前年データが十分にあるとき）。
@@ -121,11 +135,8 @@ export const SalesPage: React.FC = () => {
   }, [scopeLoading, options, selected, canViewAll]);
 
   // --- 期間セレクタ ---
-  const [period, setPeriod] = useState<PeriodPreset>('month');
-  const [weekIndex, setWeekIndex] = useState<number>(1);
-  const [quarterIndex, setQuarterIndex] = useState<number>(1);
-
   // 営業日基準の「今日」（getBusinessDate(11)）。elapsedDays・期間上限の基準。
+  // マウント時 1 回確定（週/四半期の初期選択にも使うため useState より前に算出）。
   const baseDate = useMemo(() => getBusinessDate(STORE_START_HOUR), []);
 
   // week 選択肢数（baseDate の年月内の月曜起算週数）。
@@ -133,6 +144,18 @@ export const SalesPage: React.FC = () => {
     const [by, bm] = baseDate.split('-').map(Number);
     return getMonthWeekCount(by, bm);
   }, [baseDate]);
+
+  const [period, setPeriod] = useState<PeriodPreset>('month');
+  // B4: 週/四半期の初期選択を baseDate（営業日 today）の現在週・現在四半期に lazy init。
+  const [weekIndex, setWeekIndex] = useState<number>(() => {
+    // 正本 calculatePeriodDates の week 省略時 effectiveIndex と同一式（B4）。
+    const [by0, bm0, bd0] = baseDate.split('-').map(Number);
+    return currentWeekIndex(by0, bm0, bd0);
+  });
+  const [quarterIndex, setQuarterIndex] = useState<number>(() => {
+    const [, bm0] = baseDate.split('-').map(Number);
+    return Math.floor((bm0 - 1) / 3) + 1;
+  });
 
   // --- dates（from/to）を一度だけ算出して 3 hook に共有（二重計算・期間ズレ防止）---
   const { from, to } = useMemo(() => {
@@ -202,6 +225,61 @@ export const SalesPage: React.FC = () => {
   const salesTrend = toTrend(effectiveYoY?.yoy.total_amount);
   const customerTrend = toTrend(effectiveYoY?.yoy.customer_count);
 
+  // B6: 客単価の YoY バッジ（表示値は据置・バッジのみ付与）。
+  // 当年/前年の perCustomer を yoy.current / yoy.lastYear から算出する。
+  // 売上は open 込み（total_amount + open_total_amount）でカード表示値（totalSales）と母数を
+  // 揃える（B6）。客数母数は 4 セグ合計（new+repeat+regular+staff）に統一（unique customer_count
+  // は使わない）。
+  // NOTE: avgDaily（1日平均売上）の YoY は前年母数の集合整合（当年/前年で日数集合を揃える）が
+  // 要るため、ここでは付与せず別Loop（displayMetrics 統一）で正しく再実装する。
+  const derivedYoY = useMemo<{ perCustomer: YoYDelta | null }>(() => {
+    const y = effectiveYoY;
+    if (!y) return { perCustomer: null };
+    const curTotal = y.current.total_amount + y.current.open_total_amount;
+    const curSeg =
+      y.current.new_customer_count +
+      y.current.repeat_customer_count +
+      y.current.regular_customer_count +
+      y.current.staff_customer_count;
+    const curPerCustomer = curSeg > 0 ? curTotal / curSeg : null;
+    const lyTotal = y.lastYear
+      ? y.lastYear.total_amount + y.lastYear.open_total_amount
+      : null;
+    const lySeg = y.lastYear
+      ? y.lastYear.new_customer_count +
+        y.lastYear.repeat_customer_count +
+        y.lastYear.regular_customer_count +
+        y.lastYear.staff_customer_count
+      : null;
+    const lyPerCustomer =
+      lyTotal !== null && lySeg !== null && lySeg > 0 ? lyTotal / lySeg : null;
+    return {
+      perCustomer: curPerCustomer !== null ? calculateYoY(curPerCustomer, lyPerCustomer) : null,
+    };
+  }, [effectiveYoY]);
+
+  // B7: セグメント別 KPI の客数 YoY を動的キーで型安全に引く固定マップ。
+  // 以前は SEGMENT_LABELS.map のクロージャ内で毎反復生成していたが、effectiveYoY のみに
+  // 依存する固定 Record なので map 外（useMemo）へ移し一度だけ生成する（挙動不変）。
+  const segmentYoYMap = useMemo<
+    Record<'new' | 'repeat' | 'regular' | 'staff', YoYDelta | undefined>
+  >(
+    () => ({
+      new: effectiveYoY?.yoy.new_customer_count,
+      repeat: effectiveYoY?.yoy.repeat_customer_count,
+      regular: effectiveYoY?.yoy.regular_customer_count,
+      staff: effectiveYoY?.yoy.staff_customer_count,
+    }),
+    [effectiveYoY],
+  );
+
+  // B8: 曜日別分析。日次粒度の rawDailyTrend を入力に month〜日の平均を集計。
+  // dailyTrend は granularity 集約後で曜日が消えるため必ず rawDailyTrend を使う。mode=average 固定。
+  const weekdayAggregates = useMemo(
+    () => aggregateByWeekday(segment.data?.rawDailyTrend ?? [], 'average'),
+    [segment.data?.rawDailyTrend],
+  );
+
   // 店舗別比較は表示棒の高さ（totalSales=決済済+未決済）と並びを一致させる。
   // RPC は total_amount(決済済)のみ DESC で返すため、open 込みの totalSales で再ソートする。
   // normalizeByLocation の契約（再ソートしない）は保持し、表示直前でのみ並べ替える。
@@ -223,7 +301,7 @@ export const SalesPage: React.FC = () => {
           <div>
             <h1 className="text-lg font-semibold text-stone-900 dark:text-stone-100">売上</h1>
             <p className="text-xs text-stone-500 dark:text-stone-400">
-              Square 売上ダッシュボード（前日まで集計）
+              Square 売上ダッシュボード（前日まで確定／当日は暫定値）
             </p>
           </div>
 
@@ -292,6 +370,7 @@ export const SalesPage: React.FC = () => {
                   ? null
                   : formatYen(Math.round(data.overallAveragePerCustomer))
               }
+              trend={showYoY ? toTrend(derivedYoY.perCustomer ?? undefined) : undefined}
             />
             <StatCard
               label="1日平均売上"
@@ -300,8 +379,40 @@ export const SalesPage: React.FC = () => {
                   ? null
                   : formatYen(Math.round(data.averageDailySales))
               }
+              // avgDaily YoY は前年母数の集合整合が要るため別Loop（displayMetrics 統一）で再実装する
+              trend={undefined}
             />
           </div>
+
+          {/* セグメント別 KPI（B7）: new/repeat/regular/staff=客数+YoY、unlisted=売上額のみ。
+              unlisted 客数 YoY と全セグメントの売上 YoY は yoy.data に無いため出さない。 */}
+          <Card>
+            <h2 className="mb-2 text-sm font-semibold text-stone-700 dark:text-stone-200">
+              セグメント別
+            </h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              {SEGMENT_LABELS.map(({ key, label }) => {
+                if (key === 'unlisted') {
+                  return (
+                    <StatCard
+                      key={key}
+                      label="記載なし売上"
+                      value={formatYen(data.salesBySegment.unlisted)}
+                    />
+                  );
+                }
+                return (
+                  <StatCard
+                    key={key}
+                    label={`${label}客数`}
+                    value={data.customersBySegment[key]}
+                    unit="人"
+                    trend={showYoY ? toTrend(segmentYoYMap[key]) : undefined}
+                  />
+                );
+              })}
+            </div>
+          </Card>
 
           {/* セグメント（売上構成の円） */}
           <Card>
@@ -314,7 +425,7 @@ export const SalesPage: React.FC = () => {
           {/* トレンド（前年系列は十分時のみ） */}
           <Card>
             <h2 className="mb-2 text-sm font-semibold text-stone-700 dark:text-stone-200">
-              日次推移
+              {cardTitleByGranularity(granularityFor(period))}
             </h2>
             <SegmentTrendChart
               data={data.dailyTrend}
@@ -330,6 +441,27 @@ export const SalesPage: React.FC = () => {
               新規客の獲得経路
             </h2>
             <AcquisitionChart data={data.acquisitionBreakdown} />
+          </Card>
+
+          {/* 曜日別分析（B8）: 日次 rawDailyTrend を曜日平均に集計した客数・売上の棒グラフ。 */}
+          <Card>
+            <h2 className="mb-3 text-sm font-semibold text-stone-700 dark:text-stone-200">
+              曜日別分析
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="mb-1 text-xs font-medium text-stone-500 dark:text-stone-400">
+                  客数（曜日別平均）
+                </h3>
+                <WeekdayBarChart data={weekdayAggregates} metric="customers" />
+              </div>
+              <div>
+                <h3 className="mb-1 text-xs font-medium text-stone-500 dark:text-stone-400">
+                  売上（曜日別平均）
+                </h3>
+                <WeekdayBarChart data={weekdayAggregates} metric="sales" />
+              </div>
+            </div>
           </Card>
 
           {/* 店舗別比較（owner/manager かつ ALL 選択時のみ） */}

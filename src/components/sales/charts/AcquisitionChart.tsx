@@ -79,10 +79,10 @@ export default function AcquisitionChart({ data }: Props) {
                     payload={p.payload as never}
                     label={p.label as string | number | undefined}
                     formatters={{
-                      value: (value: number | string | Array<number | string>, _name?: string | number, item?: { payload?: Record<string, unknown> }) => {
-                        const percent =
-                          (item?.payload as { percent?: number } | undefined)?.percent ?? 0;
-                        return `${Number(value).toLocaleString()}人（${(percent * 100).toFixed(1)}%）`;
+                      value: (value: number | string | Array<number | string>) => {
+                        const num = Number(value);
+                        const percent = total === 0 ? 0 : num / total;
+                        return `${num.toLocaleString()}人（${(percent * 100).toFixed(1)}%）`;
                       },
                     }}
                   />

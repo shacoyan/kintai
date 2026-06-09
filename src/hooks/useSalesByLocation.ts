@@ -153,6 +153,10 @@ export function useSalesByLocation(
 
     if (!enabled) {
       setLoading(false);
+      // stale クリア。rows は useMemo（error||raw==null→[]）に派生するため null で即空になる。
+      // owner→staff 切替や enabled=false 時に旧データ（他店含む）の残存表示を防ぐ。
+      setRaw(null);
+      setError(null);
       return;
     }
 
