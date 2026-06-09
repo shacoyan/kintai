@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { logger } from '../lib/logger';
 import { supabase } from '../lib/supabase';
 import { useTenant } from './TenantContext';
@@ -23,16 +23,32 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [currentStore, setCurrentStoreState] = useState<Store | null>(null);
   const [loading, setLoading] = useState(false);
   const [myStoreMembers, setMyStoreMembers] = useState<StoreMember[]>([]);
+  // 直前に fetch を実行したテナント ID（テナント切替の検出用）。
+  // tenant.id が変わったときだけ旧 stores を即クリアし、残像を防ぐ（B21）。
+  const prevTenantIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!currentTenant) {
       setStores([]);
       setCurrentStoreState(null);
       setMyStoreMembers([]);
+      setLoading(false);
+      prevTenantIdRef.current = null;
       return;
     }
 
+    let cancelled = false;
+
+    // テナント切替時のみ即クリア（同一テナント内の再 fetch では currentStore を維持＝後方互換）。
+    if (currentTenant.id !== prevTenantIdRef.current) {
+      setStores([]);
+      setCurrentStoreState(null);
+      setMyStoreMembers([]);
+    }
+    prevTenantIdRef.current = currentTenant.id;
+
     const fetchStores = async () => {
+      if (cancelled) return;
       setLoading(true);
       try {
         let storeList: Store[] = [];
@@ -50,6 +66,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         } else {
           // マネージャー・スタッフの場合
           if (!myMemberId) {
+            if (cancelled) return;
             setStores([]);
             setCurrentStoreState(null);
             setMyStoreMembers([]);
@@ -68,6 +85,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
           // 所属店舗がなければ空配列
           if (storeIds.length === 0) {
+            if (cancelled) return;
             setStores([]);
             setCurrentStoreState(null);
             setMyStoreMembers(membersList);
@@ -118,6 +136,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
         }
 
+        if (cancelled) return;
         setStores(storeList);
         setMyStoreMembers(membersList);
 
@@ -147,13 +166,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setCurrentStoreState(storeList[0] || null);
 
       } catch (err) {
+        if (cancelled) return;
         logger.error('店舗の取得に失敗しました:', formatSupabaseError(err));
       } finally {
+        if (cancelled) return;
         setLoading(false);
       }
     };
 
     fetchStores();
+
+    return () => {
+      cancelled = true;
+    };
   }, [currentTenant, isOwner, myMemberId]);
 
   const setCurrentStore = useCallback((store: Store | null) => {

@@ -8,6 +8,25 @@ import type {
 import { aggregateTrendByGranularity, granularityFor } from './trendAggregation';
 
 /**
+ * 任意値を有限数に正規化する (B18 NaN 伝播ガード)。
+ *
+ * `Number(v)` が有限数なら採用、それ以外 (NaN/Infinity/-Infinity/数値化不能な
+ * 文字列/null/undefined/object) は 0 に倒す。
+ *
+ * RPC が数値文字列 `"123"` や `null` を返しても、下流の加算で
+ * 文字列連結 (`"123"+"45"="12345"`) や `null+x=NaN` が伝播しないようにする
+ * 最小ヘルパ。`normalizeResponse`(useSalesRange) / `normalizeByLocation`
+ * (useSalesByLocation) / `aggregateSalesRangeTotals`(yoy) から import される。
+ *
+ * @param v 任意の値 (number | string | null | undefined | unknown)
+ * @returns 有限数。正規化できない場合は 0。
+ */
+export function toFiniteNumber(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
  * /api/sales-range の byDate[date] エントリ。
  * flat fields 採用、segments nested は使わない (設計書 §5)。
  */
@@ -152,43 +171,54 @@ export function buildSegmentAnalysisFromSalesRange(args: {
     const day = byDate[date];
     if (!day) continue;
 
-    const daySales = day.total_amount + day.open_total_amount;
+    // RPC が null を返しても NaN 化しないよう全数値フィールドを toFiniteNumber 経由で正規化（B18）。
+    const totalAmount = toFiniteNumber(day.total_amount);
+    const openTotalAmount = toFiniteNumber(day.open_total_amount);
+    const newCustomerCount = toFiniteNumber(day.new_customer_count);
+    const repeatCustomerCount = toFiniteNumber(day.repeat_customer_count);
+    const regularCustomerCount = toFiniteNumber(day.regular_customer_count);
+    const staffCustomerCount = toFiniteNumber(day.staff_customer_count);
+    const unlistedCustomerCount = toFiniteNumber(day.unlisted_customer_count);
+    const newSales = toFiniteNumber(day.new_sales);
+    const repeatSales = toFiniteNumber(day.repeat_sales);
+    const regularSales = toFiniteNumber(day.regular_sales);
+    const staffSales = toFiniteNumber(day.staff_sales);
+    const unlistedSales = toFiniteNumber(day.unlisted_sales);
+
+    const daySales = totalAmount + openTotalAmount;
     totalSales += daySales;
 
     // dayCustomers から unlisted を除外（4 セグ合計に統一）。
     // 客数 headline・客単価分母は new+repeat+regular+staff のみ。
     // customersBySegment.unlisted（内訳）・dailyTrend.unlisted（グラフ）は従来どおり保持する。
     const dayCustomers =
-      day.new_customer_count +
-      day.repeat_customer_count +
-      day.regular_customer_count +
-      day.staff_customer_count;
+      newCustomerCount + repeatCustomerCount + regularCustomerCount + staffCustomerCount;
     totalCustomers += dayCustomers;
 
-    customersBySegment.new += day.new_customer_count;
-    customersBySegment.repeat += day.repeat_customer_count;
-    customersBySegment.regular += day.regular_customer_count;
-    customersBySegment.staff += day.staff_customer_count;
-    customersBySegment.unlisted += day.unlisted_customer_count;
+    customersBySegment.new += newCustomerCount;
+    customersBySegment.repeat += repeatCustomerCount;
+    customersBySegment.regular += regularCustomerCount;
+    customersBySegment.staff += staffCustomerCount;
+    customersBySegment.unlisted += unlistedCustomerCount;
 
-    salesBySegment.new += day.new_sales;
-    salesBySegment.repeat += day.repeat_sales;
-    salesBySegment.regular += day.regular_sales;
-    salesBySegment.staff += day.staff_sales;
-    salesBySegment.unlisted += day.unlisted_sales;
+    salesBySegment.new += newSales;
+    salesBySegment.repeat += repeatSales;
+    salesBySegment.regular += regularSales;
+    salesBySegment.staff += staffSales;
+    salesBySegment.unlisted += unlistedSales;
 
     dailyTrend.push({
       date,
-      new: day.new_customer_count,
-      repeat: day.repeat_customer_count,
-      regular: day.regular_customer_count,
-      staff: day.staff_customer_count,
-      unlisted: day.unlisted_customer_count,
-      newSales: day.new_sales,
-      repeatSales: day.repeat_sales,
-      regularSales: day.regular_sales,
-      staffSales: day.staff_sales,
-      unlistedSales: day.unlisted_sales,
+      new: newCustomerCount,
+      repeat: repeatCustomerCount,
+      regular: regularCustomerCount,
+      staff: staffCustomerCount,
+      unlisted: unlistedCustomerCount,
+      newSales,
+      repeatSales,
+      regularSales,
+      staffSales,
+      unlistedSales,
     });
   }
 

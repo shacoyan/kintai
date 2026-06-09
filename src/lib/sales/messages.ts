@@ -27,6 +27,7 @@ export const MSG = {
     acquisition: '獲得経路データがありません',
     weekday: '曜日データがありません',
     trend: '推移データがありません',
+    series: '系列を選択してください',
     sales: '売上データがありません',
     location: '店舗データがありません',
   },

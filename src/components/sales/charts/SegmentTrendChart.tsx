@@ -92,6 +92,9 @@ export default function SegmentTrendChart({
   const granularity = granularityFor(period);
 
   const isEmpty = !data || data.length === 0;
+  // 全系列 OFF で軸のみの白紙になる（「壊れてる？」感）のを防ぐ（B14）。
+  // データはあるが allHidden のときのみオーバーレイ表示（isEmpty 優先・併存しない）。
+  const allHidden = SERIES.every(s => !visibleKeys[s.key]);
 
   // 前年系列を current 日付軸にマッピング (lastYear 'YYYY-MM-DD' → current 'YYYY+1-MM-DD')。
   // period='week'/'today' は UI 過密回避のため抑制 (設計書 §1.3 / §6.6)。
@@ -163,7 +166,12 @@ export default function SegmentTrendChart({
         onAllOff={handleAllOff}
         className="mb-2"
       />
-      <div className="w-full min-w-0" style={{ height: chartTheme.heightPreset.detail }}>
+      <div className="relative w-full min-w-0" style={{ height: chartTheme.heightPreset.detail }}>
+        {!isEmpty && allHidden && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+            <p className="text-text-muted text-sm">{MSG.empty.series}</p>
+          </div>
+        )}
         <ChartFigure label="折れ線グラフ：日次の客数または売上をセグメント別（新規・リピート・常連・スタッフ・記載なし）に表示">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={chartTheme.defaultMargin}>

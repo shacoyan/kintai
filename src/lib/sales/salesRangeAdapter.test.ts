@@ -4,6 +4,7 @@ import {
   adaptToLegacyMetrics,
   dayMetricsToTrendPoint,
   fetchSalesRange,
+  toFiniteNumber,
 } from './salesRangeAdapter';
 import type { SalesRangeDay, SalesRangeResponse, SalesRangeMeta } from './salesRangeAdapter';
 
@@ -131,6 +132,46 @@ describe('salesRangeAdapter', () => {
     expect(result.periodEnd).toBe('2026-04-05');
   });
 
+  it('open_total_amount=null など RPC の null 返しでも NaN にならない（B18 回帰）', () => {
+    // RPC が一部数値フィールドを null 返ししても toFiniteNumber で 0 化され NaN 伝播しない。
+    const nullDay = makeDay({
+      total_amount: 8000,
+      open_total_amount: null as unknown as number,
+      new_customer_count: null as unknown as number,
+      repeat_customer_count: null as unknown as number,
+      regular_customer_count: null as unknown as number,
+      staff_customer_count: null as unknown as number,
+      unlisted_customer_count: null as unknown as number,
+      new_sales: null as unknown as number,
+      repeat_sales: null as unknown as number,
+      regular_sales: null as unknown as number,
+      staff_sales: null as unknown as number,
+      unlisted_sales: null as unknown as number,
+    });
+    const result = buildSegmentAnalysisFromSalesRange({
+      byDate: { '2026-04-01': nullDay, '2026-04-02': makeDay() },
+      dates: ['2026-04-01', '2026-04-02'],
+      period: 'week',
+      baseDate: '2026-04-02',
+    });
+
+    // null は 0 として扱われ、有効日 (makeDay) のみ加算される。
+    expect(Number.isNaN(result.totalSales)).toBe(false);
+    expect(result.totalSales).toBe(8000 + 10500);
+    expect(Number.isNaN(result.totalCustomers)).toBe(false);
+    expect(result.totalCustomers).toBe(6); // makeDay の new+repeat+regular+staff = 2+3+1+0
+    expect(Number.isNaN(result.customersBySegment.new)).toBe(false);
+    expect(result.customersBySegment.new).toBe(2);
+    expect(result.salesBySegment.repeat).toBe(4000);
+    expect(Number.isNaN(result.averageDailySales as number)).toBe(false);
+    expect(Number.isNaN(result.overallAveragePerCustomer as number)).toBe(false);
+    // dailyTrend にも NaN が混入しない。
+    for (const pt of result.dailyTrend) {
+      expect(Number.isNaN(pt.new)).toBe(false);
+      expect(Number.isNaN(pt.newSales)).toBe(false);
+    }
+  });
+
   it('dayMetricsToTrendPoint — flat fields を DailySegmentPoint に変換する', () => {
     const day = makeDay();
     const point = dayMetricsToTrendPoint('2026-04-01', day);
@@ -243,5 +284,47 @@ describe('salesRangeAdapter', () => {
         }),
       ).rejects.toThrow(/sales-range fetch failed: 400/);
     });
+  });
+});
+
+describe('toFiniteNumber (B18 NaN 伝播ガード)', () => {
+  it('有限数はそのまま返す', () => {
+    expect(toFiniteNumber(0)).toBe(0);
+    expect(toFiniteNumber(123)).toBe(123);
+    expect(toFiniteNumber(-45.6)).toBe(-45.6);
+  });
+
+  it('数値文字列は数値化する', () => {
+    expect(toFiniteNumber('123')).toBe(123);
+    expect(toFiniteNumber('0')).toBe(0);
+    expect(toFiniteNumber('-12.5')).toBe(-12.5);
+  });
+
+  it('null / undefined は 0 に倒す', () => {
+    expect(toFiniteNumber(null)).toBe(0);
+    expect(toFiniteNumber(undefined)).toBe(0);
+  });
+
+  it('NaN / Infinity / -Infinity は 0 に倒す', () => {
+    expect(toFiniteNumber(NaN)).toBe(0);
+    expect(toFiniteNumber(Infinity)).toBe(0);
+    expect(toFiniteNumber(-Infinity)).toBe(0);
+    expect(toFiniteNumber('Infinity')).toBe(0);
+  });
+
+  it('数値化できない文字列 / object は 0 に倒す', () => {
+    expect(toFiniteNumber('abc')).toBe(0);
+    expect(toFiniteNumber('12px')).toBe(0);
+    expect(toFiniteNumber({})).toBe(0);
+    expect(toFiniteNumber([1, 2])).toBe(0);
+  });
+
+  it('空文字は 0（Number("")===0 の挙動を固定）', () => {
+    expect(toFiniteNumber('')).toBe(0);
+  });
+
+  it('文字列連結バグの再現防止: 数値文字列同士を toFiniteNumber 経由で加算すると数値和になる', () => {
+    // ガードなしだと "123" + "45" = "12345"（文字列連結）。
+    expect(toFiniteNumber('123') + toFiniteNumber('45')).toBe(168);
   });
 });

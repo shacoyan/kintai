@@ -22,11 +22,14 @@ const LABELS: Record<keyof SegmentBreakdown, string> = {
 };
 
 export default function SegmentPieChart({ sales }: Props) {
-  const total = sales.new + sales.repeat + sales.regular + sales.staff + sales.unlisted;
+  // 返金等で個別セグメントが負になり得る。負スライスは円が歪む/白紙化するため 0 にクランプし、
+  // クランプ後合計 positiveTotal を空状態・割合計算の基準にする（B9）。
+  const positiveTotal = SEGMENT_ORDER.reduce((sum, segment) => sum + Math.max(0, sales[segment]), 0);
+  const isEmpty = positiveTotal <= 0;
 
-  const data = total === 0
+  const data = isEmpty
     ? [{ name: 'データなし', value: 1, segment: 'new' as const }]
-    : SEGMENT_ORDER.map((segment) => ({ name: LABELS[segment], value: sales[segment], segment }));
+    : SEGMENT_ORDER.map((segment) => ({ name: LABELS[segment], value: Math.max(0, sales[segment]), segment }));
 
   const legendItems = SEGMENT_ORDER.map(s => ({ id: s, label: LABELS[s], color: segmentColors[s] }));
 
@@ -42,18 +45,18 @@ export default function SegmentPieChart({ sales }: Props) {
                 cy="50%"
                 innerRadius={60}
                 outerRadius={110}
-                paddingAngle={total === 0 ? 0 : 2}
+                paddingAngle={isEmpty ? 0 : 2}
                 dataKey="value"
               >
                 {data.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={total === 0 ? segmentEmptyColor : segmentColors[entry.segment]}
+                    fill={isEmpty ? segmentEmptyColor : segmentColors[entry.segment]}
                     stroke="none"
                   />
                 ))}
               </Pie>
-              {total > 0 && (
+              {!isEmpty && (
                 <Tooltip
                   cursor={{ fill: 'rgba(15,23,42,0.04)' }}
                   content={(p) => (
@@ -64,7 +67,7 @@ export default function SegmentPieChart({ sales }: Props) {
                       formatters={{
                         value: (value: number | string | Array<number | string>) => {
                           const num = Number(value);
-                          const percent = total === 0 ? 0 : num / total;
+                          const percent = num / positiveTotal;
                           return `¥${num.toLocaleString()}（${(percent * 100).toFixed(1)}%）`;
                         },
                       }}
@@ -76,10 +79,10 @@ export default function SegmentPieChart({ sales }: Props) {
           </ResponsiveContainer>
         </ChartFigure>
       </div>
-      {total > 0 && (
+      {!isEmpty && (
         <ChartLegend items={legendItems} size="sm" align="center" />
       )}
-      {total === 0 && (
+      {isEmpty && (
         <p className="text-center text-text-muted text-sm">{MSG.empty.sales}</p>
       )}
     </div>

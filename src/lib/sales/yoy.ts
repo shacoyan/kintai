@@ -1,3 +1,5 @@
+import { toFiniteNumber } from './salesRangeAdapter';
+
 export type YoYClassification = 'up' | 'down' | 'flat' | 'no_data';
 
 export interface YoYDelta {
@@ -35,11 +37,29 @@ export function isLastYearDataInsufficient(
   return fourSegSum < MIN_LASTYEAR_CUSTOMERS;
 }
 
+/**
+ * 当年/前年の数値から YoY 差分を計算する。
+ *
+ * B18 NaN 伝播ガード: RPC 由来の非有限値 (NaN/Infinity/数値文字列の混入) が
+ * deltaPercent / classification 分岐を壊さないよう先頭で正規化する。
+ * - `current` が非有限 → 0 とみなす。
+ * - `lastYear` が非有限 → null (= 前年データなし) とみなし no_data に倒す。
+ */
 export function calculateYoY(current: number, lastYear: number | null): YoYDelta {
-  if (lastYear === null || lastYear === 0) {
-    return { current, lastYear, deltaPercent: null, classification: 'no_data' };
+  // toFiniteNumber で数値文字列も number 化しつつ current の非有限を 0 に正規化する。
+  const cur = toFiniteNumber(current);
+  // lastYear: null はそのまま no_data 維持。数値文字列は toFiniteNumber で number 化するが、
+  // 元値が非有限（NaN/Infinity）の場合は 0 に潰さず null（= 前年データなし）に倒す。
+  let ly: number | null = null;
+  if (lastYear !== null) {
+    const lyNum = toFiniteNumber(lastYear);
+    // toFiniteNumber は非有限を 0 に正規化するため、元値が非有限かを Number で判定して切り分ける。
+    ly = Number.isFinite(Number(lastYear)) ? lyNum : null;
   }
-  const deltaPercent = ((current - lastYear) / lastYear) * 100;
+  if (ly === null || ly === 0) {
+    return { current: cur, lastYear: ly, deltaPercent: null, classification: 'no_data' };
+  }
+  const deltaPercent = ((cur - ly) / ly) * 100;
   let classification: YoYClassification;
   if (Math.abs(deltaPercent) <= 2) {
     classification = 'flat';
@@ -48,7 +68,7 @@ export function calculateYoY(current: number, lastYear: number | null): YoYDelta
   } else {
     classification = 'down';
   }
-  return { current, lastYear, deltaPercent, classification };
+  return { current: cur, lastYear: ly, deltaPercent, classification };
 }
 
 export function shiftDateOneYearBack(dateStr: string): string {
@@ -100,6 +120,18 @@ export function shiftDateOneYearForward(dateStr: string): string {
   return `${outY}-${outM}-${outD}`;
 }
 
+/**
+ * 期間 {start_date, end_date} を前年同期に back-shift する。
+ *
+ * **B19 うるう日挙動の明文化（コード挙動は変えない）**:
+ * start/end をそれぞれ独立に単日 back-shift する（`shiftDateOneYearBack`）。
+ * end が 2/29 のとき前年は 2/28 になり、例えば
+ * `{2024-02-28, 2024-02-29}` → `{2023-02-28, 2023-02-28}` のように
+ * 範囲が単日へ潰れ得る。これは `lastYearPeriod` の**表示ラベルのみ**の現象で、
+ * YoY 集計本体は `buildYoYResultFromResponses` が current の各日を個別に
+ * back-shift して前年同日へ対応付けるため**集計は正しい**（うるう日の当年 2/29 は
+ * 前年 2/28 にマッチ）。見本 square-dashboard と同一挙動を維持し、独自補正しない。
+ */
 export function shiftRangeOneYearBack(args: { start_date: string; end_date: string }): { start_date: string; end_date: string } {
   return {
     start_date: shiftDateOneYearBack(args.start_date),
@@ -189,16 +221,18 @@ export function aggregateSalesRangeTotals(
     staff_customer_count: 0,
     unlisted_customer_count: 0,
   };
+  // B18 最終防波堤: 各加算を toFiniteNumber で包み、RPC 由来の数値文字列/null/
+  // Infinity が混入しても文字列連結・NaN を集計へ伝播させない。
   for (const val of Object.values(byDate)) {
-    result.total_amount += val.total_amount;
-    result.open_total_amount += val.open_total_amount ?? 0;
-    result.transaction_count += val.transaction_count;
-    result.customer_count += val.customer_count;
-    result.new_customer_count += val.new_customer_count ?? 0;
-    result.repeat_customer_count += val.repeat_customer_count ?? 0;
-    result.regular_customer_count += val.regular_customer_count ?? 0;
-    result.staff_customer_count += val.staff_customer_count ?? 0;
-    result.unlisted_customer_count += val.unlisted_customer_count ?? 0;
+    result.total_amount += toFiniteNumber(val.total_amount);
+    result.open_total_amount += toFiniteNumber(val.open_total_amount);
+    result.transaction_count += toFiniteNumber(val.transaction_count);
+    result.customer_count += toFiniteNumber(val.customer_count);
+    result.new_customer_count += toFiniteNumber(val.new_customer_count);
+    result.repeat_customer_count += toFiniteNumber(val.repeat_customer_count);
+    result.regular_customer_count += toFiniteNumber(val.regular_customer_count);
+    result.staff_customer_count += toFiniteNumber(val.staff_customer_count);
+    result.unlisted_customer_count += toFiniteNumber(val.unlisted_customer_count);
   }
   return result;
 }
@@ -346,24 +380,25 @@ export function buildYoYResultFromResponses(args: {
     return {
       business_date: date,
       lastYearDate,
+      // B18 同根の理論リスク解消: byDate 数値フィールドも toFiniteNumber で正規化する。
       current: {
-        total_amount: cur.total_amount,
-        transaction_count: cur.transaction_count,
-        customer_count: cur.customer_count,
-        new_customer_count: cur.new_customer_count ?? 0,
-        repeat_customer_count: cur.repeat_customer_count ?? 0,
-        regular_customer_count: cur.regular_customer_count ?? 0,
-        staff_customer_count: cur.staff_customer_count ?? 0,
+        total_amount: toFiniteNumber(cur.total_amount),
+        transaction_count: toFiniteNumber(cur.transaction_count),
+        customer_count: toFiniteNumber(cur.customer_count),
+        new_customer_count: toFiniteNumber(cur.new_customer_count),
+        repeat_customer_count: toFiniteNumber(cur.repeat_customer_count),
+        regular_customer_count: toFiniteNumber(cur.regular_customer_count),
+        staff_customer_count: toFiniteNumber(cur.staff_customer_count),
       },
       lastYear: lyDay
         ? {
-            total_amount: lyDay.total_amount,
-            transaction_count: lyDay.transaction_count,
-            customer_count: lyDay.customer_count,
-            new_customer_count: lyDay.new_customer_count ?? 0,
-            repeat_customer_count: lyDay.repeat_customer_count ?? 0,
-            regular_customer_count: lyDay.regular_customer_count ?? 0,
-            staff_customer_count: lyDay.staff_customer_count ?? 0,
+            total_amount: toFiniteNumber(lyDay.total_amount),
+            transaction_count: toFiniteNumber(lyDay.transaction_count),
+            customer_count: toFiniteNumber(lyDay.customer_count),
+            new_customer_count: toFiniteNumber(lyDay.new_customer_count),
+            repeat_customer_count: toFiniteNumber(lyDay.repeat_customer_count),
+            regular_customer_count: toFiniteNumber(lyDay.regular_customer_count),
+            staff_customer_count: toFiniteNumber(lyDay.staff_customer_count),
           }
         : null,
     };

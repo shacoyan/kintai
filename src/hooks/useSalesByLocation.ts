@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { logger } from '../lib/logger';
 import { formatSupabaseError } from '../lib/errors';
 import { supabaseSquare, withSquareSession } from '../lib/supabaseSquare';
-import { getLocationColor } from '../lib/sales/locationColors';
+import { getLocationColors } from '../lib/sales/locationColors';
+import { toFiniteNumber } from '../lib/sales/salesRangeAdapter';
 import type { SalesRangeMeta } from '../lib/sales/salesRangeAdapter';
 
 // =============================================================================
@@ -116,20 +117,27 @@ export function normalizeByLocation(raw: unknown): {
   const obj = (raw ?? {}) as { byLocation?: unknown; meta?: unknown };
   const list = Array.isArray(obj.byLocation) ? (obj.byLocation as RawLocationRow[]) : [];
 
+  // B13: 表示 location 全体に getLocationColors を 1 回適用し、djb2 hash%N の
+  // desired index が衝突しても色を相異にする（行内 getLocationColor の独立適用を廃止）。
+  const ids = list.map((r) => (typeof r.location_id === 'string' ? r.location_id : ''));
+  const colorMap = getLocationColors(ids);
+
   const rows: SalesByLocationRow[] = list.map((r) => {
     const locationId = typeof r.location_id === 'string' ? r.location_id : '';
-    const totalSales = (r.total_amount ?? 0) + (r.open_total_amount ?? 0);
+    // B18: 数値正規化を toFiniteNumber 経由にし、数値文字列連結 / null+x=NaN を防ぐ。
+    const totalSales =
+      toFiniteNumber(r.total_amount) + toFiniteNumber(r.open_total_amount);
     const totalCustomers =
-      (r.new_customer_count ?? 0) +
-      (r.repeat_customer_count ?? 0) +
-      (r.regular_customer_count ?? 0) +
-      (r.staff_customer_count ?? 0);
+      toFiniteNumber(r.new_customer_count) +
+      toFiniteNumber(r.repeat_customer_count) +
+      toFiniteNumber(r.regular_customer_count) +
+      toFiniteNumber(r.staff_customer_count);
     return {
       locationId,
       locationName: typeof r.location_name === 'string' ? r.location_name : '',
       totalSales,
       totalCustomers,
-      color: getLocationColor(locationId),
+      color: colorMap[locationId],
     };
   });
 
@@ -162,6 +170,9 @@ export function useSalesByLocation(
 
     const run = async () => {
       setLoading(true);
+      // B17: fetch 開始時に旧 raw を即クリアし、period/店舗切替直後に旧期間データが
+      // 1 フレーム見える stale を解消（rows は useMemo で raw==null→[] に即追従）。
+      setRaw(null);
       setError(null);
       try {
         const { data: rpcData, error: rpcError } = await withSquareSession(

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeByLocation } from './useSalesByLocation';
-import { getLocationColor } from '../lib/sales/locationColors';
+import { getLocationColors } from '../lib/sales/locationColors';
 
 // =============================================================================
 // normalizeByLocation（追補B/C / Engineer C）
@@ -37,8 +37,57 @@ describe('normalizeByLocation', () => {
     // totalSales = total_amount + open_total_amount。
     expect(rows[0].totalSales).toBe(1200);
     expect(rows[0].locationName).toBe('吸暮');
-    // 色は location_id 由来で安定。
-    expect(rows[0].color).toBe(getLocationColor('LOC_A'));
+    // B13: 色は表示 location 全体への getLocationColors 一括適用で割当（衝突回避版）。
+    expect(rows[0].color).toBe(getLocationColors(['LOC_A'])['LOC_A']);
+  });
+
+  it('B13: desired index が衝突する複数店でも color が相異なる（getLocationColors 一括適用）', () => {
+    // パレット数 N に対し djb2 hash%N が衝突しうる ID を複数並べる。
+    const raw = {
+      byLocation: [
+        { location_id: 'LOC_1', location_name: '店1', total_amount: 100, new_customer_count: 1 },
+        { location_id: 'LOC_2', location_name: '店2', total_amount: 90, new_customer_count: 1 },
+        { location_id: 'LOC_3', location_name: '店3', total_amount: 80, new_customer_count: 1 },
+        { location_id: 'LOC_4', location_name: '店4', total_amount: 70, new_customer_count: 1 },
+        { location_id: 'LOC_5', location_name: '店5', total_amount: 60, new_customer_count: 1 },
+        { location_id: 'LOC_6', location_name: '店6', total_amount: 50, new_customer_count: 1 },
+        { location_id: 'LOC_7', location_name: '店7', total_amount: 40, new_customer_count: 1 },
+      ],
+      meta: {},
+    };
+    const { rows } = normalizeByLocation(raw);
+    const colors = rows.map((r) => r.color);
+    // 7 店すべて相異なる色（衝突回避が効いている）。
+    expect(new Set(colors).size).toBe(colors.length);
+    // hook 内の colorMap と純関数 getLocationColors の割当が一致する。
+    const ids = raw.byLocation.map((r) => r.location_id);
+    const map = getLocationColors(ids);
+    rows.forEach((r) => expect(r.color).toBe(map[r.locationId]));
+  });
+
+  it('B18: 数値文字列 / null / Infinity の total_amount でも有限数（NaN/文字列連結なし）', () => {
+    const raw = {
+      byLocation: [
+        {
+          location_id: 'LOC_S',
+          location_name: 'S',
+          // 数値文字列・null・Infinity が混入しても toFiniteNumber で有限数 0 補完。
+          total_amount: '1000' as unknown as number,
+          open_total_amount: null as unknown as number,
+          new_customer_count: '4' as unknown as number,
+          repeat_customer_count: Infinity as unknown as number,
+          regular_customer_count: 1,
+          staff_customer_count: 2,
+        },
+      ],
+    };
+    const { rows } = normalizeByLocation(raw);
+    // '1000' は文字列連結せず 1000、null は 0 → 1000。
+    expect(rows[0].totalSales).toBe(1000);
+    expect(Number.isFinite(rows[0].totalSales)).toBe(true);
+    // '4'→4, Infinity→0, 1, 2 = 7。
+    expect(rows[0].totalCustomers).toBe(7);
+    expect(Number.isFinite(rows[0].totalCustomers)).toBe(true);
   });
 
   it('RPC の total_amount DESC 並びを尊重し再ソートしない', () => {

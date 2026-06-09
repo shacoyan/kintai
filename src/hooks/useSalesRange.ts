@@ -120,6 +120,9 @@ export function useSalesRange(args: UseSalesRangeArgs): UseSalesRangeResult {
 
     const run = async () => {
       setLoading(true);
+      // B17: fetch 開始時に旧 data を即クリアし、period/店舗切替直後に旧期間
+      // データが 1 フレーム見える stale を解消（Wave1 B2 の即クリア方式と統一）。
+      setData(null);
       setError(null);
       try {
         const { data: rpcData, error: rpcError } = await withSquareSession(

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { logger } from '../lib/logger';
 import { formatSupabaseError } from '../lib/errors';
-import { supabaseSquare, ensureSquareSession } from '../lib/supabaseSquare';
+import { supabaseSquare, withSquareSession } from '../lib/supabaseSquare';
 import { resolveSquareLocationName } from '../lib/squareStoreMap';
 import { useTenant } from '../contexts/TenantContext';
 import { useStoreContext } from '../contexts/StoreContext';
@@ -55,12 +55,16 @@ export function useSalesScope(): SalesScope {
 
       setLoading(true);
       try {
-        // RLS 到達のため public セッション（authenticated JWT）を注入してから SELECT。
-        await ensureSquareSession();
-        const { data, error } = await supabaseSquare
-          .from('locations_meta')
-          .select('location_name, is_active')
-          .eq('is_active', true);
+        // B20: 売上 hook と同じ withSquareSession に統一。セッション無し時は
+        // 即 throw → 下の catch が fail-closed（setActiveLocationNames([])）。
+        // public ログアウト後の旧 JWT で locations_meta が読める経路を構造封鎖。
+        const { data, error } = await withSquareSession(
+          async () =>
+            await supabaseSquare
+              .from('locations_meta')
+              .select('location_name, is_active')
+              .eq('is_active', true),
+        );
 
         if (error) throw error;
         if (cancelled) return;

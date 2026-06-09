@@ -21,7 +21,10 @@ const CHANNEL_CONFIG: { key: keyof AcquisitionBreakdown; label: string; color: s
 export default function AcquisitionChart({ data }: Props) {
   const total = CHANNEL_CONFIG.reduce((sum, ch) => sum + (data[ch.key] ?? 0), 0);
 
-  if (total === 0) {
+  // total が負（返金等で打ち漏れ等が負算入）でも空状態に倒す（B9）。
+  // 以降の chartData は value>0 で filter 済のため percent 分母は実質正値だが、
+  // total<=0 はここで early-return するため負割合は発生しない。
+  if (total <= 0) {
     return (
       <div className="w-full min-w-0 space-y-3">
         <div className="w-full min-w-0">

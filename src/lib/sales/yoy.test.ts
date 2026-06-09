@@ -53,6 +53,27 @@ describe('calculateYoY', () => {
     expect(res.deltaPercent).toBeNull();
     expect(res.classification).toBe('no_data');
   });
+
+  it('current 非有限 (NaN) は 0 として扱う（toFiniteNumber ガード）', () => {
+    const res = calculateYoY(NaN, 100);
+    expect(res.current).toBe(0);
+    expect(res.deltaPercent).toBeCloseTo(-100);
+    expect(res.classification).toBe('down');
+  });
+
+  it('lastYear 非有限 (NaN) は no_data に倒れる（lastYear=NaN→0→no_data）', () => {
+    const res = calculateYoY(100, NaN);
+    expect(res.deltaPercent).toBeNull();
+    expect(res.classification).toBe('no_data');
+  });
+
+  it('数値文字列を number 化して計算する（toFiniteNumber）', () => {
+    const res = calculateYoY('110' as unknown as number, '100' as unknown as number);
+    expect(res.current).toBe(110);
+    expect(res.lastYear).toBe(100);
+    expect(res.deltaPercent).toBeCloseTo(10);
+    expect(res.classification).toBe('up');
+  });
 });
 
 describe('shiftDateOneYearBack', () => {
@@ -493,5 +514,183 @@ describe('buildYoYResultFromResponses', () => {
     expect(res.yoy.total_amount.classification).toBe('up');
     // 決済済フィールド total_amount は open 込みに変えない（不変）。
     expect(res.current.total_amount).toBe(200);
+  });
+
+  it('byDate payload の数値フィールドを toFiniteNumber で正規化する（null/NaN→0、B18 同根）', () => {
+    const current: SalesRangeLike = {
+      byDate: {
+        '2026-05-01': day({
+          total_amount: 200,
+          open_total_amount: null as unknown as number,
+          transaction_count: null as unknown as number,
+          customer_count: null as unknown as number,
+          new_customer_count: 10,
+          repeat_customer_count: null as unknown as number,
+          regular_customer_count: 3,
+          staff_customer_count: 2,
+        }),
+      },
+    };
+    const lastYear: SalesRangeLike = {
+      byDate: {
+        '2025-05-01': day({
+          total_amount: 100,
+          transaction_count: null as unknown as number,
+          new_customer_count: 5,
+          repeat_customer_count: 3,
+          regular_customer_count: 1,
+          staff_customer_count: 1,
+        }),
+      },
+    };
+
+    const res = buildYoYResultFromResponses({
+      start_date: '2026-05-01',
+      end_date: '2026-05-01',
+      currentRes: current,
+      lastYearRes: lastYear,
+    });
+
+    const d = res.byDate[0];
+    // null/NaN は 0 に正規化され NaN が混入しない。
+    expect(Number.isNaN(d.current.transaction_count)).toBe(false);
+    expect(d.current.transaction_count).toBe(0);
+    expect(d.current.customer_count).toBe(0);
+    expect(d.current.repeat_customer_count).toBe(0);
+    // 有効値はそのまま number 化される。
+    expect(d.current.new_customer_count).toBe(10);
+    expect(d.current.total_amount).toBe(200);
+    expect(d.lastYear).not.toBeNull();
+    expect(Number.isNaN(d.lastYear!.transaction_count)).toBe(false);
+    expect(d.lastYear!.transaction_count).toBe(0);
+    expect(d.lastYear!.new_customer_count).toBe(5);
+  });
+});
+
+describe('calculateYoY — B18 NaN 伝播ガード', () => {
+  it('current が NaN → 0 とみなす (lastYear 有効なら down)', () => {
+    const res = calculateYoY(NaN, 100);
+    expect(res.current).toBe(0);
+    expect(res.lastYear).toBe(100);
+    expect(res.deltaPercent).toBeCloseTo(-100);
+    expect(res.classification).toBe('down');
+  });
+
+  it('current が Infinity → 0 とみなす', () => {
+    const res = calculateYoY(Infinity, 100);
+    expect(res.current).toBe(0);
+    expect(res.deltaPercent).toBeCloseTo(-100);
+  });
+
+  it('lastYear が NaN → null 扱い → no_data', () => {
+    const res = calculateYoY(100, NaN);
+    expect(res.current).toBe(100);
+    expect(res.lastYear).toBeNull();
+    expect(res.deltaPercent).toBeNull();
+    expect(res.classification).toBe('no_data');
+  });
+
+  it('lastYear が Infinity → null 扱い → no_data', () => {
+    const res = calculateYoY(100, Infinity);
+    expect(res.lastYear).toBeNull();
+    expect(res.classification).toBe('no_data');
+  });
+
+  it('両方 NaN → current=0 / lastYear=null / no_data', () => {
+    const res = calculateYoY(NaN, NaN);
+    expect(res.current).toBe(0);
+    expect(res.lastYear).toBeNull();
+    expect(res.classification).toBe('no_data');
+  });
+
+  it('正常系は従来挙動を維持 (up)', () => {
+    const res = calculateYoY(120, 100);
+    expect(res.current).toBe(120);
+    expect(res.lastYear).toBe(100);
+    expect(res.deltaPercent).toBeCloseTo(20);
+    expect(res.classification).toBe('up');
+  });
+});
+
+describe('aggregateSalesRangeTotals — B18 NaN 伝播ガード', () => {
+  it('数値文字列 / null / Infinity / undefined を含む byDate でも全フィールド有限数で集計', () => {
+    const byDate = {
+      d1: {
+        total_amount: '100' as unknown as number,
+        open_total_amount: null as unknown as number,
+        transaction_count: 5,
+        customer_count: '3' as unknown as number,
+        new_customer_count: Infinity as unknown as number,
+        repeat_customer_count: 2,
+        regular_customer_count: undefined as unknown as number,
+        staff_customer_count: 1,
+        unlisted_customer_count: 'abc' as unknown as number,
+      },
+      d2: {
+        total_amount: 50,
+        open_total_amount: 10,
+        transaction_count: 3,
+        customer_count: 2,
+        new_customer_count: 1,
+        repeat_customer_count: 1,
+        regular_customer_count: 1,
+        staff_customer_count: 0,
+        unlisted_customer_count: 0,
+      },
+    };
+    const res = aggregateSalesRangeTotals(byDate);
+    // 文字列 "100" は数値化、null/Infinity/undefined/"abc" は 0 補完。
+    expect(res.total_amount).toBe(150); // 100 + 50
+    expect(res.open_total_amount).toBe(10); // 0(null) + 10
+    expect(res.transaction_count).toBe(8);
+    expect(res.customer_count).toBe(5); // 3 + 2
+    expect(res.new_customer_count).toBe(1); // 0(Infinity) + 1
+    expect(res.regular_customer_count).toBe(1); // 0(undefined) + 1
+    expect(res.unlisted_customer_count).toBe(0); // 0("abc") + 0
+    // どのフィールドも NaN / 文字列でないこと。
+    Object.values(res).forEach((v) => expect(Number.isFinite(v)).toBe(true));
+  });
+});
+
+describe('shiftRangeOneYearBack — B19 うるう年回帰保護', () => {
+  it('end が 2/29 のとき前年範囲は 2/28 に潰れる (表示ラベル挙動を固定)', () => {
+    const res = shiftRangeOneYearBack({ start_date: '2024-02-28', end_date: '2024-02-29' });
+    expect(res.start_date).toBe('2023-02-28');
+    expect(res.end_date).toBe('2023-02-28');
+  });
+
+  it('うるう年でも集計は current 各日を個別 back-shift して正しく対応する', () => {
+    // current 2024-02-28, 2024-02-29 → 前年 2023-02-28(両日とも)。
+    // 前年 4 セグ合計 >= MIN_LASTYEAR_CUSTOMERS(10) にして insufficient 判定を回避し、
+    // 「うるう年でも前年同日にマッチする」集計の正しさを検証する。
+    const day = (over: Partial<SalesRangeLike['byDate'][string]> = {}) => ({
+      total_amount: 100,
+      transaction_count: 1,
+      customer_count: 12,
+      new_customer_count: 4,
+      repeat_customer_count: 4,
+      regular_customer_count: 2,
+      staff_customer_count: 2,
+      ...over,
+    });
+    const current: SalesRangeLike = {
+      byDate: { '2024-02-28': day(), '2024-02-29': day({ total_amount: 200 }) },
+    };
+    const lastYear: SalesRangeLike = {
+      byDate: { '2023-02-28': day({ total_amount: 80 }) },
+    };
+    const res = buildYoYResultFromResponses({
+      start_date: '2024-02-28',
+      end_date: '2024-02-29',
+      currentRes: current,
+      lastYearRes: lastYear,
+    });
+    // 表示ラベルは単日に潰れる。
+    expect(res.lastYearPeriod).toEqual({ start: '2023-02-28', end: '2023-02-28' });
+    // current 各日は個別 back-shift: 2/28→2023-02-28(マッチ), 2/29→2023-02-28(マッチ)。
+    expect(res.byDate.find((b) => b.business_date === '2024-02-28')?.lastYearDate).toBe('2023-02-28');
+    expect(res.byDate.find((b) => b.business_date === '2024-02-29')?.lastYearDate).toBe('2023-02-28');
+    // 両日とも前年同日にデータがマッチ → coverage 1。
+    expect(res.dataCoverage).toBe(1);
   });
 });
