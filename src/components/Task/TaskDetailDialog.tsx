@@ -1,11 +1,30 @@
+import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { Calendar, Pencil } from 'lucide-react';
-import type { Task } from '../../types';
+import type { Task, TaskPriority, TaskStatus } from '../../types';
 import { TASK_PRIORITY_LABELS } from '../../types';
+import type { TaskInput } from '../../hooks/useTasks';
 import { getProjectColor } from '../../lib/projectColor';
+import { canTransitionStatus } from '../../lib/kanbanTransition';
 import { BottomSheet } from '../ui/BottomSheet';
 import { statusMeta } from './taskStatusMeta';
 import { SubtaskKanban } from './SubtaskKanban';
+
+// ③ インライン編集の選択肢。
+const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
+  { value: 'todo', label: '未着手' },
+  { value: 'in_progress', label: '進行中' },
+  { value: 'done', label: '完了' },
+  { value: 'cancelled', label: '中止' },
+];
+const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
+  { value: 0, label: TASK_PRIORITY_LABELS[0] },
+  { value: 1, label: TASK_PRIORITY_LABELS[1] },
+  { value: 2, label: TASK_PRIORITY_LABELS[2] },
+  { value: 3, label: TASK_PRIORITY_LABELS[3] },
+];
+
+type SavingField = 'status' | 'priority' | 'due' | null;
 
 // アバター色 helper（SubtaskKanban.tsx / list 行と同一実装をローカル複製）。
 // 共通化（lib/avatarColor.ts への集約）は将来課題（設計書 §6）。
@@ -53,6 +72,19 @@ export interface TaskDetailDialogProps {
   canAct: (t: Task) => boolean;
   canManage: boolean;
   currentUserId?: string | null;
+  // ③ 親メタ即編集（status は getTransitionApi 経由＝親側ハンドラ）。
+  // #3 保存中ガードのため Promise を返せる（refetch 完了で resolve）。
+  onChangeStatus: (to: TaskStatus) => void | Promise<void>;
+  onPatchTask: (patch: Partial<TaskInput>) => void | Promise<void>; // priority / dueDate の即保存
+  // ②③ 子 status 変更 + DnD 権限。
+  onChangeChildStatus: (child: Task, to: TaskStatus) => void;
+  onQuickAddChild: (title: string, status: TaskStatus) => Promise<void>; // ①
+  onMutationSuccess: () => void | Promise<void>; // ② 楽観解除同期（refetch）
+  myRole: 'owner' | 'manager' | 'staff'; // ② DnD hook へ
+  isParttime: boolean; // ② DnD hook へ
+  myStoreIds: string[]; // ② DnD hook へ
+  onError?: (msg: string) => void;
+  onSuccess?: (msg: string) => void;
 }
 
 /**
@@ -83,13 +115,41 @@ export function TaskDetailDialog({
   canAct,
   canManage,
   currentUserId,
+  onChangeStatus,
+  onPatchTask,
+  onChangeChildStatus,
+  onQuickAddChild,
+  onMutationSuccess,
+  myRole,
+  isParttime,
+  myStoreIds,
+  onError,
+  onSuccess,
 }: TaskDetailDialogProps): JSX.Element | null {
+  // ③ インライン編集: どのメタ項目が編集中か（クリックで select/input に切替）。
+  const [editingField, setEditingField] = useState<SavingField>(null);
+  // #3 保存中ガード: 当該セルを保存完了（refetch）まで disabled にし、二重操作・stale from 再送信を防ぐ。
+  const [savingField, setSavingField] = useState<SavingField>(null);
   if (!open) return null;
 
   const projectColor = getProjectColor(task.project_id);
   const projectName = task.project_id ? projectNames.get(task.project_id) : undefined;
   const storeName = task.store_id ? storeNames.get(task.store_id) ?? '不明な店舗' : '全社';
   const meta = statusMeta[task.status];
+
+  // #1 §11(A): status select の選択肢を canTransitionStatus（=②canMove と同一）で絞る。
+  // 現在値は常に残し、他は task.status からの遷移が許可される status のみ表示。
+  // → done 親（managerial）は「完了（現在値）＋進行中」のみ。todo/cancelled は出ない（②と完全一致）。
+  const allowedStatusOptions = STATUS_OPTIONS.filter(
+    (o) =>
+      o.value === task.status ||
+      canTransitionStatus(task, task.status, o.value, {
+        myRole,
+        isParttime,
+        myStoreIds,
+        currentUserId: currentUserId ?? undefined,
+      }),
+  );
 
   // 進捗: 分母 = subtask_total（フィルタ前全件・cancelled 含む）優先、分子 = subtask_done。
   const total = task.subtask_total ?? children.length;
@@ -137,31 +197,138 @@ export function TaskDetailDialog({
           </div>
         </div>
 
-        {/* メタ情報（読み取り表示） */}
+        {/* メタ情報（ステータス/優先度/期限は ③ インライン編集対応） */}
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px] sm:grid-cols-3">
+          {/* ステータス（③ インライン編集） */}
           <div className="flex flex-col gap-0.5">
             <dt className="text-[11px] font-medium text-stone-400 dark:text-stone-500">ステータス</dt>
             <dd className="flex items-center gap-1.5">
-              <span aria-hidden="true" className={`h-2 w-2 rounded-full ${meta.dot}`} />
-              <span className={`font-medium ${meta.text}`}>{meta.label}</span>
+              {canEdit && editingField === 'status' ? (
+                <select
+                  autoFocus
+                  value={task.status}
+                  disabled={savingField === 'status'}
+                  className="w-full rounded-md border border-stone-300 bg-white px-1.5 py-1 text-[13px] text-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+                  onChange={(e) => {
+                    // #3 保存中の多重発火・stale from 再送信を防ぐ。from は常に最新 task.status を参照。
+                    if (savingField === 'status') return;
+                    const to = e.target.value as TaskStatus;
+                    if (to === task.status) {
+                      setEditingField(null);
+                      return;
+                    }
+                    setEditingField(null);
+                    setSavingField('status');
+                    void Promise.resolve(onChangeStatus(to)).finally(() => setSavingField(null));
+                  }}
+                  onBlur={() => {
+                    if (savingField !== 'status') setEditingField(null);
+                  }}
+                >
+                  {allowedStatusOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <button
+                  type="button"
+                  disabled={!canEdit || savingField === 'status'}
+                  onClick={() => canEdit && savingField !== 'status' && setEditingField('status')}
+                  className={`flex items-center gap-1.5 rounded ${canEdit && savingField !== 'status' ? 'cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800' : 'cursor-default'} px-1 py-0.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60`}
+                  aria-label={canEdit ? 'ステータスを変更' : undefined}
+                >
+                  <span aria-hidden="true" className={`h-2 w-2 rounded-full ${meta.dot}`} />
+                  <span className={`font-medium ${meta.text}`}>{meta.label}</span>
+                </button>
+              )}
             </dd>
           </div>
+          {/* 優先度（③ インライン編集） */}
           <div className="flex flex-col gap-0.5">
             <dt className="text-[11px] font-medium text-stone-400 dark:text-stone-500">優先度</dt>
-            <dd className="text-stone-800 dark:text-stone-200">{TASK_PRIORITY_LABELS[task.priority]}</dd>
+            <dd className="text-stone-800 dark:text-stone-200">
+              {canEdit && editingField === 'priority' ? (
+                <select
+                  autoFocus
+                  value={task.priority}
+                  disabled={savingField === 'priority'}
+                  className="w-full rounded-md border border-stone-300 bg-white px-1.5 py-1 text-[13px] text-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+                  onChange={(e) => {
+                    if (savingField === 'priority') return;
+                    setEditingField(null);
+                    setSavingField('priority');
+                    void Promise.resolve(
+                      onPatchTask({ priority: Number(e.target.value) as TaskPriority }),
+                    ).finally(() => setSavingField(null));
+                  }}
+                  onBlur={() => {
+                    if (savingField !== 'priority') setEditingField(null);
+                  }}
+                >
+                  {PRIORITY_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <button
+                  type="button"
+                  disabled={!canEdit || savingField === 'priority'}
+                  onClick={() => canEdit && savingField !== 'priority' && setEditingField('priority')}
+                  className={`rounded ${canEdit && savingField !== 'priority' ? 'cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800' : 'cursor-default'} px-1 py-0.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60`}
+                  aria-label={canEdit ? '優先度を変更' : undefined}
+                >
+                  {TASK_PRIORITY_LABELS[task.priority]}
+                </button>
+              )}
+            </dd>
           </div>
+          {/* 期限（③ インライン編集） */}
           <div className="flex flex-col gap-0.5">
             <dt className="text-[11px] font-medium text-stone-400 dark:text-stone-500">期限</dt>
             <dd className="flex items-center gap-1 text-stone-800 dark:text-stone-200">
-              {task.due_date ? (
-                <>
-                  <Calendar className="h-3.5 w-3.5 text-stone-400" aria-hidden="true" />
-                  <time dateTime={task.due_date} className="font-mono tabular-nums">
-                    {format(parseISO(task.due_date), 'yyyy/MM/dd')}
-                  </time>
-                </>
+              {canEdit && editingField === 'due' ? (
+                <input
+                  type="date"
+                  autoFocus
+                  value={task.due_date ?? ''}
+                  disabled={savingField === 'due'}
+                  className="w-full rounded-md border border-stone-300 bg-white px-1.5 py-1 text-[13px] text-stone-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-200"
+                  onChange={(e) => {
+                    if (savingField === 'due') return;
+                    const v = e.target.value;
+                    setEditingField(null);
+                    setSavingField('due');
+                    void Promise.resolve(
+                      onPatchTask({ dueDate: v === '' ? null : v }),
+                    ).finally(() => setSavingField(null));
+                  }}
+                  onBlur={() => {
+                    if (savingField !== 'due') setEditingField(null);
+                  }}
+                />
               ) : (
-                <span className="text-stone-400 dark:text-stone-500">なし</span>
+                <button
+                  type="button"
+                  disabled={!canEdit || savingField === 'due'}
+                  onClick={() => canEdit && savingField !== 'due' && setEditingField('due')}
+                  className={`flex items-center gap-1 rounded ${canEdit && savingField !== 'due' ? 'cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-800' : 'cursor-default'} px-1 py-0.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-60`}
+                  aria-label={canEdit ? '期限を変更' : undefined}
+                >
+                  {task.due_date ? (
+                    <>
+                      <Calendar className="h-3.5 w-3.5 text-stone-400" aria-hidden="true" />
+                      <time dateTime={task.due_date} className="font-mono tabular-nums">
+                        {format(parseISO(task.due_date), 'yyyy/MM/dd')}
+                      </time>
+                    </>
+                  ) : (
+                    <span className="text-stone-400 dark:text-stone-500">なし</span>
+                  )}
+                </button>
               )}
             </dd>
           </div>
@@ -261,6 +428,15 @@ export function TaskDetailDialog({
           canManage={canManage}
           currentUserId={currentUserId}
           showAddButton={showAddButton}
+          // ①② チーム A の SubtaskKanban 新 I/F（§5-3）への中継
+          onQuickAddChild={onQuickAddChild}
+          onChangeChildStatus={onChangeChildStatus}
+          onMutationSuccess={onMutationSuccess}
+          myRole={myRole}
+          isParttime={isParttime}
+          myStoreIds={myStoreIds}
+          onError={onError}
+          onSuccess={onSuccess}
         />
       </div>
     </BottomSheet>

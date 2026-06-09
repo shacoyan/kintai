@@ -60,6 +60,7 @@ import {
 } from '../lib/kanbanStorage';
 import type { ViewMode, StoreTabValue } from '../components/Kanban/types';
 import { getProjectColor } from '../lib/projectColor';
+import { getTransitionApi } from '../lib/kanbanTransition';
 
 // ─── ダイアログ状態 ──────────────────────────────────────────
 
@@ -399,6 +400,61 @@ export function TasksPage(): JSX.Element {
       }
     },
     [reopenTask, refetch, showToast],
+  );
+
+  // ── ③ 親メタ（status 以外）の即保存。status は handleChangeTaskStatus を使う。 ──
+  const handlePatchTask = useCallback(
+    async (id: string, patch: Partial<TaskInput>) => {
+      try {
+        await updateTask(id, patch);
+        showToast('更新しました', 'success');
+        await refetch();
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : '更新に失敗しました', 'error');
+      }
+    },
+    [updateTask, refetch, showToast],
+  );
+
+  // ── ②③共用: status 変更は getTransitionApi で complete/reopen/update に振り分け。 ──
+  const handleChangeTaskStatus = useCallback(
+    async (id: string, from: TaskStatus, to: TaskStatus) => {
+      if (from === to) return;
+      const api = getTransitionApi(from, to);
+      if (api === 'noop') return;
+      try {
+        if (api === 'complete') await completeTask(id);
+        else if (api === 'reopen') await reopenTask(id);
+        else if (api === 'reopen+update') {
+          await reopenTask(id);
+          await updateTask(id, { status: to });
+        } else if (api === 'update') await updateTask(id, { status: to });
+        showToast('ステータスを更新しました', 'success');
+        await refetch();
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : 'ステータス変更に失敗しました', 'error');
+      }
+    },
+    [completeTask, reopenTask, updateTask, refetch, showToast],
+  );
+
+  // ── ① クイック子追加（タイトルのみ・親 store/project 継承）。 ──
+  // 例外は呼び出し側 SubtaskColumn に伝播させ入力を保持するため try/catch せず投げる。
+  const handleQuickAddChild = useCallback(
+    async (parent: Task, title: string, status: TaskStatus) => {
+      await createTask({
+        tenantId,
+        parentTaskId: parent.id,
+        storeId: parent.store_id ?? null,
+        projectId: parent.project_id ?? null,
+        title,
+        status,
+        priority: 1,
+        assigneeUserIds: [],
+      });
+      await refetch();
+    },
+    [createTask, refetch, tenantId],
   );
 
   // 削除確認モーダルを開いたら、CASCADE 対象の実子件数をサーバから取得。
@@ -813,6 +869,22 @@ export function TasksPage(): JSX.Element {
             canAct={canActOnTask}
             canManage={canManage}
             currentUserId={user?.id}
+            // ②③ DnD / 権限用
+            myRole={myRoleNarrow}
+            isParttime={isParttime}
+            myStoreIds={myStoreIds}
+            // ③ 親メタ即編集
+            onChangeStatus={(to) => handleChangeTaskStatus(detailTask.id, detailTask.status, to)}
+            onPatchTask={(patch) => handlePatchTask(detailTask.id, patch)}
+            // ② 子 status 変更（DnD / メニュー代替）
+            onChangeChildStatus={(child, to) => void handleChangeTaskStatus(child.id, child.status, to)}
+            // ② 楽観解除同期（refetch）
+            onMutationSuccess={refetch}
+            // ① クイック子追加（Promise を返す＝await せず関数のまま渡す）
+            onQuickAddChild={(title, status) => handleQuickAddChild(detailTask, title, status)}
+            // ②①の toast 中継
+            onError={(m) => showToast(m, 'error')}
+            onSuccess={(m) => showToast(m, 'success')}
           />
         );
       })()}

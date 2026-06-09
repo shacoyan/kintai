@@ -56,3 +56,64 @@ export function getTransitionApi(from: TaskStatus, to: TaskStatus): TransitionAp
   // それ以外はすべて生 UPDATE
   return 'update';
 }
+
+/**
+ * status 遷移の権限可否を判定する純粋関数 (single source of truth)。
+ *
+ * 設計書 2026-06-10 §11 の裁定により、`useKanbanDnd.canMove` 本体・②メニュー代替・
+ * ③ TaskDetailDialog の status select の 3 経路がこの関数を共有する。
+ *
+ * **後方互換厳守**: ここに集約したロジックは `useKanbanDnd` に inline 実装されていた
+ * canMove（L201-232）と入出力が 1 ミリも変わらないこと。役割×from×to の真理値表が完全一致する。
+ *
+ *   parttime    : 自分が assignee + (todo|in_progress) → done のみ
+ *   managerial  : 全許可。ただし done → todo/cancelled を禁止（Phase 2 凍結 / Q-T4）。
+ *                 Phase 3 で reopen_task RPC に p_target_status を追加して解禁予定。
+ *   staff (非 parttime) : 自店舗 or 全社タスクのみ。done からの reopen は NG。
+ *
+ * @param task 対象タスク（assignee_user_ids / store_id を参照）
+ * @param from 遷移元 status
+ * @param to   遷移先 status
+ * @param ctx  権限判定コンテキスト（myRole / isParttime / myStoreIds / currentUserId）
+ */
+export function canTransitionStatus(
+  task: { assignee_user_ids?: string[] | null; store_id?: string | null },
+  from: TaskStatus,
+  to: TaskStatus,
+  ctx: {
+    myRole: 'owner' | 'manager' | 'staff';
+    isParttime: boolean;
+    myStoreIds: string[];
+    currentUserId: string | undefined;
+  },
+): boolean {
+  const { myRole, isParttime, myStoreIds, currentUserId } = ctx;
+
+  // parttime は最優先で判定 (myRole が staff でも parttime フラグが立つことがある)
+  if (isParttime) {
+    const isAssignee =
+      currentUserId !== undefined &&
+      (task.assignee_user_ids ?? []).includes(currentUserId);
+    const isValidFrom = from === 'todo' || from === 'in_progress';
+    const isValidTo = to === 'done';
+    return isAssignee && isValidFrom && isValidTo;
+  }
+
+  // managerial (owner / manager) は基本全許可、ただし Phase 2 では done → todo/cancelled を禁止 (Q-T4)
+  // Phase 3 で reopen_task RPC に p_target_status 引数を追加して解禁予定
+  if (myRole === 'owner' || myRole === 'manager') {
+    if (from === 'done' && (to === 'todo' || to === 'cancelled')) return false;
+    return true;
+  }
+
+  // staff (非 parttime): 自店舗 + done からの reopen NG
+  if (myRole === 'staff') {
+    const isMyStore =
+      task.store_id === null ||
+      (typeof task.store_id === 'string' && myStoreIds.includes(task.store_id));
+    const isReopenAttempt = from === 'done';
+    return isMyStore && !isReopenAttempt;
+  }
+
+  return false;
+}

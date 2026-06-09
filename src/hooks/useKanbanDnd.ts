@@ -30,7 +30,7 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useState, useCallback, useMemo } from 'react';
 import type { Task, TaskStatus } from '../types';
 import { TASK_STATUS_LABELS } from '../types';
-import { getTransitionApi } from '../lib/kanbanTransition';
+import { getTransitionApi, canTransitionStatus } from '../lib/kanbanTransition';
 import { useTaskMutations } from './useTasks';
 
 // ---------------------------------------------------------------------------
@@ -76,6 +76,13 @@ export interface UseKanbanDndParams {
    * カードが「楽観列 → 元の列に一瞬戻る → 真の列に再配置」とちらつくのを防ぐ。
    */
   onMutationSuccess?: () => void | Promise<void>;
+  /**
+   * dnd-kit id のプレフィックス名前空間。
+   * 省略時は従来の { card: 'task-', column: 'column-' }（親看板 = 完全後方互換）。
+   * 子看板は { card: 'subtask-', column: 'subcol-' } を渡し、
+   * 同一ページに併存する親 DndContext と id 空間を分離する。
+   */
+  idPrefix?: { card: string; column: string };
 }
 
 export interface UseKanbanDndResult {
@@ -89,6 +96,11 @@ export interface UseKanbanDndResult {
   /** taskId → 楽観 status。`tasks` 配列の表示時に override する用途。 */
   optimisticOverrides: Map<string, TaskStatus>;
   canStartDrag: (task: Task) => boolean;
+  /**
+   * status 遷移の権限判定（②メニュー代替のフィルタ用に export）。
+   * 既存呼び出し（親看板）は無視するだけ＝後方互換。
+   */
+  canMove: (task: Task, from: TaskStatus, to: TaskStatus) => boolean;
 }
 
 /**
@@ -108,6 +120,9 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
     onSuccess,
     onMutationSuccess,
   } = params;
+
+  // dnd-kit id プレフィックス（省略時 = 親看板の従来値で後方互換）。
+  const prefix = params.idPrefix ?? { card: 'task-', column: 'column-' };
 
   const { updateTask, completeTask, reopenTask } = useTaskMutations();
 
@@ -141,9 +156,9 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
   );
 
   const getColumnLabel = useCallback((rawOverId: string): string => {
-    const status = narrowToTaskStatus(stripPrefix(rawOverId, 'column-'));
+    const status = narrowToTaskStatus(stripPrefix(rawOverId, prefix.column));
     return status ? TASK_STATUS_LABELS[status] : rawOverId;
-  }, []);
+  }, [prefix.column]);
 
   const accessibility = useMemo<{
     announcements: Announcements;
@@ -151,7 +166,7 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
   }>(() => {
     const announcements: Announcements = {
       onDragStart: ({ active }) => {
-        const taskId = stripPrefix(String(active.id), 'task-');
+        const taskId = stripPrefix(String(active.id), prefix.card);
         const task = findTaskById(taskId);
         return task ? `タスク「${task.title}」を移動します。` : 'タスクを移動します。';
       },
@@ -174,7 +189,7 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
     };
 
     return { announcements, screenReaderInstructions };
-  }, [findTaskById, getColumnLabel]);
+  }, [findTaskById, getColumnLabel, prefix.card]);
 
   // -------------------------------------------------------------------------
   // 権限チェック (§3-4 canMove 相当を inline 実装)
@@ -183,36 +198,14 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
   //   staff       : 自店舗 or 全社タスクのみ、done からの reopen は NG
   //   managerial  : 全許可 (ただし done → todo/cancelled は Phase 2 で禁止、Q-T4)
   // -------------------------------------------------------------------------
+  //
+  // 2026-06-10 §11: ロジック本体を lib/kanbanTransition.ts の純粋関数
+  // `canTransitionStatus` に切り出し、ここはそれへ委譲する（single source of truth）。
+  // ②canMove・②メニュー代替・③ TaskDetailDialog の status select が同一判定を共有。
+  // 入出力は従来 inline 実装と完全一致（役割×from×to の真理値表が 1 ケースも変わらない）。
   const canMove = useCallback(
-    (task: Task, from: TaskStatus, to: TaskStatus): boolean => {
-      // parttime は最優先で判定 (myRole が staff でも parttime フラグが立つことがある)
-      if (isParttime) {
-        const isAssignee =
-          currentUserId !== undefined &&
-          (task.assignee_user_ids ?? []).includes(currentUserId);
-        const isValidFrom = from === 'todo' || from === 'in_progress';
-        const isValidTo = to === 'done';
-        return isAssignee && isValidFrom && isValidTo;
-      }
-
-      // managerial (owner / manager) は基本全許可、ただし Phase 2 では done → todo/cancelled を禁止 (Q-T4)
-      // Phase 3 で reopen_task RPC に p_target_status 引数を追加して解禁予定
-      if (myRole === 'owner' || myRole === 'manager') {
-        if (from === 'done' && (to === 'todo' || to === 'cancelled')) return false;
-        return true;
-      }
-
-      // staff (非 parttime): 自店舗 + done からの reopen NG
-      if (myRole === 'staff') {
-        const isMyStore =
-          task.store_id === null ||
-          (typeof task.store_id === 'string' && myStoreIds.includes(task.store_id));
-        const isReopenAttempt = from === 'done';
-        return isMyStore && !isReopenAttempt;
-      }
-
-      return false;
-    },
+    (task: Task, from: TaskStatus, to: TaskStatus): boolean =>
+      canTransitionStatus(task, from, to, { myRole, isParttime, myStoreIds, currentUserId }),
     [isParttime, myRole, currentUserId, myStoreIds],
   );
 
@@ -258,13 +251,13 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
   const handleDragEnd = useCallback(
     async (event: DragEndEvent): Promise<void> => {
       // 1. active.id から taskId 抽出
-      const taskId = stripPrefix(String(event.active.id), 'task-');
+      const taskId = stripPrefix(String(event.active.id), prefix.card);
 
       // 2. ドロップ先が無ければ早期 return
       if (!event.over) return;
 
       // 3. over.id から newStatus を narrow
-      const rawStatus = stripPrefix(String(event.over.id), 'column-');
+      const rawStatus = stripPrefix(String(event.over.id), prefix.column);
       const newStatus = narrowToTaskStatus(rawStatus);
       if (!newStatus) {
         onError?.('無効な移動先です');
@@ -361,6 +354,8 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
       onSuccess,
       onMutationSuccess,
       removeOptimisticOverride,
+      prefix.card,
+      prefix.column,
     ],
   );
 
@@ -371,5 +366,6 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
     isMutating,
     optimisticOverrides,
     canStartDrag,
+    canMove,
   };
 }
