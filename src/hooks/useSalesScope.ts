@@ -34,7 +34,7 @@ interface LocationMetaRow {
 
 export function useSalesScope(): SalesScope {
   const { currentTenant, isOwner, isManager } = useTenant();
-  const { stores } = useStoreContext();
+  const { stores, loading: storesLoading } = useStoreContext();
 
   const canViewAll = isOwner || isManager;
 
@@ -103,5 +103,10 @@ export function useSalesScope(): SalesScope {
     });
   }
 
-  return { allowedLocationNames, canViewAll, loading };
+  // Loop2 申し送り §6.1: locations_meta fetch だけでなく、StoreContext の所属店
+  // ロード中（storesLoading）と currentTenant 未確定も loading に合成する。
+  // staff のスコープ確定前に「対象店舗なし」を一瞬誤表示するのを防ぐ。
+  const combinedLoading = loading || storesLoading || !currentTenant;
+
+  return { allowedLocationNames, canViewAll, loading: combinedLoading };
 }

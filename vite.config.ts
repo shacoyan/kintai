@@ -25,6 +25,17 @@ export default defineConfig({
           ) {
             return 'react-vendor';
           }
+          // recharts とその描画依存 (d3 系 / victory-vendor) を売上ルート専用の
+          // 遅延 chunk に分離し、初期バンドルの肥大を防ぐ (SalesPage は lazy import 済)。
+          // react-is は上の react-vendor 判定で先に拾われるため共有のまま。
+          if (
+            id.includes('recharts') ||
+            id.includes('victory-vendor') ||
+            id.includes('/d3-') ||
+            id.includes('/internmap/')
+          ) {
+            return 'recharts-vendor';
+          }
           if (id.includes('@supabase')) return 'supabase-vendor';
           if (id.includes('@dnd-kit')) return 'dnd-vendor';
           if (id.includes('date-fns')) return 'date-vendor';

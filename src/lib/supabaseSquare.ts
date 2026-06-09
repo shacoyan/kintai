@@ -68,3 +68,28 @@ export async function ensureSquareSession(): Promise<void> {
     refresh_token: session.refresh_token,
   });
 }
+
+/**
+ * セッションを注入してから `fn()` を実行する fail-closed ラッパー。
+ * (Loop2 申し送り §6.2)
+ *
+ * `ensureSquareSession()` は未ログイン時に黙って return するため、呼び忘れると
+ * 後続の SELECT / RPC が anon 扱いになり越権・誤動作の温床になる。本ラッパーは
+ *   1. public 側セッションを取得し、無ければ **即 throw**（fail-closed）。
+ *   2. セッションを square クライアントへ注入。
+ *   3. `fn()` を実行して結果を返す。
+ * これにより「セッション注入忘れ」を構造的に排除する。square_dashboard への
+ * SELECT / RPC は本ラッパー経由で呼ぶこと。
+ */
+export async function withSquareSession<T>(fn: () => Promise<T>): Promise<T> {
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
+  if (!session) {
+    throw new Error('No active session: cannot access square_dashboard (fail-closed).');
+  }
+  await supabaseSquare.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
+  return fn();
+}
