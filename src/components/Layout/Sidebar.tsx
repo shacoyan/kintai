@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Clock, List, Calendar, LayoutDashboard, CheckSquare, FolderKanban, type LucideIcon } from 'lucide-react';
+import { Clock, List, Calendar, LayoutDashboard, CheckSquare, FolderKanban, TrendingUp, type LucideIcon } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { Badge, BrandMark } from '../ui';
 
@@ -70,6 +70,7 @@ export function Sidebar() {
       <NavItem to="/history" icon={List} label="履歴" />
       <NavItem to="/shift" icon={Calendar} label="シフト" />
       <NavItem to="/tasks" icon={CheckSquare} label="タスク" />
+      <NavItem to="/sales" icon={TrendingUp} label="売上" />
       <NavItem to="/projects" icon={FolderKanban} label="プロジェクト" />
 
       {isManagerial && (
