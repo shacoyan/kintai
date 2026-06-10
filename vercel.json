@@ -1,5 +1,10 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     { "source": "/((?!assets/|api/|.*\\.).*)", "destination": "/index.html" }
-  ]
+  ],
+  "functions": {
+    "api/transactions.js": { "maxDuration": 60 },
+    "api/*.js": { "maxDuration": 15 }
+  }
 }

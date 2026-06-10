@@ -4,6 +4,8 @@ import { useSalesSegment } from '../hooks/useSalesSegment';
 import { useSalesYoY } from '../hooks/useSalesYoY';
 import { useSalesByLocation } from '../hooks/useSalesByLocation';
 import { useSalesByLocationDaily } from '../hooks/useSalesByLocationDaily';
+import { useSquareLiveSales } from '../hooks/useSquareLiveSales';
+import { squareFetch } from '../lib/sales/squareLiveClient';
 import {
   Card,
   PageLoader,
@@ -14,6 +16,7 @@ import {
   DashboardSkeleton,
 } from '../components/ui';
 import { PeriodSelector } from '../components/sales/ui';
+import DailyLiveSection from '../components/sales/DailyLiveSection';
 import {
   SegmentPieChart,
   SegmentTrendChart,
@@ -186,14 +189,71 @@ export const SalesPage: React.FC = () => {
   // 店舗別比較は owner/manager かつ ALL 選択時のみ（複数店を全店で見るときだけ意味）。
   const showLocationCompare = canViewAll && locationNames === null;
 
+  // --- 当日 live（W4-P1 / 設計書 §4.3.3）---
+  // period==='today' のとき RPC 集計（前日まで確定）の代わりに Square live を表示する。
+  // RPC 経路は今日では enabled=false（無駄打ち停止）。他 period は完全に現状不変。
+  const isToday = period === 'today';
+
+  // ALL（全店）+ today は live が店舗単位のため未対応 → 単店選択を促す（P1 は合算しない）。
+  const isAllToday = isToday && locationNames === null;
+  // 単店選択時の Square location_name。live の location_id 解決キー。
+  const selectedLocationName = useMemo<string | null>(
+    () => (locationNames && locationNames.length === 1 ? locationNames[0] : null),
+    [locationNames],
+  );
+
+  // /api/locations を 1 回呼んで name→id マップを作る（locations.js は P1 で移植済）。
+  // today 表示かつ単店選択時のみ取得（owner ALL / 非 today では往復しない）。
+  const [locationIdMap, setLocationIdMap] = useState<Record<string, string>>({});
+  const [locationsError, setLocationsError] = useState<string | null>(null);
+  const needLocationId = scopeReady && isToday && selectedLocationName !== null;
+  useEffect(() => {
+    if (!needLocationId) return;
+    let cancelled = false;
+    setLocationsError(null);
+    squareFetch<{ locations: { id: string; name: string }[] }>('/api/locations')
+      .then((res) => {
+        if (cancelled) return;
+        const map: Record<string, string> = {};
+        for (const loc of res.locations ?? []) map[loc.name] = loc.id;
+        setLocationIdMap(map);
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        // error は全文表示（短縮しない＝MEMORY ルール）。
+        setLocationsError(e instanceof Error ? e.message : String(e));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [needLocationId]);
+
+  const selectedLocationId = selectedLocationName
+    ? locationIdMap[selectedLocationName] ?? null
+    : null;
+
+  // 当日 live（決済済み売上 + 取引一覧）。単店選択かつ id 解決済みのときのみ起動。
+  const live = useSquareLiveSales({
+    date: baseDate,
+    // 契約は non-null。未解決時は空文字 + enabled=false で hook 側が「何もしない」。
+    locationId: selectedLocationId ?? '',
+    startHour: STORE_START_HOUR,
+    // 営業日はフル 24h (11:00〜翌10:59)。api 側 parseTimeRange は endHour < startHour の
+    // ときのみ翌日扱いになるため、endHour=STORE_START_HOUR(11) だと 11:00〜11:59 の
+    // 59分しか取得できない。Dashboard.tsx と同式の (start+23)%24 (=10) で翌日 10:59 までを表現する。
+    endHour: (STORE_START_HOUR + 23) % 24,
+    enabled: scopeReady && isToday && selectedLocationId !== null,
+  });
+
   // --- 3 hook（from/to/baseDate を共有）---
+  // today は live 経路へ切替えるため RPC 集計系を停止（enabled=false）。
   const segment = useSalesSegment({
     from,
     to,
     period,
     baseDate,
     locationNames,
-    enabled: scopeReady,
+    enabled: scopeReady && !isToday,
   });
 
   // YoY を描くのは month/quarter/year のみ（week/today は SegmentTrendChart 側でも抑制）。
@@ -211,7 +271,7 @@ export const SalesPage: React.FC = () => {
     from,
     to,
     locationNames: null,
-    enabled: scopeReady && showLocationCompare,
+    enabled: scopeReady && !isToday && showLocationCompare,
   });
 
   // 077 RPC（店舗別日次）。owner ALL かつ比較セクション表示時のみフェッチ
@@ -220,7 +280,7 @@ export const SalesPage: React.FC = () => {
     from,
     to,
     locationNames: null,
-    enabled: scopeReady && showLocationCompare,
+    enabled: scopeReady && !isToday && showLocationCompare,
   });
 
   // --- 前年比バッジ・YoY 系列の導出 ---
@@ -315,7 +375,7 @@ export const SalesPage: React.FC = () => {
           <div>
             <h1 className="text-lg font-semibold text-stone-900 dark:text-stone-100">売上</h1>
             <p className="text-xs text-stone-500 dark:text-stone-400">
-              Square 売上ダッシュボード（前日まで確定／当日は暫定値）
+              Square 売上ダッシュボード（前日まで確定／当日はリアルタイム）
             </p>
           </div>
 
@@ -361,6 +421,29 @@ export const SalesPage: React.FC = () => {
           title="対象店舗の売上データがありません"
           description="閲覧可能な Square 店舗が見つかりませんでした。"
         />
+      ) : isToday ? (
+        // 当日は Square live（決済済み売上 + 取引一覧）を表示する（W4-P1 / §4.3.3）。
+        // RPC 集計系（前日まで確定）は today では停止済み。
+        isAllToday ? (
+          // ALL+today は live が店舗単位のため P1 では単店選択を促す（合算は P2 以降）。
+          <EmptyState
+            title="今日のデータは店舗を 1 つ選んでください"
+            description="当日のリアルタイム売上は店舗ごとに表示します。上の店舗セレクタで店舗を選択してください。"
+          />
+        ) : locationsError ? (
+          // 店舗 ID 解決エラーは全文表示（短縮しない＝MEMORY ルール）。
+          <ErrorBanner message={locationsError} />
+        ) : (
+          <DailyLiveSection
+            sales={live.sales}
+            transactions={live.transactions}
+            loading={live.loading}
+            error={live.error}
+            date={baseDate}
+            lastUpdated={live.lastUpdated}
+            refresh={live.refresh}
+          />
+        )
       ) : segment.error ? (
         // error は全文表示（短縮しない＝MEMORY ルール）。
         <ErrorBanner message={segment.error} />
