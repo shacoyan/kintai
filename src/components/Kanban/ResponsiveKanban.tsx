@@ -14,10 +14,12 @@
  *   楽観的更新の分断が発生しない。子コンポーネントは `dnd` props を受け取り、
  *   内部で `DndContext` を巻かない。
  */
-import { DndContext } from '@dnd-kit/core';
+import { useState } from 'react';
+import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
 
 import { KanbanBoard } from './KanbanBoard';
 import { MobileKanban } from './MobileKanban';
+import { KanbanCardPresentation } from './KanbanCard';
 import { useKanbanDnd } from '../../hooks/useKanbanDnd';
 import type { Task } from '../../types';
 
@@ -45,6 +47,8 @@ interface ResponsiveKanbanProps {
 }
 
 export function ResponsiveKanban(props: ResponsiveKanbanProps) {
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+
   const dnd = useKanbanDnd({
     tasks: props.tasks,
     myRole: props.myRole,
@@ -57,7 +61,20 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
   });
 
   return (
-    <DndContext sensors={dnd.sensors} accessibility={dnd.accessibility} onDragEnd={dnd.handleDragEnd}>
+    <DndContext
+      sensors={dnd.sensors}
+      accessibility={dnd.accessibility}
+      collisionDetection={closestCorners}
+      onDragStart={({ active }) => {
+        const id = String(active.id).replace('task-', '');
+        setActiveTask(props.tasks.find((t) => t.id === id) ?? null);
+      }}
+      onDragEnd={(e) => {
+        void dnd.handleDragEnd(e);
+        setActiveTask(null);
+      }}
+      onDragCancel={() => setActiveTask(null)}
+    >
       <div>
         <div className="lg:hidden">
           <MobileKanban
@@ -91,6 +108,18 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
           />
         </div>
       </div>
+      <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2,0,0,1)' }}>
+        {activeTask ? (
+          <KanbanCardPresentation
+            task={activeTask}
+            assignees={(activeTask.assignee_user_ids ?? []).map((id) => ({
+              userId: id,
+              name: props.memberNames?.get(id) ?? '?',
+            }))}
+            projectName={activeTask.project_id ? props.projectNames?.get(activeTask.project_id) : undefined}
+          />
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

@@ -82,7 +82,7 @@ export function KanbanColumn({
         ref={setNodeRef}
         className={`flex min-h-[120px] flex-1 flex-col gap-2 overflow-auto p-2 motion-safe:transition-colors duration-150 focus-within:ring-2 focus-within:ring-blue-500/40 ${
           isOver
-            ? 'bg-blue-50/40 dark:bg-blue-950/20'
+            ? 'bg-blue-50 ring-2 ring-inset ring-blue-400/60 dark:bg-blue-950/30 dark:ring-blue-500/40'
             : ''
         }`}
       >

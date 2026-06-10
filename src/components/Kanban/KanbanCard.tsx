@@ -79,56 +79,30 @@ function getProjectDotColor(borderClass: string): string {
 }
 
 /**
- * Kanban カラム内に表示する compact カード。
- * description / アクションボタンは出さず、タイトル + 優先度 + 期限 + 担当者のみ。
- * dnd-kit `useSortable` で draggable + sortable。
+ * KanbanCardBody — カードの見た目本体（root div の中身）。
+ * sortable 版 (KanbanCard) と overlay 版 (KanbanCardPresentation) で共有し JSX を二重管理しない。
+ * `…`メニュー（ActionMenu）は `menuSlot` 注入とし、overlay では渡さない（純表示）。
  */
-export function KanbanCard({
+function KanbanCardBody({
   task,
-  onClick,
-  isDraggable = true,
   assignees,
   projectName,
-  onDelete,
-  canDelete = false,
-}: KanbanCardProps): JSX.Element {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: `task-${task.id}`,
-    disabled: !isDraggable,
-  });
-
-  // transform に rotate(0.5deg) scale(0.98) を追加。dnd-kit の transform と合成。
-  const dragTransform = isDragging
-    ? `${CSS.Transform.toString(transform) ?? ''} rotate(0.5deg) scale(0.98)`.trim()
-    : CSS.Transform.toString(transform);
-
-  const style: React.CSSProperties = {
-    transform: dragTransform,
-    transition,
-  };
-
+  menuSlot,
+}: {
+  task: Task;
+  assignees?: { userId: string; name: string }[];
+  projectName?: string;
+  /** ヘッダ右端に差し込む `…`メニュー。overlay 版は undefined（描画しない）。 */
+  menuSlot?: React.ReactNode;
+}): JSX.Element {
   const isOverdue =
     !!task.due_date &&
     isPast(parseISO(task.due_date)) &&
     task.status !== 'done' &&
     task.status !== 'cancelled';
 
-  const isClickable = !!onClick;
-
   // プロジェクトごとの色 (左 border + chip)。projectId なしは neutral。
   const projectColor = getProjectColor(task.project_id);
-
-  const menuItems: ActionMenuItem[] = [];
-  if (canDelete && onDelete) {
-    menuItems.push({ key: 'delete', label: '削除', tone: 'danger', onSelect: onDelete });
-  }
 
   // 子タスク進捗 pill (parent のみ subtask_total > 0)
   const subtaskTotal = task.subtask_total ?? 0;
@@ -139,50 +113,8 @@ export function KanbanCard({
       ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
       : 'bg-stone-100 text-stone-600 dark:bg-stone-700 dark:text-stone-300';
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // ドラッグ後のクリック誤発火を避ける
-    if (isDragging) return;
-    if (onClick) onClick();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    void e;
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!isClickable || !onClick) return;
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      onClick();
-    }
-  };
-
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      onClick={isClickable ? handleClick : undefined}
-      onKeyDown={isClickable ? handleKeyDown : undefined}
-      role={isClickable ? 'button' : undefined}
-      tabIndex={isClickable ? 0 : undefined}
-      aria-disabled={!isDraggable || undefined}
-      aria-label={isClickable ? `タスク: ${task.title}` : undefined}
-      className={`
-        flex flex-col gap-1.5
-        bg-white dark:bg-stone-800
-        rounded-[8px]
-        border border-stone-200/70 dark:border-stone-700/60
-        border-l-[3px] ${projectColor.border}
-        ${isDragging ? 'opacity-[0.55] rotate-[0.6deg] scale-[0.98] shadow-[0_12px_28px_rgba(0,0,0,0.16)] cursor-grabbing' : 'shadow-[0_1px_2px_rgba(0,0,0,0.04)]'}
-        p-2.5 px-3
-        select-none
-        motion-safe:transition-all motion-safe:duration-150 motion-safe:ease-out
-        ${!isDraggable
-          ? 'cursor-not-allowed opacity-90'
-          : 'cursor-grab active:cursor-grabbing motion-safe:hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]'}
-        ${isClickable ? 'focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus:outline-none' : ''}
-      `}
-    >
+    <>
       <div className="flex items-center gap-1.5">
         <span
           aria-hidden="true"
@@ -197,23 +129,7 @@ export function KanbanCard({
             中止
           </span>
         )}
-        {menuItems.length > 0 && (
-          <span
-            className="-my-2 -mr-1.5 flex items-center justify-center"
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
-          >
-            <ActionMenu
-              items={menuItems}
-              triggerSize="sm"
-              align="end"
-              triggerLabel="タスク操作"
-              bottomSheetTitle="タスク操作"
-            />
-          </span>
-        )}
+        {menuSlot}
       </div>
 
       <h3 className="line-clamp-2 text-[12.5px] font-medium leading-[1.4] text-stone-900 dark:text-stone-100">
@@ -281,6 +197,158 @@ export function KanbanCard({
           )}
         </div>
       )}
+    </>
+  );
+}
+
+/**
+ * Kanban カラム内に表示する compact カード。
+ * description / アクションボタンは出さず、タイトル + 優先度 + 期限 + 担当者のみ。
+ * dnd-kit `useSortable` で draggable + sortable。
+ */
+export function KanbanCard({
+  task,
+  onClick,
+  isDraggable = true,
+  assignees,
+  projectName,
+  onDelete,
+  canDelete = false,
+}: KanbanCardProps): JSX.Element {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: `task-${task.id}`,
+    disabled: !isDraggable,
+  });
+
+  // DragOverlay 導入により元カードは動かさない (overlay が追従)。
+  // SortableContext の並べ替え transform のみ受け、プレースホルダとして自然に隙間を作る。
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const isClickable = !!onClick;
+
+  // プロジェクトごとの色 (左 border)。projectId なしは neutral。
+  const projectColor = getProjectColor(task.project_id);
+
+  const menuItems: ActionMenuItem[] = [];
+  if (canDelete && onDelete) {
+    menuItems.push({ key: 'delete', label: '削除', tone: 'danger', onSelect: onDelete });
+  }
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // ドラッグ後のクリック誤発火を避ける
+    if (isDragging) return;
+    if (onClick) onClick();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    void e;
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!isClickable || !onClick) return;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={isClickable ? handleClick : undefined}
+      onKeyDown={isClickable ? handleKeyDown : undefined}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      aria-disabled={!isDraggable || undefined}
+      aria-label={isClickable ? `タスク: ${task.title}` : undefined}
+      className={`
+        flex flex-col gap-1.5
+        bg-white dark:bg-stone-800
+        rounded-[8px]
+        border border-stone-200/70 dark:border-stone-700/60
+        border-l-[3px] ${projectColor.border}
+        ${isDragging ? 'opacity-40 border-dashed shadow-none' : 'shadow-[0_1px_2px_rgba(0,0,0,0.04)]'}
+        p-2.5 px-3
+        select-none
+        motion-safe:transition-all motion-safe:duration-150 motion-safe:ease-out
+        ${!isDraggable
+          ? 'cursor-not-allowed opacity-90'
+          : isDragging
+            ? 'cursor-grabbing'
+            : 'cursor-grab active:cursor-grabbing motion-safe:hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)]'}
+        ${isClickable ? 'focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus:outline-none' : ''}
+      `}
+    >
+      <KanbanCardBody
+        task={task}
+        assignees={assignees}
+        projectName={projectName}
+        menuSlot={
+          menuItems.length > 0 ? (
+            <span
+              className="-my-2 -mr-1.5 flex items-center justify-center"
+              onPointerDown={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
+            >
+              <ActionMenu
+                items={menuItems}
+                triggerSize="sm"
+                align="end"
+                triggerLabel="タスク操作"
+                bottomSheetTitle="タスク操作"
+              />
+            </span>
+          ) : undefined
+        }
+      />
+    </div>
+  );
+}
+
+export interface KanbanCardPresentationProps {
+  task: Task;
+  assignees?: { userId: string; name: string }[];
+  projectName?: string;
+}
+
+/**
+ * KanbanCardPresentation — DragOverlay 用の純表示カード。
+ * useSortable / onClick / role / tabIndex / ActionMenu を一切持たない「掴んでいる札」。
+ * 見た目本体は KanbanCardBody を共有（プロジェクトタグ/進捗pill/期限/アバター/優先度/中止バッジ全再現）。
+ */
+export function KanbanCardPresentation({
+  task,
+  assignees,
+  projectName,
+}: KanbanCardPresentationProps): JSX.Element {
+  const projectColor = getProjectColor(task.project_id);
+  return (
+    <div
+      className={`
+        flex flex-col gap-1.5
+        bg-white dark:bg-stone-800
+        rounded-[8px]
+        border border-stone-200/70 dark:border-stone-700/60
+        border-l-[3px] ${projectColor.border}
+        shadow-[0_12px_28px_rgba(0,0,0,0.16)]
+        p-2.5 px-3
+        select-none cursor-grabbing
+      `}
+    >
+      <KanbanCardBody task={task} assignees={assignees} projectName={projectName} />
     </div>
   );
 }
