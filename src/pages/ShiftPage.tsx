@@ -1351,23 +1351,37 @@ export function ShiftPage() {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-[112px_1fr] gap-2">
+                  <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-[112px_1fr] gap-2">
+                      <Button
+                        variant="secondary"
+                        size="lg"
+                        className="whitespace-nowrap"
+                        onClick={() => setMobilePresetSheetOpen(true)}
+                        disabled={isDeadlinePassed && !canEditDeadline}
+                      >
+                        プリセット
+                      </Button>
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        iconLeft={<Plus className="w-4 h-4" />}
+                        onClick={() => setNewPreferenceDate(format(new Date(), 'yyyy-MM-dd'))}
+                      >
+                        希望シフト提出
+                      </Button>
+                    </div>
                     <Button
-                      variant="secondary"
+                      variant="success"
                       size="lg"
-                      className="whitespace-nowrap"
-                      onClick={() => setMobilePresetSheetOpen(true)}
-                      disabled={isDeadlinePassed && !canEditDeadline}
-                    >
-                      プリセット
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="lg"
+                      fullWidth
                       iconLeft={<Plus className="w-4 h-4" />}
-                      onClick={() => setNewPreferenceDate(format(new Date(), 'yyyy-MM-dd'))}
+                      onClick={handleEnterBulkMode}
+                      disabled={isDeadlinePassed && !canEditDeadline}
+                      aria-pressed={isBulkMode}
+                      aria-label={messages.shiftPreference.bulk.entryButtonAria}
                     >
-                      希望シフト提出
+                      {messages.shiftPreference.bulk.entryButtonShort}
                     </Button>
                   </div>
                 )}
