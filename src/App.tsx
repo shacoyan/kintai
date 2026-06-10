@@ -20,6 +20,7 @@ const ShiftPage = lazy(() => import('./pages/ShiftPage').then(m => ({ default: m
 const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: m.default })));
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then(m => ({ default: m.ProjectsPage })));
 const SalesPage = lazy(() => import('./pages/SalesPage').then(m => ({ default: m.SalesPage })));
+const ReportsPage = lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
 
 const App: React.FC = () => {
   return (
@@ -163,6 +164,22 @@ const App: React.FC = () => {
                       <ErrorBoundary scope="route">
                         <Suspense fallback={<PageLoader variant="screen" />}>
                           <SalesPage />
+                        </Suspense>
+                      </ErrorBoundary>
+                    </Layout>
+                  </RequireTenant>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <RequireTenant>
+                    <Layout>
+                      <ErrorBoundary scope="route">
+                        <Suspense fallback={<PageLoader variant="screen" />}>
+                          <ReportsPage />
                         </Suspense>
                       </ErrorBoundary>
                     </Layout>

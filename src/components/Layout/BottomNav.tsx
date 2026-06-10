@@ -8,6 +8,7 @@ import {
   CheckSquare,
   TrendingUp,
   FolderKanban,
+  FileText,
   MoreHorizontal,
   type LucideIcon,
 } from 'lucide-react';
@@ -31,6 +32,7 @@ const PRIMARY_ITEMS: NavItemDef[] = [
 
 // 「もっと」drawer 内の項目 (全 role 表示)
 const MORE_ITEMS_ALL: NavItemDef[] = [
+  { to: '/reports', icon: FileText, label: '日報' },
   { to: '/projects', icon: FolderKanban, label: 'プロジェクト' },
 ];
 
