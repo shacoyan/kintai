@@ -33,6 +33,7 @@ export function useMonthlyReport(
   storeId: string | null,
   year: number | null,
   month: number | null,
+  tenantId: string | null = null,
 ): UseMonthlyReportResult {
   const [data, setData] = useState<MonthlyReport | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -61,7 +62,7 @@ export function useMonthlyReport(
       try {
         const { data: rpcData, error: rpcError } = await supabase.rpc(
           'get_monthly_report',
-          { p_store_id: storeId, p_year: year, p_month: month },
+          { p_store_id: storeId, p_year: year, p_month: month, p_tenant_id: tenantId },
         );
         if (rpcError) throw rpcError;
         if (cancelled) return;
@@ -83,7 +84,7 @@ export function useMonthlyReport(
     return () => {
       cancelled = true;
     };
-  }, [storeId, year, month, enabled, reloadKey]);
+  }, [storeId, year, month, tenantId, enabled, reloadKey]);
 
   return { data, loading, error, reload };
 }

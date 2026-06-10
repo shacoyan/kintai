@@ -54,8 +54,8 @@ export const MonthlyReportPanel: React.FC = () => {
   };
 
   // ---- データ取得 ----
-  const report = useMonthlyReport(effectiveStoreId, year, month);
-  const reportAll = useMonthlyReportAll(year, month, isManagerial);
+  const report = useMonthlyReport(effectiveStoreId, year, month, currentTenant?.id ?? null);
+  const reportAll = useMonthlyReportAll(year, month, currentTenant?.id ?? null, isManagerial);
   const settings = useStoreMonthlySettings(
     isManagerial ? currentTenant?.id ?? null : null,
     isManagerial ? effectiveStoreId : null,

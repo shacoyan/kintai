@@ -73,6 +73,7 @@ export function useDailyReport(
         const { data: rpcData, error: rpcError } = await supabase.rpc('get_daily_report', {
           p_store_id: storeId,
           p_business_date: businessDate,
+          p_tenant_id: tenantId,
         });
         if (rpcError) throw rpcError;
         if (cancelled) return;
@@ -93,7 +94,7 @@ export function useDailyReport(
     return () => {
       cancelled = true;
     };
-  }, [storeId, businessDate, reloadKey]);
+  }, [storeId, businessDate, tenantId, reloadKey]);
 
   const saveDailyReport = useCallback(
     async (form: DailyReportForm) => {

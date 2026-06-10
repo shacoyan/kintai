@@ -30,6 +30,7 @@ export interface UseMonthlyReportAllResult {
 export function useMonthlyReportAll(
   year: number | null,
   month: number | null,
+  tenantId: string | null,
   enabled = true,
 ): UseMonthlyReportAllResult {
   const [data, setData] = useState<MonthlyReportAll | null>(null);
@@ -39,7 +40,7 @@ export function useMonthlyReportAll(
 
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
 
-  const ready = enabled && year != null && month != null;
+  const ready = enabled && year != null && month != null && tenantId != null;
 
   useEffect(() => {
     let cancelled = false;
@@ -59,7 +60,7 @@ export function useMonthlyReportAll(
       try {
         const { data: rpcData, error: rpcError } = await supabase.rpc(
           'get_monthly_report_all',
-          { p_year: year, p_month: month },
+          { p_year: year, p_month: month, p_tenant_id: tenantId },
         );
         if (rpcError) throw rpcError;
         if (cancelled) return;
@@ -81,7 +82,7 @@ export function useMonthlyReportAll(
     return () => {
       cancelled = true;
     };
-  }, [year, month, ready, reloadKey]);
+  }, [year, month, tenantId, ready, reloadKey]);
 
   return { data, loading, error, reload };
 }
