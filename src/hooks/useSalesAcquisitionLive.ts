@@ -12,11 +12,16 @@ import type {
 } from '../lib/sales/types';
 
 // =============================================================================
-// useSalesAcquisitionLive — 獲得経路の live 補完 hook（Wave4-P2 §4.1.1 / §4.1.2）
+// useSalesAcquisitionLive — 獲得経路 + 混雑分析の live fetch hook（Wave4-P2 / P3 §4.C）
 // -----------------------------------------------------------------------------
 // 役割: 現在の period 期間の transactions-range（+open-orders-range）を fetch し、
-// `aggregateSegments(allTransactions).acquisition` だけを返す。売上・客数・トレンドは
-// 一切触らない（それは useSalesSegment=RPC が正本）。獲得経路だけの live 補完。
+// `aggregateSegments(allTransactions).acquisition`（集計済み）と、その算出元になった
+// 正規化済み `transactions: Transaction[]`（生）の両方を返す。売上・客数・トレンドは
+// 一切触らない（それは useSalesSegment=RPC が正本）。獲得経路 + 時間帯別混雑分析の live 補完。
+//
+// 方式A（P3 §5.1）: occupancy（混雑分析）は acquisition と同一 fetch 結果から派生する。
+// transactions を expose するだけで、acquisition 集計は一切変えない（fetch 往復はゼロ増）。
+// year 等で 92 日クランプが効くと occupancy も「直近 92 暦日」の集計になる（許容・§5.2）。
 //
 // 三重ガード（設計書どおり。enabled=false で fetch しない）:
 //   1. 単店選択時のみ（locationId 解決済み）。ALL は補完しない（§4.1.4）。
@@ -29,7 +34,11 @@ import type {
 // AbortController + 世代管理: 引数変更/unmount で in-flight を中断 & stale 破棄。
 // =============================================================================
 
-/** 獲得経路 transactions-range の期間上限（四半期相当）。year/長期はこれにクランプ。 */
+/**
+ * 獲得経路 transactions-range の期間上限（四半期相当）。year/長期はこれにクランプ。
+ * 定義は「inclusive 暦日数」（両端含む日数）。= 直近 92 暦日。
+ * （P2 までは「差分日数」定義で 1 日 off-by-one があり 93 暦日取っていた → P3 で厳密化）
+ */
 export const ACQUISITION_MAX_RANGE_DAYS = 92;
 
 /** acquisition fetch の timeout（catalog 多段がありうるため明示 60s）。 */
@@ -53,10 +62,16 @@ export interface UseSalesAcquisitionLiveArgs {
 export interface UseSalesAcquisitionLiveResult {
   /** 取得成功時のみ。null=未取得/取得失敗（呼び出し側は既定ゼロのまま）。 */
   acquisition: AcquisitionBreakdown | null;
+  /**
+   * acquisition 算出元の正規化済み transactions（方式A・P3）。
+   * 混雑分析（buildOccupancyMatrix）の入力。失敗/ガード不成立時は []。
+   * acquisition と同一 fetch 結果から派生（fetch 往復ゼロ増）。
+   */
+  transactions: Transaction[];
   loading: boolean;
   /** 全文（短縮禁止）。失敗時も売上表示は壊さない（acquisition だけ欠落）。 */
   error: string | null;
-  /** クランプが効いて「直近 92 日」に縮めた場合 true（チャート注記用）。 */
+  /** クランプが効いて「直近 92 暦日」に縮めた場合 true（チャート注記用）。 */
   clamped: boolean;
 }
 
@@ -86,10 +101,15 @@ function utcMsToDate(ms: number): string {
 }
 
 /**
- * 獲得経路 fetch の期間を上限クランプする純関数（§4.1.2）。
- * `endDate - startDate > maxDays` のとき startDate を `endDate - maxDays` に切り上げる。
- * 売上・客数（RPC=全期間）には影響しない。acquisition チャートだけが「直近 maxDays 日」になる。
+ * 獲得経路 fetch の期間を上限クランプする純関数（§4.1.2 / P3 §4.C-2 で off-by-one 厳密化）。
  *
+ * `maxDays` は「inclusive 暦日数」（両端含む日数）。transactions-range は start/end を
+ * 両端含む inclusive で fetch するため、暦日数で上限を定義する。
+ *   - inclusiveDays = spanDays + 1（spanDays=日付差分）。
+ *   - inclusiveDays <= maxDays のときクランプしない。
+ *   - クランプ時は start = end - (maxDays-1) 日（= end を含め maxDays 暦日 = 直近 92 暦日）。
+ *
+ * 売上・客数（RPC=全期間）には影響しない。acquisition / occupancy だけが「直近 maxDays 暦日」になる。
  * 無効入力（NaN になる日付）はクランプせずそのまま返す（fail-soft。呼び出し側で fetch 判定）。
  *
  * @returns { start, end, clamped }。clamped=true のときチャートに注記を出す。
@@ -106,10 +126,12 @@ export function clampAcquisitionRange(
   }
   const dayMs = 24 * 60 * 60 * 1000;
   const spanDays = Math.round((endMs - startMs) / dayMs);
-  if (spanDays <= maxDays) {
+  const inclusiveDays = spanDays + 1; // 両端含む暦日数
+  if (inclusiveDays <= maxDays) {
     return { start: startDate, end: endDate, clamped: false };
   }
-  const clampedStartMs = endMs - maxDays * dayMs;
+  // end を含め maxDays 暦日に収める → start = end - (maxDays - 1) 日。
+  const clampedStartMs = endMs - (maxDays - 1) * dayMs;
   return { start: utcMsToDate(clampedStartMs), end: endDate, clamped: true };
 }
 
@@ -229,6 +251,8 @@ export function useSalesAcquisitionLive(
   const [acquisition, setAcquisition] = useState<AcquisitionBreakdown | null>(
     null,
   );
+  // 方式A（P3）: acquisition 算出元の正規化済み transactions。混雑分析の入力。
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [clamped, setClamped] = useState<boolean>(false);
@@ -249,6 +273,7 @@ export function useSalesAcquisitionLive(
     setLoading(true);
     // fail-soft: 取得中は前回値を破棄（period/店舗切替の stale 残存を防ぐ）。
     setAcquisition(null);
+    setTransactions([]);
     setError(null);
 
     const { start, end, clamped: didClamp } = clampAcquisitionRange(
@@ -293,6 +318,7 @@ export function useSalesAcquisitionLive(
             : '期間データの取得に失敗しました';
         logger.error('useSalesAcquisitionLive both fetch failed:', reason);
         setAcquisition(null);
+        setTransactions([]);
         setError(reason);
         return;
       }
@@ -305,7 +331,9 @@ export function useSalesAcquisitionLive(
         allTransactions.push(...flattenOpenRange(openResult.value));
       }
 
+      // 方式A: acquisition 集計は不変。同じ allTransactions を occupancy 用に expose。
       setAcquisition(aggregateSegments(allTransactions).acquisition);
+      setTransactions(allTransactions);
     } catch (err) {
       if (myGeneration !== generationRef.current) return;
       if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -313,6 +341,7 @@ export function useSalesAcquisitionLive(
         err instanceof Error ? err.message : '期間データの取得に失敗しました';
       logger.error('useSalesAcquisitionLive fetch failed:', message);
       setAcquisition(null);
+      setTransactions([]);
       setError(message);
     } finally {
       if (myGeneration === generationRef.current) setLoading(false);
@@ -326,6 +355,7 @@ export function useSalesAcquisitionLive(
       if (abortRef.current) abortRef.current.abort();
       setLoading(false);
       setAcquisition(null);
+      setTransactions([]);
       setError(null);
       setClamped(false);
       return;
@@ -340,5 +370,5 @@ export function useSalesAcquisitionLive(
     };
   }, [active, doFetch]);
 
-  return { acquisition, loading, error, clamped };
+  return { acquisition, transactions, loading, error, clamped };
 }

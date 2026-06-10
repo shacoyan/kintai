@@ -26,6 +26,7 @@ import {
   WeekdayBarChart,
 } from '../components/sales/charts';
 import SalesLocationComparison from '../components/sales/SalesLocationComparison';
+import OccupancyAnalysisSection from '../components/sales/OccupancyAnalysisSection';
 import SegmentBreakdownList from '../components/sales/SegmentBreakdownList';
 import { formatYen } from '../components/sales/utils';
 import { getBusinessDate } from '../lib/sales/businessDate';
@@ -590,6 +591,12 @@ export const SalesPage: React.FC = () => {
                 （直近約 3 ヶ月の新規客内訳）
               </p>
             ) : null}
+            {/* fail-soft: 取得失敗時も売上・客数には影響しない。獲得経路カード内に局所注意のみ。 */}
+            {locationNames !== null && !isToday && acquisitionLive.error ? (
+              <p className="mb-2 text-xs text-amber-600 dark:text-amber-400">
+                獲得経路の取得に失敗しました（売上・客数には影響していません）。
+              </p>
+            ) : null}
             <AcquisitionChart data={acquisitionBreakdown ?? data.acquisitionBreakdown} />
           </Card>
 
@@ -613,6 +620,37 @@ export const SalesPage: React.FC = () => {
               </div>
             </div>
           </Card>
+
+          {/* 時間帯別混雑分析（B/P3）: 単店 × 非 today のみ。方式A で acquisitionLive の
+              transactions（同一 fetch 結果）から派生＝新規 fetch ゼロ増。ALL/today では非表示。
+              Section は Card を持たず中身だけ返す（§5.2）→ SalesPage が Card + 見出しを持つ。 */}
+          {locationNames !== null && !isToday && (
+            <Card>
+              <h2 className="mb-3 text-sm font-semibold text-stone-700 dark:text-stone-200">
+                時間帯別混雑分析
+              </h2>
+              {acquisitionLive.loading ? (
+                <p className="mb-2 text-xs text-stone-400 dark:text-stone-500">
+                  混雑分析を集計中…
+                </p>
+              ) : acquisitionLive.clamped ? (
+                <p className="mb-2 text-xs text-stone-500 dark:text-stone-400">
+                  （直近約 3 ヶ月の集計）
+                </p>
+              ) : null}
+              {/* fail-soft: 取得失敗時もチャートは EmptyState のまま壊さない（局所注意のみ）。 */}
+              {acquisitionLive.error ? (
+                <p className="mb-2 text-xs text-amber-600 dark:text-amber-400">
+                  混雑分析の取得に失敗しました（売上・客数には影響していません）。
+                </p>
+              ) : null}
+              <OccupancyAnalysisSection
+                transactions={acquisitionLive.transactions}
+                startHour={STORE_START_HOUR}
+                endHour={(STORE_START_HOUR + 23) % 24}
+              />
+            </Card>
+          )}
 
           {/* 店舗別比較（owner/manager かつ ALL 選択時のみ）。
               071 バー（byLoc）と 077 トレンド/曜日/構成（byLocDaily）を別管理で配線。 */}

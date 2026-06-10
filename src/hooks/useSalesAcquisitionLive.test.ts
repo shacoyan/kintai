@@ -11,9 +11,9 @@ import {
 // React/hook 実行は伴わない。
 // =============================================================================
 
-describe('clampAcquisitionRange', () => {
-  it('92 日以内はクランプしない（そのまま返す）', () => {
-    // 2026-04-01 〜 2026-04-30 = 29 日差。
+describe('clampAcquisitionRange（inclusive 暦日 92 日定義 / P3 off-by-one 厳密化）', () => {
+  it('92 暦日以内はクランプしない（そのまま返す）', () => {
+    // 2026-04-01 〜 2026-04-30 = 30 暦日（両端含む）。
     expect(clampAcquisitionRange('2026-04-01', '2026-04-30')).toEqual({
       start: '2026-04-01',
       end: '2026-04-30',
@@ -21,26 +21,35 @@ describe('clampAcquisitionRange', () => {
     });
   });
 
-  it('ちょうど 92 日差はクランプしない（境界）', () => {
-    // 2026-01-01 + 92 日 = 2026-04-03。
-    const r = clampAcquisitionRange('2026-01-01', '2026-04-03');
+  it('ちょうど 92 暦日（差分 91 日）はクランプしない（境界・下）', () => {
+    // 2026-01-01 + 91 日差 = 2026-04-02。両端含めて 92 暦日ちょうど。
+    const r = clampAcquisitionRange('2026-01-01', '2026-04-02');
     expect(r.clamped).toBe(false);
     expect(r.start).toBe('2026-01-01');
   });
 
-  it('92 日超は startDate を endDate-92 日にクランプ（year 相当）', () => {
-    // 2025-06-10 〜 2026-06-10（365 日）→ start を 2026-06-10 の 92 日前へ。
+  it('93 暦日（差分 92 日）はクランプする（境界・上）', () => {
+    // 2026-01-01 + 92 日差 = 2026-04-03。両端含め 93 暦日 → 上限超でクランプ。
+    const r = clampAcquisitionRange('2026-01-01', '2026-04-03');
+    expect(r.clamped).toBe(true);
+    expect(r.end).toBe('2026-04-03');
+    // start = end - (92-1) 日 = 2026-04-03 − 91 日 = 2026-01-02（end 含め 92 暦日）。
+    expect(r.start).toBe('2026-01-02');
+  });
+
+  it('92 暦日超は startDate を「end 含め直近 92 暦日」にクランプ（year 相当）', () => {
+    // 2025-06-10 〜 2026-06-10（365 日差）→ start を end − 91 日へ。
     const r = clampAcquisitionRange('2025-06-10', '2026-06-10');
     expect(r.clamped).toBe(true);
     expect(r.end).toBe('2026-06-10');
-    expect(r.start).toBe('2026-03-10'); // 2026-06-10 − 92 日
+    expect(r.start).toBe('2026-03-11'); // 2026-06-10 − 91 日（end 含め 92 暦日）
   });
 
-  it('maxDays を明示指定できる', () => {
+  it('maxDays を明示指定できる（inclusive 暦日定義）', () => {
     const r = clampAcquisitionRange('2026-01-01', '2026-12-31', 30);
     expect(r.clamped).toBe(true);
     expect(r.end).toBe('2026-12-31');
-    expect(r.start).toBe('2026-12-01'); // 12-31 − 30 日
+    expect(r.start).toBe('2026-12-02'); // 12-31 − 29 日（end 含め 30 暦日）
   });
 
   it('既定 maxDays は ACQUISITION_MAX_RANGE_DAYS (92)', () => {
