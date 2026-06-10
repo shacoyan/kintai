@@ -64,9 +64,11 @@ const SalesLocationComparison: React.FC<Props> = ({ byLocRows, daily, period }) 
 
   // お客様構成（積み上げ）の rows: 071 rows は 4 セグ合計の totalCustomers しか持たない
   // ため、セグメント別客数は 077 daily の各店 points を全期間合算して作る。
-  // 並びはバーと同じく totalSales DESC に寄せる（sortedByLocRows の locationName 順）。
+  // 並びはバーと同じく totalSales DESC に寄せる（sortedByLocRows の順）。
+  // 突合は locationId で行う（両 RPC とも location_id を契約に含むため、
+  // 店舗改名・同名追加でも壊れない）。表示ラベルは locationName のまま。
   const stackRows = useMemo(() => {
-    const byName = new Map<string, { new: number; repeat: number; regular: number; staff: number; unlisted: number }>();
+    const byId = new Map<string, { new: number; repeat: number; regular: number; staff: number; unlisted: number }>();
     for (const loc of daily.locationSeries) {
       const acc = { new: 0, repeat: 0, regular: 0, staff: 0, unlisted: 0 };
       for (const p of loc.points) {
@@ -76,12 +78,12 @@ const SalesLocationComparison: React.FC<Props> = ({ byLocRows, daily, period }) 
         acc.staff += p.staff;
         acc.unlisted += p.unlisted;
       }
-      byName.set(loc.locationName, acc);
+      byId.set(loc.locationId, acc);
     }
     return sortedByLocRows
-      .filter((r) => byName.has(r.locationName))
+      .filter((r) => byId.has(r.locationId))
       .map((r) => {
-        const acc = byName.get(r.locationName)!;
+        const acc = byId.get(r.locationId)!;
         return { locationName: r.locationName, ...acc };
       });
   }, [daily.locationSeries, sortedByLocRows]);
