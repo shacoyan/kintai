@@ -5,6 +5,8 @@ import { useSalesYoY } from '../hooks/useSalesYoY';
 import { useSalesByLocation } from '../hooks/useSalesByLocation';
 import { useSalesByLocationDaily } from '../hooks/useSalesByLocationDaily';
 import { useSquareLiveSales } from '../hooks/useSquareLiveSales';
+import { useSquareOpenOrders } from '../hooks/useSquareOpenOrders';
+import { useSalesAcquisitionLive } from '../hooks/useSalesAcquisitionLive';
 import { squareFetch } from '../lib/sales/squareLiveClient';
 import {
   Card,
@@ -206,7 +208,9 @@ export const SalesPage: React.FC = () => {
   // today 表示かつ単店選択時のみ取得（owner ALL / 非 today では往復しない）。
   const [locationIdMap, setLocationIdMap] = useState<Record<string, string>>({});
   const [locationsError, setLocationsError] = useState<string | null>(null);
-  const needLocationId = scopeReady && isToday && selectedLocationName !== null;
+  // Square location_id が要るのは (a) today live/open-orders と (b) 非 today 単店の
+  // acquisition live 補完（§4.1.3）。どちらも単店選択時のみ。ALL では往復しない。
+  const needLocationId = scopeReady && selectedLocationName !== null;
   useEffect(() => {
     if (!needLocationId) return;
     let cancelled = false;
@@ -243,6 +247,27 @@ export const SalesPage: React.FC = () => {
     // 59分しか取得できない。Dashboard.tsx と同式の (start+23)%24 (=10) で翌日 10:59 までを表現する。
     endHour: (STORE_START_HOUR + 23) % 24,
     enabled: scopeReady && isToday && selectedLocationId !== null,
+  });
+
+  // 当日 未会計伝票（OPEN orders）。today 単店選択かつ id 解決済みのときのみ起動（§4.3.4）。
+  const liveOpenOrders = useSquareOpenOrders({
+    date: baseDate,
+    locationId: selectedLocationId ?? '',
+    startHour: STORE_START_HOUR,
+    endHour: (STORE_START_HOUR + 23) % 24,
+    enabled: scopeReady && isToday && selectedLocationId !== null,
+  });
+
+  // 獲得経路 live 補完（§4.1.3）。非 today × 単店選択 × id 解決済みのときのみ起動。
+  // ALL/today は従来どおり（acquisition は RPC の既定ゼロ or live セクション）。
+  // acquisition だけを実数で上書きし、売上/客数/トレンドは RPC（segment.data）不変。
+  const acquisitionLive = useSalesAcquisitionLive({
+    startDate: from,
+    endDate: to,
+    locationId: selectedLocationId ?? '',
+    startHour: STORE_START_HOUR,
+    endHour: (STORE_START_HOUR + 23) % 24,
+    enabled: scopeReady && !isToday && selectedLocationId !== null,
   });
 
   // --- 3 hook（from/to/baseDate を共有）---
@@ -368,6 +393,13 @@ export const SalesPage: React.FC = () => {
 
   const data = segment.data;
 
+  // 獲得経路だけを live 実数で上書き（§4.1.3）。取得成功時のみ差し替え、失敗時は
+  // data の既定ゼロのまま（売上/客数/トレンド/セグメントは RPC=data を一切触らない）。
+  const acquisitionBreakdown =
+    data && acquisitionLive.acquisition
+      ? acquisitionLive.acquisition
+      : data?.acquisitionBreakdown ?? null;
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
       <header className="flex flex-col gap-3">
@@ -442,6 +474,9 @@ export const SalesPage: React.FC = () => {
             date={baseDate}
             lastUpdated={live.lastUpdated}
             refresh={live.refresh}
+            openOrders={liveOpenOrders.orders}
+            openOrdersLoading={liveOpenOrders.loading}
+            openOrdersError={liveOpenOrders.error}
           />
         )
       ) : segment.error ? (
@@ -536,12 +571,26 @@ export const SalesPage: React.FC = () => {
             />
           </Card>
 
-          {/* 獲得経路（新規客） */}
+          {/* 獲得経路（新規客）。単店選択時は live 実数で補完（§4.1.3/§4.1.4）。 */}
           <Card>
             <h2 className="mb-2 text-sm font-semibold text-stone-700 dark:text-stone-200">
               新規客の獲得経路
             </h2>
-            <AcquisitionChart data={data.acquisitionBreakdown} />
+            {locationNames === null ? (
+              // ALL（全店）は acquisition live 補完スコープ外（§4.1.4）。
+              <p className="mb-2 text-xs text-stone-500 dark:text-stone-400">
+                店舗を 1 つ選ぶと獲得経路の内訳が表示されます。
+              </p>
+            ) : acquisitionLive.loading ? (
+              <p className="mb-2 text-xs text-stone-400 dark:text-stone-500">
+                獲得経路を集計中…
+              </p>
+            ) : acquisitionLive.clamped ? (
+              <p className="mb-2 text-xs text-stone-500 dark:text-stone-400">
+                （直近約 3 ヶ月の新規客内訳）
+              </p>
+            ) : null}
+            <AcquisitionChart data={acquisitionBreakdown ?? data.acquisitionBreakdown} />
           </Card>
 
           {/* 曜日別分析（B8）: 日次 rawDailyTrend を曜日平均に集計した客数・売上の棒グラフ。 */}

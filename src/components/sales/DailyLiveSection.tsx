@@ -1,7 +1,8 @@
 import SalesSummary from './SalesSummary';
 import TransactionList from './TransactionList';
+import OpenOrderList from './OpenOrderList';
 import { ErrorBanner } from '../ui';
-import type { Transaction } from '../../lib/sales/types';
+import type { OpenOrder, Transaction } from '../../lib/sales/types';
 
 // =============================================================================
 // DailyLiveSection — 当日明細タブ本体（W4-P1 / 設計書 §4.3.5）
@@ -13,7 +14,10 @@ import type { Transaction } from '../../lib/sales/types';
 //   - loading / error（error は全文表示・短縮禁止＝MEMORY ルール）
 //   - lastUpdated: 最終更新時刻（live の鮮度表示）
 //   - refresh: 手動再取得
-// P1 は SalesSummary + TransactionList の縦積み。P2 で未決済（OpenOrderList）を間に挿入。
+// P2 で未決済（OpenOrderList）を SalesSummary と TransactionList の間に挿入。
+//   - openOrders: OpenOrder[]（未会計伝票・useSquareOpenOrders 戻り値）
+//   - openOrdersLoading / openOrdersError（error は OpenOrderList 内で自前表示し、
+//     当日売上全体は潰さない＝見本同様）
 // =============================================================================
 
 /** useSquareLiveSales の sales（§4.3.2）。決済済み集計の一部のみ参照。 */
@@ -33,6 +37,12 @@ export interface DailyLiveSectionProps {
   lastUpdated?: Date | null;
   /** 手動再取得（任意） */
   refresh?: () => void;
+  /** 未会計伝票（useSquareOpenOrders 戻り値・§4.3.1） */
+  openOrders: OpenOrder[];
+  /** 未会計伝票の取得中フラグ */
+  openOrdersLoading: boolean;
+  /** 未会計伝票の取得エラー（全文・OpenOrderList 内で自前表示） */
+  openOrdersError: string | null;
 }
 
 function formatUpdatedAt(d: Date): string {
@@ -49,6 +59,9 @@ export default function DailyLiveSection({
   date,
   lastUpdated,
   refresh,
+  openOrders,
+  openOrdersLoading,
+  openOrdersError,
 }: DailyLiveSectionProps) {
   // error は全文表示（短縮しない＝MEMORY ルール）。再取得手段があれば併設。
   if (error) {
@@ -75,6 +88,12 @@ export default function DailyLiveSection({
       </div>
 
       <SalesSummary total={total} count={count} loading={loading} date={date} />
+
+      <OpenOrderList
+        orders={openOrders}
+        loading={openOrdersLoading}
+        error={openOrdersError}
+      />
 
       <TransactionList transactions={transactions} loading={loading} />
     </div>

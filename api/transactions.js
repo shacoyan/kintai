@@ -1,4 +1,4 @@
-import { setCors, squareHeaders, parseTimeRange, fetchCustomers, normalizePaymentsForReporting } from './_shared.js';
+import { setCors, squareHeaders, parseTimeRange, fetchCustomers, fetchCatalogVariationCategoryMap, normalizePaymentsForReporting } from './_shared.js';
 import { authenticate, resolveStartHour, assertLocationAllowed, AuthError } from './_auth.js';
 
 // maxDuration は vercel.json の functions に一本化（inline config と二重定義していたため撤去）。
@@ -95,94 +95,14 @@ export default async (req, res) => {
       }
     }
 
-    // catalog取得とcustomers取得を並列実行
+    // catalog取得とcustomers取得を並列実行。
+    // catalog は _shared.js の共有実装（variationId → {id,name} を返す正実装）を使う。
+    // 旧インライン実装は variationId → string を返していたため後段の `?.name` 参照で
+    // category が常に null に潰れていた（裁定 a・継承バグ）。共有実装に統一して恒久修正。
+    const customerIds = allPayments.filter(p => p.customer_id).map(p => p.customer_id);
     const [customersMap, variationCategoryMap] = await Promise.all([
-      // customers bulk-retrieve
-      (async () => {
-        const customerIds = allPayments.filter(p => p.customer_id).map(p => p.customer_id);
-        return await fetchCustomers(customerIds);
-      })(),
-
-      // catalog batch-retrieve (カテゴリ取得) - 2段階方式
-      (async () => {
-        const catalogObjectIds = [...new Set(
-          Object.values(ordersMap).flatMap(order =>
-            (order.line_items ?? [])
-              .filter(item => parseFloat(item.quantity) > 0 && item.catalog_object_id)
-              .map(item => item.catalog_object_id)
-          )
-        )];
-
-        const variationToItemId = {};
-        const itemToCategoryId = {};
-
-        // 第1段階: ITEM_VARIATIONとITEMを取得
-        for (let i = 0; i < catalogObjectIds.length; i += 100) {
-          const batch = catalogObjectIds.slice(i, i + 100);
-          try {
-            const catalogRes = await fetch('https://connect.squareup.com/v2/catalog/batch-retrieve', {
-              method: 'POST',
-              headers: squareHeaders(),
-              body: JSON.stringify({ object_ids: batch, include_related_objects: true })
-            });
-            if (!catalogRes.ok) {
-              console.error('Catalog API error (stage1):', catalogRes.status, await catalogRes.text());
-              continue;
-            }
-            const catalogData = await catalogRes.json();
-            for (const obj of (catalogData.objects ?? [])) {
-              if (obj.type === 'ITEM_VARIATION') {
-                variationToItemId[obj.id] = obj.item_variation_data?.item_id ?? null;
-              }
-            }
-            for (const obj of (catalogData.related_objects ?? [])) {
-              if (obj.type === 'ITEM') {
-                const catId = obj.item_data?.reporting_category?.id ?? null;
-                if (catId) itemToCategoryId[obj.id] = catId;
-              }
-            }
-          } catch (e) {
-            console.error('Catalog batch error (stage1):', e);
-          }
-        }
-
-        // 第2段階: CATEGORYを取得
-        const categoryIds = [...new Set(Object.values(itemToCategoryId).filter(Boolean))];
-        const categoryIdToName = {};
-
-        for (let i = 0; i < categoryIds.length; i += 100) {
-          const batch = categoryIds.slice(i, i + 100);
-          try {
-            const catRes = await fetch('https://connect.squareup.com/v2/catalog/batch-retrieve', {
-              method: 'POST',
-              headers: squareHeaders(),
-              body: JSON.stringify({ object_ids: batch })
-            });
-            if (!catRes.ok) {
-              console.error('Catalog API error (stage2):', catRes.status, await catRes.text());
-              continue;
-            }
-            const catData = await catRes.json();
-            for (const obj of (catData.objects ?? [])) {
-              if (obj.type === 'CATEGORY') {
-                categoryIdToName[obj.id] = obj.category_data?.name ?? null;
-              }
-            }
-          } catch (e) {
-            console.error('Catalog batch error (stage2):', e);
-          }
-        }
-
-        // 最終マップ構築: variationId → categoryName
-        const localVariationCategoryMap = {};
-        for (const [varId, itemId] of Object.entries(variationToItemId)) {
-          if (!itemId) { localVariationCategoryMap[varId] = null; continue; }
-          const catId = itemToCategoryId[itemId];
-          localVariationCategoryMap[varId] = catId ? (categoryIdToName[catId] ?? null) : null;
-        }
-
-        return localVariationCategoryMap;
-      })()
+      fetchCustomers(customerIds),
+      fetchCatalogVariationCategoryMap(ordersMap)
     ]);
 
     const transactions = allPayments.map(payment => {
