@@ -7,3 +7,4 @@ export { default as LocationTrendChart } from './LocationTrendChart';
 export { default as SeriesCheckboxGroup } from './SeriesCheckboxGroup';
 export { default as WeekdayBarChart } from './WeekdayBarChart';
 export { default as WeekdayLocationBarChart } from './WeekdayLocationBarChart';
+export { default as WeekdayLocationTable } from './WeekdayLocationTable';

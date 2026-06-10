@@ -3,6 +3,7 @@ import { useSalesScope } from '../hooks/useSalesScope';
 import { useSalesSegment } from '../hooks/useSalesSegment';
 import { useSalesYoY } from '../hooks/useSalesYoY';
 import { useSalesByLocation } from '../hooks/useSalesByLocation';
+import { useSalesByLocationDaily } from '../hooks/useSalesByLocationDaily';
 import {
   Card,
   PageLoader,
@@ -17,9 +18,10 @@ import {
   SegmentPieChart,
   SegmentTrendChart,
   AcquisitionChart,
-  LocationBarChart,
   WeekdayBarChart,
 } from '../components/sales/charts';
+import SalesLocationComparison from '../components/sales/SalesLocationComparison';
+import SegmentBreakdownList from '../components/sales/SegmentBreakdownList';
 import { formatYen } from '../components/sales/utils';
 import { getBusinessDate } from '../lib/sales/businessDate';
 import { calculatePeriodDates, getMonthWeekCount, currentWeekIndex } from '../lib/sales/periodDates';
@@ -28,6 +30,7 @@ import { aggregateByWeekday } from '../lib/sales/weekdayAggregation';
 import type { PeriodPreset } from '../lib/sales/types';
 import { calculateYoY } from '../lib/sales/yoy';
 import type { YoYDelta, DailyTotalPoint, SalesRangeYoYResult } from '../lib/sales/yoy';
+import { computeAvgDailyYoY } from '../lib/sales/avgDailyYoY';
 
 // =============================================================================
 // SalesPage — Square 売上ダッシュボード（Loop2 本体配線 / 設計書 §4.2 + 追補E）
@@ -211,6 +214,15 @@ export const SalesPage: React.FC = () => {
     enabled: scopeReady && showLocationCompare,
   });
 
+  // 077 RPC（店舗別日次）。owner ALL かつ比較セクション表示時のみフェッチ
+  // （staff・単店選択では往復しない）。トレンド/曜日/構成セグの源。
+  const byLocDaily = useSalesByLocationDaily({
+    from,
+    to,
+    locationNames: null,
+    enabled: scopeReady && showLocationCompare,
+  });
+
   // --- 前年比バッジ・YoY 系列の導出 ---
   // yoy.loading 中は stale な前年値を出さない（前年比バッジ・前年系列を抑制）。
   // loading が明けて新範囲の data が確定してから表示する。
@@ -258,6 +270,13 @@ export const SalesPage: React.FC = () => {
     };
   }, [effectiveYoY]);
 
+  // follow-up: 1日平均売上の YoY バッジ（前回の符号逆転を解消した形）。
+  // 純関数 computeAvgDailyYoY に集約（テスト容易化）。open 抜き決済済ベース・当年/前年同定義。
+  const avgDailyYoY = useMemo<YoYDelta | null>(
+    () => computeAvgDailyYoY(effectiveYoY),
+    [effectiveYoY],
+  );
+
   // B7: セグメント別 KPI の客数 YoY を動的キーで型安全に引く固定マップ。
   // 以前は SEGMENT_LABELS.map のクロージャ内で毎反復生成していたが、effectiveYoY のみに
   // 依存する固定 Record なので map 外（useMemo）へ移し一度だけ生成する（挙動不変）。
@@ -280,13 +299,8 @@ export const SalesPage: React.FC = () => {
     [segment.data?.rawDailyTrend],
   );
 
-  // 店舗別比較は表示棒の高さ（totalSales=決済済+未決済）と並びを一致させる。
-  // RPC は total_amount(決済済)のみ DESC で返すため、open 込みの totalSales で再ソートする。
-  // normalizeByLocation の契約（再ソートしない）は保持し、表示直前でのみ並べ替える。
-  const sortedLocationRows = useMemo(
-    () => [...byLoc.rows].sort((a, b) => b.totalSales - a.totalSales),
-    [byLoc.rows],
-  );
+  // 店舗別の表示棒高さ（totalSales=決済済+未決済）での再ソートは
+  // SalesLocationComparison 内（バー・構成）へ移譲（normalizeByLocation の契約は不変）。
 
   if (scopeLoading) {
     return <PageLoader variant="screen" label="読み込み中" />;
@@ -379,8 +393,8 @@ export const SalesPage: React.FC = () => {
                   ? null
                   : formatYen(Math.round(data.averageDailySales))
               }
-              // avgDaily YoY は前年母数の集合整合が要るため別Loop（displayMetrics 統一）で再実装する
-              trend={undefined}
+              // avgDaily YoY（open 抜き決済済ベース・当年/前年同定義）。前回の符号逆転を解消済み。
+              trend={showYoY ? toTrend(avgDailyYoY ?? undefined) : undefined}
             />
           </div>
 
@@ -419,7 +433,11 @@ export const SalesPage: React.FC = () => {
             <h2 className="mb-2 text-sm font-semibold text-stone-700 dark:text-stone-200">
               売上構成（セグメント別）
             </h2>
-            <SegmentPieChart sales={data.salesBySegment} />
+            {/* B24: 円グラフ（左/上）+ セグメント別 ¥金額・構成%リスト（右/下）。 */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <SegmentPieChart sales={data.salesBySegment} />
+              <SegmentBreakdownList sales={data.salesBySegment} />
+            </div>
           </Card>
 
           {/* トレンド（前年系列は十分時のみ） */}
@@ -464,21 +482,24 @@ export const SalesPage: React.FC = () => {
             </div>
           </Card>
 
-          {/* 店舗別比較（owner/manager かつ ALL 選択時のみ） */}
-          {showLocationCompare && (
-            <Card>
-              <h2 className="mb-2 text-sm font-semibold text-stone-700 dark:text-stone-200">
-                店舗別比較
-              </h2>
-              {byLoc.error ? (
+          {/* 店舗別比較（owner/manager かつ ALL 選択時のみ）。
+              071 バー（byLoc）と 077 トレンド/曜日/構成（byLocDaily）を別管理で配線。 */}
+          {showLocationCompare &&
+            (byLoc.error ? (
+              <Card>
                 <ErrorBanner message={byLoc.error} />
-              ) : byLoc.loading ? (
+              </Card>
+            ) : byLoc.loading ? (
+              <Card>
                 <DashboardSkeleton />
-              ) : (
-                <LocationBarChart rows={sortedLocationRows} />
-              )}
-            </Card>
-          )}
+              </Card>
+            ) : (
+              <SalesLocationComparison
+                byLocRows={byLoc.rows}
+                daily={byLocDaily}
+                period={period}
+              />
+            ))}
         </div>
       )}
     </div>

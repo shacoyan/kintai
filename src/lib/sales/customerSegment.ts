@@ -57,6 +57,8 @@ export function allocateSalesByTransaction(tx: Transaction): SegmentBreakdown {
   return { ...baseSales, unlisted: 0 };
 }
 
+// NOTE: Wave4（BIG-1：Square api 直叩きの取引明細データ源）で UI 配線予定。現状は
+// aggregateSegments から呼ばれるテスト/将来用。削除しない。
 export function detectAcquisitionChannels(tx: Transaction): AcquisitionBreakdown {
   const result: AcquisitionBreakdown = { google: 0, review: 0, signboard: 0, sns: 0, unknown: 0 };
   let newQty = 0;
@@ -77,6 +79,7 @@ export function detectAcquisitionChannels(tx: Transaction): AcquisitionBreakdown
   return result;
 }
 
+// NOTE: Wave4（BIG-1/BIG-3：取引明細データ源）で使用予定。現状はテスト/将来用。削除しない。
 export function aggregateSegments(transactions: Transaction[]): {
   customers: SegmentBreakdown;
   sales: SegmentBreakdown;
