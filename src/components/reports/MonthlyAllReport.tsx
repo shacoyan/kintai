@@ -130,7 +130,18 @@ export const MonthlyAllReport: React.FC<MonthlyAllReportProps> = ({
                     <LockedValue value={s.provisional_profit} isManagerial={isManagerial} />
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {formatRate(s.target.achievement_rate)}
+                    {/*
+                      達成率。RPC は achievement_rate を round(sales/target, 4) ＝
+                      0..1 の小数で返すが、formatRate は 0..100 のパーセント値を
+                      想定するため ×100 してから渡す（暫定利益率と同じ単位整合）。
+                      null は ×100 で 0 化して「0.0%」誤表示になるため、null のまま
+                      渡して「—」を維持する。
+                    */}
+                    {formatRate(
+                      s.target.achievement_rate == null
+                        ? null
+                        : s.target.achievement_rate * 100,
+                    )}
                   </td>
                 </tr>
               ))}
@@ -185,9 +196,16 @@ export const MonthlyAllReport: React.FC<MonthlyAllReportProps> = ({
             <LockedValue value={totals.operating_profit} isManagerial={isManagerial} />
           </PnlRow>
           <PnlRow label="営業利益率">
+            {/*
+              総合 P&L の営業利益率。RPC は operating_profit_rate を
+              round(op_profit/sales, 4) ＝ 0..1 の小数で返すが、formatRate は
+              0..100 のパーセント値を想定するため ×100 してから渡す（暫定利益率
+              と同じ単位整合）。LockedValue は value=null のとき format を呼ばず
+              「—」を返すため null 安全。
+            */}
             <LockedValue
               value={totals.operating_profit_rate}
-              format={(n) => formatRate(n)}
+              format={(n) => formatRate(n * 100)}
               isManagerial={isManagerial}
             />
           </PnlRow>
