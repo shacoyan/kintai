@@ -792,15 +792,15 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // fetch 結果が空 → RLS 反映遅延 / 一時的エラーの可能性が高いので保持
         // （Loop 39 真因対応: 起動時の誤った redirect を防ぐ）
         if (!fetchedTenants || fetchedTenants.length === 0) {
+          // UI 保持のみ。members の fetch は 847 effect が myMemberId 確定後に行う
+          // （旧テナント id × 新 user JWT での 401 race を回避。fetch 責務を 847 effect に一本化）。
           setCurrentTenantState(parsed);
-          fetchMembers(parsed.id);
           return;
         }
 
         const found = fetchedTenants.find(t => t.id === parsed.id);
         if (found) {
           setCurrentTenantState(found);
-          fetchMembers(found.id);
         } else {
           // 他 tenant はあるが saved は含まれない → 2段階検証
           const result = await verifyTenantStillAccessible(parsed.id);
@@ -812,7 +812,6 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           } else {
             // 'transient' / 'ok' は保持
             setCurrentTenantState(parsed);
-            fetchMembers(parsed.id);
           }
         }
       } catch (err) {
@@ -824,8 +823,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (saved) {
           try {
             const parsed = JSON.parse(saved) as Tenant;
+            // UI 保持のみ。members の fetch は 847 effect が myMemberId 確定後に行う。
             setCurrentTenantState(parsed);
-            fetchMembers(parsed.id);
           } catch {
             localStorage.removeItem('kintai_current_tenant');
             setCurrentTenantState(null);
@@ -845,16 +844,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // 2026-05-13 Track B: 依存配列を user → user?.id に変更 (TOKEN_REFRESHED → state reset race 回避)。
   // 2026-05-22 Loop 4 P0-2: myStoreIds も同じタイミングで fetch (myMemberId が確定したら)。
   useEffect(() => {
-    if (currentTenant) {
+    // myMemberId != null ⇔ tenants に currentTenant.id が出現 ⇔ 現 user 所有テナント確定。
+    // これが確定するまで fetch しない（旧テナント × 新 user JWT での 401 race を回避）。
+    if (currentTenant && myMemberId && user?.id) {
       fetchMembers(currentTenant.id);
-      if (user?.id) {
-        fetchMyParttime(currentTenant.id, user.id);
-      }
-      if (myMemberId) {
-        fetchMyStoreIds(myMemberId);
-      } else {
-        setMyStoreIds([]);
-      }
+      fetchMyParttime(currentTenant.id, user.id);
+      fetchMyStoreIds(myMemberId);
     } else {
       setMembers([]);
       setIsParttime(false);

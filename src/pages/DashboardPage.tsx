@@ -13,6 +13,7 @@ import { AlertTriangle, CalendarDays, ChevronRight, FileClock } from 'lucide-rea
 import { Card, StatCard, Badge, Button, DashboardSkeleton, ListRowSkeleton, Heading } from '../components/ui';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { messages } from '../lib/messages';
+import { deriveTodayStatusLabel, deriveTodayStatusTone } from '../lib/todayAttendanceStatus';
 import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { formatTimeRange } from '../utils/formatTimeRange';
@@ -212,8 +213,10 @@ export function DashboardPage() {
   const monthRate = monthlyProgress;
   const monthHoursActual = (totalWorkMinutes / 60).toFixed(1);
   const monthHoursPlanned = (plannedMinutes / 60).toFixed(1);
-  const todayStatusLabel = status === 'working' ? '勤務中' : status === 'on_break' ? '休憩中' : '未出勤';
-  const todayStatusTone = status === 'working' ? 'success' : status === 'on_break' ? 'warning' : 'neutral';
+  // 「本日の記録」カード専用のステータス導出（フックの status は退勤済みを返さないため、ここで4値化）。
+  // 判定順（優先度）: 休憩中 → 勤務中 → 退勤済（当日 clock_in/clock_out あり）→ 未出勤。
+  const todayStatusLabel = deriveTodayStatusLabel(status, todayOnlyRecords);
+  const todayStatusTone = deriveTodayStatusTone(status);
   const roleLabel = myRole === 'owner' ? 'Owner' : myRole === 'manager' ? 'Manager' : 'Staff';
   const punchScopeLabel = currentStore ? `${currentStore.name} ${roleLabel}` : '全社管轄';
   const shortTodayLabel = format(today, 'M/d (E)', { locale: ja });
