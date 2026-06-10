@@ -1,4 +1,4 @@
-import { DndContext, useDroppable } from '@dnd-kit/core';
+import { DndContext, DragOverlay, closestCorners, useDroppable } from '@dnd-kit/core';
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { format, parseISO } from 'date-fns';
@@ -178,8 +178,10 @@ function SubtaskCard({
       {...attributes}
       {...listeners}
       aria-disabled={!canStartDrag || undefined}
-      className={`flex items-start gap-2 rounded-[8px] border border-stone-200/70 bg-white px-2 py-2 dark:border-stone-700/60 dark:bg-stone-800 ${
-        isDragging ? 'opacity-[0.55] shadow-[0_12px_28px_rgba(0,0,0,0.16)]' : ''
+      className={`flex select-none items-start gap-2 rounded-[8px] border bg-white px-2 py-2 motion-safe:transition-[box-shadow,background-color,opacity] motion-safe:duration-150 motion-safe:ease-out dark:bg-stone-800 ${
+        isDragging
+          ? 'border-dashed border-stone-300 opacity-40 dark:border-stone-600'
+          : 'border-stone-200/70 dark:border-stone-700/60'
       } ${canStartDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'}`}
     >
       <span
@@ -330,7 +332,7 @@ function QuickAddInput({ status, onQuickAddChild, onError }: QuickAddInputProps)
           // 次フレームでフォーカス（input マウント後）。
           requestAnimationFrame(() => inputRef.current?.focus());
         }}
-        className="flex w-full items-center gap-1 rounded-[8px] border border-dashed border-stone-300 px-2 py-1.5 text-left text-[12px] text-stone-400 hover:border-stone-400 hover:text-stone-600 dark:border-stone-700 dark:text-stone-500 dark:hover:text-stone-300"
+        className="flex w-full items-center gap-1 rounded-[8px] border border-dashed border-blue-300 px-2 py-1.5 text-left text-[12px] font-medium text-blue-600 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-blue-500/40 dark:text-blue-400 dark:hover:bg-blue-950/30 dark:hover:text-blue-300"
       >
         <Plus className="h-3.5 w-3.5" aria-hidden="true" />
         追加
@@ -432,13 +434,15 @@ function SubtaskColumn({
       {/* カラム本体 (droppable) */}
       <div
         ref={setNodeRef}
-        className={`flex flex-1 flex-col gap-2 p-2 transition-colors ${
-          isOver ? 'bg-blue-50/40 dark:bg-blue-950/20' : ''
+        className={`flex min-h-[96px] flex-1 flex-col gap-2 p-2 transition-colors ${
+          isOver
+            ? 'bg-blue-50 ring-2 ring-inset ring-blue-400/60 dark:bg-blue-950/30 dark:ring-blue-500/40'
+            : ''
         }`}
       >
         <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
           {colTasks.length === 0 ? (
-            <div className="rounded-[8px] border border-dashed border-stone-300 p-4 text-center text-[11px] text-stone-400 dark:border-stone-700 dark:text-stone-500">
+            <div className="rounded-[8px] border border-dashed border-stone-300 p-6 text-center text-[11px] text-stone-400 dark:border-stone-700 dark:text-stone-500">
               なし
             </div>
           ) : (
@@ -466,6 +470,73 @@ function SubtaskColumn({
         {allowQuickAdd && (
           <QuickAddInput status={status} onQuickAddChild={onQuickAddChild} onError={onError} />
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * P0-A: DragOverlay 用の軽量プレゼンテーションカード（案 ii）。
+ * useSortable を持たない純表示（id 衝突なし・操作 UI 無し）。掴んでいる札の縮約表示。
+ * ドラッグ中ビジュアルは document.body 直下の portal に描かれるため、BottomSheet の
+ * overflow 境界で clip されず滑らかに追従する。
+ */
+function SubtaskOverlayCard({
+  child,
+  memberNames,
+}: {
+  child: Task;
+  memberNames: Map<string, string>;
+}): JSX.Element {
+  const assignees = (child.assignee_user_ids ?? []).map((id) => ({
+    userId: id,
+    name: memberNames.get(id) ?? '?',
+  }));
+  const isDoneOrCancelled = child.status === 'done' || child.status === 'cancelled';
+
+  return (
+    <div className="flex cursor-grabbing select-none items-start gap-2 rounded-[8px] border border-stone-200/70 bg-white px-2 py-2 shadow-[0_12px_28px_rgba(0,0,0,0.18)] dark:border-stone-700/60 dark:bg-stone-800">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span
+          className={`break-words text-[12.5px] leading-snug ${
+            isDoneOrCancelled ? 'text-stone-400 line-through' : 'text-stone-800 dark:text-stone-200'
+          }`}
+          title={child.title}
+        >
+          {child.title}
+        </span>
+        <div className="flex items-center gap-2">
+          {assignees.length > 0 && (
+            <span className="flex items-center -space-x-1.5">
+              {assignees.slice(0, 2).map((a) => (
+                <span
+                  key={a.userId}
+                  className={`inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold dark:border-stone-900 ${getAvatarColor(a.userId)}`}
+                  title={a.name}
+                >
+                  {a.name.slice(0, 1)}
+                </span>
+              ))}
+              {assignees.length > 2 && (
+                <span
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-stone-200 text-[10px] font-semibold text-stone-600 dark:border-stone-900 dark:bg-stone-700 dark:text-stone-300"
+                  title={assignees.slice(2).map((a) => a.name).join(', ')}
+                >
+                  +{assignees.length - 2}
+                </span>
+              )}
+            </span>
+          )}
+          {child.due_date && (
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-stone-500 dark:text-stone-400">
+              <Calendar className="h-[11px] w-[11px]" aria-hidden="true" />
+              <time dateTime={child.due_date}>{format(parseISO(child.due_date), 'MM/dd')}</time>
+            </span>
+          )}
+          <span className="inline-flex items-center" title={`優先度 ${child.priority}`}>
+            <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${priorityDotColor[child.priority]}`} />
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -517,6 +588,9 @@ export function SubtaskKanban({
     idPrefix: { card: 'subtask-', column: 'subcol-' },
   });
 
+  // P0-A: DragOverlay 用。ドラッグ中の子を保持し、portal レイヤに縮約札を描く。
+  const [activeChild, setActiveChild] = useState<Task | null>(null);
+
   const showCancelled = children.some((c) => c.status === 'cancelled');
 
   const baseStatuses: TaskStatus[] = ['todo', 'in_progress', 'done'];
@@ -540,7 +614,21 @@ export function SubtaskKanban({
   const gridCols = showCancelled ? 'md:grid-cols-4' : 'md:grid-cols-3';
 
   return (
-    <DndContext sensors={dnd.sensors} accessibility={dnd.accessibility} onDragEnd={dnd.handleDragEnd}>
+    <DndContext
+      sensors={dnd.sensors}
+      accessibility={dnd.accessibility}
+      collisionDetection={closestCorners}
+      autoScroll={{ threshold: { x: 0, y: 0.2 }, acceleration: 8 }}
+      onDragStart={({ active }) => {
+        const id = String(active.id).replace('subtask-', '');
+        setActiveChild(children.find((c) => c.id === id) ?? null);
+      }}
+      onDragEnd={(e) => {
+        void dnd.handleDragEnd(e);
+        setActiveChild(null);
+      }}
+      onDragCancel={() => setActiveChild(null)}
+    >
       <div className="space-y-3">
         <div className={`grid grid-cols-1 gap-3 ${gridCols}`}>
           {columnStatuses.map((status) => (
@@ -574,13 +662,17 @@ export function SubtaskKanban({
               e.stopPropagation();
               onAddChild();
             }}
-            className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-[12px] font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-700 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200"
+            className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium text-blue-600 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-blue-400 dark:hover:bg-blue-950/30 dark:hover:text-blue-300"
           >
             <Plus className="h-3.5 w-3.5" aria-hidden="true" />
             子タスクを追加
           </button>
         )}
       </div>
+
+      <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2,0,0,1)' }}>
+        {activeChild ? <SubtaskOverlayCard child={activeChild} memberNames={memberNames} /> : null}
+      </DragOverlay>
     </DndContext>
   );
 }
