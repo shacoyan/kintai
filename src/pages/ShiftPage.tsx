@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo, startTransition } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, startTransition } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks, subMonths, addMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Plus, ChevronLeft, ChevronRight, AlertTriangle, X } from 'lucide-react';
@@ -20,9 +21,9 @@ import { useShiftSubmissionDeadline } from '../hooks/useShiftSubmissionDeadline'
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftMobileCalendar } from '../components/Shift/ShiftMobileCalendar';
-import { ShiftMobilePresetSheet } from '../components/Shift/ShiftMobilePresetSheet';
-import { ShiftMobileTodayList } from '../components/Shift/ShiftMobileTodayList';
-import { ShiftMobileToolbar } from '../components/Shift/ShiftMobileToolbar';
+import { ShiftMobileMonthHeader } from '../components/Shift/ShiftMobileMonthHeader';
+import { ShiftMobileFab } from '../components/Shift/ShiftMobileFab';
+import { ShiftDayCoverageHeader } from '../components/Shift/ShiftDayCoverageHeader';
 import { ShiftEditModal } from '../components/Shift/ShiftEditModal';
 import { PreferenceTimeEditModal } from '../components/Shift/PreferenceTimeEditModal';
 import { PreferenceAdminActionModal } from '../components/Shift/PreferenceAdminActionModal';
@@ -95,8 +96,6 @@ export function ShiftPage() {
   // Iter 2-B (Worker B): SP BottomSheet を SP 日付タップで自動 open しないよう
   // selectedDate と分離。BottomSheet は「+N 件すべて見る」or 明示的トリガーから開く。
   const [mobileSheetDate, setMobileSheetDate] = useState<string | null>(null);
-  // Iter 2-B (Worker B): SP「プリセット」ボタンで開く preset chooser sheet。
-  const [mobilePresetSheetOpen, setMobilePresetSheetOpen] = useState<boolean>(false);
   // Loop15: カレンダーの自分の preference を直接押したときに開く時間変更モーダル用 state。
   const [selectedPreference, setSelectedPreference] = useState<import('../types').ShiftPreference | null>(null);
   // Loop16-B: 他人の preference を直接押したときの管理アクションモーダル用 state。
@@ -442,12 +441,6 @@ export function ShiftPage() {
     }
   }, [currentUserId, canManageTenant, isManagerOf]);
 
-  // SP「+N 件すべて見る」ハンドラ (selectedDate 確定 → mobileSheetDate へ転写)。
-  const handleSeeAllMobile = useCallback(() => {
-    const target = selectedDate ?? format(new Date(), 'yyyy-MM-dd');
-    setMobileSheetDate(target);
-  }, [selectedDate]);
-
   // 一括選択モードの自動 OFF (§4.1 + P2-INT-2):
   //   storeId null / preferenceView !== 'current'
   useEffect(() => {
@@ -534,6 +527,58 @@ export function ShiftPage() {
       });
     }
   }, [isBulkMode, handleToggleBulkDate]);
+
+  // §A-3: SP セルタップ = 即 BottomSheet 起動（二段階禁止）。
+  // bulk 中は従来どおりトグル。通常は selectedDate（FAB 申請のデフォルト日付）も更新し
+  // mobileSheetDate を直接セットしてシートを即起動する。
+  const handleMobileCellOpen = useCallback((date: string) => {
+    // 直前の横スワイプ成立から 350ms 以内のセルタップは抑止（二重発火防止 §E-4）。
+    // boolean 永続フラグは pointercancel 経路で残留し正規タップを 1 回潰すため、時間窓方式を採用。
+    if (Date.now() - lastSwipeAtRef.current < 350) {
+      return;
+    }
+    if (isBulkMode) {
+      handleToggleBulkDate(date);
+      return;
+    }
+    setSelectedDate(date);
+    setMobileSheetDate(date);
+  }, [isBulkMode, handleToggleBulkDate]);
+
+  // §E-4: 横スワイプ月送り（ライブラリ非依存・pointer 実装）。
+  // X ドラッグ量が 60px を超え、かつ X が Y に対し優位なときのみ月送り。Y 優位は縦スクロール優先で無視。
+  // 堅牢化: pointerId を追跡し、pointercancel をクリア。+N ボタン等のインタラクティブ要素起点は無視。
+  // スワイプ成立時刻を ref に記録し、直後（350ms 以内）に発火するセル onClick を抑止して
+  // 「月送り」と「セルタップ=BottomSheet 起動」の二重発火を防ぐ（時間窓方式・§E-4）。
+  const swipeRef = useRef<{ x: number; y: number; pointerId: number } | null>(null);
+  const lastSwipeAtRef = useRef(0);
+  // 各日セルは role="button" を持つため除外セレクタに入れるとセル面スワイプ起点が記録されない（P1）。
+  // [role="button"] は外し、実 button / リンク / フォーム要素（+N・FAB は実 button）のみ除外する。
+  const isInteractiveTarget = (target: EventTarget | null): boolean => {
+    if (!(target instanceof Element)) return false;
+    return !!target.closest('button, a, input, select, textarea');
+  };
+  const handleSwipePointerDown = useCallback((e: ReactPointerEvent) => {
+    if (isInteractiveTarget(e.target)) {
+      swipeRef.current = null;
+      return;
+    }
+    swipeRef.current = { x: e.clientX, y: e.clientY, pointerId: e.pointerId };
+  }, []);
+  const handleSwipePointerUp = useCallback((e: ReactPointerEvent) => {
+    const start = swipeRef.current;
+    swipeRef.current = null;
+    if (!start || start.pointerId !== e.pointerId) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      lastSwipeAtRef.current = Date.now();
+      setShiftViewMonth((prev) => (dx < 0 ? addMonths(prev, 1) : subMonths(prev, 1)));
+    }
+  }, []);
+  const handleSwipePointerCancel = useCallback(() => {
+    swipeRef.current = null;
+  }, []);
 
   const handleEnterBulkMode = useCallback(() => {
     setIsBulkMode(true);
@@ -1212,15 +1257,17 @@ export function ShiftPage() {
                 </div>
               )}
 
-              {/* SP モバイル UI — Worker C / D 担当 */}
+              {/* SP モバイル UI（Google カレンダー風・統合フェーズ Engineer F 配線） */}
               <div className="lg:hidden flex flex-col gap-3">
-                <ShiftMobileToolbar
+                {/* ① sticky 月ヘッダ（月ラベル + 前後送り + 今日 + 曜日ヘッダ 一塊） */}
+                <ShiftMobileMonthHeader
                   shiftViewMonth={shiftViewMonth}
                   onPrevMonth={() => setShiftViewMonth(subMonths(shiftViewMonth, 1))}
                   onNextMonth={() => setShiftViewMonth(addMonths(shiftViewMonth, 1))}
+                  onToday={() => setShiftViewMonth(startOfMonth(new Date()))}
                 />
 
-                {/* Iter 9-D: SP フィルター chip を Toolbar 直下に直接表示 */}
+                {/* ② StatusFilter（カレンダー直上に常設・横スクロール） */}
                 <div className="-mx-1 px-1 overflow-x-auto">
                   <ShiftStatusFilter
                     value={statusFilter}
@@ -1235,29 +1282,29 @@ export function ShiftPage() {
                   />
                 </div>
 
-                <ShiftMobileCalendar
-                  shiftViewMonth={shiftViewMonth}
-                  shifts={shifts}
-                  preferences={preferencesForCalendar}
-                  currentUserId={currentUserId}
-                  selectedDate={selectedDate}
-                  selectedBulkDates={isBulkMode ? selectedBulkDates : undefined}
-                  isBulkMode={isBulkMode}
-                  statusFilter={statusFilter}
-                  onDateClick={handleCalendarDateClick}
-                />
-
-                <ShiftMobileTodayList
-                  selectedDate={selectedDate}
-                  shifts={shifts}
-                  preferences={preferencesForCalendar}
-                  memberNames={memberNames}
-                  roleTypeMap={spRoleTypeMap}
-                  statusFilter={statusFilter}
-                  showPreferenceStatus={canManageTenant}
-                  onShiftClick={handleShiftClick}
-                  onSeeAll={handleSeeAllMobile}
-                />
+                {/* ③ 月グリッド（名前チップ化・横スワイプ対応ラッパー §E-4） */}
+                <div
+                  onPointerDown={handleSwipePointerDown}
+                  onPointerUp={handleSwipePointerUp}
+                  onPointerCancel={handleSwipePointerCancel}
+                  style={{ touchAction: 'pan-y' }}
+                >
+                  <ShiftMobileCalendar
+                    shiftViewMonth={shiftViewMonth}
+                    shifts={shifts}
+                    preferences={preferencesForCalendar}
+                    currentUserId={currentUserId}
+                    selectedDate={selectedDate}
+                    selectedBulkDates={isBulkMode ? selectedBulkDates : undefined}
+                    isBulkMode={isBulkMode}
+                    statusFilter={statusFilter}
+                    showPreferenceStatus={canManageTenant}
+                    memberNames={memberNames}
+                    roleTypeMap={spRoleTypeMap}
+                    onDateClick={handleMobileCellOpen}
+                    onOverflowClick={handleMobileCellOpen}
+                  />
+                </div>
               </div>
 
               {/* SP BottomSheet: Unified Sidebar inline component */}
@@ -1268,6 +1315,17 @@ export function ShiftPage() {
                   title={mobileSheetDate ? `${mobileSheetDate} のシフト・申請` : undefined}
                 >
                   {mobileSheetDate && (
+                    <>
+                    {/* §D-1: カバレッジ判定ヘッダを Sidebar 直前に注入（UnifiedShiftSidebar 非改変）。
+                        staff には店舗 allShifts を出せず myShifts だけでは「確定0名/未配置」と誤読されるため、
+                        canManageTenant のときのみ描画する（P2-a・スコープ境界）。 */}
+                    {canManageTenant && (
+                      <ShiftDayCoverageHeader
+                        date={mobileSheetDate}
+                        shifts={allShifts}
+                        currentUserId={currentUserId}
+                      />
+                    )}
                     <UnifiedShiftSidebar
                       mode={canManageTenant ? "manager" : "staff"}
                       currentUserId={currentUserId}
@@ -1305,32 +1363,14 @@ export function ShiftPage() {
                       isDeadlinePassed={isDeadlinePassed}
                       canBypassDeadline={canEditDeadline}
                     />
+                    </>
                   )}
                 </BottomSheet>
               )}
 
-              {!isDesktop && (
-                <ShiftMobilePresetSheet
-                  isOpen={mobilePresetSheetOpen}
-                  onClose={() => setMobilePresetSheetOpen(false)}
-                  presets={presets}
-                  targetDate={selectedDate ?? format(new Date(), 'yyyy-MM-dd')}
-                  disabled={isDeadlinePassed && !canEditDeadline}
-                  onSelect={async (preset) => {
-                    try {
-                      const targetDateStr = selectedDate ?? format(new Date(), 'yyyy-MM-dd');
-                      await submitPreference(targetDateStr, 'preferred', preset.start_time, preset.end_time, undefined, undefined);
-                      fetchPreferenceRange();
-                      setMobilePresetSheetOpen(false);
-                    } catch {
-                      // submitPreference already reports the error.
-                    }
-                  }}
-                />
-              )}
-
-              <div className="lg:hidden mt-3 rounded-md px-3 py-3">
-                {isBulkMode ? (
+              {/* §E-6: bulk mode 中の確定 sticky バーのみ残す。通常時の各申請ボタンは FAB へ移管。 */}
+              {isBulkMode && (
+                <div className="lg:hidden mt-3 rounded-md px-3 py-3">
                   <div className="flex items-center gap-2">
                     <Button
                       variant="secondary"
@@ -1350,42 +1390,20 @@ export function ShiftPage() {
                       {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
                     </Button>
                   </div>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <div className="grid grid-cols-[112px_1fr] gap-2">
-                      <Button
-                        variant="secondary"
-                        size="lg"
-                        className="whitespace-nowrap"
-                        onClick={() => setMobilePresetSheetOpen(true)}
-                        disabled={isDeadlinePassed && !canEditDeadline}
-                      >
-                        プリセット
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        iconLeft={<Plus className="w-4 h-4" />}
-                        onClick={() => setNewPreferenceDate(format(new Date(), 'yyyy-MM-dd'))}
-                      >
-                        希望シフト提出
-                      </Button>
-                    </div>
-                    <Button
-                      variant="success"
-                      size="lg"
-                      fullWidth
-                      iconLeft={<Plus className="w-4 h-4" />}
-                      onClick={handleEnterBulkMode}
-                      disabled={isDeadlinePassed && !canEditDeadline}
-                      aria-pressed={isBulkMode}
-                      aria-label={messages.shiftPreference.bulk.entryButtonAria}
-                    >
-                      {messages.shiftPreference.bulk.entryButtonShort}
-                    </Button>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* §F-3: FAB + 申請メニュー（bulk 中は下部確定バーと競合回避のため非表示）。
+                  PC では完全 unmount し、SP→PC リサイズ時の body scroll lock 残留を防ぐ（§H-2(2)）。 */}
+              {!isDesktop && !isBulkMode && (
+                <ShiftMobileFab
+                  canManageTenant={canManageTenant}
+                  disabled={isDeadlinePassed && !canEditDeadline}
+                  onRequestPreference={() => setNewPreferenceDate(selectedDate ?? format(new Date(), 'yyyy-MM-dd'))}
+                  onBulkRequest={handleEnterBulkMode}
+                  onAddShift={canManageTenant ? () => setMobileSheetDate(selectedDate ?? format(new Date(), 'yyyy-MM-dd')) : undefined}
+                />
+              )}
             </div>
           </div>
 
