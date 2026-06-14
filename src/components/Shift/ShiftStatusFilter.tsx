@@ -145,7 +145,7 @@ function StatusChip({
 /**
  * シフトカレンダーのステータスフィルタ (controlled component)
  * - PC: 横並び pill チェックボックス列
- * - SP: <details> で collapsible
+ * - SP: 横並び pill チェックボックス列（常時表示・flex-wrap で折り返し）
  * - 全 OFF 時はフィルタなしとして扱う
  * - localStorage 永続化は親が readStatusFilter / writeStatusFilter を介して行う
  */
@@ -183,15 +183,6 @@ export function ShiftStatusFilter({
       (showPreferenceStatus || (s !== 'pending_preference' && s !== 'unavailable_preference'))
   );
 
-  const activeStatusLabels = displayedStatuses
-    .filter((s) => value.has(s))
-    .map((s) => STATUS_FILTER_LABELS[s]);
-
-  const summaryText =
-    activeStatusLabels.length === 0
-      ? 'すべて表示'
-      : `${activeStatusLabels.length}/${displayedStatuses.length} 表示`;
-
   return (
     <div>
       {/* PC: 横並び */}
@@ -210,26 +201,21 @@ export function ShiftStatusFilter({
         ))}
       </fieldset>
 
-      {/* SP: collapsible */}
-      <details className="sm:hidden">
-        <summary className="cursor-pointer text-sm font-medium text-stone-700 dark:text-stone-300 select-none px-2 py-2">
-          表示ステータス（{summaryText}）
-        </summary>
-        <fieldset
-          className="mt-2 flex flex-wrap gap-2"
-          aria-label="表示するステータス"
-        >
-          {displayedStatuses.map((status) => (
-            <StatusChip
-              key={status}
-              status={status}
-              isActive={value.has(status)}
-              count={counts?.[status]}
-              onToggle={() => toggle(status)}
-            />
-          ))}
-        </fieldset>
-      </details>
+      {/* SP: 常時表示 */}
+      <fieldset
+        className="sm:hidden flex flex-wrap gap-2"
+        aria-label="表示するステータス"
+      >
+        {displayedStatuses.map((status) => (
+          <StatusChip
+            key={status}
+            status={status}
+            isActive={value.has(status)}
+            count={counts?.[status]}
+            onToggle={() => toggle(status)}
+          />
+        ))}
+      </fieldset>
 
     </div>
   );

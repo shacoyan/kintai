@@ -1282,6 +1282,21 @@ export function ShiftPage() {
                   />
                 </div>
 
+                {/* ②-b まとめて申請ボタン（常設・FAB と並存／bulk 中は下部確定バーがあるので非表示） */}
+                {storeId && !isBulkMode && (
+                  <Button
+                    variant="success"
+                    size="lg"
+                    fullWidth
+                    iconLeft={<Plus className="w-4 h-4" />}
+                    onClick={handleEnterBulkMode}
+                    disabled={isDeadlinePassed && !canEditDeadline}
+                    aria-label={messages.shiftPreference.bulk.entryButtonAria}
+                  >
+                    {messages.shiftPreference.bulk.entryButton}
+                  </Button>
+                )}
+
                 {/* ③ 月グリッド（名前チップ化・横スワイプ対応ラッパー §E-4） */}
                 <div
                   onPointerDown={handleSwipePointerDown}
