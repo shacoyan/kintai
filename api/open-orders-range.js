@@ -1,18 +1,5 @@
-import { parseRangeTimeRange, computeBusinessDate, fetchCustomers, setCors, squareHeaders } from './_shared.js';
+import { parseRangeTimeRange, computeBusinessDate, fetchCustomers, setCors, squareHeaders, isValidDateStr, rangeDays, MAX_RANGE_DAYS } from './_shared.js';
 import { authenticate, resolveStartHour, assertLocationAllowed, AuthError } from './_auth.js';
-
-/**
- * 'YYYY-MM-DD' 形式かつ実在する日付か判定。
- *   '2026-02-31' のような Date round-trip で別日に化けるケースを弾く。
- *   (sales-range.js と同一実装)
- */
-function isValidDateStr(s) {
-  if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-  const d = new Date(s + 'T00:00:00Z');
-  if (Number.isNaN(d.getTime())) return false;
-  const roundtrip = d.toISOString().slice(0, 10);
-  return roundtrip === s;
-}
 
 export default async (req, res) => {
   if (setCors(req, res)) {
@@ -37,6 +24,10 @@ export default async (req, res) => {
       return res.status(400).json({ error: 'invalid_date_range', message: 'start_date must be <= end_date' });
     }
 
+    if (rangeDays(start_date, end_date) > MAX_RANGE_DAYS) {
+      return res.status(400).json({ error: 'range_too_large', message: `date range must be <= ${MAX_RANGE_DAYS} days` });
+    }
+
     // 越権封鎖: 許可外 location は存在を漏らさず空返し。
     if (!assertLocationAllowed(allowedLocationIds, location_id)) {
       return res.status(200).json({ byDate: {} });
@@ -55,8 +46,13 @@ export default async (req, res) => {
 
     let rawOrders = [];
     let cursor = undefined;
+    let pages = 0;
 
     do {
+      if (++pages > 1000) {
+        console.error('open-orders-range.js pagination runaway (>1000 pages)');
+        return res.status(502).json({ error: 'Square API error' });
+      }
       const response = await fetch('https://connect.squareup.com/v2/orders/search', {
         method: 'POST',
         headers: squareHeaders(),
@@ -76,7 +72,8 @@ export default async (req, res) => {
 
       if (!response.ok) {
         const err = await response.text();
-        return res.status(response.status).json({ error: 'Square API error', detail: err });
+        console.error('Square API error (open-orders-range):', response.status, err);
+        return res.status(response.status).json({ error: 'Square API error' });
       }
 
       const data = await response.json();

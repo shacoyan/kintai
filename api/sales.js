@@ -1,4 +1,4 @@
-import { setCors, squareHeaders, parseTimeRange, normalizePaymentsForReporting } from './_shared.js';
+import { setCors, squareHeaders, parseTimeRange, normalizePaymentsForReporting, isValidDateStr } from './_shared.js';
 import { authenticate, resolveStartHour, assertLocationAllowed, AuthError } from './_auth.js';
 
 export default async (req, res) => {
@@ -18,6 +18,10 @@ export default async (req, res) => {
 
     if (!date || !location_id) {
       return res.status(400).json({ error: 'date and location_id are required' });
+    }
+
+    if (!isValidDateStr(date)) {
+      return res.status(400).json({ error: 'invalid_date', message: 'date must be valid YYYY-MM-DD' });
     }
 
     // 越権ガード: 要求 location_id が許可集合に無ければ、存在を漏らさず空データを返す（§2.2）。
@@ -41,8 +45,13 @@ export default async (req, res) => {
 
     let allPayments = [];
     let cursor = undefined;
+    let pages = 0;
 
     do {
+      if (++pages > 1000) {
+        console.error('sales.js pagination runaway (>1000 pages)');
+        return res.status(502).json({ error: 'Failed to fetch payments from Square API' });
+      }
       let url = `https://connect.squareup.com/v2/payments?begin_time=${encodeURIComponent(beginTimeJST)}&end_time=${encodeURIComponent(endTimeJST)}&location_id=${encodeURIComponent(location_id)}&limit=200`;
 
       if (cursor) {
@@ -57,7 +66,7 @@ export default async (req, res) => {
       if (!response.ok) {
         const errorBody = await response.text();
         console.error('Square API error:', response.status, errorBody);
-        return res.status(response.status).json({ error: 'Failed to fetch payments from Square API', detail: errorBody });
+        return res.status(response.status).json({ error: 'Failed to fetch payments from Square API' });
       }
 
       const data = await response.json();
@@ -89,6 +98,6 @@ export default async (req, res) => {
       return res.status(error.status).json({ error: error.message });
     }
     console.error('Error fetching sales:', error);
-    return res.status(500).json({ error: 'Internal server error', detail: String(error?.message ?? error) });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 };

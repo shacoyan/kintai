@@ -12,12 +12,71 @@
  */
 
 
+/**
+ * CORS 許可オリジン解決。
+ *   ALLOWED_ORIGIN（カンマ区切り可）を許可リストとして扱い、
+ *   リクエスト Origin が一致した時のみその Origin を返す。
+ *   未設定時は `*` フォールバックを撤去し、何も許可しない（fail-closed）。
+ *   本番は ALLOWED_ORIGIN を必ず設定すること。
+ */
 export function setCors(req, res, methods = 'GET, OPTIONS') {
-  const origin = process.env.ALLOWED_ORIGIN || '*';
-  res.setHeader('Access-Control-Allow-Origin', origin);
+  const allowList = (process.env.ALLOWED_ORIGIN || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const reqOrigin = req.headers?.origin;
+
+  if (allowList.includes('*')) {
+    // 明示的に全許可を意図した場合のみ `*` を返す。
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  } else if (reqOrigin && allowList.includes(reqOrigin)) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    res.setHeader('Vary', 'Origin');
+  }
+  // 許可リストに無い/未設定なら Access-Control-Allow-Origin を出さない（ブラウザがブロック）。
+
   res.setHeader('Access-Control-Allow-Methods', methods);
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   return req.method === 'OPTIONS';
+}
+
+/**
+ * 'YYYY-MM-DD' 形式かつ実在する日付か判定。
+ *   '2026-02-31' のような Date round-trip で別日に化けるケースを弾く。
+ *   全 endpoint 共用（旧 sales-range / open-orders-range / transactions-range のインライン実装を集約）。
+ */
+export function isValidDateStr(s) {
+  if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(s + 'T00:00:00Z');
+  if (Number.isNaN(d.getTime())) return false;
+  const roundtrip = d.toISOString().slice(0, 10);
+  return roundtrip === s;
+}
+
+/**
+ * 時:0-23 にクランプし、NaN/範囲外は fallback を返す。
+ */
+function clampHour(raw, fallback) {
+  const n = parseInt(raw, 10);
+  if (Number.isNaN(n)) return fallback;
+  if (n < 0) return 0;
+  if (n > 23) return 23;
+  return n;
+}
+
+// range 系の最大日数ガード / cursor ページング上限。
+export const MAX_RANGE_DAYS = 366;
+const MAX_PAYMENT_PAGES = 1000; // limit=200 → 最大 20万件相当。暴走/無限ループ防止。
+
+/**
+ * start_date / end_date（両端含む）の日数を返す。invalid なら NaN。
+ */
+export function rangeDays(start_date, end_date) {
+  if (!isValidDateStr(start_date) || !isValidDateStr(end_date)) return NaN;
+  const s = new Date(start_date + 'T00:00:00Z').getTime();
+  const e = new Date(end_date + 'T00:00:00Z').getTime();
+  return Math.floor((e - s) / 86400000) + 1;
 }
 
 
@@ -30,8 +89,10 @@ export function squareHeaders() {
 }
 
 export function parseTimeRange({ date, start_hour, end_hour }) {
-  const startHour = parseInt(start_hour ?? '0', 10);
-  const endHour = end_hour !== undefined ? parseInt(end_hour, 10) : (startHour > 0 ? startHour - 1 : 23);
+  const startHour = clampHour(start_hour ?? '0', 0);
+  const endHour = end_hour !== undefined
+    ? clampHour(end_hour, startHour > 0 ? startHour - 1 : 23)
+    : (startHour > 0 ? startHour - 1 : 23);
   const isNextDay = endHour < startHour;
   const endDate = isNextDay ? (() => {
     const d = new Date(date + 'T12:00:00+09:00');
@@ -75,8 +136,10 @@ export async function fetchCustomers(customerIds) {
 const HH = (h) => String(h).padStart(2, '0');
 
 export function parseRangeTimeRange({ start_date, end_date, start_hour, end_hour }) {
-  const startHour = parseInt(start_hour ?? '0', 10);
-  const endHour = end_hour !== undefined ? parseInt(end_hour, 10) : (startHour > 0 ? startHour - 1 : 23);
+  const startHour = clampHour(start_hour ?? '0', 0);
+  const endHour = end_hour !== undefined
+    ? clampHour(end_hour, startHour > 0 ? startHour - 1 : 23)
+    : (startHour > 0 ? startHour - 1 : 23);
   const isNextDay = endHour < startHour;
 
   const beginTimeJST = `${start_date}T${HH(startHour)}:00:00+09:00`;
@@ -120,8 +183,12 @@ export function computeBusinessDate(createdAtISO, startHour) {
 export async function fetchAllPayments({ beginTimeJST, endTimeJST, location_id }) {
   const payments = [];
   let cursor = undefined;
+  let pages = 0;
 
   do {
+    if (++pages > MAX_PAYMENT_PAGES) {
+      throw new Error(`fetchAllPayments exceeded ${MAX_PAYMENT_PAGES} pages (possible runaway pagination)`);
+    }
     const params = new URLSearchParams({
       begin_time: beginTimeJST,
       end_time: endTimeJST,

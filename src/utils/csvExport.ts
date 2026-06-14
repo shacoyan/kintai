@@ -29,8 +29,12 @@ function fmtTime(min: number): string {
  * actual / shift / CSV / 印刷 で同一値になることを保証する。
  */
 export function generatePayrollCsv(payrollData: PayrollCsvRow[]): string {
+  // CSV インジェクション対策: 先頭が = + - @ TAB CR なら ' を前置して数式評価を防ぐ。
   const csvEscape = (val: string | number): string => {
-    const s = String(val);
+    let s = String(val);
+    if (s.length > 0 && /^[=+\-@\t\r]/.test(s)) {
+      s = `'${s}`;
+    }
     return `"${s.replace(/"/g, '""')}"`;
   };
 
@@ -73,9 +77,9 @@ export function generatePayrollCsv(payrollData: PayrollCsvRow[]): string {
     ['総支給額', '-', fmtTime(totalNormal), fmtTime(totalNight), '-', totalPayment, ''].map(csvEscape).join(',')
   );
 
-  // UTF-8 BOM
+  // UTF-8 BOM\u3002\u884C\u533A\u5207\u308A\u306F CRLF\uFF08Excel \u4E92\u63DB\uFF09+ \u672B\u5C3E CRLF \u306B\u7D71\u4E00\u3002
   const BOM = '\uFEFF';
-  return BOM + header + '\n' + lines.join('\n');
+  return BOM + header + '\r\n' + lines.join('\r\n') + '\r\n';
 }
 
 export function downloadCsv(content: string, filename: string): void {

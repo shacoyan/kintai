@@ -9,6 +9,14 @@ vi.mock('./_shared.js', () => ({
   fetchCatalogVariationCategoryMap: vi.fn(async () => ({})),
   fetchCustomers: vi.fn(async () => ({})),
   normalizePaymentsForReporting: vi.fn((payments) => payments),
+  // B7: isValidDateStr/rangeDays/MAX_RANGE_DAYS が _shared.js へ集約されたため実ロジック相当で mock。
+  isValidDateStr: (s) =>
+    typeof s === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(s) &&
+    new Date(s + 'T00:00:00Z').toISOString().slice(0, 10) === s,
+  rangeDays: (a, b) =>
+    Math.floor((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000) + 1,
+  MAX_RANGE_DAYS: 366,
 }));
 
 vi.mock('./_auth.js', () => ({
@@ -155,5 +163,30 @@ describe('api/transactions-range — 入力検証ガード', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ byDate: {} });
+  });
+
+  it('366 日 (上限ちょうど・両端含む) は 200 を返す', async () => {
+    // 2026-01-01 〜 2027-01-01 = 366 日 (両端含む, MAX_RANGE_DAYS ちょうど)。
+    const req = makeReq({
+      start_date: '2026-01-01',
+      end_date: '2027-01-01',
+      location_id: 'L1',
+    });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+  });
+
+  it('367 日 (上限超過) で 400 + range_too_large を返す', async () => {
+    // 2026-01-01 〜 2027-01-02 = 367 日 (両端含む) > MAX_RANGE_DAYS(366)。
+    const req = makeReq({
+      start_date: '2026-01-01',
+      end_date: '2027-01-02',
+      location_id: 'L1',
+    });
+    const res = makeRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe('range_too_large');
   });
 });

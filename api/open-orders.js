@@ -1,4 +1,4 @@
-import { setCors, squareHeaders, parseTimeRange, fetchCustomers } from './_shared.js';
+import { setCors, squareHeaders, parseTimeRange, fetchCustomers, isValidDateStr } from './_shared.js';
 import { authenticate, resolveStartHour, assertLocationAllowed, AuthError } from './_auth.js';
 
 export default async (req, res) => {
@@ -14,6 +14,9 @@ export default async (req, res) => {
     const { location_id, date, end_hour } = req.query;
     if (!location_id) return res.status(400).json({ error: 'location_id is required' });
     if (!date) return res.status(400).json({ error: 'date is required' });
+    if (!isValidDateStr(date)) {
+      return res.status(400).json({ error: 'invalid_date', message: 'date must be valid YYYY-MM-DD' });
+    }
 
     // 越権封鎖: 許可外 location は存在を漏らさず空返し。
     if (!assertLocationAllowed(allowedLocationIds, location_id)) {
@@ -30,29 +33,45 @@ export default async (req, res) => {
 
     const { beginTimeJST, endTimeJST } = parseTimeRange({ date, start_hour: resolvedStartHour, end_hour });
 
-    const response = await fetch('https://connect.squareup.com/v2/orders/search', {
-      method: 'POST',
-      headers: squareHeaders(),
-      body: JSON.stringify({
-        location_ids: [location_id],
-        query: {
-          filter: {
-            state_filter: { states: ['OPEN'] },
-            date_time_filter: { created_at: { start_at: beginTimeJST, end_at: endTimeJST } }
+    // cursor ページング: limit=50 単発だと 51件以上の OPEN 注文が切り捨てられる。
+    // cursor を辿って全件取得する（暴走防止に最大 200 ページ＝1万件上限）。
+    let rawOrders = [];
+    let cursor = undefined;
+    let pages = 0;
+
+    do {
+      if (++pages > 200) {
+        console.error('open-orders.js pagination runaway (>200 pages)');
+        return res.status(502).json({ error: 'Square API error' });
+      }
+
+      const response = await fetch('https://connect.squareup.com/v2/orders/search', {
+        method: 'POST',
+        headers: squareHeaders(),
+        body: JSON.stringify({
+          location_ids: [location_id],
+          query: {
+            filter: {
+              state_filter: { states: ['OPEN'] },
+              date_time_filter: { created_at: { start_at: beginTimeJST, end_at: endTimeJST } }
+            },
+            sort: { sort_field: 'CREATED_AT', sort_order: 'DESC' }
           },
-          sort: { sort_field: 'CREATED_AT', sort_order: 'DESC' }
-        },
-        limit: 50
-      })
-    });
+          limit: 200,
+          cursor: cursor
+        })
+      });
 
-    if (!response.ok) {
-      const err = await response.text();
-      return res.status(response.status).json({ error: 'Square API error', detail: err });
-    }
+      if (!response.ok) {
+        const err = await response.text();
+        console.error('Square API error (open-orders):', response.status, err);
+        return res.status(response.status).json({ error: 'Square API error' });
+      }
 
-    const data = await response.json();
-    const rawOrders = data.orders ?? [];
+      const data = await response.json();
+      rawOrders = rawOrders.concat(data.orders ?? []);
+      cursor = data.cursor ?? undefined;
+    } while (cursor);
 
     // customers bulk-retrieve
     const customerIds = rawOrders.filter(o => o.customer_id).map(o => o.customer_id);

@@ -23,6 +23,14 @@ vi.mock('./_shared.js', () => ({
   computeBusinessDate: vi.fn(() => '2026-04-01'),
   fetchCustomers: vi.fn(async () => ({})),
   squareHeaders: vi.fn(() => ({})),
+  // B7: isValidDateStr/rangeDays/MAX_RANGE_DAYS が _shared.js へ集約されたため実ロジック相当で mock。
+  isValidDateStr: (s) =>
+    typeof s === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(s) &&
+    new Date(s + 'T00:00:00Z').toISOString().slice(0, 10) === s,
+  rangeDays: (a, b) =>
+    Math.floor((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000) + 1,
+  MAX_RANGE_DAYS: 366,
 }));
 
 // 35 日ガード撤廃済み (2026-05-21) → どの期間でも fetch が呼ばれる前提。

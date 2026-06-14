@@ -2,6 +2,9 @@
 
 # Build output
 dist/
+
+# Secrets（subtree 切出し時に root の ignore へ依存しないよう明記）
+.env
 .env*.local
 
 # Playwright E2E

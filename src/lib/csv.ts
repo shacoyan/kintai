@@ -1,9 +1,18 @@
 // kintai/src/lib/csv.ts
 export type CsvRow = (string | number | null | undefined)[];
 
+// CSV インジェクション対策: Excel/Sheets はセル先頭が = + - @ TAB CR の場合に
+// 数式として評価する（情報漏えい・外部リンク誘導の温床）。先頭に ' を前置して無効化する。
+function sanitizeCsvFormula(s: string): string {
+  if (s.length > 0 && /^[=+\-@\t\r]/.test(s)) {
+    return `'${s}`;
+  }
+  return s;
+}
+
 function escapeCsvField(v: string | number | null | undefined): string {
   if (v === null || v === undefined) return '';
-  const s = String(v);
+  const s = sanitizeCsvFormula(String(v));
   if (/[",\n\r]/.test(s)) {
     return `"${s.replace(/"/g, '""')}"`;
   }
