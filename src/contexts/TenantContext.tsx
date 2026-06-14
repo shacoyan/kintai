@@ -258,38 +258,25 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setLoading(true);
     setError(null);
     try {
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      if (authError || !authUser) throw new Error('認証情報の取得に失敗しました');
-
-      const inviteCode = await generateUniqueInviteCode();
-
-      const { data: tenantData, error: tenantError } = await supabase
-        .from('tenants')
-        .insert({ name, invite_code: inviteCode, owner_id: authUser.id })
-        .select()
+      // 2026-06-15 (P2/P3 B2 / 094): tenants INSERT → tenant_members INSERT の2段DMLを
+      // create_tenant RPC に集約。owner_id/user_id は auth.uid() をサーバ側固定、invite_code も
+      // サーバ生成、両 INSERT を1トランザクションで実行し部分失敗時の孤立テナントを防ぐ。
+      // create_tenant は SETOF tenants を返す（PostgREST 上は行配列）。.single() で単一行に絞る。
+      const { data: tenantData, error: rpcError } = await supabase
+        .rpc('create_tenant', { p_name: name, p_display_name: displayName })
         .single();
 
-      if (tenantError) throw tenantError;
+      if (rpcError) throw rpcError;
+      if (!tenantData) throw new Error('ワークスペースの作成に失敗しました');
 
-      const { error: memberError } = await supabase
-        .from('tenant_members')
-        .insert({
-          tenant_id: tenantData.id,
-          user_id: authUser.id,
-          display_name: displayName,
-          role: 'owner',
-        });
-
-      if (memberError) throw memberError;
-
-      return tenantData;
+      return tenantData as Tenant;
     } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [generateUniqueInviteCode]);
+  }, []);
 
   const joinTenant = useCallback(async (inviteCode: string, displayName: string): Promise<Tenant> => {
     setLoading(true);
