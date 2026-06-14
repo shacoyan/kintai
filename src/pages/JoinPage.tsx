@@ -44,18 +44,17 @@ type PreviewState =
   | { status: 'notFound' }
   | { status: 'error'; message: string };
 
+// 2026-06-14 #3: preview_invite RPC（SECURITY DEFINER）の返り 1 行。
+// code 文字列・owner_id・revoked_at 値は返らない（列挙防止）。
 interface InvitePreviewRow {
-  id: string;
   tenant_id: string;
+  tenant_name: string;
   expires_at: string | null;
   max_uses: number | null;
   used_count: number;
-  revoked_at: string | null;
-  tenants: {
-    id: string;
-    name: string;
-    deleted_at: string | null;
-  } | null;
+  is_valid: boolean;
+  reason: string;
+  stores: { id: string; name: string }[] | null;
 }
 
 export function JoinPage(): JSX.Element {
@@ -117,23 +116,18 @@ export function JoinPage(): JSX.Element {
     (async () => {
       setPreview({ status: 'loading' });
       try {
-        // 2026-05-12: per-store invite URL 対応。
-        // 旧: tenants.invite_code 直接 lookup
-        // 新: tenant_invite_codes lookup + tenants embed
-        const { data, error } = await supabase
-          .from('tenant_invite_codes')
-          .select(
-            'id, tenant_id, expires_at, max_uses, used_count, revoked_at, tenants!inner(id, name, deleted_at)'
-          )
-          .eq('code', code)
-          .is('revoked_at', null)
-          .is('tenants.deleted_at', null)
-          .maybeSingle();
+        // 2026-06-14 #3 列挙脆弱性修正: tenant_invite_codes / tenant_invite_code_stores の
+        // 直 SELECT（全テナント列挙可能）を廃止し、SECURITY DEFINER RPC preview_invite に集約。
+        // RPC は code 完全一致 1 件のみ評価し、code 文字列・owner_id・revoked_at 値は返さない。
+        // 配属店舗(stores)も RPC が返すため storeRowsBlocked は不要（常に false 互換維持）。
+        const { data, error } = await supabase.rpc('preview_invite', {
+          p_code: code,
+        });
 
         if (cancelled) return;
 
         if (error) {
-          logger.error('invite preview query failed:', formatSupabaseError(error));
+          logger.error('invite preview rpc failed:', formatSupabaseError(error));
           setPreview({
             status: 'error',
             message: formatSupabaseError(error).message,
@@ -141,70 +135,49 @@ export function JoinPage(): JSX.Element {
           return;
         }
 
-        if (!data) {
-          // v3 で見つからなければ即 notFound 確定 (v2 fallback は本 Loop では実装しない)。
+        // RETURNS TABLE は配列で返る。
+        const row = (Array.isArray(data) ? data[0] : data) as
+          | InvitePreviewRow
+          | null
+          | undefined;
+
+        if (!row || row.reason === 'not_found') {
           setPreview({ status: 'notFound' });
           return;
         }
-
-        const row = data as unknown as InvitePreviewRow;
-        const tenantRow = row.tenants;
-        if (!tenantRow || tenantRow.deleted_at != null) {
+        if (row.reason === 'revoked') {
+          // revoked は存在を隠して notFound 扱い。
           setPreview({ status: 'notFound' });
           return;
         }
-
-        if (
-          row.expires_at &&
-          new Date(row.expires_at).getTime() < Date.now()
-        ) {
+        if (row.reason === 'expired') {
           setPreview({ status: 'expired' });
           return;
         }
-        if (
-          row.max_uses != null &&
-          row.used_count >= row.max_uses
-        ) {
+        if (row.reason === 'max_uses_reached') {
           setPreview({ status: 'maxUsesReached' });
           return;
         }
 
-        // 配属予定店舗 lookup (tenant_invite_code_stores ベース)
-        // 2026-05-12 P1-B: 未参加 user は RLS で中間表を見られないため、
-        // storeErr 発生時のみ storeRowsBlocked=true で続行し、表示側でフォールバック文言を出す。
-        // N=0 招待 (店舗ゼロ＝テナント加入のみ) は正常状態として storeRowsBlocked=false のまま扱う。
-        const { data: storeRows, error: storeErr } = await supabase
-          .from('tenant_invite_code_stores')
-          .select('store_id, sort_order, stores(id, name)')
-          .eq('invite_code_id', row.id)
-          .order('sort_order');
-
-        if (storeErr) {
-          logger.error(
-            'invite preview store lookup blocked (likely RLS):',
-            formatSupabaseError(storeErr)
-          );
-        }
-
-        const storeRowsBlocked = !!storeErr;
-
-        const stores: { id: string; name: string }[] = Array.isArray(storeRows)
-          ? storeRows
-              .map((r: unknown) => {
-                const obj = r as { stores?: { id: string; name: string } | null };
-                return obj.stores ?? null;
+        const stores: { id: string; name: string }[] = Array.isArray(row.stores)
+          ? row.stores
+              .map((s: unknown) => {
+                const obj = s as { id?: string; name?: string } | null;
+                return obj && obj.id && obj.name
+                  ? { id: obj.id, name: obj.name }
+                  : null;
               })
               .filter((s): s is { id: string; name: string } => s != null)
           : [];
 
-        const alreadyMember = tenants.some((t) => t.id === tenantRow.id);
+        const alreadyMember = tenants.some((t) => t.id === row.tenant_id);
 
         setPreview({
           status: 'ok',
-          tenant: { id: tenantRow.id, name: tenantRow.name },
+          tenant: { id: row.tenant_id, name: row.tenant_name },
           stores,
           alreadyMember,
-          storeRowsBlocked,
+          storeRowsBlocked: false,
         });
       } catch (e) {
         if (cancelled) return;
