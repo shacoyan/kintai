@@ -257,8 +257,18 @@ export function useKanbanDnd(params: UseKanbanDndParams): UseKanbanDndResult {
       if (!event.over) return;
 
       // 3. over.id から newStatus を narrow
-      const rawStatus = stripPrefix(String(event.over.id), prefix.column);
-      const newStatus = narrowToTaskStatus(rawStatus);
+      //   collisionDetection=closestCorners + 各カードが droppable のため、非空カラムへの
+      //   ドロップでは over.id が列 (`column-`/`subcol-`) でなくカード (`task-`/`subtask-`) に
+      //   なる。その場合は narrow=null になるので、カード上ドロップとみなし対象タスクの
+      //   status を採用するフォールバックを入れる (親 task-/column- ・子 subtask-/subcol- 両対応)。
+      let newStatus = narrowToTaskStatus(stripPrefix(String(event.over.id), prefix.column));
+      if (!newStatus) {
+        const overId = String(event.over.id);
+        if (overId.startsWith(prefix.card)) {
+          const overTask = findTaskById(stripPrefix(overId, prefix.card));
+          if (overTask) newStatus = overTask.status; // Task.status は TaskStatus 型なので narrow 不要
+        }
+      }
       if (!newStatus) {
         onError?.('無効な移動先です');
         return;

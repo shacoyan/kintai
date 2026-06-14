@@ -3,8 +3,10 @@ import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useShift } from '../../hooks/useShift';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { parseISO, differenceInMinutes } from 'date-fns';
-import type { AttendanceRecord, TenantMember, Shift, TenantRole } from '../../types';
+import type { AttendanceRecord, TenantMember, Shift, TenantRole, MemberStorePayroll } from '../../types';
 import { useTenantRoles } from '../../hooks/useTenantRoles';
+import { useMemberStorePayrolls } from '../../hooks/useMemberStorePayrolls';
+import { getMemberPayrollForStore } from '../../utils/payrollCalc';
 import { generatePayrollCsv, downloadCsv } from '../../utils/csvExport';
 import { getNightMinutesInRange, getNightMinutesForShift } from '../../utils/nightShift';
 import { Download, Calculator, Lock, Printer } from 'lucide-react';
@@ -45,38 +47,31 @@ function splitNightMinutes(clockIn: string, clockOut: string): { normal: number;
   return { normal: totalMins - nightMins, night: nightMins };
 }
 
-/**
- * Loop 11b L11b-3: 役職フォールバック付き時給/月給算出
- * 個別 hourly_rate が設定されていればそれを優先、未設定なら役職の default を継承、それも無ければ 0。
- */
-function getEffectiveHourlyRate(m: TenantMember, rolesMap: Map<string, TenantRole>): number {
-  if (m.hourly_rate != null) return m.hourly_rate;
-  if (m.role_id) {
-    const role = rolesMap.get(m.role_id);
-    if (role?.default_hourly_rate != null) return role.default_hourly_rate;
-  }
-  return 0;
-}
-
-function getEffectiveMonthlySalary(m: TenantMember, rolesMap: Map<string, TenantRole>): number {
-  if (m.monthly_salary != null) return m.monthly_salary;
-  if (m.role_id) {
-    const role = rolesMap.get(m.role_id);
-    if (role?.default_monthly_salary != null) return role.default_monthly_salary;
-  }
-  return 0;
-}
-
 function calcMemberPayroll(
   member: TenantMember,
   records: AttendanceRecord[],
-  rolesMap: Map<string, TenantRole>
+  rolesMap: Map<string, TenantRole>,
+  payrollsMap: Map<string, MemberStorePayroll>
 ): PayrollRow {
-  const rate = getEffectiveHourlyRate(member, rolesMap);
+  // Phase 2: payType / 表示用 rate は代表店舗 (最頻 r.store_id) で判定。
+  // useShift.getLaborCostEstimate と同じ「代表店舗で payType 判定 → 時給はレコード単位で rate 引き直し」パターン。
+  const storeIdCounts = new Map<string, number>();
+  let repStoreId: string | null = null;
+  let maxCount = 0;
+  for (const r of records) {
+    if (!r.store_id) continue;
+    const c = (storeIdCounts.get(r.store_id) ?? 0) + 1;
+    storeIdCounts.set(r.store_id, c);
+    if (c > maxCount) { maxCount = c; repStoreId = r.store_id; }
+  }
+  const repPayroll = getMemberPayrollForStore(member, repStoreId, payrollsMap, rolesMap);
+
   const dates = new Set<string>();
   let totalMinutes = 0;
   let normalMinutes = 0;
   let nightMinutes = 0;
+  // 時給メンバーの支払額は record 単位で store_id ごとに rate/nightMultiplier を引き直して合算する。
+  let payAccumulator = 0;
 
   for (const r of records) {
     if (!r.clock_in) continue;
@@ -98,6 +93,11 @@ function calcMemberPayroll(
 
     totalMinutes += workMins;
 
+    // この record の store_id で rate / nightMultiplier を解決 (store_id=null は tenant 既定値に fallback)。
+    const recordPayroll = getMemberPayrollForStore(member, r.store_id, payrollsMap, rolesMap);
+    let recNormal: number;
+    let recNight: number;
+
     if (member.night_shift_enabled !== false && r.clock_in && r.clock_out) {
       const { normal, night } = splitNightMinutes(r.clock_in, r.clock_out);
       // 休憩時間を通常/深夜に分割
@@ -115,32 +115,33 @@ function calcMemberPayroll(
           }
         }
       }
-      const adjustedNormal = Math.max(0, normal - breakNormalMins);
-      const adjustedNight = Math.max(0, night - breakNightMins);
-      normalMinutes += adjustedNormal;
-      nightMinutes += adjustedNight;
+      recNormal = Math.max(0, normal - breakNormalMins);
+      recNight = Math.max(0, night - breakNightMins);
     } else {
-      normalMinutes += workMins;
+      recNormal = workMins;
+      recNight = 0;
     }
+    normalMinutes += recNormal;
+    nightMinutes += recNight;
+    payAccumulator += (recNormal / 60) * recordPayroll.hourlyRate
+      + (recNight / 60) * recordPayroll.hourlyRate * recordPayroll.nightMultiplier;
   }
 
-  const payType = member.pay_type ?? 'hourly';
-  const monthlySalary = getEffectiveMonthlySalary(member, rolesMap);
+  const payType = repPayroll.payType;
+  const monthlySalary = repPayroll.monthlySalary;
 
   let payment: number;
   if (payType === 'monthly') {
     payment = monthlySalary;
   } else {
-    const normalPay = (normalMinutes / 60) * rate;
-    const nightPay = (nightMinutes / 60) * rate * 1.25;
-    payment = Math.ceil(normalPay + nightPay);
+    payment = Math.ceil(payAccumulator);
   }
 
   return {
     userId: member.user_id,
     displayName: member.display_name,
     payType,
-    hourlyRate: rate,
+    hourlyRate: repPayroll.hourlyRate,
     monthlySalary,
     nightShiftEnabled: member.night_shift_enabled ?? true,
     workDays: dates.size,
@@ -157,21 +158,35 @@ function calcMemberPayroll(
 function calcMemberShiftPayroll(
   member: TenantMember,
   shifts: Shift[],
-  rolesMap: Map<string, TenantRole>
+  rolesMap: Map<string, TenantRole>,
+  payrollsMap: Map<string, MemberStorePayroll>
 ): PayrollRow {
-  const rate = getEffectiveHourlyRate(member, rolesMap);
-  const payType = member.pay_type ?? 'hourly';
-  const monthlySalary = getEffectiveMonthlySalary(member, rolesMap);
-
   // 承認済み（approved / modified）シフトのみを対象とする
   const approvedShifts = shifts.filter(
     (s) => s.user_id === member.user_id && (s.status === 'approved' || s.status === 'modified')
   );
 
+  // Phase 2: payType / 表示用 rate は代表店舗 (最頻 store_id) で判定。
+  // useShift.getLaborCostEstimate と同じ「代表店舗で payType 判定 → 時給は shift 単位で rate 引き直し」パターン。
+  const storeIdCounts = new Map<string, number>();
+  let repStoreId: string | null = null;
+  let maxCount = 0;
+  for (const s of approvedShifts) {
+    if (!s.store_id) continue;
+    const c = (storeIdCounts.get(s.store_id) ?? 0) + 1;
+    storeIdCounts.set(s.store_id, c);
+    if (c > maxCount) { maxCount = c; repStoreId = s.store_id; }
+  }
+  const repPayroll = getMemberPayrollForStore(member, repStoreId, payrollsMap, rolesMap);
+  const payType = repPayroll.payType;
+  const monthlySalary = repPayroll.monthlySalary;
+
   const dates = new Set<string>();
   let totalMinutes = 0;
   let normalMinutes = 0;
   let nightMinutes = 0;
+  // 時給メンバーの支払額は shift 単位で store_id ごとに rate/nightMultiplier を引き直して合算する。
+  let payAccumulator = 0;
 
   for (const s of approvedShifts) {
     dates.add(s.date);
@@ -189,29 +204,36 @@ function calcMemberShiftPayroll(
 
     totalMinutes += shiftMins;
 
+    let recNormal: number;
+    let recNight: number;
     if (member.night_shift_enabled !== false) {
       const nightMins = getNightMinutesForShift(s.date, startTime, endTime);
-      nightMinutes += nightMins;
-      normalMinutes += shiftMins - nightMins;
+      recNight = nightMins;
+      recNormal = shiftMins - nightMins;
     } else {
-      normalMinutes += shiftMins;
+      recNight = 0;
+      recNormal = shiftMins;
     }
+    nightMinutes += recNight;
+    normalMinutes += recNormal;
+
+    const shiftPayroll = getMemberPayrollForStore(member, s.store_id, payrollsMap, rolesMap);
+    payAccumulator += (recNormal / 60) * shiftPayroll.hourlyRate
+      + (recNight / 60) * shiftPayroll.hourlyRate * shiftPayroll.nightMultiplier;
   }
 
   let payment: number;
   if (payType === 'monthly') {
     payment = monthlySalary;
   } else {
-    const normalPay = (normalMinutes / 60) * rate;
-    const nightPay = (nightMinutes / 60) * rate * 1.25;
-    payment = Math.ceil(normalPay + nightPay);
+    payment = Math.ceil(payAccumulator);
   }
 
   return {
     userId: member.user_id,
     displayName: member.display_name,
     payType,
-    hourlyRate: rate,
+    hourlyRate: repPayroll.hourlyRate,
     monthlySalary,
     nightShiftEnabled: member.night_shift_enabled ?? true,
     workDays: dates.size,
@@ -295,6 +317,9 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   // === Loop 11b L11b-3: 役職時給フォールバック ===
   const { roles: tenantRoles, fetchRoles: fetchTenantRoles } = useTenantRoles(tenantId);
   useEffect(() => { fetchTenantRoles(); }, [fetchTenantRoles]);
+  // Phase 2: 店舗別人件費 override を解決するための Map (member_store_payrolls)。
+  const { fetchMemberStorePayrolls } = useMemberStorePayrolls(tenantId);
+  const [payrollsMap, setPayrollsMap] = useState<Map<string, MemberStorePayroll>>(new Map());
   const rolesMap = useMemo(() => {
     const m = new Map<string, typeof tenantRoles[number]>();
     for (const r of tenantRoles) m.set(r.id, r);
@@ -367,6 +392,14 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
     const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
     const endDate = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
+    // 店舗別 override Map を取得。fetch 失敗時は空 Map で計算継続 (tenant 既定値 fallback)。
+    try {
+      const map = await fetchMemberStorePayrolls();
+      setPayrollsMap(map);
+    } catch {
+      setPayrollsMap(new Map());
+    }
+
     if (payrollMode === 'actual') {
       await fetchAllAttendance(selectedYear, selectedMonth, currentStore?.id ?? null);
     } else {
@@ -381,7 +414,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
     if (!calculated) return [];
 
     if (payrollMode === 'shift') {
-      return members.map((m) => calcMemberShiftPayroll(m, allShifts, rolesMap));
+      return members.map((m) => calcMemberShiftPayroll(m, allShifts, rolesMap, payrollsMap));
     }
 
     // 実績ベース
@@ -390,8 +423,8 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
       if (!grouped[r.user_id]) grouped[r.user_id] = [];
       grouped[r.user_id].push(r);
     });
-    return members.map((m) => calcMemberPayroll(m, grouped[m.user_id] || [], rolesMap));
-  }, [calculated, allAttendance, allShifts, members, payrollMode, rolesMap]);
+    return members.map((m) => calcMemberPayroll(m, grouped[m.user_id] || [], rolesMap, payrollsMap));
+  }, [calculated, allAttendance, allShifts, members, payrollMode, rolesMap, payrollsMap]);
 
   const payrollData: PayrollRow[] = useMemo(() => {
     if (run && run.items) {
@@ -578,7 +611,8 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                   csv = generateShiftPayrollCsv(payrollData, selectedYear, selectedMonth);
                   filename = `給与計算_シフトベース_${storeLabel}_${selectedYear}年${selectedMonth}月.csv`;
                 } else {
-                  csv = generatePayrollCsv(allAttendance, members);
+                  // actual モードも画面・印刷と同一の payrollData (calcMemberPayroll 由来) を消費し整合させる
+                  csv = generatePayrollCsv(payrollData);
                   filename = `給与計算_${storeLabel}_${selectedYear}年${selectedMonth}月.csv`;
                 }
                 downloadCsv(csv, filename);
@@ -727,7 +761,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900 dark:text-stone-100">{row.displayName}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-700 dark:text-stone-300 text-right">{row.workDays}日</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-700 dark:text-stone-300 text-right" title="休憩を除く">{fmtTime(row.normalMinutes)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right" title="22:00〜翌5:00 は 1.25 倍">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right" title="22:00〜翌5:00 は深夜割増（既定1.25倍。店舗別設定で変更可）">
                           {row.nightMinutes > 0 ? (
                             <span className="text-orange-700 dark:text-orange-200 font-medium">{fmtTime(row.nightMinutes)}</span>
                           ) : (
@@ -748,7 +782,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
                       <td className="px-6 py-4 text-sm font-bold text-stone-900 dark:text-stone-100">合計</td>
                       <td className="px-6 py-4 text-sm font-bold text-stone-900 dark:text-stone-100 text-right">-</td>
                       <td className="px-6 py-4 text-sm font-bold text-stone-900 dark:text-stone-100 text-right" title="休憩を除く">{fmtTime(grandTotalMinutes - totalNightMinutes)}</td>
-                      <td className="px-6 py-4 text-sm font-bold text-orange-700 dark:text-orange-200 text-right" title="22:00〜翌5:00 は 1.25 倍">{totalNightMinutes > 0 ? fmtTime(totalNightMinutes) : '-'}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-orange-700 dark:text-orange-200 text-right" title="22:00〜翌5:00 は深夜割増（既定1.25倍。店舗別設定で変更可）">{totalNightMinutes > 0 ? fmtTime(totalNightMinutes) : '-'}</td>
                       <td className="px-6 py-4 text-right">-</td>
                       <td className="px-6 py-4 text-base font-bold text-stone-900 dark:text-stone-100 text-right">¥{totalPayment.toLocaleString()}</td>
                     </tr>

@@ -22,6 +22,28 @@ export function getEffectiveMonthlySalary(
 }
 
 /**
+ * メンバーの実効時給を取得する（getEffectiveMonthlySalary と対称）。
+ * 優先順:
+ *   1. member.hourly_rate が設定されていればそれを採用
+ *   2. role.default_hourly_rate が設定されていればそれを採用
+ *   3. それ以外は 0
+ *
+ * 旧 getEffectiveHourlyRate の3段フォールバック（member → role 既定 → 0）を復元する。
+ * role に時給を設定し member 個別時給を空にする運用で 0 円計算になる潜在バグを防ぐ。
+ */
+export function getEffectiveHourlyRate(
+  member: TenantMember,
+  rolesMap?: Map<string, TenantRole>
+): number {
+  if (member.hourly_rate != null) return member.hourly_rate;
+  if (rolesMap && member.role_id) {
+    const role = rolesMap.get(member.role_id);
+    if (role?.default_hourly_rate != null) return role.default_hourly_rate;
+  }
+  return 0;
+}
+
+/**
  * 特定店舗におけるメンバーの給与情報を取得する (Phase 2 / 店舗別人件費)。
  *
  * 優先順:
@@ -55,7 +77,7 @@ export function getMemberPayrollForStore(
     if (override) {
       return {
         payType: override.pay_type,
-        hourlyRate: override.hourly_rate ?? member.hourly_rate ?? 0,
+        hourlyRate: override.hourly_rate ?? getEffectiveHourlyRate(member, rolesMap),
         monthlySalary: override.monthly_salary ?? getEffectiveMonthlySalary(member, rolesMap),
         nightMultiplier: override.night_shift_rate_multiplier ?? DEFAULT_NIGHT_MULTIPLIER,
       };
@@ -64,7 +86,7 @@ export function getMemberPayrollForStore(
 
   return {
     payType: member.pay_type ?? 'hourly',
-    hourlyRate: member.hourly_rate ?? 0,
+    hourlyRate: getEffectiveHourlyRate(member, rolesMap),
     monthlySalary: getEffectiveMonthlySalary(member, rolesMap),
     nightMultiplier: DEFAULT_NIGHT_MULTIPLIER,
   };

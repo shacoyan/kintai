@@ -928,7 +928,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
         )}
 
         <div className="px-6 py-3 bg-stone-50 dark:bg-stone-900/50 border-t border-stone-200 dark:border-stone-700">
-          <p className="text-xs text-stone-500 dark:text-stone-300">深夜給: 22:00〜翌5:00 の勤務時間に対して時給1.25倍で計算されます</p>
+          <p className="text-xs text-stone-500 dark:text-stone-300">深夜給: 22:00〜翌5:00 の勤務時間に深夜割増（既定1.25倍。店舗別設定で変更可）で計算されます</p>
         </div>
     </Card>
   );

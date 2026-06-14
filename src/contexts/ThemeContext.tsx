@@ -12,7 +12,13 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem('kintai_theme') as Theme) || 'light';
+    try {
+      if (typeof localStorage === 'undefined') return 'light';
+      return (localStorage.getItem('kintai_theme') as Theme) || 'light';
+    } catch {
+      // localStorage 読取不可 (Safari プライベート / iframe sandbox 等) は既定 light
+      return 'light';
+    }
   });
 
   const [isDark, setIsDark] = useState(false);
@@ -43,7 +49,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setTheme = (t: Theme) => {
     setThemeState(t);
-    localStorage.setItem('kintai_theme', t);
+    try {
+      if (typeof localStorage !== 'undefined') localStorage.setItem('kintai_theme', t);
+    } catch {
+      // 書込不可は無視 (UI 上の切替は state で維持される)
+    }
   };
 
   return (
