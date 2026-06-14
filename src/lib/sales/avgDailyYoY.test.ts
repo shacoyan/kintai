@@ -1,76 +1,122 @@
 import { describe, it, expect } from 'vitest';
-import { computeAvgDailyYoY } from './avgDailyYoY';
-import type { SalesRangeYoYResult } from './yoy';
+import { computeAvgDailyYoY, inclusiveDaySpan } from './avgDailyYoY';
+import type { SalesRangeYoYResult, SalesRangeTotal } from './yoy';
 
-// byDate の 1 行を組む小ヘルパ（テストに必要なフィールドのみ）。
-function row(
-  business_date: string,
-  curAmount: number,
-  lyAmount: number | null,
-): SalesRangeYoYResult['byDate'][number] {
+// open 込みの合計を持つ SalesRangeTotal（テストに必要なフィールドのみ + キャスト）。
+function totals(total_amount: number, open_total_amount: number): SalesRangeTotal {
+  return { total_amount, open_total_amount } as unknown as SalesRangeTotal;
+}
+
+// computeAvgDailyYoY が参照する period / lastYearPeriod / current / lastYear を最小構成で組む。
+// 分母は連続全カレンダー日数（period / lastYearPeriod の両端含む span）なので、
+// byDate ではなく period の {start,end} が分母を決める（母数統一の核心）。
+function yoyWith(args: {
+  period: { start: string; end: string };
+  lastYearPeriod: { start: string; end: string };
+  current: SalesRangeTotal;
+  lastYear: SalesRangeTotal | null;
+}): SalesRangeYoYResult {
   return {
-    business_date,
-    lastYearDate: business_date,
-    current: { total_amount: curAmount, transaction_count: 0, customer_count: 0 },
-    lastYear:
-      lyAmount === null
-        ? null
-        : { total_amount: lyAmount, transaction_count: 0, customer_count: 0 },
-  };
+    period: args.period,
+    lastYearPeriod: args.lastYearPeriod,
+    current: args.current,
+    lastYear: args.lastYear,
+    byDate: [],
+  } as unknown as SalesRangeYoYResult;
 }
 
-// computeAvgDailyYoY は byDate のみ参照するので、最小構成を as でキャストして渡す。
-function yoyWith(byDate: SalesRangeYoYResult['byDate']): SalesRangeYoYResult {
-  return { byDate } as unknown as SalesRangeYoYResult;
-}
+describe('inclusiveDaySpan', () => {
+  it('両端含む連続日数を返す（カード elapsedDays = enumerateDates(from,to).length と一致）', () => {
+    expect(inclusiveDaySpan('2026-06-01', '2026-06-03')).toBe(3);
+    expect(inclusiveDaySpan('2026-06-01', '2026-06-01')).toBe(1);
+    expect(inclusiveDaySpan('2026-06-01', '2026-06-30')).toBe(30);
+  });
+
+  it('月跨ぎ・年跨ぎも UTC 両端含みで正しい', () => {
+    expect(inclusiveDaySpan('2026-01-30', '2026-02-02')).toBe(4);
+    expect(inclusiveDaySpan('2025-12-30', '2026-01-02')).toBe(4);
+  });
+
+  it('不正入力は 0', () => {
+    expect(inclusiveDaySpan('', '2026-06-03')).toBe(0);
+    expect(inclusiveDaySpan('2026-06-03', '2026-06-01')).toBe(0); // 逆順
+    expect(inclusiveDaySpan('not-a-date', '2026-06-03')).toBe(0);
+  });
+});
 
 describe('computeAvgDailyYoY', () => {
   it('yoy=null のとき null', () => {
     expect(computeAvgDailyYoY(null)).toBeNull();
   });
 
-  it('byDate 空のとき null', () => {
-    expect(computeAvgDailyYoY(yoyWith([]))).toBeNull();
+  it('当年 period span が 0 のとき null', () => {
+    const yoy = yoyWith({
+      period: { start: '2026-06-03', end: '2026-06-01' }, // 逆順 → span 0
+      lastYearPeriod: { start: '2025-06-01', end: '2025-06-03' },
+      current: totals(0, 0),
+      lastYear: totals(0, 0),
+    });
+    expect(computeAvgDailyYoY(yoy)).toBeNull();
   });
 
-  it('当年=byDate 全件平均、前年=前年実在行のみ平均で YoY を出す', () => {
-    // 当年: 3 日 [100,200,300] → 平均 200
-    // 前年: 3 日 [50,100,150]  → 平均 100 → +100%（up）
-    const yoy = yoyWith([
-      row('2026-06-01', 100, 50),
-      row('2026-06-02', 200, 100),
-      row('2026-06-03', 300, 150),
-    ]);
+  it('カードと同母数: 当年=open込み合計/当年連続全日数、前年=open込み合計/前年連続全日数', () => {
+    // 当年 3 日(6/1-6/3): 決済済 450 + open 150 = 600 → 日平均 200。
+    // 前年 3 日(前年同期): 決済済 240 + open 60 = 300 → 日平均 100 → +100%（up）。
+    const yoy = yoyWith({
+      period: { start: '2026-06-01', end: '2026-06-03' },
+      lastYearPeriod: { start: '2025-06-01', end: '2025-06-03' },
+      current: totals(450, 150),
+      lastYear: totals(240, 60),
+    });
     const delta = computeAvgDailyYoY(yoy);
     expect(delta).not.toBeNull();
     expect(delta!.classification).toBe('up');
-    expect(delta!.current).toBeCloseTo(200, 5);
-    expect(delta!.lastYear).toBeCloseTo(100, 5);
+    expect(delta!.current).toBeCloseTo(200, 5); // 600 / 3
+    expect(delta!.lastYear).toBeCloseTo(100, 5); // 300 / 3
     expect(delta!.deltaPercent).toBeCloseTo(100, 5);
   });
 
-  it('回帰: 前年が一部日付のみ存在しても符号が正しい（前回の符号逆転バグ）', () => {
-    // 当年 4 日 [100,100,100,100] → 当年日平均 100。
-    // 前年は 2 日のみ実在 [200,200]（残 2 日は lastYear=null）→ 前年日平均 200。
-    // 正: 100 < 200 で down（前年比 -50%）。
-    // 前回バグ: 前年分子=実在2日合計400 を 当年実在日数4 で割る等で 100 に化け flat/up へ
-    //          符号逆転していた。本実装は「前年実在行のみで分子/分母を揃える」ため正しく down。
-    const yoy = yoyWith([
-      row('2026-06-01', 100, 200),
-      row('2026-06-02', 100, 200),
-      row('2026-06-03', 100, null),
-      row('2026-06-04', 100, null),
-    ]);
+  it('母数は連続全日数（実売上日が欠損していても period span で割る = カードと一致）', () => {
+    // RPC は実売上日しか byDate に返さないが、分母は period の連続全日数。
+    // 6/1-6/4 の 4 日 span。当年 open 込み合計 400 → 日平均 100。
+    // 前年も 6/1-6/4 の 4 日 span。open 込み合計 400 → 日平均 100 → flat。
+    // （round1 は前年を matched 行数 2 で割り 200=down だったが、母数非対称で誤り。
+    //   連続全日数で当年/前年とも割ると対称化され正しく flat になる。）
+    const yoy = yoyWith({
+      period: { start: '2026-06-01', end: '2026-06-04' },
+      lastYearPeriod: { start: '2025-06-01', end: '2025-06-04' },
+      current: totals(400, 0),
+      lastYear: totals(400, 0),
+    });
     const delta = computeAvgDailyYoY(yoy);
     expect(delta).not.toBeNull();
-    expect(delta!.current).toBeCloseTo(100, 5);
-    expect(delta!.lastYear).toBeCloseTo(200, 5);
-    expect(delta!.classification).toBe('down');
-    expect(delta!.deltaPercent).toBeCloseTo(-50, 5);
+    expect(delta!.current).toBeCloseTo(100, 5); // 400 / 4
+    expect(delta!.lastYear).toBeCloseTo(100, 5); // 400 / 4（前年も連続全日数）
+    expect(delta!.classification).toBe('flat');
   });
 
-  it('前年が全行 null のとき no_data（lastYear=null）', () => {
-    const yoy = yoyWith([row('2026-06-01', 100, null), row('2026-06-02', 200, null)]);
+  it('open が当年/前年とも分子に入る（open 抜きとは値が変わる）', () => {
+    // 当年 2 日: 決済済 200 + open 200 = 400 → 平均 200。
+    // 前年 2 日: 決済済 100 + open 100 = 200 → 平均 100 → +100%。
+    const yoy = yoyWith({
+      period: { start: '2026-06-01', end: '2026-06-02' },
+      lastYearPeriod: { start: '2025-06-01', end: '2025-06-02' },
+      current: totals(200, 200),
+      lastYear: totals(100, 100),
+    });
+    const delta = computeAvgDailyYoY(yoy);
+    expect(delta!.current).toBeCloseTo(200, 5);
+    expect(delta!.lastYear).toBeCloseTo(100, 5);
+    expect(delta!.classification).toBe('up');
+  });
+
+  it('前年が null（希薄判定で除外）のとき no_data', () => {
+    const yoy = yoyWith({
+      period: { start: '2026-06-01', end: '2026-06-02' },
+      lastYearPeriod: { start: '2025-06-01', end: '2025-06-02' },
+      current: totals(300, 0),
+      lastYear: null,
+    });
     const delta = computeAvgDailyYoY(yoy);
     expect(delta).not.toBeNull();
     expect(delta!.classification).toBe('no_data');

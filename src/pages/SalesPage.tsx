@@ -328,8 +328,8 @@ export const SalesPage: React.FC = () => {
   // 売上は open 込み（total_amount + open_total_amount）でカード表示値（totalSales）と母数を
   // 揃える（B6）。客数母数は 4 セグ合計（new+repeat+regular+staff）に統一（unique customer_count
   // は使わない）。
-  // NOTE: avgDaily（1日平均売上）の YoY は前年母数の集合整合（当年/前年で日数集合を揃える）が
-  // 要るため、ここでは付与せず別Loop（displayMetrics 統一）で正しく再実装する。
+  // NOTE: avgDaily（1日平均売上）の YoY は computeAvgDailyYoY（avgDailyYoY.ts）に集約。
+  // カードと同じ open 込み基準で、当年/前年とも「その年の合計 / その年の実在日数」で算出する。
   const derivedYoY = useMemo<{ perCustomer: YoYDelta | null }>(() => {
     const y = effectiveYoY;
     if (!y) return { perCustomer: null };
@@ -356,8 +356,9 @@ export const SalesPage: React.FC = () => {
     };
   }, [effectiveYoY]);
 
-  // follow-up: 1日平均売上の YoY バッジ（前回の符号逆転を解消した形）。
-  // 純関数 computeAvgDailyYoY に集約（テスト容易化）。open 抜き決済済ベース・当年/前年同定義。
+  // 1日平均売上の YoY バッジ。純関数 computeAvgDailyYoY に集約（テスト容易化）。
+  // カード averageDailySales と同一基準 = open 込み（total_amount + open_total_amount）。
+  // 当年/前年とも「その年の open 込み合計 / その年の実在日数」で集合整合・符号正しさ担保。
   const avgDailyYoY = useMemo<YoYDelta | null>(
     () => computeAvgDailyYoY(effectiveYoY),
     [effectiveYoY],
@@ -512,7 +513,7 @@ export const SalesPage: React.FC = () => {
                   ? null
                   : formatYen(Math.round(data.averageDailySales))
               }
-              // avgDaily YoY（open 抜き決済済ベース・当年/前年同定義）。前回の符号逆転を解消済み。
+              // avgDaily YoY（open 込み・カード averageDailySales と同一基準）。符号逆転も解消済み。
               trend={showYoY ? toTrend(avgDailyYoY ?? undefined) : undefined}
             />
           </div>
