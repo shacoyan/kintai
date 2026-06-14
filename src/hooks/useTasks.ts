@@ -424,6 +424,10 @@ export function useTaskMutations(): UseTaskMutationsResult {
     return data as Task;
   }, []);
 
+  // bulk_assign_tasks (098): task_assignees を真実源とする replace に統一。
+  // 各 task の担当者集合を assigneeUserId 1 名へ置換 (既存の他担当は削除)。
+  // tasks.assignee_user_id (primary) は task_assignees の同期トリガに委ねる。
+  // 戻り値は同期後の SETOF tasks (シグネチャ不変)。
   const bulkAssignTasks = useCallback(
     async (taskIds: string[], assigneeUserId: string): Promise<Task[]> => {
       // 重複 ID dedupe (Loop 2 Reviewer P2 指摘対応)
