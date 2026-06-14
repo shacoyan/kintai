@@ -57,7 +57,7 @@ export function ShiftPage() {
   // 走ってしまう症状を根治する。Tailwind の lg ブレークポイントと一致させる。
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift, getLaborCostEstimate, addShiftForMember } = useShift(tenantId, storeId);
+  const { myShifts, allShifts, loading: shiftLoading, getMyShifts, getAllShifts, deleteShift, approveShift, rejectShift, modifyShift, tentativeApproveShift, cancelShiftTentative, revertShiftToTentative, restoreShift, getLaborCostEstimate, addShiftForMember, finalApproveStoreShifts } = useShift(tenantId, storeId);
   const { members, fetchMembers } = useTenantAdmin(tenantId);
   const { roles, fetchRoles } = useTenantRoles(tenantId);
   // Phase 2: 店舗別人件費 (member_store_payrolls)。0 行のテナントでは payrollsMap が空 Map のまま →
@@ -828,8 +828,9 @@ export function ShiftPage() {
                 {canManageTenant && (() => {
                   // Iter 2-A (Worker A) / P1: 正典準拠順序 — 申請 → 本承認 → 却下。
                   // 「仮承認を一括本承認」: 表示中の月に含まれる shift.status === 'tentative' を一括で本承認する。
-                  // - approveShift (RPC approve_shift_final) を 1 件ずつ呼ぶ。エラー件数は console.warn でログ出力。
-                  // - 「未承認を一括却下」と同じパターン (filter → confirm → for ループ → fetchRange)。
+                  // - 097: N+1 解消。選択中の月の期間を渡す単一 RPC (approve_store_shifts_final) で一括本承認。
+                  //   通知は RPC 側が per-item と同型 (shift_approved) で一括 INSERT するため、フロントの通知ループは撤去。
+                  //   月スコープは RPC 側で date BETWEEN p_from AND p_to により保証 (他月は不可触)。
                   const monthStart = format(startOfMonth(shiftViewMonth), 'yyyy-MM-dd');
                   const monthEnd = format(endOfMonth(shiftViewMonth), 'yyyy-MM-dd');
                   const tentativeInRange = shifts.filter(
@@ -838,21 +839,16 @@ export function ShiftPage() {
                   const tCount = tentativeInRange.length;
                   const handleBulkApproveTentative = async () => {
                     if (tCount === 0) return;
+                    if (!storeId) return;
                     // eslint-disable-next-line no-alert
                     if (!window.confirm(`${tCount}件を本承認します。よろしいですか？`)) return;
-                    let errors = 0;
-                    for (const s of tentativeInRange) {
-                      try {
-                        await approveShift(s.id);
-                      } catch {
-                        errors += 1;
-                      }
+                    try {
+                      await finalApproveStoreShifts(tenantId, storeId, monthStart, monthEnd);
+                    } catch (err) {
+                      // eslint-disable-next-line no-console
+                      console.warn('[bulkApproveTentative] 一括本承認に失敗しました', err);
                     }
                     fetchRange();
-                    if (errors > 0) {
-                      // eslint-disable-next-line no-console
-                      console.warn(`[bulkApproveTentative] ${errors} 件で承認エラーが発生しました`);
-                    }
                   };
                   return (
                     /* Iter 2-A / P1: outline 風 */

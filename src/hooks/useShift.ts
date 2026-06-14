@@ -261,8 +261,15 @@ export function useShift(tenantId: string, storeId: string | null) {
     return data as Shift;
   }, []);
 
-  const finalApproveStoreShifts = useCallback(async (tenantId: string, storeId: string) => {
-    const { data, error: e } = await supabase.rpc('approve_store_shifts_final', { p_tenant_id: tenantId, p_store_id: storeId });
+  const finalApproveStoreShifts = useCallback(async (tenantId: string, storeId: string, from: string, to: string) => {
+    // 通知は RPC 側 (approve_store_shifts_final) が per-item と同型で一括 INSERT するため
+    // フロント側の通知ループは不要。指定期間 [from, to] の tentative のみ本承認される。
+    const { data, error: e } = await supabase.rpc('approve_store_shifts_final', {
+      p_tenant_id: tenantId,
+      p_store_id: storeId,
+      p_from: from,
+      p_to: to,
+    });
     if (e) throw new Error(`店舗の一括本承認に失敗しました: ${e.message}`);
     const row = (data as Array<{approved_count: number; approved_ids: string[]}> | null)?.[0];
     return { approvedCount: row?.approved_count ?? 0, approvedIds: row?.approved_ids ?? [] as string[] };
