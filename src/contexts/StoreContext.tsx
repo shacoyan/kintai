@@ -27,8 +27,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // tenant.id が変わったときだけ旧 stores を即クリアし、残像を防ぐ（B21）。
   const prevTenantIdRef = useRef<string | null>(null);
 
+  // PERF (B6): effect の依存を currentTenant オブジェクトから id 文字列に変更。
+  // TenantContext が同一テナントでも新しいオブジェクト参照を返すと（identity 変化）、
+  // オブジェクト依存では不要な refetch が走るため、安定した id で依存判定する。
+  const currentTenantId = currentTenant?.id ?? null;
+
   useEffect(() => {
-    if (!currentTenant) {
+    if (!currentTenantId) {
       setStores([]);
       setCurrentStoreState(null);
       setMyStoreMembers([]);
@@ -40,12 +45,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     let cancelled = false;
 
     // テナント切替時のみ即クリア（同一テナント内の再 fetch では currentStore を維持＝後方互換）。
-    if (currentTenant.id !== prevTenantIdRef.current) {
+    if (currentTenantId !== prevTenantIdRef.current) {
       setStores([]);
       setCurrentStoreState(null);
       setMyStoreMembers([]);
     }
-    prevTenantIdRef.current = currentTenant.id;
+    prevTenantIdRef.current = currentTenantId;
 
     const fetchStores = async () => {
       if (cancelled) return;
@@ -59,7 +64,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           const { data, error } = await supabase
             .from('stores')
             .select('*')
-            .eq('tenant_id', currentTenant.id);
+            .eq('tenant_id', currentTenantId);
           if (error) throw error;
           storeList = (data as Store[]) || [];
           membersList = [];
@@ -142,7 +147,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         // カレントストアの初期決定ロジック
         // 1. localStorageからの復元
-        const savedId = localStorage.getItem(`kintai_selected_store_${currentTenant.id}`);
+        const savedId = localStorage.getItem(`kintai_selected_store_${currentTenantId}`);
         if (savedId) {
           const found = storeList.find(s => s.id === savedId);
           if (found) {
@@ -179,7 +184,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => {
       cancelled = true;
     };
-  }, [currentTenant, isOwner, myMemberId]);
+  }, [currentTenantId, isOwner, myMemberId]);
 
   const setCurrentStore = useCallback((store: Store | null) => {
     setCurrentStoreState(store);

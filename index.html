@@ -10,6 +10,23 @@
     <meta name="theme-color" content="#2F4585">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!--
+      FOUC 対策 (B6): first paint 前に保存済みテーマを反映して dark 利用者の白フラッシュを防ぐ。
+      ThemeContext.tsx と同じ仕様（localStorage キー 'kintai_theme' / 値 light|dark|system /
+      documentElement の 'dark' クラス切替）を踏襲。失敗時は既定 light（クラス無し）。
+      ThemeContext の useEffect が後で同じ結果に上書きするため二重適用しても不整合は起きない。
+    -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('kintai_theme') || 'light';
+          var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {
+          // localStorage 読取不可 (Safari プライベート等) は既定 light のまま
+        }
+      })();
+    </script>
   </head>
   <body class="bg-gray-50 text-gray-900 antialiased">
     <div id="root"></div>

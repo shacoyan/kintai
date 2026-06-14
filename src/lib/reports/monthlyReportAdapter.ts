@@ -97,7 +97,8 @@ export function normalizeMonthlyReport(raw: unknown): MonthlyReport {
       regular: num(customers.regular),
       staff: num(customers.staff),
       total: num(customers.total),
-      avg_spend: num(customers.avg_spend),
+      // 客単価は客数0等で算出不能なら null 保持（0 に潰さず「—」表示・dead branch 解消）。
+      avg_spend: numOrNull(customers.avg_spend),
     },
     shisha_count: num(r.shisha_count),
     labor: {
@@ -152,7 +153,8 @@ function normalizeTotals(raw: unknown): MonthlyAllTotals {
     operating_profit: numOrNull(t.operating_profit),
     operating_profit_rate: numOrNull(t.operating_profit_rate),
     customers_total: num(t.customers_total),
-    avg_spend: num(t.avg_spend),
+    // 平均客単価は客数0等で算出不能なら null 保持（0 に潰さず「—」表示）。
+    avg_spend: numOrNull(t.avg_spend),
   };
 }
 

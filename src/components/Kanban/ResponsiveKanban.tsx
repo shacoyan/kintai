@@ -5,14 +5,19 @@
  *
  * 設計書: .company/engineering/docs/2026-05-22-kintai-task-kanban-phase2-techdesign.md
  *
- * 切替方式: 案 A — 両方を常時 mount し、Tailwind の `lg:` (1024px) breakpoint で
- *   `lg:hidden` / `hidden lg:block` により表示・非表示を切り替える。
+ * 切替方式: JS breakpoint (`useMediaQuery('(min-width: 1024px)')`) で desktop / mobile の
+ *   いずれか一方のみを mount する。`lg:` (1024px) は Tailwind の lg と一致。
  *
  * Loop 4.5 P1-3:
  *   `useKanbanDnd` を当ラッパーで 1 回だけ呼び、`DndContext` も親 1 つに集約する。
- *   これにより MobileKanban / KanbanBoard が同時 mount されても hook 多重実行・
- *   楽観的更新の分断が発生しない。子コンポーネントは `dnd` props を受け取り、
- *   内部で `DndContext` を巻かない。
+ *   子コンポーネントは `dnd` props を受け取り、内部で `DndContext` を巻かない。
+ *
+ * P2 (DnD 二重 id 解消):
+ *   以前は MobileKanban と KanbanBoard を CSS (`lg:hidden` / `hidden lg:block`) で
+ *   両方常時 mount していたため、同一 DndContext 内に同じ task (`task-${id}`) の
+ *   sortable が 2 重登録され、dnd-kit の id 衝突 (WAI-ARIA / measure 不整合) を招いていた。
+ *   JS breakpoint で片方のみ mount することで sortable id を一意化する。
+ *   `useMediaQuery` は synchronous 初期評価のため初回 paint から正しい board が出る。
  */
 import { useState } from 'react';
 import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
@@ -21,6 +26,7 @@ import { KanbanBoard } from './KanbanBoard';
 import { MobileKanban } from './MobileKanban';
 import { KanbanCardPresentation } from './KanbanCard';
 import { useKanbanDnd } from '../../hooks/useKanbanDnd';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import type { Task } from '../../types';
 
 interface ResponsiveKanbanProps {
@@ -48,6 +54,9 @@ interface ResponsiveKanbanProps {
 
 export function ResponsiveKanban(props: ResponsiveKanbanProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  // lg breakpoint (1024px) で desktop / mobile を排他 mount。
+  // 両方を同時 mount すると同一 DndContext に同じ task の sortable が 2 重登録される。
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const dnd = useKanbanDnd({
     tasks: props.tasks,
@@ -76,22 +85,7 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
       onDragCancel={() => setActiveTask(null)}
     >
       <div>
-        <div className="lg:hidden">
-          <MobileKanban
-            tasks={props.tasks}
-            onTaskClick={props.onTaskClick}
-            myRole={props.myRole}
-            isParttime={props.isParttime}
-            currentUserId={props.currentUserId}
-            memberNames={props.memberNames}
-            projectNames={props.projectNames}
-            onSuccess={props.onSuccess}
-            onError={props.onError}
-            dnd={dnd}
-            onTaskDelete={props.onTaskDelete}
-          />
-        </div>
-        <div className="hidden lg:block">
+        {isDesktop ? (
           <KanbanBoard
             tasks={props.tasks}
             onTaskClick={props.onTaskClick}
@@ -106,7 +100,21 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
             onAddInStatus={props.onAddInStatus}
             onTaskDelete={props.onTaskDelete}
           />
-        </div>
+        ) : (
+          <MobileKanban
+            tasks={props.tasks}
+            onTaskClick={props.onTaskClick}
+            myRole={props.myRole}
+            isParttime={props.isParttime}
+            currentUserId={props.currentUserId}
+            memberNames={props.memberNames}
+            projectNames={props.projectNames}
+            onSuccess={props.onSuccess}
+            onError={props.onError}
+            dnd={dnd}
+            onTaskDelete={props.onTaskDelete}
+          />
+        )}
       </div>
       <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2,0,0,1)' }}>
         {activeTask ? (

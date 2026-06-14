@@ -96,7 +96,8 @@ export function adaptDailyReport(raw: unknown): DailyReport {
       source: typeof labor.source === 'string' ? labor.source : 'unavailable',
     },
     derived: {
-      discrepancy_amount: num(derived.discrepancy_amount),
+      // 未入力（算出不能）は null 保持（0 と区別＝「—」表示）。
+      discrepancy_amount: intOrNull(derived.discrepancy_amount),
     },
   };
 }

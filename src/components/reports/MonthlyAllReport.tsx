@@ -124,7 +124,8 @@ export const MonthlyAllReport: React.FC<MonthlyAllReportProps> = ({
                     {formatCount(s.customers.total)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
-                    {formatYen(s.customers.avg_spend)}
+                    {/* 客数0等で avg_spend=null → ¥0 でなく「—」。 */}
+                    {formatYenOrDash(s.customers.avg_spend)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     <LockedValue value={s.provisional_profit} isManagerial={isManagerial} />

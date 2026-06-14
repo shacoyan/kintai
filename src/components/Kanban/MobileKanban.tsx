@@ -155,11 +155,19 @@ export function MobileKanban({
               閉じている時も DOM ツリー上に保持しドロップを受領できるようにする。
               `hidden` (display:none) は dnd-kit の droppable measure を阻害するため使用しない。
               `h-0 overflow-hidden pointer-events-none` で視覚的に潰しつつ DnD は機能させる。
-              `aria-hidden` で支援技術にも非表示と伝える。
+
+              a11y (P2 mobile-accordion-focusable-aria-hidden):
+              `aria-hidden` だけでは内部のカード / 削除ボタンがキーボード Tab で
+              到達可能なまま残り「aria-hidden な subtree に focus 可能要素がある」
+              という WAI-ARIA 違反になる。`inert` 属性 (subtree を focus 不可 + クリック不可
+              + AT 除外) を閉じている時に付与し、併せて子 KanbanCard の `focusable` を false に
+              連動させて tabIndex を -1 化する。inert は @types/react 18.3 の基底型に未収録のため
+              型安全なプレーンオブジェクト spread で付与する。
             */}
             <div
               id={accordionId}
               aria-hidden={!isOpen}
+              {...(!isOpen ? ({ inert: '' } as Record<string, unknown>) : {})}
               className={
                 isOpen
                   ? 'block motion-safe:transition-all duration-200'
@@ -185,6 +193,7 @@ export function MobileKanban({
                         key={task.id}
                         task={task}
                         isDraggable={isDraggable}
+                        focusable={isOpen}
                         assignees={assignees}
                         projectName={projectName}
                         onClick={onTaskClick ? () => onTaskClick(task) : undefined}

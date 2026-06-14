@@ -120,9 +120,10 @@ export function Toast(props: ToastProps): JSX.Element {
   }, [startTimer, duration]);
 
   return (
+    // a11y (P2 toast-nested-aria-live): live region は親 ToastViewport に 1 箇所だけ置く。
+    // 個々の Toast に role="status"/aria-live を付けると live region がネストし、
+    // スクリーンリーダが二重読み上げ・読み上げ順不定になるため、ここでは付与しない。
     <div
-      role="status"
-      aria-live="polite"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}
@@ -167,7 +168,9 @@ export function ToastViewport(props: ToastViewportProps): JSX.Element {
       : 'bottom-4 right-4 items-end';
 
   return (
+    // 唯一の live region (P2 toast-nested-aria-live)。子 Toast には live 属性を付けない。
     <div
+      role="status"
       aria-live="polite"
       aria-atomic="false"
       className={cn(

@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Badge, Heading, ErrorBanner, EmptyState, Spinner } from '../ui';
 import type { MonthlyReport } from '../../lib/reports/types';
 import { formatYen, formatCount } from './reportFormat';
-import { LockedValue, formatRate } from './monthlyDisplay';
+import { LockedValue, formatRate, formatYenOrDash } from './monthlyDisplay';
 import { computeMonthlyPnl } from '../../lib/reports/monthlyPnl';
 
 // =============================================================================
@@ -142,7 +142,8 @@ export const MonthlyStoreReport: React.FC<MonthlyStoreReportProps> = ({
             <Row label="常連">{formatCount(customers.regular)}</Row>
             <Row label="スタッフ">{formatCount(customers.staff)}</Row>
             <TotalRow label="合計">{formatCount(customers.total)}</TotalRow>
-            <Row label="客単価">{formatYen(customers.avg_spend)}</Row>
+            {/* 客数0等で avg_spend=null → ¥0 でなく「—」。 */}
+            <Row label="客単価">{formatYenOrDash(customers.avg_spend)}</Row>
             <Row label="シーシャ本数">{formatCount(data.shisha_count)} 本</Row>
           </Card.Body>
         </Card>

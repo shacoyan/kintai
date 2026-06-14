@@ -18,6 +18,12 @@ export interface KanbanCardProps {
   onDelete?: () => void;
   /** 削除可否 (権限)。default false */
   canDelete?: boolean;
+  /**
+   * キーボードフォーカス可否。default true。
+   * MobileKanban の折り畳み列 (inert) 配下では false を渡し、tabIndex を -1 にして
+   * aria-hidden subtree 内に focus 可能要素が残らないようにする (WAI-ARIA 違反回避)。
+   */
+  focusable?: boolean;
 }
 
 const priorityDotColor: Record<TaskPriority, string> = {
@@ -214,6 +220,7 @@ export function KanbanCard({
   projectName,
   onDelete,
   canDelete = false,
+  focusable = true,
 }: KanbanCardProps): JSX.Element {
   const {
     attributes,
@@ -269,7 +276,7 @@ export function KanbanCard({
       onClick={isClickable ? handleClick : undefined}
       onKeyDown={isClickable ? handleKeyDown : undefined}
       role={isClickable ? 'button' : undefined}
-      tabIndex={isClickable ? 0 : undefined}
+      tabIndex={isClickable ? (focusable ? 0 : -1) : undefined}
       aria-disabled={!isDraggable || undefined}
       aria-label={isClickable ? `タスク: ${task.title}` : undefined}
       className={`

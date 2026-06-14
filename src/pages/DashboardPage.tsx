@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import { useTenant } from '../hooks/useTenant';
+import { useNow } from '../hooks/useNow';
 import { useStoreContext } from '../contexts/StoreContext';
 import { useAttendance } from '../hooks/useAttendance';
 import { useShift } from '../hooks/useShift';
@@ -17,6 +18,102 @@ import { deriveTodayStatusLabel, deriveTodayStatusTone } from '../lib/todayAtten
 import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { formatTimeRange } from '../utils/formatTimeRange';
+import type { AttendanceRecord } from '../types';
+
+type AttendanceStatus = 'not_started' | 'working' | 'on_break';
+
+// 当日レコードから労働時間合計（分）を算出。勤務中・休憩中レコードは
+// 渡された基準時刻 `now` を使って経過分を加算する（live 表示用）。
+function calcTotalWorkMinutes(records: AttendanceRecord[], now: Date): number {
+  return records.reduce((sum, record) => {
+    if (record.total_work_minutes != null) return sum + record.total_work_minutes;
+    // 勤務中のレコード: clock_in はあるが clock_out がない
+    if (record.clock_in && !record.clock_out) {
+      const elapsed = differenceInMinutes(now, parseISO(record.clock_in));
+      const breakMins = (record.breaks || []).reduce((bSum, b) => {
+        if (b.start_time && b.end_time) {
+          return bSum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
+        }
+        if (b.start_time && !b.end_time) {
+          return bSum + differenceInMinutes(now, parseISO(b.start_time));
+        }
+        return bSum;
+      }, 0);
+      return sum + Math.max(0, elapsed - breakMins);
+    }
+    return sum;
+  }, 0);
+}
+
+function calcTotalBreakMinutes(records: AttendanceRecord[], now: Date): number {
+  return records.reduce((sum, record) => {
+    const breakMins = (record.breaks || []).reduce((bSum, b) => {
+      if (b.start_time && b.end_time) {
+        return bSum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
+      }
+      if (b.start_time && !b.end_time) {
+        return bSum + differenceInMinutes(now, parseISO(b.start_time));
+      }
+      return bSum;
+    }, 0);
+    return sum + breakMins;
+  }, 0);
+}
+
+function formatDurationCompact(minutes: number | null | undefined): string {
+  if (minutes == null) return '-';
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
+function formatTime(time: string | null | undefined): string {
+  if (!time) return '-';
+  return format(parseISO(time), 'HH:mm');
+}
+
+/**
+ * 「本日の記録」の数値グリッド。
+ *
+ * PERF (B6): 勤務時間・休憩合計の live 表示はここでのみ毎秒更新する。
+ * useNow を内部購読し React.memo でラップすることで、親 DashboardPage は
+ * 毎秒の再レンダを免れ、再レンダはこの子のみに局所化される。
+ */
+const TodayRecordStats = memo(function TodayRecordStats({
+  todayOnlyRecords,
+  status,
+  firstClockIn,
+  todayPlannedOut,
+}: {
+  todayOnlyRecords: AttendanceRecord[];
+  status: AttendanceStatus;
+  firstClockIn: string | null;
+  todayPlannedOut: string;
+}) {
+  const now = useNow(1000);
+  const totalWorkMinutes = calcTotalWorkMinutes(todayOnlyRecords, now);
+  const totalBreakMinutes = calcTotalBreakMinutes(todayOnlyRecords, now);
+  const cells = [
+    { label: '出勤', value: formatTime(firstClockIn), sub: '実打刻' },
+    { label: '退勤予定', value: todayPlannedOut, sub: 'シフト' },
+    { label: '勤務時間', value: formatDurationCompact(totalWorkMinutes), sub: '休憩を除く', live: status === 'working' },
+    { label: '休憩合計', value: formatDurationCompact(totalBreakMinutes), sub: '本日' },
+  ];
+  return (
+    <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-stone-200 dark:border-stone-700 sm:grid-cols-4">
+      {cells.map((cell, index) => (
+        <div
+          key={cell.label}
+          className={`flex flex-col gap-1 p-3 ${index < 2 ? 'border-b border-stone-200 dark:border-stone-700 sm:border-b-0' : ''} ${index < 3 ? 'sm:border-r sm:border-stone-200 sm:dark:border-stone-700' : ''} ${cell.live ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-stone-900'}`}
+        >
+          <div className="text-[11px] font-medium text-stone-500 dark:text-stone-400">{cell.label}</div>
+          <span className="font-num text-2xl font-semibold tracking-tight tabular-nums text-stone-900 dark:text-stone-50">{cell.value}</span>
+          <div className="text-[10px] text-stone-400 dark:text-stone-500">{cell.sub}</div>
+        </div>
+      ))}
+    </div>
+  );
+});
 
 export function DashboardPage() {
   const { currentTenant, myRole } = useTenant();
@@ -83,14 +180,6 @@ export function DashboardPage() {
     return list;
   }, [allMembers, todaysActiveByUserId]);
 
-  // ヒーロー時計と勤務中の労働時間をリアルタイム更新するためのタイマー
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    setNow(new Date());
-    const timer = setInterval(() => setNow(new Date()), 1_000);
-    return () => clearInterval(timer);
-  }, []);
-
   // 有給残日数
   const [remainingPaidLeave, setRemainingPaidLeave] = useState<number | null>(null);
 
@@ -123,54 +212,17 @@ export function DashboardPage() {
   }
 
   const todayStr = todayFromHook;
-  const today = now;
+  // 日付ラベル・週/月レンジ用の基準時刻。
+  // PERF (B6): 毎秒の再レンダを避けるため親では ticking clock を持たず、
+  // レンダ時点の Date を 1 回だけ取得する（日跨ぎは再 fetch / 再マウントで反映）。
+  const today = new Date();
 
   // 今日のレコードのみ（日跨ぎの未退勤レコードは除外して集計）
   const todayOnlyRecords = todayRecords.filter((r) => r.date === todayStr);
 
-  const formatTime = (time: string | null | undefined) => {
-    if (!time) return '-';
-    return format(parseISO(time), 'HH:mm');
-  };
-
-  const formatDurationCompact = (minutes: number | null | undefined) => {
-    if (minutes == null) return '-';
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${h}:${String(m).padStart(2, '0')}`;
-  };
-
-  const totalWorkMinutes = todayOnlyRecords.reduce((sum, record) => {
-    if (record.total_work_minutes != null) return sum + record.total_work_minutes;
-    // 勤務中のレコード: clock_in はあるが clock_out がない
-    if (record.clock_in && !record.clock_out) {
-      const elapsed = differenceInMinutes(now, parseISO(record.clock_in));
-      const breakMins = (record.breaks || []).reduce((bSum, b) => {
-        if (b.start_time && b.end_time) {
-          return bSum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
-        }
-        if (b.start_time && !b.end_time) {
-          return bSum + differenceInMinutes(now, parseISO(b.start_time));
-        }
-        return bSum;
-      }, 0);
-      return sum + Math.max(0, elapsed - breakMins);
-    }
-    return sum;
-  }, 0);
-
-  const totalBreakMinutes = todayOnlyRecords.reduce((sum, record) => {
-    const breakMins = (record.breaks || []).reduce((bSum, b) => {
-      if (b.start_time && b.end_time) {
-        return bSum + differenceInMinutes(parseISO(b.end_time), parseISO(b.start_time));
-      }
-      if (b.start_time && !b.end_time) {
-        return bSum + differenceInMinutes(now, parseISO(b.start_time));
-      }
-      return bSum;
-    }, 0);
-    return sum + breakMins;
-  }, 0);
+  // 月間サマリ用の労働時間合計。live グリッド（TodayRecordStats）とは別に
+  // 親レンダ時点の today を基準に算出する（毎秒ではなくレンダ毎に更新）。
+  const totalWorkMinutes = calcTotalWorkMinutes(todayOnlyRecords, today);
 
   const firstClockIn = todayOnlyRecords.length > 0
     ? todayOnlyRecords.reduce((earliest, record) => {
@@ -337,23 +389,12 @@ export function DashboardPage() {
                 <div className="flex-1" />
                 <span className="font-num text-xs text-stone-500 tabular-nums dark:text-stone-400">{shortTodayLabel}</span>
               </header>
-              <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-stone-200 dark:border-stone-700 sm:grid-cols-4">
-                {[
-                  { label: '出勤', value: formatTime(firstClockIn), sub: '実打刻' },
-                  { label: '退勤予定', value: todayPlannedOut, sub: 'シフト' },
-                  { label: '勤務時間', value: formatDurationCompact(totalWorkMinutes), sub: '休憩を除く', live: status === 'working' },
-                  { label: '休憩合計', value: formatDurationCompact(totalBreakMinutes), sub: '本日' },
-                ].map((cell, index) => (
-                  <div
-                    key={cell.label}
-                    className={`flex flex-col gap-1 p-3 ${index < 2 ? 'border-b border-stone-200 dark:border-stone-700 sm:border-b-0' : ''} ${index < 3 ? 'sm:border-r sm:border-stone-200 sm:dark:border-stone-700' : ''} ${cell.live ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-stone-900'}`}
-                  >
-                    <div className="text-[11px] font-medium text-stone-500 dark:text-stone-400">{cell.label}</div>
-                    <span className="font-num text-2xl font-semibold tracking-tight tabular-nums text-stone-900 dark:text-stone-50">{cell.value}</span>
-                    <div className="text-[10px] text-stone-400 dark:text-stone-500">{cell.sub}</div>
-                  </div>
-                ))}
-              </div>
+              <TodayRecordStats
+                todayOnlyRecords={todayOnlyRecords}
+                status={status}
+                firstClockIn={firstClockIn}
+                todayPlannedOut={todayPlannedOut}
+              />
             </Card>
 
             <Card padding="md" className="flex flex-col gap-3.5">

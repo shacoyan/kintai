@@ -82,8 +82,11 @@ export interface DailyReportLabor {
 
 /** get_daily_report の derived ブロック（RPC 算出の違算）。 */
 export interface DailyReportDerived {
-  /** 現金合計 − Square 現金（手動上書きがあればその値）。 */
-  discrepancy_amount: number;
+  /**
+   * 現金合計 − Square 現金（手動上書きがあればその値）。
+   * 未入力（金種未入力等で算出不能）は null（0 と区別＝「—」表示）。
+   */
+  discrepancy_amount: number | null;
 }
 
 /** get_daily_report(p_store_id, p_business_date) の戻り型。 */
@@ -142,7 +145,8 @@ export interface MonthlyCustomers {
   regular: number;
   staff: number;
   total: number;
-  avg_spend: number;
+  /** 客単価。客数0等で算出不能なら null（0 と区別＝「—」表示）。 */
+  avg_spend: number | null;
 }
 
 /** 月報の変動費内訳。 */
@@ -228,7 +232,8 @@ export interface MonthlyAllTotals {
   operating_profit: number | null;
   operating_profit_rate: number | null;
   customers_total: number;
-  avg_spend: number;
+  /** 平均客単価。客数0等で算出不能なら null（0 と区別＝「—」表示）。 */
+  avg_spend: number | null;
 }
 
 /** get_monthly_report_all(p_year, p_month) の戻り型。 */

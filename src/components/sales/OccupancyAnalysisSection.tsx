@@ -22,7 +22,19 @@ interface Props {
  * - 折れ線: 平均/合計 トグル + 曜日フィルタ
  */
 export default function OccupancyAnalysisSection({ transactions, startHour, endHour }: Props) {
-  const matrix = useMemo(() => buildOccupancyMatrix(transactions), [transactions]);
+  // OPEN（未決済伝票）は created_at が滞在開始を表さず「開始時刻不明」として
+  // skippedCount を水増しするため、混雑分析の入力からは決済済のみに絞る。
+  const paidTransactions = useMemo(
+    () =>
+      transactions.filter(
+        (t) => t.status !== 'OPEN' && t.source !== 'OPEN_TICKET',
+      ),
+    [transactions],
+  );
+  const matrix = useMemo(
+    () => buildOccupancyMatrix(paidTransactions),
+    [paidTransactions],
+  );
   const activeSlots = useMemo(() => getActiveSlots(startHour, endHour), [startHour, endHour]);
 
   const hasAnyData = matrix.totalSpans > 0;

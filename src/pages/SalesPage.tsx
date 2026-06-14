@@ -591,6 +591,12 @@ export const SalesPage: React.FC = () => {
                 （直近約 3 ヶ月の新規客内訳）
               </p>
             ) : null}
+            {/* 店舗 id 解決失敗（locations 取得エラー）も無言の空表示にせず局所注記する。 */}
+            {locationNames !== null && !isToday && locationsError ? (
+              <p className="mb-2 text-xs text-amber-600 dark:text-amber-400">
+                店舗情報の取得に失敗したため獲得経路を表示できません（売上・客数には影響していません）。
+              </p>
+            ) : null}
             {/* fail-soft: 取得失敗時も売上・客数には影響しない。獲得経路カード内に局所注意のみ。 */}
             {locationNames !== null && !isToday && acquisitionLive.error ? (
               <p className="mb-2 text-xs text-amber-600 dark:text-amber-400">
@@ -636,6 +642,12 @@ export const SalesPage: React.FC = () => {
               ) : acquisitionLive.clamped ? (
                 <p className="mb-2 text-xs text-stone-500 dark:text-stone-400">
                   （直近約 3 ヶ月の集計）
+                </p>
+              ) : null}
+              {/* 店舗 id 解決失敗（locations 取得エラー）も無言の空表示にせず局所注記する。 */}
+              {locationsError ? (
+                <p className="mb-2 text-xs text-amber-600 dark:text-amber-400">
+                  店舗情報の取得に失敗したため混雑分析を表示できません（売上・客数には影響していません）。
                 </p>
               ) : null}
               {/* fail-soft: 取得失敗時もチャートは EmptyState のまま壊さない（局所注意のみ）。 */}

@@ -307,6 +307,31 @@ function generateShiftPayrollCsv(
   return BOM + header + '\n' + lines.join('\n');
 }
 
+/** finalized_at\uFF08ISO/\u30BF\u30A4\u30E0\u30B9\u30BF\u30F3\u30D7\u6587\u5B57\u5217\uFF09\u3092 JST \u306E\u300CYYYY/MM/DD HH:mm\u300D\u3078\u6574\u5F62\u3002\u89E3\u91C8\u4E0D\u80FD\u306A\u3089\u539F\u6587\u3002 */
+function formatFinalizedAt(raw: string | null | undefined): string {
+  if (!raw) return '\u2014';
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return new Intl.DateTimeFormat('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(d);
+}
+
+/** finalized_by\uFF08UUID\uFF09\u3092 display_name \u3078\u89E3\u6C7A\u3002\u672A\u5728\u7C4D/\u4E0D\u660E\u306F\u300C\u4E0D\u660E\u306A\u78BA\u5B9A\u8005\u300D\u3078\u30D5\u30A9\u30FC\u30EB\u30D0\u30C3\u30AF\u3002 */
+function resolveFinalizedBy(
+  userId: string | null | undefined,
+  nameMap: Map<string, string>,
+): string {
+  if (!userId) return '\u2014';
+  return nameMap.get(userId) ?? '\u4E0D\u660E\u306A\u78BA\u5B9A\u8005\uFF08\u9000\u8077\u6E08\u307F\u7B49\uFF09';
+}
+
 export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   const { members, allAttendance, loading, error, fetchMembers, fetchAllAttendance } = useTenantAdmin(tenantId);
   const { currentStore } = useStoreContext();
@@ -325,6 +350,12 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
     for (const r of tenantRoles) m.set(r.id, r);
     return m;
   }, [tenantRoles]);
+  // 確定者 UUID → display_name 解決 Map（未在籍ユーザーは Map に存在せずフォールバック表示）。
+  const memberNameMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const mem of members) m.set(mem.user_id, mem.display_name);
+    return m;
+  }, [members]);
   // === /Loop 11b L11b-3 ===
   const deleteRun = unfinalizeRun;
   const [run, setRun] = useState<{
@@ -648,7 +679,8 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
       {isFinalized && (
         <div className="px-6 py-3 border-b border-stone-100 dark:border-stone-700 bg-emerald-50 dark:bg-emerald-800/20">
           <Badge tone="success">
-            確定済（{run.confirmedAt} 確定 / 確定者: {run.confirmedBy}）
+            確定済（{formatFinalizedAt(run.confirmedAt)} 確定 / 確定者:{' '}
+            {resolveFinalizedBy(run.confirmedBy, memberNameMap)}）
           </Badge>
         </div>
       )}

@@ -103,10 +103,17 @@ export function DailyReportForm({ report, saving, onSave }: DailyReportFormProps
   // 現金合計（リアルタイム・送信しない表示専用）。文字列→数値へ純変換（NaN は 0）。
   const liveCashTotal = useMemo(() => cashTotal(parseCounts(cashCounts)), [cashCounts]);
 
-  // 自動違算 = derived.discrepancy_amount（RPC 算出 = 現金合計 − Square 現金）。
-  const autoDiscrepancy = report.derived.discrepancy_amount;
+  // 自動違算 = 現金合計（金種ライブ） − Square 現金。
+  // RPC の derived.discrepancy_amount は保存時点のスナップショットで金種入力に
+  // 追従しないため、フロントで再算出してライブ更新する（金種を打ち替えると即反映）。
+  // ただし金種が一切未入力（現金合計0）かつ derived も null（未入力）のときは、
+  // 0 と「未入力」を区別して null（「—」表示）にする。
+  const autoDiscrepancy: number | null =
+    liveCashTotal === 0 && report.derived.discrepancy_amount === null
+      ? null
+      : liveCashTotal - report.square.cash_amount;
   // 表示中の違算（手動 ON なら手動値、OFF なら自動値）。
-  const shownDiscrepancy = manualOverride
+  const shownDiscrepancy: number | null = manualOverride
     ? (manualDiscrepancy.trim() === '' ? 0 : Number(manualDiscrepancy))
     : autoDiscrepancy;
 
@@ -244,8 +251,9 @@ export function DailyReportForm({ report, saving, onSave }: DailyReportFormProps
                 現金合計 − Square 現金。プラス＝過剰 / マイナス＝不足。
               </p>
             </div>
-            <Badge tone={discrepancyTone(shownDiscrepancy)}>
-              {formatSignedYen(shownDiscrepancy)}
+            <Badge tone={shownDiscrepancy === null ? 'neutral' : discrepancyTone(shownDiscrepancy)}>
+              {/* 未入力（null）は ±0 でなく「—」（0 一致と区別）。 */}
+              {shownDiscrepancy === null ? '—' : formatSignedYen(shownDiscrepancy)}
             </Badge>
           </div>
 
@@ -280,7 +288,7 @@ export function DailyReportForm({ report, saving, onSave }: DailyReportFormProps
                 </div>
               ) : (
                 <p className="mt-2 text-xs text-stone-400 dark:text-stone-500">
-                  オフのとき自動算出（{formatSignedYen(autoDiscrepancy)}）を保存します。
+                  オフのとき自動算出（{autoDiscrepancy === null ? '—' : formatSignedYen(autoDiscrepancy)}）を保存します。
                 </p>
               )}
             </div>

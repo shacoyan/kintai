@@ -1,6 +1,7 @@
 export function formatYen(amount: number): string {
   if (!Number.isFinite(amount)) return '¥0';
-  return `¥${amount.toLocaleString()}`;
+  // formatCount と同様にロケールを 'ja-JP' で固定（環境ロケール差による区切り揺れを防ぐ）。
+  return `¥${amount.toLocaleString('ja-JP')}`;
 }
 
 /**
