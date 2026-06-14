@@ -80,29 +80,8 @@ export function usePayrollRun(tenantId: string, storeId: string | null) {
 
       const totalPayment = payrollData.reduce((sum, row) => sum + row.payment, 0);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      const finalizedBy = user?.id ?? null;
-
-      const { data: runData, error: runError } = await supabase
-        .from('payroll_runs')
-        .insert({
-          tenant_id: tenantId,
-          store_id: storeId,
-          target_month: `${targetMonth}-01`,
-          close_day: closeDay,
-          period_start: periodStart,
-          period_end: periodEnd,
-          mode,
-          total_payment: totalPayment,
-          finalized_by: finalizedBy,
-        })
-        .select()
-        .single();
-
-      if (runError) throw runError;
-
+      // items は jsonb 配列で RPC に渡す（SQL 側で run_id を新規 id に固定するため run_id は含めない）
       const itemsPayload = payrollData.map((row) => ({
-        run_id: (runData as PayrollRun).id,
         user_id: row.userId,
         display_name: row.displayName,
         pay_type: row.payType,
@@ -114,19 +93,24 @@ export function usePayrollRun(tenantId: string, storeId: string | null) {
         payment: row.payment,
       }));
 
-      if (itemsPayload.length > 0) {
-        const { error: itemsError } = await supabase
-          .from('payroll_run_items')
-          .insert(itemsPayload);
+      // 確定は単一トランザクションの SECURITY DEFINER RPC に集約（孤児 payroll_run 防止）。
+      // 失敗時は RPC が throw するため、無音 0 行ロールバック問題は発生しない。
+      const { data: newRunId, error: rpcError } = await supabase.rpc('finalize_payroll_run', {
+        p_tenant_id: tenantId,
+        p_store_id: storeId,
+        p_target_month: `${targetMonth}-01`,
+        p_close_day: closeDay,
+        p_period_start: periodStart,
+        p_period_end: periodEnd,
+        p_mode: mode,
+        p_total_payment: totalPayment,
+        p_items: itemsPayload,
+      });
 
-        if (itemsError) {
-          // ロールバック: 親 run を削除
-          await supabase.from('payroll_runs').delete().eq('id', (runData as PayrollRun).id);
-          throw itemsError;
-        }
-      }
+      if (rpcError) throw rpcError;
 
-      return runData as PayrollRun;
+      // RPC は新 run の id を返す。フロントは fetchRun で再取得するため最小形で返す。
+      return { id: newRunId as string } as PayrollRun;
     } catch (err) {
       logger.error('finalizeRun error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
@@ -140,12 +124,11 @@ export function usePayrollRun(tenantId: string, storeId: string | null) {
     setLoading(true);
     setError(null);
     try {
-      const { error: deleteError } = await supabase
-        .from('payroll_runs')
-        .delete()
-        .eq('id', runId);
+      // 確定取消は owner 限定 SECURITY DEFINER RPC に集約（直 .delete() は撤去）。
+      // owner 以外は RPC が insufficient_privilege で throw するため、無音 0 行問題は発生しない。
+      const { error: rpcError } = await supabase.rpc('unfinalize_payroll_run', { p_run_id: runId });
 
-      if (deleteError) throw deleteError;
+      if (rpcError) throw rpcError;
     } catch (err) {
       logger.error('unfinalizeRun error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);
