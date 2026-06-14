@@ -110,70 +110,94 @@ export function useAttendance(tenantId: string, storeId: string | null) {
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
-  const cleanupChannel = useCallback(() => {
-    const ch = channelRef.current;
-    if (ch) {
-      try { supabase.removeChannel(ch); } catch (e) { console.warn('[useAttendance] removeChannel failed:', e); }
-      channelRef.current = null;
-    }
-  }, []);
+  // breaks テーブルには tenant_id 列が無く Realtime フィルタで自テナントに絞れないため、
+  // 全テナントの breaks 変更でこのコールバックが発火する。即時 fetch すると無関係な
+  // 休憩打刻でも毎回 select が走るため、短いデバウンスでバースト分を 1 回に畳む。
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleFetch = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      void fetchTodayRecords();
+    }, 300);
+  }, [fetchTodayRecords]);
 
+  // Realtime subscription。removeChannel は Promise を返す非同期 API のため、await せず
+  // 同名 channel を即再生成すると Supabase Realtime 内部状態の競合で CHANNEL_ERROR が出る
+  // （StrictMode mount→unmount→remount / tenant・store・日跨ぎ切替で顕在化）。
+  // useNotification.ts と同型に async setup + 全 removeChannel await + cancelled flag でガードする。
   useEffect(() => {
-    if (!storeId) {
-      cleanupChannel();
-      return;
-    }
-    cleanupChannel(); // 念のため新規作成前に必ず破棄
+    let cancelled = false;
 
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(`attendance:${tenantId}:${storeId}:${today}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'attendance_records',
-            filter: `tenant_id=eq.${tenantId}`,
-          },
-          () => {
-            fetchTodayRecords();
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'breaks',
-          },
-          () => {
-            // TODO: breaks テーブルには tenant_id がないため Supabase Realtime フィルタで絞れない
-            // attendance_record_id で不要な fetch を減らす改善余地あり
-            fetchTodayRecords();
-          }
-        )
-        .subscribe((status, err) => {
-          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
-            console.warn('[useAttendance] subscribe status:', status, err);
-          }
-        });
-      channelRef.current = channel;
-    } catch (e) {
-      console.warn('[useAttendance] channel setup failed:', e);
-      setError(formatSupabaseError(e));
-      if (channel) {
-        try { supabase.removeChannel(channel); } catch (re) { console.warn('[useAttendance] removeChannel after fail:', re); }
+    const setup = async () => {
+      // 冪等 cleanup（await で UNSUBSCRIBE 完了まで待つ）
+      if (channelRef.current) {
+        const ch = channelRef.current;
+        channelRef.current = null;
+        try { await supabase.removeChannel(ch); } catch (e) { console.warn('[useAttendance] removeChannel failed:', e); }
       }
-      channelRef.current = null;
-      return;
-    }
+      if (cancelled || !storeId) return;
+
+      let channel: ReturnType<typeof supabase.channel> | null = null;
+      try {
+        channel = supabase
+          .channel(`attendance:${tenantId}:${storeId}:${today}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'attendance_records',
+              filter: `tenant_id=eq.${tenantId}`,
+            },
+            () => scheduleFetch()
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'breaks',
+            },
+            () => scheduleFetch()
+          )
+          .subscribe((status, err) => {
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
+              console.warn('[useAttendance] subscribe status:', status, err);
+            }
+          });
+        if (cancelled) {
+          try { await supabase.removeChannel(channel); } catch (e) { console.warn('[useAttendance] removeChannel after cancel:', e); }
+          return;
+        }
+        channelRef.current = channel;
+      } catch (e) {
+        console.warn('[useAttendance] channel setup failed:', e);
+        setError(formatSupabaseError(e));
+        if (channel) {
+          try { await supabase.removeChannel(channel); } catch (re) { console.warn('[useAttendance] removeChannel after fail:', re); }
+        }
+        channelRef.current = null;
+      }
+    };
+
+    void setup();
 
     return () => {
-      cleanupChannel();
+      cancelled = true;
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+      const ch = channelRef.current;
+      channelRef.current = null;
+      if (ch) {
+        void (async () => {
+          try { await supabase.removeChannel(ch); } catch (e) { console.warn('[useAttendance] removeChannel failed:', e); }
+        })();
+      }
     };
-  }, [tenantId, storeId, today, fetchTodayRecords, cleanupChannel]);
+  }, [tenantId, storeId, today, fetchTodayRecords, scheduleFetch]);
 
   useEffect(() => {
     fetchTodayRecords();

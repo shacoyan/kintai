@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { format } from 'date-fns';
+import { subDays } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { supabase } from '../lib/supabase';
 import type { AttendanceRecord, TenantMember } from '../types';
 
@@ -53,7 +54,15 @@ export function useTodaysActiveAttendances({
     }
 
     let cancelled = false;
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const now = new Date();
+    // TZ: 非JST環境でも当日判定がアプリ他箇所(useAttendance 等)と一致するよう
+    // Asia/Tokyo で日付文字列を生成する。
+    const todayStr = formatInTimeZone(now, 'Asia/Tokyo', 'yyyy-MM-dd');
+    // 退勤忘れ孤児対策: clock_out IS NULL の行は退勤打刻漏れがあると無限に溜まり、
+    // 取得件数が線形劣化する。日付下限(数日)を入れて古い孤児を除外しつつ、
+    // 深夜跨ぎの本当の勤務中(前日 date の未退勤)は隠さない余裕を持たせる。
+    // さらに .limit() で上限を設けて最悪ケースの取得量を頭打ちにする。
+    const orphanFloor = formatInTimeZone(subDays(now, 3), 'Asia/Tokyo', 'yyyy-MM-dd');
     setLoading(true);
     setError(null);
 
@@ -63,8 +72,10 @@ export function useTodaysActiveAttendances({
           .from('attendance_records')
           .select('*, breaks(*)')
           .eq('tenant_id', tenantId)
+          .gte('date', orphanFloor)
           .or(`date.eq.${todayStr},clock_out.is.null`)
-          .order('clock_in', { ascending: true });
+          .order('clock_in', { ascending: true })
+          .limit(500);
 
         if (e) throw new Error(e.message);
         if (!cancelled) setRecords((data as AttendanceRecord[]) ?? []);
