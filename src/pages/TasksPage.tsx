@@ -274,6 +274,11 @@ export function TasksPage(): JSX.Element {
     const storeCounts = new Map<string, number>();
 
     for (const task of tasks) {
+      // B4 修正 (store-tab-badge-counts-children):
+      //   バッジ単位はボード表示単位 (= 親タスクのみ) に合わせる。
+      //   子タスクは親展開内/Dialog 内でしか表示しないため、バッジ件数から除外し
+      //   「表示枚数」と一致させる。
+      if (task.parent_task_id) continue;
       if (task.status === 'done' || task.status === 'cancelled') continue;
       allCount++;
       if (task.store_id === null || task.store_id === undefined) {

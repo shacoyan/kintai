@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Select } from '../ui';
 import { useTenant } from '../../contexts/TenantContext';
 import { useReportStores } from '../../hooks/useReportStores';
@@ -44,6 +44,13 @@ export const MonthlyReportPanel: React.FC = () => {
 
   const [subTab, setSubTab] = useState<SubTab>('store');
   const [storeId, setStoreId] = useState<string | null>(null);
+
+  // テナント切替時は選択中の storeId をリセットする（前テナントの store id が
+  // 残ると新テナントに存在せず月報が空表示になるため。DailyReportPanel と同型）。
+  // effectiveStoreId が新テナントの先頭店舗にフォールバックして空表示を解消する。
+  useEffect(() => {
+    setStoreId(null);
+  }, [currentTenant?.id]);
 
   // store が後から解決された場合の初期補完（ユーザー選択は上書きしない）。
   const effectiveStoreId = storeId ?? stores[0]?.id ?? null;

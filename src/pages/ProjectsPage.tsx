@@ -301,13 +301,16 @@ export function ProjectsPage() {
       if (task.status === 'in_progress') doing += 1;
 
       if (task.status === 'done') {
-        const updatedAt = new Date(task.updated_at);
-        if (updatedAt >= weekRange.start && updatedAt < weekEndExclusive) {
+        // 完了日時は completed_at を基準にする (updated_at は再編集等で動くため不正確)。
+        // 旧データで completed_at が未設定の場合のみ updated_at にフォールバック。
+        const completedAt = new Date(task.completed_at ?? task.updated_at);
+        if (completedAt >= weekRange.start && completedAt < weekEndExclusive) {
           doneThisWeek += 1;
         }
       }
 
-      if (task.due_date && task.status !== 'done') {
+      // 期限切れ: done と cancelled は対象外 (cancelled を含めると不要な期限切れ表示になる)
+      if (task.due_date && task.status !== 'done' && task.status !== 'cancelled') {
         const dueDate = parseLocalDate(task.due_date);
         if (dueDate < today) overdue += 1;
       }

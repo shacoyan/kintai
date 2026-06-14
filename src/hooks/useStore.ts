@@ -53,11 +53,16 @@ export function useStore(tenantId: string) {
 
   const updateStore = useCallback(async (storeId: string, name: string) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('stores')
         .update({ name })
-        .eq('id', storeId);
+        .eq('id', storeId)
+        .eq('tenant_id', tenantId)
+        .select('id')
+        .maybeSingle();
       if (error) throw new Error(`店舗名の更新に失敗しました: ${formatSupabaseError(error).message}`);
+      // RLS / 他テナント scope 外で 0 行更新は無音 success になるため明示エラー化
+      if (!data) throw new Error('店舗名の更新に失敗しました（権限不足または対象が見つかりません）');
       await fetchStores();
     } catch (err) {
       logger.error('updateStore error:', formatSupabaseError(err));
@@ -65,15 +70,20 @@ export function useStore(tenantId: string) {
       setError(f);
       throw err;
     }
-  }, [fetchStores]);
+  }, [tenantId, fetchStores]);
 
   const deleteStore = useCallback(async (storeId: string) => {
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('stores')
         .delete()
-        .eq('id', storeId);
+        .eq('id', storeId)
+        .eq('tenant_id', tenantId)
+        .select('id')
+        .maybeSingle();
       if (error) throw new Error(`店舗の削除に失敗しました: ${formatSupabaseError(error).message}`);
+      // RLS / 他テナント scope 外で 0 行削除は無音 success になるため明示エラー化
+      if (!data) throw new Error('店舗の削除に失敗しました（権限不足または対象が見つかりません）');
       await fetchStores();
     } catch (err) {
       logger.error('deleteStore error:', formatSupabaseError(err));
@@ -81,7 +91,7 @@ export function useStore(tenantId: string) {
       setError(f);
       throw err;
     }
-  }, [fetchStores]);
+  }, [tenantId, fetchStores]);
 
   const fetchStoreMembers = useCallback(async (storeId: string) => {
     try {

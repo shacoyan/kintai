@@ -191,25 +191,41 @@ export function useTasks(opts?: UseTasksOptions): UseTasksResult {
         return { ...rest, assignee_user_ids: buildAssigneeUserIds(task_assignees) } as Task;
       });
 
-      // 068 子タスク: 親ごとに子を集計し subtask_total/done を親へ付与 (クライアント集計)。
-      // 集計はフィルタ前の全件 (mapped) で行う — assignee フィルタで子が落ちても親の進捗が狂わないように。
-      const childrenByParent = new Map<string, Task[]>();
-      for (const t of mapped) {
-        if (t.parent_task_id) {
-          const arr = childrenByParent.get(t.parent_task_id) ?? [];
-          arr.push(t);
-          childrenByParent.set(t.parent_task_id, arr);
+      // 068 子タスク: 親ごとに子を集計し subtask_total/done を親へ付与。
+      // B4 修正 (subtask-pill-undercount-status-filter):
+      //   旧実装は同一クエリ結果 (mapped) 内の子だけで集計していたため、
+      //   status / store フィルタで取得スコープから落ちた子を過少カウントしていた。
+      //   → 親 id 集合に対し子を「フィルタ無条件」で別クエリ取得し、
+      //     status / 件数だけを軽量に集計する (本体一覧は従来どおり filter 適用)。
+      const parentIds = mapped.filter((t) => !t.parent_task_id).map((t) => t.id);
+
+      // 親ごとの { total, done } 集計。子が存在しない親は 0/0。
+      const countsByParent = new Map<string, { total: number; done: number }>();
+      if (parentIds.length > 0) {
+        const { data: childRows, error: childErr } = await supabase
+          .from('tasks')
+          .select('parent_task_id, status')
+          .eq('tenant_id', opts.tenantId)
+          .in('parent_task_id', parentIds);
+        if (childErr) throw childErr;
+
+        for (const row of (childRows as { parent_task_id: string | null; status: string }[] | null) ?? []) {
+          if (!row.parent_task_id) continue;
+          const acc = countsByParent.get(row.parent_task_id) ?? { total: 0, done: 0 };
+          // 分母: cancelled も含む全子数 (デフォルト)。
+          acc.total += 1;
+          if (row.status === 'done') acc.done += 1;
+          countsByParent.set(row.parent_task_id, acc);
         }
       }
+
       const withCounts = mapped.map((t) => {
         if (t.parent_task_id) return t; // 子は集計対象外
-        const children = childrenByParent.get(t.id) ?? [];
-        // 分母: cancelled も含む全子数 (デフォルト)。除外したい場合は
-        //   children.filter((c) => c.status !== 'cancelled').length に変更可。
+        const c = countsByParent.get(t.id) ?? { total: 0, done: 0 };
         return {
           ...t,
-          subtask_total: children.length,
-          subtask_done: children.filter((c) => c.status === 'done').length,
+          subtask_total: c.total,
+          subtask_done: c.done,
         };
       });
 

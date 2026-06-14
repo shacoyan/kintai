@@ -75,7 +75,38 @@ export function detectAcquisitionChannels(tx: Transaction): AcquisitionBreakdown
     if (name.includes('SNS')) result.sns += qty;
   }
   const channelTotal = result.google + result.review + result.signboard + result.sns;
-  result.unknown = Math.max(0, newQty - channelTotal);
+
+  if (channelTotal > newQty) {
+    // 取得チャネルの打刻合計が新規客数を超過するケース（打刻ミス・1客に複数チャネル
+    // 打刻 等）。Math.max(0, newQty - channelTotal) で unknown を 0 クランプすると
+    // 超過分が黙って消え、内訳が母数(newQty)と不整合になる。
+    // → 新規客数 newQty を母数に各チャネルを按分し直し、合計が newQty に一致する
+    //   整数配分にする（最大剰余法で端数を寄せる）。unknown は 0。
+    const channelKeys: ('google' | 'review' | 'signboard' | 'sns')[] = [
+      'google',
+      'review',
+      'signboard',
+      'sns',
+    ];
+    const exact = channelKeys.map((k) => (result[k] * newQty) / channelTotal);
+    const floored = exact.map((v) => Math.floor(v));
+    let remainder = newQty - floored.reduce((a, b) => a + b, 0);
+    // 端数(remainder)を小数部の大きい順に +1 して合計を newQty に一致させる。
+    const order = exact
+      .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+      .sort((a, b) => b.frac - a.frac);
+    for (let n = 0; n < order.length && remainder > 0; n += 1) {
+      floored[order[n].i] += 1;
+      remainder -= 1;
+    }
+    channelKeys.forEach((k, i) => {
+      result[k] = floored[i];
+    });
+    result.unknown = 0;
+    return result;
+  }
+
+  result.unknown = newQty - channelTotal;
   return result;
 }
 

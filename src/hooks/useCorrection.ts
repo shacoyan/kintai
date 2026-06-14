@@ -148,14 +148,22 @@ export function useCorrection(tenantId: string) {
   const revertRequest = async (requestId: string) => {
     setError(null);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('correction_requests')
         .update({ status: 'pending', reviewed_by: null, reviewed_at: null })
-        .eq('id', requestId);
+        .eq('id', requestId)
+        .select('id');
       if (error) {
         logger.error('Revert correction request error:', formatSupabaseError(error));
         setError(formatSupabaseError(error).message);
         throw error;
+      }
+      // RLS / 対象不在で 0 行更新は無音 success になるため明示エラー化
+      if (!data || data.length === 0) {
+        const msg = '差し戻しに失敗しました（権限不足または対象が見つかりません）';
+        logger.error('Revert correction request error:', msg);
+        setError(msg);
+        throw new Error(msg);
       }
       // 承認済の場合、すでに attendance_records へ反映済の修正は取り消さない（巻き戻しは別途手動で）
       await fetchRequests();
@@ -168,48 +176,73 @@ export function useCorrection(tenantId: string) {
 
   // Realtime 購読: tenant 内の correction_requests を監視し、変更があれば自動再取得
   useEffect(() => {
-    if (!tenantId) return;
+    // race 対策: removeChannel は Promise を返す非同期 API。await せず同名 channel を即再生成すると
+    // Supabase Realtime 内部状態で "subscribed 済" と判定され ".on() after subscribe()" エラーになる。
+    // setup を async でくくり全 removeChannel を await + cancelled flag で stale closure をガード。
+    let cancelled = false;
 
-    // 冪等 cleanup
-    if (channelRef.current) {
-      try { supabase.removeChannel(channelRef.current); } catch (e) { console.warn('[useCorrection] removeChannel failed:', e); }
-      channelRef.current = null;
-    }
-
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(`correction_requests:${tenantId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'correction_requests',
-            filter: `tenant_id=eq.${tenantId}`,
-          },
-          () => { void fetchRequests(); }
-        )
-        .subscribe((status, err) => {
-          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
-            console.warn('[useCorrection] subscribe status:', status, err);
-          }
-        });
-      channelRef.current = channel;
-    } catch (e) {
-      console.warn('[useCorrection] channel setup failed:', e);
-      setError(e instanceof Error ? e.message : String(e));
-      if (channel) {
-        try { supabase.removeChannel(channel); } catch (re) { console.warn('[useCorrection] removeChannel after fail:', re); }
+    const setup = async () => {
+      if (!tenantId) {
+        if (channelRef.current) {
+          const ch = channelRef.current;
+          channelRef.current = null;
+          try { await supabase.removeChannel(ch); } catch (e) { console.warn('[useCorrection] removeChannel failed:', e); }
+        }
+        return;
       }
-      channelRef.current = null;
-      return;
-    }
+
+      // 冪等 cleanup (await で UNSUBSCRIBE 完了まで待つ)
+      if (channelRef.current) {
+        const ch = channelRef.current;
+        channelRef.current = null;
+        try { await supabase.removeChannel(ch); } catch (e) { console.warn('[useCorrection] removeChannel failed:', e); }
+      }
+      if (cancelled) return;
+
+      let channel: ReturnType<typeof supabase.channel> | null = null;
+      try {
+        channel = supabase
+          .channel(`correction_requests:${tenantId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'correction_requests',
+              filter: `tenant_id=eq.${tenantId}`,
+            },
+            () => { void fetchRequests(); }
+          )
+          .subscribe((status, err) => {
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {
+              console.warn('[useCorrection] subscribe status:', status, err);
+            }
+          });
+        if (cancelled) {
+          try { await supabase.removeChannel(channel); } catch (e) { console.warn('[useCorrection] removeChannel after cancel:', e); }
+          return;
+        }
+        channelRef.current = channel;
+      } catch (e) {
+        console.warn('[useCorrection] channel setup failed:', e);
+        setError(e instanceof Error ? e.message : String(e));
+        if (channel) {
+          try { await supabase.removeChannel(channel); } catch (re) { console.warn('[useCorrection] removeChannel after fail:', re); }
+        }
+        channelRef.current = null;
+      }
+    };
+
+    void setup();
 
     return () => {
-      if (channelRef.current) {
-        try { supabase.removeChannel(channelRef.current); } catch (e) { console.warn('[useCorrection] removeChannel failed:', e); }
-        channelRef.current = null;
+      cancelled = true;
+      const ch = channelRef.current;
+      channelRef.current = null;
+      if (ch) {
+        void (async () => {
+          try { await supabase.removeChannel(ch); } catch (e) { console.warn('[useCorrection] removeChannel failed:', e); }
+        })();
       }
     };
   }, [tenantId, fetchRequests]);

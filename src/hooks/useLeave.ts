@@ -95,19 +95,25 @@ export function useLeave(tenantId: string) {
             reason: reason || null,
             store_id: storeId ?? null,
           })
+          // 挿入直後の行 id を控え、部分失敗ロールバックを id 限定削除にする
+          // (date-only DELETE は半休同日2件など別申請を巻き添えにするため)
+          .select('id')
       )
     );
 
     const successDates: string[] = [];
     const failedDates: string[] = [];
+    const insertedIds: string[] = [];
 
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
-        const { error: e } = result.value;
+        const { data, error: e } = result.value;
         if (e) {
           failedDates.push(dates[index]);
         } else {
           successDates.push(dates[index]);
+          const rows = (data as { id: string }[] | null) ?? [];
+          rows.forEach(row => { if (row?.id) insertedIds.push(row.id); });
         }
       } else {
         failedDates.push(dates[index]);
@@ -116,38 +122,34 @@ export function useLeave(tenantId: string) {
 
     let rolledBackCount = 0;
 
-    if (failedDates.length > 0 && successDates.length > 0) {
-      const rollbackResults = await Promise.allSettled(
-        successDates.map(d =>
-          supabase
-            .from('leave_requests')
-            .delete()
-            .eq('tenant_id', tenantId)
-            .eq('user_id', user.id)
-            .eq('date', d)
-        )
-      );
-
-      rollbackResults.forEach(result => {
-        if (result.status === 'fulfilled') {
-          const { error: e } = result.value;
-          if (!e) {
-            rolledBackCount++;
-          }
-        }
-      });
+    if (failedDates.length > 0 && insertedIds.length > 0) {
+      const { data: deleted, error: delErr } = await supabase
+        .from('leave_requests')
+        .delete()
+        .eq('tenant_id', tenantId)
+        .eq('user_id', user.id)
+        .in('id', insertedIds)
+        .select('id');
+      if (!delErr) {
+        rolledBackCount = ((deleted as { id: string }[] | null) ?? []).length;
+      }
     }
 
-    return { successCount: 0, failedDates, rolledBackCount };
+    return { successCount: successDates.length, failedDates, rolledBackCount };
   }, [tenantId]);
 
   const cancelLeave = useCallback(async (leaveId: string) => {
-    const { error: e } = await supabase
+    const { data, error: e } = await supabase
       .from('leave_requests')
       .update({ status: 'cancelled' })
       .eq('id', leaveId)
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .select('id');
     if (e) throw new Error(`休暇取り消しに失敗しました: ${e.message}`);
+    // RLS / status 不一致で 0 行更新は無音 success になるため明示エラー化
+    if (!data || data.length === 0) {
+      throw new Error('休暇取り消しに失敗しました: 対象が見つからないか、既に処理済みです');
+    }
   }, []);
 
   const approveLeave = useCallback(async (leaveId: string) => {

@@ -151,7 +151,10 @@ export function TaskDetailDialog({
       }),
   );
 
-  // 進捗: 分母 = subtask_total（フィルタ前全件・cancelled 含む）優先、分子 = subtask_done。
+  // 進捗: 分母 = subtask_total（useTasks が親 id 集合に対し子を無条件取得して算出。
+  //   status / store フィルタで取得スコープ外に落ちた子も含む全子数・cancelled 含む）を優先。
+  //   ?? の children フォールバックはフィルタ依存で過少になり得るため、subtask_total が
+  //   常に数値で来る親では発火しない（後方互換の保険のみ）。分子 = subtask_done。
   const total = task.subtask_total ?? children.length;
   const done = task.subtask_done ?? children.filter((c) => c.status === 'done').length;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;

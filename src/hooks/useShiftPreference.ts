@@ -216,6 +216,9 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
           tentative_approved_by: approver?.id ?? null,
           note: pref.note || null,
           store_id: pref.store_id,
+          // B4(096): 承認元の希望 id を記録し、revertPreference が時刻ではなく
+          // preference_id で厳密に当該仮承認シフトを削除できるようにする。
+          preference_id: pref.id,
         });
       if (insertError) throw new Error(`シフトの作成に失敗しました: ${insertError.message}`);
 
@@ -282,23 +285,27 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
       if (pref.status === 'pending') return;
 
       // approvedの場合は対応するshiftsレコードを削除
-      // Loop K: approvePreference は status='tentative' で INSERT するため、
-      // 仮承認のままで未昇格のシフトを削除する（status を match 条件から外す）。
-      // 既に本承認 (approved) されたシフトはオーナーが意図的に昇格させたものなので削除しない。
+      // B4(096): approvePreference は preference_id を記録した tentative 行を INSERT する。
+      // 削除は元時刻一致（override 承認だと不一致→孤児化、複数 tentative で取り違え）ではなく
+      // preference_id で厳密に当該仮承認シフトのみを削除する。
+      // status='tentative' 限定: 既に本承認 (approved) されたシフトはオーナーが
+      // 意図的に昇格させたものなので削除しない。
       if (pref.status === 'approved') {
-        const { error: deleteError } = await supabase
+        const { data: deleted, error: deleteError } = await supabase
           .from('shifts')
           .delete()
           .match({
-            tenant_id: pref.tenant_id,
-            user_id: pref.user_id,
-            date: pref.date,
-            store_id: pref.store_id,
+            preference_id: pref.id,
             status: 'tentative',
-            start_time: pref.start_time,
-            end_time: pref.end_time,
-          });
+          })
+          .select('id');
         if (deleteError) throw new Error(`シフトの削除に失敗しました: ${deleteError.message}`);
+        // 0 行削除のエラー化（MEMORY 規律: mutate 無音 success 防止）。
+        // tentative の仮承認シフトが見つからない = 既に本承認/手動削除済み等の
+        // 想定外状態。希望ステータスだけ pending に巻き戻すと孤児を温存し得るため停止する。
+        if (!deleted || deleted.length === 0) {
+          throw new Error('保留に戻す対象の仮承認シフトが見つかりませんでした（既に本承認・削除済みの可能性があります）');
+        }
       }
 
       // ステータスをpendingに更新
