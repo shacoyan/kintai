@@ -136,6 +136,8 @@ export function DashboardPage() {
     today: todayFromHook,
     loading,
     error: attendanceError,
+    fetchRecords,
+    monthlySummary,
   } = useAttendance(tenantId, currentStore?.id ?? null);
 
   const { myShifts, getMyShifts, loading: shiftLoading, error: shiftError } = useShift(tenantId, currentStore?.id ?? null);
@@ -196,12 +198,18 @@ export function DashboardPage() {
     getRemainingPaidLeave(user.id).then(days => setRemainingPaidLeave(days));
   }, [user?.id, getRemainingPaidLeave]);
 
-  // 今週のシフトを取得
+  // 当月のシフトを取得（月間サマリの予定算出 + 週バー用にこの範囲から再 filter）
   useEffect(() => {
-    const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    getMyShifts(weekStart, weekEnd);
+    const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+    getMyShifts(monthStart, monthEnd);
   }, [getMyShifts]);
+
+  // 当月の勤怠実績を取得（月間サマリの実績算出用、本人・当月スコープ）
+  useEffect(() => {
+    const now = new Date();
+    fetchRecords(now.getFullYear(), now.getMonth() + 1);
+  }, [fetchRecords]);
 
   if (loading && todayRecords.length === 0) {
     return (
@@ -219,10 +227,6 @@ export function DashboardPage() {
 
   // 今日のレコードのみ（日跨ぎの未退勤レコードは除外して集計）
   const todayOnlyRecords = todayRecords.filter((r) => r.date === todayStr);
-
-  // 月間サマリ用の労働時間合計。live グリッド（TodayRecordStats）とは別に
-  // 親レンダ時点の today を基準に算出する（毎秒ではなくレンダ毎に更新）。
-  const totalWorkMinutes = calcTotalWorkMinutes(todayOnlyRecords, today);
 
   const firstClockIn = todayOnlyRecords.length > 0
     ? todayOnlyRecords.reduce((earliest, record) => {
@@ -256,15 +260,25 @@ export function DashboardPage() {
     return Math.max(0, differenceInMinutes(end, start));
   };
 
-  const plannedMinutes = activeWeekShifts.reduce((sum, shift) => {
+  // 月間サマリ用の集計（当月 1日〜月末の本人有効シフト = 予定、当月確定実働 = 実績）。
+  // 週バー（activeWeekShifts）とは独立に算出する。
+  const monthStartStr = format(startOfMonth(today), 'yyyy-MM-dd');
+  const monthEndStr = format(endOfMonth(today), 'yyyy-MM-dd');
+  const activeMonthShifts = myShifts.filter((s) => (
+    s.date >= monthStartStr &&
+    s.date <= monthEndStr &&
+    s.status !== 'cancelled' &&
+    s.status !== 'rejected'
+  ));
+  const monthPlannedMinutes = activeMonthShifts.reduce((sum, shift) => {
     return sum + getShiftMinutes(shift);
   }, 0);
-  const monthlyProgress = plannedMinutes > 0
-    ? Math.min(100, Math.round((totalWorkMinutes / plannedMinutes) * 100))
+  const monthActualMinutes = monthlySummary.totalWorkMinutes;
+  const monthRate = monthPlannedMinutes > 0
+    ? Math.min(100, Math.round((monthActualMinutes / monthPlannedMinutes) * 100))
     : 0;
-  const monthRate = monthlyProgress;
-  const monthHoursActual = (totalWorkMinutes / 60).toFixed(1);
-  const monthHoursPlanned = (plannedMinutes / 60).toFixed(1);
+  const monthHoursActual = (monthActualMinutes / 60).toFixed(1);
+  const monthHoursPlanned = (monthPlannedMinutes / 60).toFixed(1);
   // 「本日の記録」カード専用のステータス導出（フックの status は退勤済みを返さないため、ここで4値化）。
   // 判定順（優先度）: 休憩中 → 勤務中 → 退勤済（当日 clock_in/clock_out あり）→ 未出勤。
   const todayStatusLabel = deriveTodayStatusLabel(status, todayOnlyRecords);
@@ -297,8 +311,8 @@ export function DashboardPage() {
   const teamOverflow = teamMembers.length - visibleTeamMembers.length;
   const workingTeamCount = realWorkingCount;
   const monthStats = [
-    { key: '今月予定', value: monthHoursPlanned, unit: 'h', sub: '/ 週シフト合計' },
-    { key: '実績', value: monthHoursActual, unit: 'h', sub: `${monthRate}% 経過` },
+    { key: '今月予定', value: monthHoursPlanned, unit: 'h', sub: '/ 当月シフト合計' },
+    { key: '実績', value: monthHoursActual, unit: 'h', sub: `今月予定の ${monthRate}%` },
     { key: '繰越有給', value: remainingPaidLeave !== null ? String(remainingPaidLeave) : '-', unit: '日', sub: `申請中 ${pendingLeaveCount} 件` },
   ];
 
