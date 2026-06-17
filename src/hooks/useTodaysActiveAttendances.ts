@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { subDays } from 'date-fns';
+import { subDays, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { supabase } from '../lib/supabase';
 import type { AttendanceRecord, TenantMember } from '../types';
@@ -129,7 +129,7 @@ export function useTodaysActiveAttendances({
         map.set(record.user_id, {
           user_id: record.user_id,
           status,
-          since: since ? since.slice(11, 16) : null,
+          since: since ? formatInTimeZone(parseISO(since), 'Asia/Tokyo', 'HH:mm') : null,
           record,
         });
       }

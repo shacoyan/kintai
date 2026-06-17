@@ -17,10 +17,13 @@ const TenantPage: React.FC = () => {
   const location = useLocation();
   const { tenants, currentTenant, setCurrentTenant, fetchTenants, createTenant, joinTenant, loading, error } = useTenant();
 
-  const returnTo = (location.state as { from?: string } | null)?.from ?? '/';
+  const navState = location.state as { from?: string; intent?: string } | null;
+  const returnTo = navState?.from ?? '/';
+  const explicitAdd = navState?.intent === 'add';
 
   // テナント選択済みなら即ダッシュボードへ（または復帰先 URL へ）
-  if (currentTenant) {
+  // ただし TenantSwitcher から明示的に作成/参加に来た場合（intent='add'）はスキップ
+  if (currentTenant && !explicitAdd) {
     return <Navigate to={returnTo} replace />;
   }
 

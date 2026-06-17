@@ -37,7 +37,7 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
 
   const handleNavigateToNewWorkspace = useCallback(() => {
     setIsOpen(false);
-    navigate('/tenant');
+    navigate('/tenant', { state: { intent: 'add' } });
   }, [navigate]);
 
   const handleKeyDown = useCallback(
