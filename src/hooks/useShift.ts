@@ -106,7 +106,7 @@ export function useShift(tenantId: string, storeId: string | null) {
     if (effectiveStoreId === null) throw new Error('店舗が選択されていません');
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
-    const { error: e } = await supabase
+    const { data, error: e } = await supabase
       .from('shifts')
       .insert({
         tenant_id: tenantId,
@@ -116,8 +116,13 @@ export function useShift(tenantId: string, storeId: string | null) {
         end_time: endTime,
         note: note || null,
         store_id: effectiveStoreId,
-      });
+      })
+      .select('id');
     if (e) throw new Error(`シフトの作成に失敗しました: ${e.message}`);
+    // P3-5: RLS で 0 行 INSERT は無音 success になるため明示エラー化
+    if (!data || data.length === 0) {
+      throw new Error('シフトの作成に失敗しました: 対象が見つからないか権限がありません');
+    }
   }, [tenantId, storeId]);
 
   const addShiftForMember = useCallback(async (date: string, userId: string, storeId: string, startTime: string, endTime: string, note?: string): Promise<Shift> => {
@@ -143,20 +148,30 @@ export function useShift(tenantId: string, storeId: string | null) {
   }, [tenantId]);
 
   const deleteShift = useCallback(async (shiftId: string) => {
-    const { error: e } = await supabase
+    const { data, error: e } = await supabase
       .from('shifts')
       .delete()
-      .eq('id', shiftId);
+      .eq('id', shiftId)
+      .select('id');
     if (e) throw new Error(`シフトの削除に失敗しました: ${e.message}`);
+    // P3-3: RLS で 0 行 DELETE は無音 success になるため明示エラー化
+    if (!data || data.length === 0) {
+      throw new Error('シフトの削除に失敗しました: 対象が見つからないか権限がありません');
+    }
   }, []);
 
   const cancelShift = useCallback(async (shiftId: string) => {
-    const { error: e } = await supabase
+    const { data, error: e } = await supabase
       .from('shifts')
       .update({ status: 'cancelled' })
       .eq('id', shiftId)
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .select('id');
     if (e) throw new Error(`シフトの取り消しに失敗しました: ${e.message}`);
+    // P3-3: RLS / status 不一致で 0 行更新は無音 success になるため明示エラー化
+    if (!data || data.length === 0) {
+      throw new Error('シフトの取り消しに失敗しました: 対象が見つからないか、既に処理済みです');
+    }
   }, []);
 
   const approveShift = useCallback(async (shiftId: string) => {
@@ -288,8 +303,13 @@ export function useShift(tenantId: string, storeId: string | null) {
     const memberMap = new Map(members.map(m => [m.user_id, m]));
     const userShifts = new Map<string, Shift[]>();
 
+    // P1-4: 見込み計上は確定方向の status のみに限定（pending = 申請段階は非計上）。
+    // 旧実装は「rejected/cancelled 以外を全合算」= pending を拾う除外リスト方式だった。
+    // ShiftPage の all(monthShifts 全 status を渡す)からも pending が除外され、
+    // laborEstimates 意図コメント「tentative + approved」と一致する（modified も確定方向なので含める）。
+    const COUNTABLE = new Set(['tentative', 'approved', 'modified']);
     for (const s of shifts) {
-      if (s.status === 'rejected' || s.status === 'cancelled') continue;
+      if (!COUNTABLE.has(s.status)) continue;
       const arr = userShifts.get(s.user_id) || [];
       arr.push(s);
       userShifts.set(s.user_id, arr);

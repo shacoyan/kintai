@@ -700,6 +700,7 @@ export type Database = {
           note: string | null
           original_end_time: string | null
           original_start_time: string | null
+          preference_id: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           start_time: string
@@ -718,6 +719,7 @@ export type Database = {
           note?: string | null
           original_end_time?: string | null
           original_start_time?: string | null
+          preference_id?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           start_time: string
@@ -736,6 +738,7 @@ export type Database = {
           note?: string | null
           original_end_time?: string | null
           original_start_time?: string | null
+          preference_id?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           start_time?: string
@@ -1319,6 +1322,45 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      approve_preference: {
+        Args: {
+          p_preference_id: string
+          p_override_start?: string | null
+          p_override_end?: string | null
+        }
+        Returns: {
+          created_at: string | null
+          date: string
+          end_time: string
+          id: string
+          note: string | null
+          original_end_time: string | null
+          original_start_time: string | null
+          preference_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          start_time: string
+          status: string
+          store_id: string
+          tenant_id: string
+          tentative_approved_at: string | null
+          tentative_approved_by: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "shifts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      approve_preferences: {
+        Args: { p_ids: string[] }
+        Returns: {
+          approved_count: number
+          approved_ids: string[]
+        }[]
+      }
       approve_store_shifts_final: {
         Args: { p_store_id: string; p_tenant_id: string }
         Returns: {
@@ -1457,6 +1499,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      reject_preferences: {
+        Args: { p_ids: string[] }
+        Returns: {
+          rejected_count: number
+          rejected_ids: string[]
+        }[]
+      }
       reject_shift: {
         Args: { p_reason?: string; p_shift_id: string }
         Returns: {
@@ -1467,6 +1516,7 @@ export type Database = {
           note: string | null
           original_end_time: string | null
           original_start_time: string | null
+          preference_id: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           start_time: string
@@ -1537,6 +1587,28 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      revert_preference: {
+        Args: { p_preference_id: string }
+        Returns: {
+          created_at: string | null
+          date: string
+          end_time: string | null
+          id: string
+          note: string | null
+          preference_type: string
+          start_time: string | null
+          status: string
+          store_id: string
+          tenant_id: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "shift_preferences"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       revert_shift_to_tentative: {
         Args: { p_shift_id: string }
         Returns: {
@@ -1547,6 +1619,7 @@ export type Database = {
           note: string | null
           original_end_time: string | null
           original_start_time: string | null
+          preference_id: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           start_time: string

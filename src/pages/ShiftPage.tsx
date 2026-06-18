@@ -64,7 +64,7 @@ export function ShiftPage() {
   // getLaborCostEstimate 内で tenant_members 既定値にフォールバック → 既存挙動完全互換。
   const { payrollsMap: memberStorePayrollsMap, fetchMemberStorePayrolls } = useMemberStorePayrolls(tenantId);
   const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
-  const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference, bulkSubmitPreferences } = useShiftPreference(tenantId, storeId);
+  const { myPreferences, allPreferences, loading: prefLoading, fetchMyPreferences, fetchAllPreferences, submitPreference, deletePreference, approvePreference, rejectPreference, revertPreference, bulkSubmitPreferences, approvePreferencesByIds, rejectPreferencesByIds } = useShiftPreference(tenantId, storeId);
   const { showToast } = useToast();
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -402,9 +402,22 @@ export function ShiftPage() {
   //   1) 個別 inline lambda (revert/restore/modify, canManageStore, onMutated, onShiftClick 等) を全部 useCallback 化
   //   2) onDateClick (PC/SP) も useCallback
   //   3) setSelectedDate は startTransition で wrap → click 即時反応 + state 更新を低優先度化
+  // P1-3: 差し戻しは原子 RPC (revert_shift_to_tentative・055 改修) を呼んだ後、
+  //   希望↔シフトの双方向同期を UI に反映するため preference / shift の両レンジを再取得する。
+  //   (旧実装は revertShiftToTentative のみで preference を再取得せず、approved 希望が画面に残っていた)
   const handleRevertShiftToTentative = useCallback(async (id: string) => {
-    await revertShiftToTentative(id);
-  }, [revertShiftToTentative]);
+    try {
+      await revertShiftToTentative(id);
+      showToast('シフトを仮承認に差し戻しました', 'success');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'シフトの差し戻しに失敗しました';
+      showToast(msg, 'error');
+      throw e;
+    } finally {
+      fetchPreferenceRange();
+      fetchRange();
+    }
+  }, [revertShiftToTentative, showToast, fetchPreferenceRange, fetchRange]);
 
   const handleRestoreShift = useCallback(async (id: string) => {
     await restoreShift(id);
@@ -632,39 +645,43 @@ export function ShiftPage() {
     [bulkSubmitPreferences, fetchPreferenceRange, showToast],
   );
 
+  // P1-5: for..of の直列 await (N+1) を撤去し、set-based RPC (approve_preferences(p_ids uuid[]))
+  //   をフックラッパ経由で 1 回だけ呼ぶ。unavailable は RPC 側 (preference_type IN('preferred','available'))
+  //   で対象外になるため、フロントでの個別フィルタは不要。fetch は完了後 1 回のみ。
   const handleBulkApprovePreferences = async (ids: string[]) => {
-    let errors = 0;
-    for (const id of ids) {
-      const pref = allPreferences.find(p => p.id === id);
-      if (!pref) continue;
-      if (pref.preference_type === 'unavailable') continue;
-      try {
-        await approvePreference(id, pref.start_time ?? undefined, pref.end_time ?? undefined);
-      } catch {
-        errors += 1;
+    if (ids.length === 0) return;
+    try {
+      const { approvedCount } = await approvePreferencesByIds(ids);
+      if (approvedCount > 0) {
+        showToast(`${approvedCount}件のシフト申請を承認しました`, 'success');
+      } else {
+        showToast('承認できるシフト申請がありませんでした', { tone: 'warning' });
       }
-    }
-    fetchPreferenceRange();
-    fetchRange();
-    if (errors > 0) {
-      // eslint-disable-next-line no-console
-      console.warn(`[bulkApprovePreferences] ${errors} 件で承認エラーが発生しました`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '一括承認に失敗しました';
+      showToast(msg, 'error');
+    } finally {
+      fetchPreferenceRange();
+      fetchRange();
     }
   };
 
+  // P1-5: 一括却下も set-based RPC (reject_preferences(p_ids uuid[])) を 1 回呼ぶ。
   const handleBulkRejectPreferences = async (ids: string[]) => {
-    let errors = 0;
-    for (const id of ids) {
-      try {
-        await rejectPreference(id);
-      } catch {
-        errors += 1;
+    if (ids.length === 0) return;
+    try {
+      const { rejectedCount } = await rejectPreferencesByIds(ids);
+      if (rejectedCount > 0) {
+        showToast(`${rejectedCount}件のシフト申請を却下しました`, 'success');
+      } else {
+        showToast('却下できるシフト申請がありませんでした', { tone: 'warning' });
       }
-    }
-    fetchPreferenceRange();
-    if (errors > 0) {
-      // eslint-disable-next-line no-console
-      console.warn(`[bulkRejectPreferences] ${errors} 件で却下エラーが発生しました`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '一括却下に失敗しました';
+      showToast(msg, 'error');
+    } finally {
+      fetchPreferenceRange();
+      fetchRange();
     }
   };
 
@@ -873,24 +890,12 @@ export function ShiftPage() {
                     p => p.status === 'pending' && p.date >= monthStart && p.date <= monthEnd
                   );
                   const count = pendingInRange.length;
+                  // P1-5: 表示中の月の pending を ids に集約し、set-based RPC を 1 回呼ぶ。
                   const handleBulkRejectInRange = async () => {
                     if (count === 0) return;
                     // eslint-disable-next-line no-alert
                     if (!window.confirm(`${count}件却下します。よろしいですか？`)) return;
-                    let errors = 0;
-                    for (const p of pendingInRange) {
-                      try {
-                        await rejectPreference(p.id);
-                      } catch {
-                        errors += 1;
-                      }
-                    }
-                    fetchPreferenceRange();
-                    fetchRange();
-                    if (errors > 0) {
-                      // eslint-disable-next-line no-console
-                      console.warn(`[bulkRejectInRange] ${errors} 件で却下エラーが発生しました`);
-                    }
+                    await handleBulkRejectPreferences(pendingInRange.map(p => p.id));
                   };
                   return (
                     /* Iter 2-A / P1: ghost-danger 風 — border なし + 赤文字 + hover で淡赤背景 */

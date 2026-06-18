@@ -92,6 +92,8 @@ export interface Shift {
   tentative_approved_by: string | null;
   tentative_approved_at: string | null;
   store_id: string | null;
+  // 096: 承認元の希望 id。revert/approve が時刻ではなく id で厳密に当該仮承認シフトを扱う。
+  preference_id: string | null;
 }
 
 export type LeaveType =

@@ -168,67 +168,35 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
   ) => {
     setError(null);
     try {
-      // 希望レコードを取得
-      const { data: pref, error: fetchError } = await supabase
-        .from('shift_preferences')
-        .select('*')
-        .eq('id', preferenceId)
-        .single();
-      if (fetchError || !pref) throw new Error(`シフト申請の取得に失敗しました: ${fetchError?.message}`);
-
-      // 出勤不可は提出時に自動承認済（DB trigger + submitPreference の二重ガード）。
-      // 多重呼び出しレース対策として早期 return（no-op）。
-      if (pref.preference_type === 'unavailable' && pref.status === 'approved') {
-        return;
-      }
-
-      const startTime = overrideStartTime ?? pref.start_time;
-      const endTime = overrideEndTime ?? pref.end_time;
-
-      if (!startTime || !endTime) {
-        throw new Error('開始・終了時刻が設定されていません');
-      }
-
-      if (pref.store_id === null) throw new Error('シフト申請に店舗が紐付いていません');
-
-      // ステータスを承認済みに更新（preference 側は従来通り 1 段階承認）
-      const { error: updateError } = await supabase
-        .from('shift_preferences')
-        .update({ status: 'approved' })
-        .eq('id', preferenceId);
-      if (updateError) throw new Error(`シフト申請の承認に失敗しました: ${updateError.message}`);
-
-      // 承認操作者を取得（shifts.tentative_approved_by に記録）
-      const { data: { user: approver } } = await supabase.auth.getUser();
-
-      // shifts テーブルにシフトを「仮承認」状態で作成（Loop K: 案 Z）
-      // preference 承認 = shifts の仮承認 → シフトタブで本承認する 2 段階フロー
-      const { error: insertError } = await supabase
-        .from('shifts')
-        .insert({
-          tenant_id: pref.tenant_id,
-          user_id: pref.user_id,
-          date: pref.date,
-          start_time: startTime,
-          end_time: endTime,
-          status: 'tentative',
-          tentative_approved_at: new Date().toISOString(),
-          tentative_approved_by: approver?.id ?? null,
-          note: pref.note || null,
-          store_id: pref.store_id,
-          // B4(096): 承認元の希望 id を記録し、revertPreference が時刻ではなく
-          // preference_id で厳密に当該仮承認シフトを削除できるようにする。
-          preference_id: pref.id,
-        });
-      if (insertError) throw new Error(`シフトの作成に失敗しました: ${insertError.message}`);
-
-      await notify({
-        tenantId: pref.tenant_id,
-        userId: pref.user_id,
-        type: 'preference_approved' as NotificationType,
-        title: 'シフト申請が承認されました',
-        link: `/shift?tab=preferences&date=${pref.date}`,
+      // P2-3 / B(101): preference UPDATE + shifts INSERT を単一トランザクションの
+      // SECURITY DEFINER RPC approve_preference に置換（原子化・ON CONFLICT 冪等・
+      // unavailable&&approved の早期 no-op は RPC 側に移植済）。通知も RPC 側で一括発行。
+      const { error } = await supabase.rpc('approve_preference', {
+        p_preference_id: preferenceId,
+        p_override_start: overrideStartTime ?? null,
+        p_override_end: overrideEndTime ?? null,
       });
+      if (error) {
+        // SQLSTATE / message → 日本語マップ（rejectShift / revertShiftToTentative 踏襲）
+        const code = (error as { code?: string }).code;
+        const msg = error.message ?? '';
+        if (code === '42501' || /permission denied/i.test(msg)) {
+          throw new Error('シフト申請を承認する権限がありません。管理者に確認してください。');
+        }
+        if (/preference not found|not found/i.test(msg)) {
+          throw new Error('シフト申請が見つかりませんでした。画面を更新してください。');
+        }
+        if (/start.*end|時刻|time.*null|missing time/i.test(msg)) {
+          throw new Error('開始・終了時刻が設定されていません。');
+        }
+        if (/store|店舗/i.test(msg)) {
+          throw new Error('シフト申請に店舗が紐付いていません。');
+        }
+        if (/auth\.uid is null|auth required/i.test(msg)) {
+          throw new Error('ログインが必要です。再ログインしてください。');
+        }
+        throw new Error(`シフト申請の承認に失敗しました: ${msg}`);
+      }
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted);
@@ -273,61 +241,72 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
   const revertPreference = useCallback(async (preferenceId: string) => {
     setError(null);
     try {
-      // 希望レコードを取得
-      const { data: pref, error: fetchError } = await supabase
-        .from('shift_preferences')
-        .select('*')
-        .eq('id', preferenceId)
-        .single();
-      if (fetchError || !pref) throw new Error(`シフト申請の取得に失敗しました: ${fetchError?.message}`);
-
-      // pendingなら何もしない
-      if (pref.status === 'pending') return;
-
-      // approvedの場合は対応するshiftsレコードを削除
-      // B4(096): approvePreference は preference_id を記録した tentative 行を INSERT する。
-      // 削除は元時刻一致（override 承認だと不一致→孤児化、複数 tentative で取り違え）ではなく
-      // preference_id で厳密に当該仮承認シフトのみを削除する。
-      // status='tentative' 限定: 既に本承認 (approved) されたシフトはオーナーが
-      // 意図的に昇格させたものなので削除しない。
-      if (pref.status === 'approved') {
-        const { data: deleted, error: deleteError } = await supabase
-          .from('shifts')
-          .delete()
-          .match({
-            preference_id: pref.id,
-            status: 'tentative',
-          })
-          .select('id');
-        if (deleteError) throw new Error(`シフトの削除に失敗しました: ${deleteError.message}`);
-        // 0 行削除のエラー化（MEMORY 規律: mutate 無音 success 防止）。
-        // tentative の仮承認シフトが見つからない = 既に本承認/手動削除済み等の
-        // 想定外状態。希望ステータスだけ pending に巻き戻すと孤児を温存し得るため停止する。
-        if (!deleted || deleted.length === 0) {
-          throw new Error('保留に戻す対象の仮承認シフトが見つかりませんでした（既に本承認・削除済みの可能性があります）');
-        }
-      }
-
-      // ステータスをpendingに更新
-      const { error: updateError } = await supabase
-        .from('shift_preferences')
-        .update({ status: 'pending' })
-        .eq('id', preferenceId);
-      if (updateError) throw new Error(`シフト申請の保留化に失敗しました: ${updateError.message}`);
-
-      await notify({
-        tenantId: pref.tenant_id,
-        userId: pref.user_id,
-        type: 'preference_reverted' as NotificationType,
-        title: 'シフト申請のステータスが戻されました',
-        link: '/shift?tab=preferences',
+      // P1-3 / B(101): 希望を pending に戻す導線を単一トランザクションの
+      // SECURITY DEFINER RPC revert_preference に置換。
+      // RPC 側で「リンク仮承認シフト(tentative/pending)の削除 → 本承認(approved)が
+      // 残っている場合は RAISE → preference を pending 化 → 通知」を原子的に実施。
+      // 旧フロントの手動 fetch + DELETE.match + UPDATE 2 段書き込みを撤去。
+      const { error } = await supabase.rpc('revert_preference', {
+        p_preference_id: preferenceId,
       });
+      if (error) {
+        const code = (error as { code?: string }).code;
+        const msg = error.message ?? '';
+        if (code === '42501' || /permission denied/i.test(msg)) {
+          throw new Error('シフト申請を保留に戻す権限がありません。管理者に確認してください。');
+        }
+        if (/本承認済み|approved.*shift|cannot revert/i.test(msg)) {
+          throw new Error('本承認済みのシフトがあるため希望を保留に戻せません。先にシフトを差し戻してください。');
+        }
+        if (/preference not found|not found/i.test(msg)) {
+          throw new Error('シフト申請が見つかりませんでした。画面を更新してください。');
+        }
+        if (/auth\.uid is null|auth required/i.test(msg)) {
+          throw new Error('ログインが必要です。再ログインしてください。');
+        }
+        throw new Error(`シフト申請の保留化に失敗しました: ${msg}`);
+      }
     } catch (err) {
       const formatted = formatSupabaseError(err);
       setError(formatted);
       logger.error('revertPreference error:', formatted);
       throw err;
     }
+  }, []);
+
+  // P1-5: 希望一括承認の N+1 解消。複数 pending を ids でまとめて承認する set-based RPC ラッパ。
+  // ShiftPage は for..of の直列 await を撤去し、これを 1 回呼ぶ（呼び出し置換は E3 担当）。
+  // RPC 側で preference 一括 approved + shifts 一括 tentative INSERT + 通知一括を原子実施。
+  // 混在テナント/店舗 ids または権限外 ids が 1 件でも含まれると全体 RAISE。
+  const approvePreferencesByIds = useCallback(async (ids: string[]): Promise<{ approvedCount: number; approvedIds: string[] }> => {
+    if (ids.length === 0) return { approvedCount: 0, approvedIds: [] };
+    const { data, error } = await supabase.rpc('approve_preferences', { p_ids: ids });
+    if (error) {
+      const code = (error as { code?: string }).code;
+      const msg = error.message ?? '';
+      if (code === '42501' || /permission denied/i.test(msg)) {
+        throw new Error('シフト申請を一括承認する権限がありません。管理者に確認してください。');
+      }
+      throw new Error(`シフト申請の一括承認に失敗しました: ${msg}`);
+    }
+    const row = (data as Array<{ approved_count: number; approved_ids: string[] }> | null)?.[0];
+    return { approvedCount: row?.approved_count ?? 0, approvedIds: row?.approved_ids ?? [] };
+  }, []);
+
+  // P1-5: 希望一括却下の N+1 解消（approvePreferencesByIds と対）。
+  const rejectPreferencesByIds = useCallback(async (ids: string[]): Promise<{ rejectedCount: number; rejectedIds: string[] }> => {
+    if (ids.length === 0) return { rejectedCount: 0, rejectedIds: [] };
+    const { data, error } = await supabase.rpc('reject_preferences', { p_ids: ids });
+    if (error) {
+      const code = (error as { code?: string }).code;
+      const msg = error.message ?? '';
+      if (code === '42501' || /permission denied/i.test(msg)) {
+        throw new Error('シフト申請を一括却下する権限がありません。管理者に確認してください。');
+      }
+      throw new Error(`シフト申請の一括却下に失敗しました: ${msg}`);
+    }
+    const row = (data as Array<{ rejected_count: number; rejected_ids: string[] }> | null)?.[0];
+    return { rejectedCount: row?.rejected_count ?? 0, rejectedIds: row?.rejected_ids ?? [] };
   }, []);
 
   const bulkSubmitPreferences = useCallback(async (args: BulkSubmitPreferenceArgs): Promise<BulkSubmitResult> => {
@@ -409,5 +388,6 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     bulkSubmitPreferences,
     approvePreference, rejectPreference,
     revertPreference,
+    approvePreferencesByIds, rejectPreferencesByIds,
   };
 }
