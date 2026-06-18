@@ -189,12 +189,19 @@ export function DashboardPage() {
   // 有給残日数
   const [remainingPaidLeave, setRemainingPaidLeave] = useState<number | null>(null);
 
+  // 日付・月境界の基準軸は Asia/Tokyo 固定（todayFromHook と同一軸）。
+  // todayFromHook は formatInTimeZone(now,'Asia/Tokyo','yyyy-MM-dd') 由来の JST 暦日。
+  // これを parseISO でローカル0時の Date 化すると、Y/M/D フィールドが JST 暦日と一致し、
+  // startOfMonth / startOfWeek / format / getDay が端末 TZ に依存しなくなる。
+  // JST 端末では new Date() と同一挙動（不変）。
+  const jstToday = useMemo(() => parseISO(todayFromHook), [todayFromHook]);
+
   // 当月の休暇取得
   useEffect(() => {
-    const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-    const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+    const monthStart = format(startOfMonth(jstToday), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(jstToday), 'yyyy-MM-dd');
     getMyLeaves(monthStart, monthEnd);
-  }, [getMyLeaves]);
+  }, [getMyLeaves, jstToday]);
 
   // 有給残日数取得
   useEffect(() => {
@@ -206,11 +213,10 @@ export function DashboardPage() {
   // 「当月初を含む週の月曜」〜「当月末」に拡張（月間サマリは monthStartStr..monthEndStr で
   // filter 済のため集計値は非破壊）。
   const fetchMyShiftsForDashboard = useCallback(() => {
-    const now = new Date();
-    const weekStart = format(startOfWeek(startOfMonth(now), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    const monthEnd = format(endOfMonth(now), 'yyyy-MM-dd');
+    const weekStart = format(startOfWeek(startOfMonth(jstToday), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(jstToday), 'yyyy-MM-dd');
     getMyShifts(weekStart, monthEnd);
-  }, [getMyShifts]);
+  }, [getMyShifts, jstToday]);
 
   // 当月のシフトを取得（月間サマリの予定算出 + 週バー用にこの範囲から再 filter）
   useEffect(() => {
@@ -219,9 +225,9 @@ export function DashboardPage() {
 
   // 当月の勤怠実績を取得（月間サマリの実績算出用、本人・当月スコープ）
   const fetchAttendanceForDashboard = useCallback(() => {
-    const now = new Date();
-    fetchRecords(now.getFullYear(), now.getMonth() + 1);
-  }, [fetchRecords]);
+    // JST 暦日軸から年月を導出（月境界での端末 TZ ズレ防止）。
+    fetchRecords(jstToday.getFullYear(), jstToday.getMonth() + 1);
+  }, [fetchRecords, jstToday]);
 
   useEffect(() => {
     fetchAttendanceForDashboard();
@@ -243,9 +249,12 @@ export function DashboardPage() {
 
   const todayStr = todayFromHook;
   // 日付ラベル・週/月レンジ用の基準時刻。
-  // PERF (B6): 毎秒の再レンダを避けるため親では ticking clock を持たず、
-  // レンダ時点の Date を 1 回だけ取得する（日跨ぎは再 fetch / 再マウントで反映）。
-  const today = new Date();
+  // P3-7: 基準軸を Asia/Tokyo 固定（todayFromHook と同一の jstToday）に統一。
+  // これにより new Date()/startOfMonth(new Date()) の端末 TZ 依存を排除し、
+  // 週/月境界・「今日」位置が JST 暦日に一致する（JST 端末では従来と同一＝不変）。
+  // PERF (B6): 親では ticking clock を持たず日付軸は1回だけ確定（日跨ぎは todayFromHook
+  // 更新→再 fetch / 再レンダで反映）。
+  const today = jstToday;
 
   // 今日のレコードのみ（日跨ぎの未退勤レコードは除外して集計）
   const todayOnlyRecords = todayRecords.filter((r) => r.date === todayStr);
@@ -310,6 +319,11 @@ export function DashboardPage() {
   const monthPlannedMinutes = activeMonthShifts.reduce((sum, shift) => {
     return sum + getShiftMinutes(shift);
   }, 0);
+  // P3-6 仕様明文化（集計ロジックは不変）:
+  // 月報の人件費はここでの勤怠実働を「JST 暦日（attendance_records.date / 00:00–24:00 JST）」で
+  // 月集計する。一方 Square 売上ダッシュボードは「営業日区切り＝11時（business_day_start_hour）」を
+  // 日境界としており、両者の日境界は一致しない（例: 深夜帯の打刻と売上は別暦日に振り分けられ得る）。
+  // 月跨ぎ・日跨ぎ近辺では人件費と売上の対応日がズレる前提で照合すること。
   const monthActualMinutes = monthlySummary.totalWorkMinutes;
   const monthRate = monthPlannedMinutes > 0
     ? Math.min(100, Math.round((monthActualMinutes / monthPlannedMinutes) * 100))

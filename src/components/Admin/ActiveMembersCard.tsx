@@ -1,4 +1,5 @@
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { Users, Coffee } from 'lucide-react';
 import { Card, Badge, EmptyState, Skeleton, Heading } from '../ui';
 import { useActiveAttendance, type ActiveAttendance } from '../../hooks/useActiveAttendance';
@@ -51,7 +52,7 @@ export function ActiveMembersCard({ tenantId, storeId, memberNames }: ActiveMemb
                 )}
               </div>
               <span className="text-xs text-stone-500 dark:text-stone-300 tabular-nums flex-shrink-0">
-                {format(parseISO(row.clockIn), 'HH:mm')}〜
+                {formatInTimeZone(row.clockIn, 'Asia/Tokyo', 'HH:mm')}〜
               </span>
             </li>
           ))}

@@ -189,8 +189,6 @@ function calcMemberShiftPayroll(
   let payAccumulator = 0;
 
   for (const s of approvedShifts) {
-    dates.add(s.date);
-
     // 使用する開始・終了時刻（modified の場合は修正後の時刻を使う）
     const startTime = s.start_time;
     const endTime = s.end_time;
@@ -201,6 +199,16 @@ function calcMemberShiftPayroll(
     const endMin = endParts[0] * 60 + endParts[1];
     // 日をまたぐシフトを考慮
     const shiftMins = endMin > startMin ? endMin - startMin : 24 * 60 - startMin + endMin;
+
+    // P3: 0時間勤務ガード。start===end のとき上式は
+    //   24*60 - startMin + endMin = 1440 (= 24h) に化けて誤計上するため、
+    //   shiftMins<=0 ではなく startMin===endMin を明示判定する
+    //   (useShift.ts の見込み計上ガードと同趣旨)。発生源は migration 102 の
+    //   CHECK (start_time <> end_time) でも塞いでいる二重防御。
+    if (startMin === endMin || shiftMins <= 0) continue;
+
+    // 0時間ガード通過後に勤務日を加算する（workDays=dates.size の過大表示を防ぐ）
+    dates.add(s.date);
 
     totalMinutes += shiftMins;
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type React from 'react';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { format, parseISO, differenceInMinutes, getDaysInMonth } from 'date-fns';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import type { AttendanceRecord, Shift } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
@@ -30,6 +31,15 @@ interface EditState {
 }
 
 const OVERTIME_THRESHOLD_MINUTES = 8 * 60; // 8時間
+const TOKYO_TZ = 'Asia/Tokyo';
+
+// datetime-local の文字列 (タイムゾーン無し 'yyyy-MM-ddTHH:mm') を
+// Asia/Tokyo の壁時計として解釈し UTC の ISO 文字列へ変換する。
+// new Date(localStr).toISOString() は端末ローカル TZ で解釈してしまうため、
+// 非JST端末では絶対時刻が破壊される。JST固定にすることで端末非依存にする。
+function datetimeLocalToISO(localStr: string): string {
+  return fromZonedTime(localStr, TOKYO_TZ).toISOString();
+}
 
 function fmtMinutes(min: number): string {
   const h = Math.floor(min / 60);
@@ -59,7 +69,9 @@ function calcWorkMinutes(record: AttendanceRecord): number {
 
 function toDatetimeLocal(isoString: string | null): string {
   if (!isoString) return '';
-  return format(parseISO(isoString), "yyyy-MM-dd'T'HH:mm");
+  // 保存値(UTC ISO)を Asia/Tokyo 壁時計に変換して datetime-local へ。
+  // 端末ローカル TZ に依存させない（非JST端末での表示ズレ防止）。
+  return formatInTimeZone(isoString, TOKYO_TZ, "yyyy-MM-dd'T'HH:mm");
 }
 
 function getDayLabel(day: number, year: number, month: number): string {
@@ -195,8 +207,8 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
     setSaving(true);
     try {
       if (selectedCell.record) {
-        const clockInISO = edit.clock_in ? new Date(edit.clock_in).toISOString() : selectedCell.record.clock_in;
-        const clockOutISO = edit.clock_out ? new Date(edit.clock_out).toISOString() : selectedCell.record.clock_out;
+        const clockInISO = edit.clock_in ? datetimeLocalToISO(edit.clock_in) : selectedCell.record.clock_in;
+        const clockOutISO = edit.clock_out ? datetimeLocalToISO(edit.clock_out) : selectedCell.record.clock_out;
         let totalWorkMinutes: number | undefined;
         if (clockInISO && clockOutISO) {
           const breakMin = calcBreakMinutes(selectedCell.record);
@@ -206,8 +218,8 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           );
         }
         await updateAttendance(selectedCell.record.id, {
-          ...(edit.clock_in ? { clock_in: new Date(edit.clock_in).toISOString() } : {}),
-          ...(edit.clock_out ? { clock_out: new Date(edit.clock_out).toISOString() } : {}),
+          ...(edit.clock_in ? { clock_in: datetimeLocalToISO(edit.clock_in) } : {}),
+          ...(edit.clock_out ? { clock_out: datetimeLocalToISO(edit.clock_out) } : {}),
           ...(totalWorkMinutes !== undefined ? { total_work_minutes: totalWorkMinutes } : {}),
         });
         showToast(messages.toast.updated('勤怠記録'), 'success');
@@ -222,8 +234,8 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
           setSaving(false);
           return;
         }
-        const clockInISO = new Date(edit.clock_in).toISOString();
-        const clockOutISO = edit.clock_out ? new Date(edit.clock_out).toISOString() : null;
+        const clockInISO = datetimeLocalToISO(edit.clock_in);
+        const clockOutISO = edit.clock_out ? datetimeLocalToISO(edit.clock_out) : null;
         let totalWorkMinutes: number | null = null;
         if (clockInISO && clockOutISO) {
           totalWorkMinutes = Math.max(
@@ -585,8 +597,8 @@ export function AttendanceAdmin({ tenantId }: AttendanceAdminProps) {
 
             {edit.clock_in && edit.clock_out && (() => {
               const grossMin = differenceInMinutes(
-                new Date(edit.clock_out),
-                new Date(edit.clock_in)
+                parseISO(datetimeLocalToISO(edit.clock_out)),
+                parseISO(datetimeLocalToISO(edit.clock_in))
               );
               const breakMin = selectedCell.record ? calcBreakMinutes(selectedCell.record) : 0;
               const workMin = Math.max(0, grossMin - breakMin);
