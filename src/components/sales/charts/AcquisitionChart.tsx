@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import type { AcquisitionBreakdown } from '../../../lib/sales/types';
 import { ChartLegend, ChartTooltip, ChartFigure } from '../ui';
@@ -18,7 +19,7 @@ const CHANNEL_CONFIG: { key: keyof AcquisitionBreakdown; label: string; color: s
   { key: 'unknown',   label: '打ち漏れ', color: '#9ca3af' },
 ];
 
-export default function AcquisitionChart({ data }: Props) {
+function AcquisitionChart({ data }: Props) {
   const total = CHANNEL_CONFIG.reduce((sum, ch) => sum + (data[ch.key] ?? 0), 0);
 
   // total が負（返金等で打ち漏れ等が負算入）でも空状態に倒す（B9）。
@@ -37,6 +38,7 @@ export default function AcquisitionChart({ data }: Props) {
                   cy="50%"
                   outerRadius={110}
                   dataKey="value"
+                  isAnimationActive={false}
                 >
                   <Cell fill="#374151" stroke="none" />
                 </Pie>
@@ -69,6 +71,7 @@ export default function AcquisitionChart({ data }: Props) {
                 outerRadius={110}
                 paddingAngle={2}
                 dataKey="value"
+                isAnimationActive={false}
               >
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
@@ -107,3 +110,5 @@ export default function AcquisitionChart({ data }: Props) {
     </div>
   );
 }
+
+export default memo(AcquisitionChart);

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { MOTION } from '../../../lib/sales/motion';
 
 export interface SeriesCheckboxItem {
@@ -93,4 +93,4 @@ export const SeriesCheckboxGroup: React.FC<SeriesCheckboxGroupProps> = ({
   );
 };
 
-export default SeriesCheckboxGroup;
+export default memo(SeriesCheckboxGroup);

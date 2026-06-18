@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -21,7 +22,7 @@ interface Props {
   emptyMessage?: string;
 }
 
-export default function LocationStackChart({ rows, series, valueUnit, emptyMessage }: Props) {
+function LocationStackChart({ rows, series, valueUnit, emptyMessage }: Props) {
   const isEmpty =
     rows.length === 0 ||
     rows.every((row) =>
@@ -112,6 +113,7 @@ export default function LocationStackChart({ rows, series, valueUnit, emptyMessa
                   name={s.label}
                   stackId="a"
                   fill={s.color}
+                  isAnimationActive={false}
                 >
                   <LabelList
                     dataKey={s.key}
@@ -129,3 +131,5 @@ export default function LocationStackChart({ rows, series, valueUnit, emptyMessa
     </div>
   );
 }
+
+export default memo(LocationStackChart);

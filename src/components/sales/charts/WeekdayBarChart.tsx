@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import type { WeekdayAggregate } from '../../../lib/sales/weekdayAggregation';
 import { formatYen } from '../utils';
 import { ChartFigure, ChartLegend, ChartTooltip, type ChartLegendItem, EmptyState } from '../ui';
@@ -70,7 +71,7 @@ function formatByMetric(val: number | string | Array<number | string>, metric: P
   return formatYen(Math.round(n));
 }
 
-export default function WeekdayBarChart({ data, metric, stacked = true }: Props) {
+function WeekdayBarChart({ data, metric, stacked = true }: Props) {
   const hasData = data.some((d) => d.sampleCount > 0);
 
   if (!hasData) {
@@ -133,6 +134,7 @@ export default function WeekdayBarChart({ data, metric, stacked = true }: Props)
                   name={getSegmentLabel(key)}
                   stackId={stacked ? 'a' : undefined}
                   fill={getSegmentColor(key)}
+                  isAnimationActive={false}
                 />
               );
             })}
@@ -143,3 +145,5 @@ export default function WeekdayBarChart({ data, metric, stacked = true }: Props)
     </div>
   );
 }
+
+export default memo(WeekdayBarChart);

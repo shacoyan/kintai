@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -44,7 +44,7 @@ function formatVal(v: number | string | Array<number | string> | undefined, mode
   return mode === 'average' ? n.toFixed(2) : Math.round(n).toLocaleString();
 }
 
-export default function OccupancyLineChart({ matrix, activeSlots }: Props) {
+function OccupancyLineChart({ matrix, activeSlots }: Props) {
   const [mode, setMode] = useState<Mode>('average');
   const [weekdayFilter, setWeekdayFilter] = useState<boolean[]>(
     () => Array.from({ length: WEEKDAY_COUNT }, () => true),
@@ -247,3 +247,5 @@ export default function OccupancyLineChart({ matrix, activeSlots }: Props) {
     </div>
   );
 }
+
+export default memo(OccupancyLineChart);

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import type { SegmentBreakdown } from '../../../lib/sales/types';
 import { ChartLegend, ChartTooltip, ChartFigure } from '../ui';
@@ -21,7 +22,7 @@ const LABELS: Record<keyof SegmentBreakdown, string> = {
   unlisted: '記載なし',
 };
 
-export default function SegmentPieChart({ sales }: Props) {
+function SegmentPieChart({ sales }: Props) {
   // 返金等で個別セグメントが負になり得る。負スライスは円が歪む/白紙化するため 0 にクランプし、
   // クランプ後合計 positiveTotal を空状態・割合計算の基準にする（B9）。
   const positiveTotal = SEGMENT_ORDER.reduce((sum, segment) => sum + Math.max(0, sales[segment]), 0);
@@ -47,6 +48,7 @@ export default function SegmentPieChart({ sales }: Props) {
                 outerRadius={110}
                 paddingAngle={isEmpty ? 0 : 2}
                 dataKey="value"
+                isAnimationActive={false}
               >
                 {data.map((entry, index) => (
                   <Cell
@@ -88,3 +90,5 @@ export default function SegmentPieChart({ sales }: Props) {
     </div>
   );
 }
+
+export default memo(SegmentPieChart);

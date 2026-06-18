@@ -1,5 +1,10 @@
-import { parseRangeTimeRange, computeBusinessDate, fetchCustomers, setCors, squareHeaders, isValidDateStr, rangeDays, MAX_RANGE_DAYS } from './_shared.js';
+import { parseRangeTimeRange, computeBusinessDate, fetchCustomers, setCors, squareHeaders, isValidDateStr, rangeDays } from './_shared.js';
 import { authenticate, resolveStartHour, assertLocationAllowed, AuthError } from './_auth.js';
+
+// open-orders（未会計）の取得は live ダッシュボード用途のみ。acquisition live の clamp が
+// 約 3 ヶ月＝92 日相当なので、それに整合させて業務上限を 92 日に絞る（共用の
+// MAX_RANGE_DAYS=366 は transactions-range 等が使うため _shared.js 側は変更しない）。
+const OPEN_ORDERS_MAX_DAYS = 92;
 
 export default async (req, res) => {
   if (setCors(req, res)) {
@@ -24,8 +29,8 @@ export default async (req, res) => {
       return res.status(400).json({ error: 'invalid_date_range', message: 'start_date must be <= end_date' });
     }
 
-    if (rangeDays(start_date, end_date) > MAX_RANGE_DAYS) {
-      return res.status(400).json({ error: 'range_too_large', message: `date range must be <= ${MAX_RANGE_DAYS} days` });
+    if (rangeDays(start_date, end_date) > OPEN_ORDERS_MAX_DAYS) {
+      return res.status(400).json({ error: 'range_too_large', message: `date range must be <= ${OPEN_ORDERS_MAX_DAYS} days` });
     }
 
     // 越権封鎖: 許可外 location は存在を漏らさず空返し。
@@ -53,9 +58,12 @@ export default async (req, res) => {
         console.error('open-orders-range.js pagination runaway (>1000 pages)');
         return res.status(502).json({ error: 'Square API error' });
       }
+      // cursor ページングは直列維持（次 cursor が前レスポンス依存）。タイムアウトのみ付与し
+      // 無限待ちを防ぐ。タイムアウト（AbortError）は致命パスとして外側 catch で 500 化される。
       const response = await fetch('https://connect.squareup.com/v2/orders/search', {
         method: 'POST',
         headers: squareHeaders(),
+        signal: AbortSignal.timeout(9000),
         body: JSON.stringify({
           location_ids: [location_id],
           query: {

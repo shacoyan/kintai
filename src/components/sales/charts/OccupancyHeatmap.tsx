@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import {
   SLOT_COUNT,
   WEEKDAY_COUNT,
@@ -45,7 +45,7 @@ interface Props {
  * - bucket 0 は zero セル。凡例は bucket 1–6 の 6 stop を flex-1 で並べる。
  * - 列ヘッダは 3h 刻みの 8 本のみ（slot % 6 === 0）表示。
  */
-export default function OccupancyHeatmap({ matrix, activeSlots }: Props) {
+function OccupancyHeatmap({ matrix, activeSlots }: Props) {
   const { avgGroups, avgPersons, maxPersons } = useMemo(() => {
     const aG: number[][] = Array.from({ length: WEEKDAY_COUNT }, () => Array(SLOT_COUNT).fill(0));
     const aP: number[][] = Array.from({ length: WEEKDAY_COUNT }, () => Array(SLOT_COUNT).fill(0));
@@ -137,3 +137,5 @@ export default function OccupancyHeatmap({ matrix, activeSlots }: Props) {
     </ChartFigure>
   );
 }
+
+export default memo(OccupancyHeatmap);

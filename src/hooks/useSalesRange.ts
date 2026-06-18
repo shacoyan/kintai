@@ -108,6 +108,9 @@ export function useSalesRange(args: UseSalesRangeArgs): UseSalesRangeResult {
 
   useEffect(() => {
     let cancelled = false;
+    // 古い fetch を中断するための AbortController。period/店舗切替や unmount で
+    // cleanup の controller.abort() が走り、未完了の RPC をネットワークレベルで中断する。
+    const controller = new AbortController();
 
     if (!enabled) {
       setLoading(false);
@@ -127,19 +130,23 @@ export function useSalesRange(args: UseSalesRangeArgs): UseSalesRangeResult {
       try {
         const { data: rpcData, error: rpcError } = await withSquareSession(
           async () =>
-            await supabaseSquare.rpc('get_sales_range_scoped', {
-              p_from: from,
-              p_to: to,
-              // ALL は NULL 相当（RPC が許可全店を合算）。
-              p_location_names: locationNames,
-            })
+            await supabaseSquare
+              .rpc('get_sales_range_scoped', {
+                p_from: from,
+                p_to: to,
+                // ALL は NULL 相当（RPC が許可全店を合算）。
+                p_location_names: locationNames,
+              })
+              .abortSignal(controller.signal)
         );
         if (rpcError) throw rpcError;
         if (cancelled) return;
 
         setData(normalizeResponse(rpcData));
       } catch (err) {
-        if (!cancelled) {
+        // abort 由来のエラーは stale 上書き同様に握りつぶす（cancelled で既にガード済だが、
+        // controller.signal.aborted も冗長に確認して表示バグ・無駄なエラー表示を防ぐ）。
+        if (!cancelled && !controller.signal.aborted) {
           const friendly = formatSupabaseError(err);
           logger.error('useSalesRange RPC failed:', friendly);
           // fail-closed: セッション無し / エラー時は空集合を返す。
@@ -154,6 +161,7 @@ export function useSalesRange(args: UseSalesRangeArgs): UseSalesRangeResult {
     run();
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [from, to, locKey, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 

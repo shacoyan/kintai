@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -60,7 +60,7 @@ interface Props {
   showYoY?: boolean;
 }
 
-export default function LocationTrendChart({
+function LocationTrendChart({
   locationSeries,
   totalsSeries,
   allDates,
@@ -290,6 +290,7 @@ export default function LocationTrendChart({
                     dot={{ r: 3, fill: color }}
                     activeDot={{ r: 5 }}
                     connectNulls
+                    isAnimationActive={false}
                     hide={!visibility[loc.locationId]}
                   />
                 );
@@ -303,6 +304,7 @@ export default function LocationTrendChart({
                 dot={{ r: 4, fill: TOTAL_LINE_COLOR }}
                 activeDot={{ r: 6 }}
                 connectNulls
+                isAnimationActive={false}
                 hide={!visibility[TOTAL_KEY]}
               >
                 {metric !== 'sales' && (
@@ -338,3 +340,5 @@ export default function LocationTrendChart({
     </div>
   );
 }
+
+export default memo(LocationTrendChart);

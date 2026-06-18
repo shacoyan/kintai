@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -46,7 +47,7 @@ function formatByMetric(v: number | string | Array<number | string>, metric: 'cu
   return formatYen(Math.round(n));
 }
 
-export default function WeekdayLocationBarChart({
+function WeekdayLocationBarChart({
   data,
   locationSeries,
   colorMap,
@@ -122,6 +123,7 @@ export default function WeekdayLocationBarChart({
                 name={loc.locationName}
                 stackId="a"
                 fill={colorMap[loc.locationId] ?? FALLBACK_LOCATION_COLOR}
+                isAnimationActive={false}
               />
             ))}
           </BarChart>
@@ -131,3 +133,5 @@ export default function WeekdayLocationBarChart({
     </div>
   );
 }
+
+export default memo(WeekdayLocationBarChart);

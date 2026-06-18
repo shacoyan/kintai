@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -81,7 +81,7 @@ const ALL_OFF_VISIBLE_KEYS: Record<CountKey, boolean> = {
   unlisted: false,
 };
 
-export default function SegmentTrendChart({
+function SegmentTrendChart({
   data,
   period = 'month',
   lastYearTotalsSeries,
@@ -226,6 +226,7 @@ export default function SegmentTrendChart({
                   dot={{ r: 3, fill: s.color }}
                   activeDot={{ r: 5 }}
                   connectNulls
+                  isAnimationActive={false}
                   hide={!visibleKeys[s.key]}
                 />
               ))}
@@ -254,3 +255,5 @@ export default function SegmentTrendChart({
     </div>
   );
 }
+
+export default memo(SegmentTrendChart);

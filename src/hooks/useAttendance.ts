@@ -110,6 +110,16 @@ export function useAttendance(tenantId: string, storeId: string | null) {
 
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
+  // breaks realtime payload の attendance_record_id が、自分が現在保持している
+  // 勤怠レコードに属するかを判定するための id 集合（自テナント・自店・自分の record）。
+  // breaks テーブルには tenant_id 列が無く Realtime filter で自テナントに絞れないため、
+  // 全テナントの breaks 変更でコールバックが発火する。payload の record id がこの集合に
+  // 含まれない無関係な打刻は fetch を間引く。判定不能（id 不明）時は fail-open で fetch。
+  const recordIdsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    recordIdsRef.current = new Set(todayRecords.map((r) => r.id));
+  }, [todayRecords]);
+
   // breaks テーブルには tenant_id 列が無く Realtime フィルタで自テナントに絞れないため、
   // 全テナントの breaks 変更でこのコールバックが発火する。即時 fetch すると無関係な
   // 休憩打刻でも毎回 select が走るため、短いデバウンスでバースト分を 1 回に畳む。
@@ -159,7 +169,20 @@ export function useAttendance(tenantId: string, storeId: string | null) {
               schema: 'public',
               table: 'breaks',
             },
-            () => scheduleFetch()
+            (payload) => {
+              // 全テナントの breaks 変更が届くため、自分が保持中の勤怠レコードに
+              // 紐づく break のみ fetch をスケジュールして無関係な打刻を間引く。
+              // payload.new（INSERT/UPDATE）と payload.old（UPDATE/DELETE）の双方の
+              // attendance_record_id を見る。id が判定できない場合は fail-open で fetch。
+              const newRow = payload.new as { attendance_record_id?: string } | null;
+              const oldRow = payload.old as { attendance_record_id?: string } | null;
+              const recId = newRow?.attendance_record_id ?? oldRow?.attendance_record_id;
+              const ids = recordIdsRef.current;
+              if (recId != null && ids.size > 0 && !ids.has(recId)) {
+                return; // 自分のレコードに無関係な休憩打刻 → 間引く
+              }
+              scheduleFetch();
+            }
           )
           .subscribe((status, err) => {
             if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || err) {

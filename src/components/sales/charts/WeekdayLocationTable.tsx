@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { WeekdayLocationAggregate } from '../../../lib/sales/weekdayLocationAggregation';
 import { formatYen } from '../utils';
 
@@ -21,7 +22,7 @@ function formatVal(v: number, metric: 'customers' | 'sales'): string {
   return formatYen(Math.round(safe));
 }
 
-export default function WeekdayLocationTable({ data, locationSeries, metric }: Props) {
+function WeekdayLocationTable({ data, locationSeries, metric }: Props) {
   // 列合計 (店舗ごと) ＋ 全体合計 ＋ サンプル累計
   const locationTotals = new Map<string, number>();
   locationSeries.forEach((l) => locationTotals.set(l.locationId, 0));
@@ -118,3 +119,5 @@ export default function WeekdayLocationTable({ data, locationSeries, metric }: P
     </div>
   );
 }
+
+export default memo(WeekdayLocationTable);

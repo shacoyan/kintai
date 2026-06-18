@@ -69,6 +69,35 @@ function clampHour(raw, fallback) {
 export const MAX_RANGE_DAYS = 366;
 const MAX_PAYMENT_PAGES = 1000; // limit=200 → 最大 20万件相当。暴走/無限ループ防止。
 
+// Square fetch のタイムアウト（無限待ち防止）と並列バッチの同時実行数。
+// 取得方法の最適化のみ。集計結果・取得件数は不変（並列でも Map 集約は順序非依存）。
+const SQUARE_FETCH_TIMEOUT_MS = 9000;
+const FETCH_CONCURRENCY = 4;
+
+/**
+ * AbortSignal.timeout を付与した fetch ラッパ。
+ *   Square API への全 fetch を共通のタイムアウトで保護する。
+ *   呼び出し側の signal 指定（既存）は無いので、ここで一律 timeout を注入する。
+ *   タイムアウト時は AbortError が throw されるため、呼び出し側の既存
+ *   try/catch（fail-soft バッチ）や !res.ok→throw（直列致命パス）と同じ経路で扱われる。
+ */
+function squareFetch(url, options = {}) {
+  return fetch(url, { ...options, signal: AbortSignal.timeout(SQUARE_FETCH_TIMEOUT_MS) });
+}
+
+/**
+ * 配列 items を同時実行数 concurrency のチャンクに分けて worker を並列実行する自前セマフォ。
+ *   p-limit 等の外部依存を足さず Promise.all のチャンク化で並列度を制御する。
+ *   worker の戻り値は使わず副作用（Map への代入）で結果を集約する想定。
+ *   ＝順序非依存なので並列化前後で最終結果は完全同一。
+ */
+async function runWithConcurrency(items, concurrency, worker) {
+  for (let i = 0; i < items.length; i += concurrency) {
+    const chunk = items.slice(i, i + concurrency);
+    await Promise.all(chunk.map((item) => worker(item)));
+  }
+}
+
 /**
  * start_date / end_date（両端含む）の日数を返す。invalid なら NaN。
  */
@@ -110,10 +139,16 @@ export async function fetchCustomers(customerIds) {
   const customersMap = {};
   const uniqueIds = [...new Set(customerIds.filter(Boolean))];
 
+  // 100 件刻みのバッチを生成して並列実行（同時実行数 FETCH_CONCURRENCY）。
+  // 各バッチは Map(customersMap) のキー集約なので順序非依存＝並列化前後で結果不変。
+  const batches = [];
   for (let i = 0; i < uniqueIds.length; i += 100) {
-    const batch = uniqueIds.slice(i, i + 100);
+    batches.push(uniqueIds.slice(i, i + 100));
+  }
+
+  await runWithConcurrency(batches, FETCH_CONCURRENCY, async (batch) => {
     try {
-      const res = await fetch('https://connect.squareup.com/v2/customers/bulk-retrieve', {
+      const res = await squareFetch('https://connect.squareup.com/v2/customers/bulk-retrieve', {
         method: 'POST',
         headers: squareHeaders(),
         body: JSON.stringify({ customer_ids: batch })
@@ -127,8 +162,8 @@ export async function fetchCustomers(customerIds) {
           customersMap[id] = [family, given].filter(Boolean).join(' ') || null;
         }
       }
-    } catch { /* 失敗しても続行 */ }
-  }
+    } catch { /* 失敗しても続行（タイムアウト含む fail-soft）。顧客名は欠損許容 */ }
+  });
 
   return customersMap;
 }
@@ -197,7 +232,10 @@ export async function fetchAllPayments({ beginTimeJST, endTimeJST, location_id }
     });
     if (cursor) params.append('cursor', cursor);
 
-    const res = await fetch(`https://connect.squareup.com/v2/payments?${params.toString()}`, {
+    // cursor ページングは前レスポンス依存のため直列維持（並列化対象外）。
+    // タイムアウトのみ付与し、無限待ちを防ぐ。AbortError は下の !res.ok と同列で
+    // catch されず上位へ伝播し、致命パスとして明示エラー化される。
+    const res = await squareFetch(`https://connect.squareup.com/v2/payments?${params.toString()}`, {
       headers: squareHeaders(),
     });
 
@@ -217,10 +255,15 @@ export async function fetchOrdersBatch(orderIds) {
   const ordersMap = {};
   const uniqueIds = [...new Set(orderIds.filter(Boolean))];
 
+  // 100 件刻みのバッチを並列実行。order.id をキーに Map 集約＝順序非依存で結果不変。
+  const batches = [];
   for (let i = 0; i < uniqueIds.length; i += 100) {
-    const batch = uniqueIds.slice(i, i + 100);
+    batches.push(uniqueIds.slice(i, i + 100));
+  }
+
+  await runWithConcurrency(batches, FETCH_CONCURRENCY, async (batch) => {
     try {
-      const res = await fetch('https://connect.squareup.com/v2/orders/batch-retrieve', {
+      const res = await squareFetch('https://connect.squareup.com/v2/orders/batch-retrieve', {
         method: 'POST',
         headers: squareHeaders(),
         body: JSON.stringify({ order_ids: batch })
@@ -232,8 +275,8 @@ export async function fetchOrdersBatch(orderIds) {
           ordersMap[order.id] = order;
         }
       }
-    } catch { /* 失敗しても続行 */ }
-  }
+    } catch { /* 失敗しても続行（タイムアウト含む fail-soft） */ }
+  });
 
   return ordersMap;
 }
@@ -251,17 +294,22 @@ export async function fetchCatalogVariationCategoryMap(ordersMap) {
   const itemToCategoryId = {};
 
   // 第1段階: ITEM_VARIATION と ITEM を取得（include_related_objects: true）
+  // 100 件刻みのバッチを並列実行。variationToItemId / itemToCategoryId は id キー集約＝順序非依存で結果不変。
+  const stage1Batches = [];
   for (let i = 0; i < catalogObjectIds.length; i += 100) {
-    const batch = catalogObjectIds.slice(i, i + 100);
+    stage1Batches.push(catalogObjectIds.slice(i, i + 100));
+  }
+
+  await runWithConcurrency(stage1Batches, FETCH_CONCURRENCY, async (batch) => {
     try {
-      const catalogRes = await fetch('https://connect.squareup.com/v2/catalog/batch-retrieve', {
+      const catalogRes = await squareFetch('https://connect.squareup.com/v2/catalog/batch-retrieve', {
         method: 'POST',
         headers: squareHeaders(),
         body: JSON.stringify({ object_ids: batch, include_related_objects: true })
       });
       if (!catalogRes.ok) {
         console.error('Catalog API error (stage1):', catalogRes.status, await catalogRes.text());
-        continue;
+        return;
       }
       const catalogData = await catalogRes.json();
       for (const obj of (catalogData.objects ?? [])) {
@@ -278,23 +326,28 @@ export async function fetchCatalogVariationCategoryMap(ordersMap) {
     } catch (e) {
       console.error('Catalog batch error (stage1):', e);
     }
-  }
+  });
 
   // 第2段階: CATEGORY を取得
   const categoryIds = [...new Set(Object.values(itemToCategoryId).filter(Boolean))];
   const categoryIdToName = {};
 
+  // 100 件刻みのバッチを並列実行。categoryIdToName は id キー集約＝順序非依存で結果不変。
+  const stage2Batches = [];
   for (let i = 0; i < categoryIds.length; i += 100) {
-    const batch = categoryIds.slice(i, i + 100);
+    stage2Batches.push(categoryIds.slice(i, i + 100));
+  }
+
+  await runWithConcurrency(stage2Batches, FETCH_CONCURRENCY, async (batch) => {
     try {
-      const catRes = await fetch('https://connect.squareup.com/v2/catalog/batch-retrieve', {
+      const catRes = await squareFetch('https://connect.squareup.com/v2/catalog/batch-retrieve', {
         method: 'POST',
         headers: squareHeaders(),
         body: JSON.stringify({ object_ids: batch })
       });
       if (!catRes.ok) {
         console.error('Catalog API error (stage2):', catRes.status, await catRes.text());
-        continue;
+        return;
       }
       const catData = await catRes.json();
       for (const obj of (catData.objects ?? [])) {
@@ -305,7 +358,7 @@ export async function fetchCatalogVariationCategoryMap(ordersMap) {
     } catch (e) {
       console.error('Catalog batch error (stage2):', e);
     }
-  }
+  });
 
   const localVariationCategoryMap = {};
   for (const [varId, itemId] of Object.entries(variationToItemId)) {

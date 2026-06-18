@@ -75,7 +75,7 @@ describe('api/open-orders-range — 入力検証ガード', () => {
     authMod.assertLocationAllowed.mockImplementation((ids, id) => Array.isArray(ids) && ids.includes(id));
   });
 
-  it('期間 36 日でも 200 を返す (35 日ガード撤廃)', async () => {
+  it('期間 36 日でも 200 を返す (35 日ガードは撤廃済・open-orders 業務上限 92 日内)', async () => {
     const req = makeReq({
       start_date: '2026-04-01',
       end_date: '2026-05-06',
@@ -113,16 +113,31 @@ describe('api/open-orders-range — 入力検証ガード', () => {
     expect(res.body.error).toBe('invalid_date');
   });
 
-  it('120 日 (長期間) のリクエストでも 200 を返す (35 日ガード撤廃)', async () => {
+  it('92 日 (open-orders 業務上限ちょうど・両端含む) は 200 を返す', async () => {
+    // 2026-01-01 〜 2026-04-02 = 92 日 (両端含む, OPEN_ORDERS_MAX_DAYS ちょうど)。
     const req = makeReq({
       start_date: '2026-01-01',
-      end_date: '2026-04-30',
+      end_date: '2026-04-02',
       location_id: 'L1',
     });
     const res = makeRes();
     await handler(req, res);
 
     expect(res.statusCode).toBe(200);
+  });
+
+  it('93 日 (open-orders 業務上限超過) で 400 + range_too_large を返す', async () => {
+    // 2026-01-01 〜 2026-04-03 = 93 日 (両端含む) > OPEN_ORDERS_MAX_DAYS(92)。
+    const req = makeReq({
+      start_date: '2026-01-01',
+      end_date: '2026-04-03',
+      location_id: 'L1',
+    });
+    const res = makeRes();
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.error).toBe('range_too_large');
   });
 
   it('必須パラメータ未指定で 400 を返す (既存挙動)', async () => {

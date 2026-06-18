@@ -6,6 +6,7 @@
   "functions": {
     "api/transactions.js": { "maxDuration": 60 },
     "api/transactions-range.js": { "maxDuration": 60 },
+    "api/open-orders-range.js": { "maxDuration": 60 },
     "api/*.js": { "maxDuration": 15 }
   }
 }

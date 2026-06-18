@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import {
   BarChart,
   Bar,
@@ -135,7 +135,7 @@ const LocationBarChart: React.FC<Props> = ({ rows }) => {
                   />
                 )}
               />
-              <Bar dataKey="totalSales" name="売上" barSize={isSP ? 16 : 20}>
+              <Bar dataKey="totalSales" name="売上" barSize={isSP ? 16 : 20} isAnimationActive={false}>
                 {rows.map((r, i) => (
                   <Cell key={r.locationName + i} fill={r.color} />
                 ))}
@@ -217,7 +217,7 @@ const LocationBarChart: React.FC<Props> = ({ rows }) => {
                   />
                 )}
               />
-              <Bar dataKey="totalCustomers" name="客数" barSize={isSP ? 16 : 20}>
+              <Bar dataKey="totalCustomers" name="客数" barSize={isSP ? 16 : 20} isAnimationActive={false}>
                 {rows.map((r, i) => (
                   <Cell key={r.locationName + i} fill={r.color} />
                 ))}
@@ -236,4 +236,4 @@ const LocationBarChart: React.FC<Props> = ({ rows }) => {
   );
 };
 
-export default LocationBarChart;
+export default memo(LocationBarChart);
