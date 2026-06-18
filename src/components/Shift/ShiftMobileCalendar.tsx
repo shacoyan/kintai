@@ -287,7 +287,6 @@ function ShiftMobileCalendarInner({
   return (
     <div className="lg:hidden">
       <div
-        role="grid"
         aria-label="シフトカレンダー (モバイル)"
         className="grid grid-cols-7 gap-[3px] bg-stone-200/70 dark:bg-stone-700/70 rounded-[8px] overflow-hidden border border-stone-200/70 dark:border-stone-700/70"
       >
@@ -304,22 +303,15 @@ function ShiftMobileCalendarInner({
           const isBulkSelected = isBulkMode && selectedBulkDates?.has(dateStr);
 
           return (
-            <div
+            <button
               key={dateStr}
-              role="button"
-              tabIndex={0}
+              type="button"
               aria-label={`${format(d, 'M月d日')}${count > 0 ? ` ${count}人` : ''}${
                 unavailableCount > 0 ? ` 出勤不可${unavailableCount}件` : ''
               }${isToday ? ' (今日)' : ''}`}
               onClick={() => onDateClick(dateStr)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  onDateClick(dateStr);
-                }
-              }}
               className={[
-                'min-h-[88px] p-1 flex flex-col gap-[2px] text-left relative',
+                'w-full min-h-[88px] p-1 flex flex-col gap-[2px] text-left relative',
                 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset',
                 'motion-safe:transition-colors duration-150',
                 otherMonth ? 'bg-stone-50 dark:bg-stone-900' : 'bg-white dark:bg-stone-800',
@@ -360,16 +352,15 @@ function ShiftMobileCalendarInner({
                     ),
                   )}
                   {overflow > 0 && (
-                    <button
-                      type="button"
-                      className="text-[10px] tabular-nums leading-none text-stone-500 dark:text-stone-400 text-left"
+                    <span
+                      className="text-[10px] tabular-nums leading-none text-stone-500 dark:text-stone-400 text-left cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleOverflow(dateStr);
                       }}
                     >
                       +{overflow}
-                    </button>
+                    </span>
                   )}
                 </div>
               )}
@@ -388,7 +379,7 @@ function ShiftMobileCalendarInner({
                   )}
                 </span>
               )}
-            </div>
+            </button>
           );
         })}
       </div>

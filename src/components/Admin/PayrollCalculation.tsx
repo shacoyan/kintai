@@ -10,7 +10,7 @@ import { getMemberPayrollForStore } from '../../utils/payrollCalc';
 import { generatePayrollCsv, downloadCsv, csvEscape } from '../../utils/csvExport';
 import { getNightMinutesInRange, getNightMinutesForShift } from '../../utils/nightShift';
 import { Download, Calculator, Lock, Printer } from 'lucide-react';
-import { EmptyState, ErrorBanner, PageSkeleton, Button, Card, Select, Badge, StatCard, Heading } from '../ui';
+import { EmptyState, ErrorBanner, PageSkeleton, Button, Card, Select, Badge, StatCard, Heading, ConfirmDialog } from '../ui';
 import { usePayrollRun } from '../../hooks/usePayrollRun';
 import { useTenant, usePayrollCloseDay } from '../../hooks/useTenant';
 import { PayrollSlipPrintView } from './PayrollSlipPrintView';
@@ -377,6 +377,8 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [calculated, setCalculated] = useState(false);
   const [payrollMode, setPayrollMode] = useState<'actual' | 'shift'>('actual');
+  // 確定 / 確定取消の確認ダイアログ識別
+  const [confirmKind, setConfirmKind] = useState<'finalize' | 'unfinalize' | null>(null);
 
   useEffect(() => {
     fetchMembers(currentStore?.id ?? null);
@@ -495,8 +497,6 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   const storeLabel = currentStore?.name ?? '全店舗';
 
   const handleFinalize = async () => {
-    if (!window.confirm(messages.confirm.finalizePayroll(selectedYear, selectedMonth))) return;
-    
     await finalizeRun({
       targetMonth: `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`,
       mode: payrollMode,
@@ -518,7 +518,6 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   };
 
   const handleUnfinalize = async () => {
-    if (!window.confirm(messages.confirm.unfinalizePayroll(selectedYear, selectedMonth))) return;
     await deleteRun(run!.id);
     fetchRun(`${selectedYear}-${String(selectedMonth).padStart(2, "0")}`, payrollMode);
   };
@@ -604,7 +603,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
               size="md"
               loading={runLoading}
               iconLeft={<Lock size={16} />}
-              onClick={handleFinalize}
+              onClick={() => setConfirmKind('finalize')}
               disabled={isLoading}
               className="w-full xl:w-auto min-h-[44px]"
             >
@@ -617,7 +616,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
               variant="danger"
               size="md"
               loading={runLoading}
-              onClick={handleUnfinalize}
+              onClick={() => setConfirmKind('unfinalize')}
               disabled={isLoading}
               className="w-full xl:w-auto min-h-[44px]"
             >
@@ -841,6 +840,26 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
           }))}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmKind !== null}
+        title={confirmKind === 'unfinalize' ? '確定を取消' : 'この月を確定'}
+        description={
+          confirmKind === 'unfinalize'
+            ? messages.confirm.unfinalizePayroll(selectedYear, selectedMonth)
+            : messages.confirm.finalizePayroll(selectedYear, selectedMonth)
+        }
+        confirmLabel={confirmKind === 'unfinalize' ? '確定を取消' : '確定する'}
+        variant="normal"
+        loading={runLoading}
+        onCancel={() => setConfirmKind(null)}
+        onConfirm={() => {
+          const kind = confirmKind;
+          setConfirmKind(null);
+          if (kind === 'finalize') void handleFinalize();
+          else if (kind === 'unfinalize') void handleUnfinalize();
+        }}
+      />
     </Card>
   );
 }

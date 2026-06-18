@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { BottomSheet, Button, ErrorBanner, Input } from '../ui';
+import { BottomSheet, Button, ConfirmDialog, ErrorBanner, Input } from '../ui';
 import { useShiftSubmissionDeadline } from '../../hooks/useShiftSubmissionDeadline';
 import { formatSupabaseError } from '../../lib/errors';
 import { format, startOfMonth } from 'date-fns';
@@ -21,6 +21,8 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [defaultPreview, setDefaultPreview] = useState<Date | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  // 提出期限削除の確認ダイアログ
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
   // 開いた時に tenants.default_deadline_day からプレビューを取得
   useEffect(() => {
@@ -95,8 +97,6 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
   };
 
   const handleClear = async () => {
-    if (!window.confirm(messages.confirm.deleteShiftDeadline)) return;
-
     setSubmitting(true);
     setSubmitError(null);
     try {
@@ -114,7 +114,7 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
     <div className="flex justify-between gap-2">
       <div>
         {deadline && (
-          <Button variant="danger" onClick={handleClear} loading={submitting} disabled={!canEdit}>
+          <Button variant="danger" onClick={() => setClearConfirmOpen(true)} loading={submitting} disabled={!canEdit}>
             削除
           </Button>
         )}
@@ -133,6 +133,7 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
   const displayError = useMemo(() => error?.message || submitError, [error, submitError]);
 
   return (
+    <>
     <BottomSheet
       isOpen={open}
       onClose={onClose}
@@ -198,5 +199,19 @@ export function ShiftDeadlineSettingsModal(props: ShiftDeadlineSettingsModalProp
         </div>
       </div>
     </BottomSheet>
+    <ConfirmDialog
+      open={clearConfirmOpen}
+      title="提出期限を削除"
+      description={messages.confirm.deleteShiftDeadline}
+      confirmLabel="削除"
+      variant="danger"
+      loading={submitting}
+      onCancel={() => setClearConfirmOpen(false)}
+      onConfirm={() => {
+        setClearConfirmOpen(false);
+        void handleClear();
+      }}
+    />
+    </>
   );
 }

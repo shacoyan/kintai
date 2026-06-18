@@ -223,7 +223,6 @@ export function ShiftPreferenceCalendar({
           (isAdminView ? 'hidden md:grid' : 'grid') +
           ' grid-cols-7 gap-1 md:gap-2'
         }
-        role="grid"
         aria-label={
           bulkSelectionMode
             ? `一括選択カレンダー — ${bulkSelectedCount}日選択中`
@@ -348,38 +347,27 @@ export function ShiftPreferenceCalendar({
           );
 
           return isAdminView ? (
-            <div
+            <button
               key={dateStr}
-              role="gridcell"
-              tabIndex={isCurrentMonth ? 0 : -1}
+              type="button"
               aria-label={ariaLabel}
-              aria-disabled={!isCurrentMonth}
               aria-pressed={bulkSelectionMode ? isBulkSelected : undefined}
-              aria-selected={bulkSelectionMode ? isBulkSelected : undefined}
+              disabled={!isCurrentMonth}
               onClick={() => handleCellActivate(dateStr, isCurrentMonth)}
-              onKeyDown={(e) => {
-                if (!isCurrentMonth) return;
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleCellActivate(dateStr, isCurrentMonth);
-                }
-              }}
-              className={baseCell + ' ' + stateCell + todayRing + bulkSelectedClass + (!isCurrentMonth ? ' opacity-60' : '')}
+              className={baseCell + ' text-left ' + stateCell + todayRing + bulkSelectedClass + (!isCurrentMonth ? ' opacity-60' : '')}
             >
               {cellChildren}
-            </div>
+            </button>
           ) : (
             <button
               key={dateStr}
               type="button"
-              role="gridcell"
               aria-label={ariaLabel}
               aria-pressed={
                 bulkSelectionMode
                   ? isBulkSelected
                   : !!primaryPref && !isAdminView
               }
-              aria-selected={bulkSelectionMode ? isBulkSelected : undefined}
               disabled={!isCurrentMonth}
               onClick={() => handleCellActivate(dateStr, isCurrentMonth)}
               className={baseCell + ' ' + stateCell + todayRing + bulkSelectedClass}

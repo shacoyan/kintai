@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Copy, Pencil, Trash2, Plus } from 'lucide-react';
 import { BottomSheet } from '../ui/BottomSheet';
 import { Button } from '../ui/Button';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { useTenant } from '../../contexts/TenantContext';
 import { useToast } from '../../contexts/ToastContext';
@@ -60,6 +61,8 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
   const [editTarget, setEditTarget] = useState<InviteCode | null>(null);
   const [lastCopiedCodeId, setLastCopiedCodeId] = useState<string | null>(null);
   const [revokingId, setRevokingId] = useState<string | null>(null);
+  // 失効確認ダイアログ対象
+  const [revokeTarget, setRevokeTarget] = useState<InviteCode | null>(null);
 
   const canIssue = isOwner || isManager;
   const tenantName = currentTenant?.name ?? '';
@@ -148,9 +151,6 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
   };
 
   const handleRevoke = async (code: InviteCode) => {
-    // eslint-disable-next-line no-alert
-    const ok = window.confirm(messages.invite.revokeConfirm);
-    if (!ok) return;
     setRevokingId(code.id);
     try {
       await revokeInviteCode(code.id);
@@ -327,7 +327,7 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
                         </button>
                         <button
                           type="button"
-                          onClick={() => void handleRevoke(code)}
+                          onClick={() => setRevokeTarget(code)}
                           className="inline-flex items-center gap-1 rounded-md border border-red-200 dark:border-red-700 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-200 hover:bg-red-50 dark:hover:bg-red-800/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:focus-visible:ring-red-400 disabled:opacity-50"
                           disabled={revokingId === code.id}
                           aria-busy={revokingId === code.id || undefined}
@@ -372,6 +372,21 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
         onIssued={handleIssued}
         onUpdated={handleUpdated}
         selectableStores={selectableStores}
+      />
+
+      <ConfirmDialog
+        open={revokeTarget !== null}
+        title={messages.invite.rowActionRevoke}
+        description={messages.invite.revokeConfirm}
+        confirmLabel={messages.invite.rowActionRevoke}
+        variant="danger"
+        loading={revokeTarget !== null && revokingId === revokeTarget.id}
+        onCancel={() => setRevokeTarget(null)}
+        onConfirm={() => {
+          const code = revokeTarget;
+          setRevokeTarget(null);
+          if (code) void handleRevoke(code);
+        }}
       />
     </>
   );

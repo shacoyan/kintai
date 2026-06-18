@@ -4,7 +4,7 @@ import { format, startOfMonth, endOfMonth, addWeeks, subMonths, addMonths } from
 import { ja } from 'date-fns/locale';
 import { Plus, ChevronLeft, ChevronRight, AlertTriangle, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { Button, Card, Badge, BottomSheet, ShiftSkeleton, EmptyState, Heading } from '../components/ui';
+import { Button, Card, Badge, BottomSheet, ShiftSkeleton, EmptyState, Heading, ConfirmDialog } from '../components/ui';
 import { messages } from '../lib/messages';
 import { getPreferenceTheme } from '../lib/preferenceTheme';
 import { Spinner } from '../components/ui/Spinner';
@@ -104,6 +104,13 @@ export function ShiftPage() {
   const [newPreferenceDate, setNewPreferenceDate] = useState<string | null>(null);
   const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
   const [statusFilter, setStatusFilter] = useState<Set<StatusFilterValue>>(() => readStatusFilter());
+  // 一括本承認 / 一括却下の確認ダイアログ用ペイロード
+  const [bulkConfirm, setBulkConfirm] = useState<
+    | { kind: 'approve'; count: number; monthStart: string; monthEnd: string }
+    | { kind: 'reject'; count: number; ids: string[] }
+    | null
+  >(null);
+  const [bulkConfirmBusy, setBulkConfirmBusy] = useState(false);
 
   // 一括シフト申請 (Engineer C / §4): 選択モード on/off, 選択 Set, ダイアログ表示
   const [isBulkMode, setIsBulkMode] = useState<boolean>(false);
@@ -685,6 +692,43 @@ export function ShiftPage() {
     }
   };
 
+  // 一括本承認の実処理（P2-5: 成功/失敗トーストを reject 側にパリティ。RPC 呼出・引数・後続 fetch は不変）。
+  const runBulkApproveTentative = async (
+    monthStart: string,
+    monthEnd: string,
+    count: number,
+  ) => {
+    if (!storeId) return;
+    setBulkConfirmBusy(true);
+    try {
+      await finalApproveStoreShifts(tenantId, storeId, monthStart, monthEnd);
+      showToast(`${count}件のシフトを本承認しました`, 'success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '一括本承認に失敗しました';
+      showToast(msg, 'error');
+    } finally {
+      setBulkConfirmBusy(false);
+      fetchRange();
+    }
+  };
+
+  // 一括確認ダイアログの確定ハンドラ
+  const handleBulkConfirm = async () => {
+    if (!bulkConfirm) return;
+    const payload = bulkConfirm;
+    setBulkConfirm(null);
+    if (payload.kind === 'approve') {
+      await runBulkApproveTentative(payload.monthStart, payload.monthEnd, payload.count);
+    } else {
+      setBulkConfirmBusy(true);
+      try {
+        await handleBulkRejectPreferences(payload.ids);
+      } finally {
+        setBulkConfirmBusy(false);
+      }
+    }
+  };
+
   if (!tenantId) return null;
 
   if (!storeId) {
@@ -856,18 +900,10 @@ export function ShiftPage() {
                     s => s.status === 'tentative' && s.date >= monthStart && s.date <= monthEnd
                   );
                   const tCount = tentativeInRange.length;
-                  const handleBulkApproveTentative = async () => {
+                  const handleBulkApproveTentative = () => {
                     if (tCount === 0) return;
                     if (!storeId) return;
-                    // eslint-disable-next-line no-alert
-                    if (!window.confirm(`${tCount}件を本承認します。よろしいですか？`)) return;
-                    try {
-                      await finalApproveStoreShifts(tenantId, storeId, monthStart, monthEnd);
-                    } catch (err) {
-                      // eslint-disable-next-line no-console
-                      console.warn('[bulkApproveTentative] 一括本承認に失敗しました', err);
-                    }
-                    fetchRange();
+                    setBulkConfirm({ kind: 'approve', count: tCount, monthStart, monthEnd });
                   };
                   return (
                     /* Iter 2-A / P1: outline 風 */
@@ -891,11 +927,9 @@ export function ShiftPage() {
                   );
                   const count = pendingInRange.length;
                   // P1-5: 表示中の月の pending を ids に集約し、set-based RPC を 1 回呼ぶ。
-                  const handleBulkRejectInRange = async () => {
+                  const handleBulkRejectInRange = () => {
                     if (count === 0) return;
-                    // eslint-disable-next-line no-alert
-                    if (!window.confirm(`${count}件却下します。よろしいですか？`)) return;
-                    await handleBulkRejectPreferences(pendingInRange.map(p => p.id));
+                    setBulkConfirm({ kind: 'reject', count, ids: pendingInRange.map(p => p.id) });
                   };
                   return (
                     /* Iter 2-A / P1: ghost-danger 風 — border なし + 赤文字 + hover で淡赤背景 */
@@ -1644,6 +1678,23 @@ export function ShiftPage() {
           onClose={() => setNewPreferenceDate(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={bulkConfirm !== null}
+        title={bulkConfirm?.kind === 'reject' ? 'シフト申請を一括却下' : 'シフトを一括本承認'}
+        description={
+          bulkConfirm?.kind === 'reject'
+            ? `${bulkConfirm.count}件却下します。よろしいですか？`
+            : bulkConfirm
+              ? `${bulkConfirm.count}件を本承認します。よろしいですか？`
+              : undefined
+        }
+        confirmLabel={bulkConfirm?.kind === 'reject' ? '却下する' : '本承認する'}
+        variant={bulkConfirm?.kind === 'reject' ? 'danger' : 'normal'}
+        loading={bulkConfirmBusy}
+        onCancel={() => setBulkConfirm(null)}
+        onConfirm={() => { void handleBulkConfirm(); }}
+      />
     </div>
   );
 }

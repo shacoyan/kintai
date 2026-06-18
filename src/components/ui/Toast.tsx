@@ -36,6 +36,11 @@ const TONE_ICON_COLOR: Record<ToastTone, string> = {
   info: 'text-blue-500',
 };
 
+// danger / warning は重要度が高いトーン (P3-15)。
+// - 自動消滅なし (未指定時 duration=0 = 手動クローズのみ)
+// - live region を assertive 相当に引き上げ、即時読み上げさせる
+const URGENT_TONES: ReadonlySet<ToastTone> = new Set<ToastTone>(['danger', 'warning']);
+
 function ToneIcon({ tone }: { tone: ToastTone }): JSX.Element | null {
   const props = { size: 18, 'aria-hidden': true } as const;
   if (tone === 'success') return <CheckCircle {...props} />;
@@ -51,9 +56,15 @@ export function Toast(props: ToastProps): JSX.Element {
     tone = 'neutral',
     title,
     message,
-    duration = 4000,
+    duration: durationProp,
     onDismiss,
   } = props;
+
+  // success / info / neutral は従来どおり 4000ms で自動消滅。
+  // danger / warning は未指定時 0 (= 自動消滅なし・手動クローズのみ, P3-15)。
+  // duration が明示指定された場合は全トーンでそれを尊重する。
+  const duration =
+    durationProp ?? (URGENT_TONES.has(tone) ? 0 : 4000);
 
   const timerRef = useRef<number | null>(null);
   const startedAtRef = useRef<number>(0);
@@ -167,11 +178,15 @@ export function ToastViewport(props: ToastViewportProps): JSX.Element {
       ? 'top-4 left-1/2 -translate-x-1/2 items-center'
       : 'bottom-4 right-4 items-end';
 
+  // 重要トーン (danger/warning) が 1 件でもあれば live region を assertive に
+  // 引き上げ即時読み上げさせる (P3-15)。ネスト回避のため region は依然この 1 箇所のみ。
+  const hasUrgent = items.some((item) => URGENT_TONES.has(item.tone ?? 'neutral'));
+
   return (
     // 唯一の live region (P2 toast-nested-aria-live)。子 Toast には live 属性を付けない。
     <div
-      role="status"
-      aria-live="polite"
+      role={hasUrgent ? 'alert' : 'status'}
+      aria-live={hasUrgent ? 'assertive' : 'polite'}
       aria-atomic="false"
       className={cn(
         'pointer-events-none fixed z-50 flex flex-col gap-2',

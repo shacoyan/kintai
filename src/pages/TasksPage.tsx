@@ -25,13 +25,12 @@ import { useStoreContext } from '../contexts/StoreContext';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../contexts/ToastContext';
 import {
-  Button,
   Checkbox,
-  Card,
   Heading,
   Spinner,
   ActionMenu,
   ErrorBanner,
+  ConfirmDialog,
   type ActionMenuItem,
 } from '../components/ui';
 import { messages } from '../lib/messages';
@@ -971,66 +970,39 @@ export function TasksPage(): JSX.Element {
       />
 
       {/* 削除確認 */}
-      {deletingTaskId && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          role="dialog"
-          aria-modal="true"
-          onClick={closeDeleteConfirm}
-        >
-          <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <Card>
-              <Card.Header>タスクを削除しますか？</Card.Header>
-              <Card.Body>
-                {(() => {
-                  if (deleteChildCount === 'loading') {
-                    return (
-                      <p className="mb-2 text-sm text-stone-500 dark:text-stone-400">
-                        子タスクの件数を確認しています…
-                      </p>
-                    );
-                  }
-                  if (deleteChildCount === null) {
-                    // 取得失敗時は安全側に倒し、件数なしで CASCADE を明示警告する
-                    return (
-                      <p className="mb-2 flex items-start gap-1.5 text-sm font-medium text-red-600 dark:text-red-400">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                        <span>表示されていない子タスクも含め、関連する子タスクはすべて一緒に削除されます。</span>
-                      </p>
-                    );
-                  }
-                  return deleteChildCount > 0 ? (
-                    <p className="mb-2 flex items-start gap-1.5 text-sm font-medium text-red-600 dark:text-red-400">
-                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                      <span>このタスクには子タスクが {deleteChildCount} 件あります。削除すると子タスクもすべて一緒に削除されます。</span>
-                    </p>
-                  ) : null;
-                })()}
-                <p className="text-sm text-stone-600 dark:text-stone-300">
-                  この操作は取り消せません。本当に削除してもよろしいですか？
-                </p>
-              </Card.Body>
-              <Card.Footer>
-                <Button
-                  variant="secondary"
-                  onClick={closeDeleteConfirm}
-                  disabled={deleting}
-                >
-                  キャンセル
-                </Button>
-                <Button
-                  variant="danger"
-                  loading={deleting}
-                  disabled={deleting || deleteChildCount === 'loading'}
-                  onClick={handleDelete}
-                >
-                  削除
-                </Button>
-              </Card.Footer>
-            </Card>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={deletingTaskId !== null}
+        title="タスクを削除しますか？"
+        description={
+          <>
+            {deleteChildCount === 'loading' ? (
+              <p className="mb-2 text-stone-500 dark:text-stone-400">
+                子タスクの件数を確認しています…
+              </p>
+            ) : deleteChildCount === null ? (
+              // 取得失敗時は安全側に倒し、件数なしで CASCADE を明示警告する
+              <p className="mb-2 flex items-start gap-1.5 font-medium text-red-600 dark:text-red-400">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>表示されていない子タスクも含め、関連する子タスクはすべて一緒に削除されます。</span>
+              </p>
+            ) : deleteChildCount > 0 ? (
+              <p className="mb-2 flex items-start gap-1.5 font-medium text-red-600 dark:text-red-400">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>このタスクには子タスクが {deleteChildCount} 件あります。削除すると子タスクもすべて一緒に削除されます。</span>
+              </p>
+            ) : null}
+            <p className="text-stone-600 dark:text-stone-300">
+              この操作は取り消せません。本当に削除してもよろしいですか？
+            </p>
+          </>
+        }
+        confirmLabel="削除"
+        variant="danger"
+        loading={deleting}
+        confirmDisabled={deleting || deleteChildCount === 'loading'}
+        onCancel={closeDeleteConfirm}
+        onConfirm={() => { void handleDelete(); }}
+      />
     </div>
   );
 }

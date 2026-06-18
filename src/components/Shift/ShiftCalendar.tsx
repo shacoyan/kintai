@@ -60,12 +60,10 @@ interface ShiftCalendarProps {
 function ShiftCalendarInner({
   shifts,
   onDateClick,
-  onShiftClick,
   memberNames,
   onViewMonthChange,
   leaves = [],
   preferences,
-  onPreferenceClick,
   statusFilter,
   showPreferenceStatus = false,
   currentUserId,
@@ -169,7 +167,7 @@ function ShiftCalendarInner({
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-px bg-stone-200/70 dark:bg-stone-700/70" role="grid" aria-label="シフトカレンダー">
+        <div className="grid grid-cols-7 gap-px bg-stone-200/70 dark:bg-stone-700/70" aria-label="シフトカレンダー">
           {dates.map((d) => {
             const dateStr = format(d, 'yyyy-MM-dd');
             const isToday = dateStr === today;
@@ -212,21 +210,13 @@ function ShiftCalendarInner({
                     : '';
 
             return (
-              <div
+              <button
                 key={dateStr}
-                role="button"
-                tabIndex={0}
+                type="button"
                 aria-label={`${dateStr} の詳細${holidayName ? ` (${holidayName})` : ''}`}
                 aria-pressed={selectedBulkDates ? isBulkSelected : undefined}
-                aria-selected={selectedBulkDates ? isBulkSelected : undefined}
                 onClick={() => onDateClick(dateStr)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onDateClick(dateStr);
-                  }
-                }}
-                className={`relative ${cellBg} ${weekendTint} p-1 cursor-pointer motion-safe:transition-colors duration-150 ease-out
+                className={`relative text-left w-full ${cellBg} ${weekendTint} p-1 cursor-pointer motion-safe:transition-colors duration-150 ease-out
                   min-h-[80px] lg:min-h-[130px]
                   ${isToday ? 'border-t-2 border-blue-600 dark:border-blue-400 bg-blue-600/[0.04] dark:bg-blue-500/10' : ''}
                   ${isCurrentMonth ? 'hover:bg-stone-50 dark:hover:bg-stone-800' : ''}
@@ -268,10 +258,6 @@ function ShiftCalendarInner({
                           shift={s}
                           member={member}
                           isMine={isMine}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onShiftClick?.(s);
-                          }}
                         />
                       );
                     }
@@ -285,10 +271,6 @@ function ShiftCalendarInner({
                         preference={p}
                         member={member}
                         isMine={isMine}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onPreferenceClick?.(p);
-                        }}
                       />
                     );
                   })}
@@ -312,7 +294,7 @@ function ShiftCalendarInner({
                     )}
                   </div>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>

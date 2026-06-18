@@ -51,6 +51,9 @@ export type { ActionMenuItem, ActionMenuProps } from './ActionMenu';
 export { Heading } from './Heading';
 export type { HeadingProps, HeadingLevel } from './Heading';
 
+export { ConfirmDialog } from './ConfirmDialog';
+export type { ConfirmDialogProps } from './ConfirmDialog';
+
 // 既存（Phase 1 では再 export のみ、内部は Phase 2 以降で差替）
 export { BottomSheet } from './BottomSheet';
 export { EmptyState } from './EmptyState';

@@ -1,4 +1,3 @@
-import type { KeyboardEvent, MouseEvent } from 'react';
 import type { Shift, ShiftPreference, TenantMember } from '../../types';
 import { getRoleColorHex } from '../../utils/getRoleColor';
 
@@ -7,7 +6,6 @@ interface CalShiftBarProps {
   preference?: ShiftPreference;
   member?: TenantMember;
   isMine?: boolean;
-  onClick?: (e: MouseEvent<HTMLDivElement> | KeyboardEvent<HTMLDivElement>) => void;
 }
 
 export function getRoleColor(member: TenantMember | undefined): string {
@@ -30,7 +28,7 @@ export function statusVisual(status: string): StatusVisual {
   return { bg: 'rgba(120,113,108,0.08)', bar: '#78716c' };
 }
 
-export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalShiftBarProps) {
+export function CalShiftBar({ shift, preference, member, isMine }: CalShiftBarProps) {
   const status = shift?.status ?? (preference ? 'pending' : 'tentative');
   const start = shift?.start_time ?? preference?.start_time ?? '';
   const end = shift?.end_time ?? preference?.end_time ?? '';
@@ -52,18 +50,9 @@ export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalS
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick?.(e);
-        }
-      }}
       title={member?.display_name ?? ''}
       aria-label={`${member?.display_name ?? ''} ${timeLabel} ${isUnavailable ? '出勤不可' : isPreference ? '申請中' : status === 'approved' ? '本承認' : status === 'tentative' ? '仮承認' : '申請中'}${isMine ? ' (自分)' : ''}`}
-      className={`group flex flex-col cursor-pointer hover:opacity-80 motion-safe:transition-opacity duration-150 min-w-0 rounded-[3px] ${
+      className={`group flex flex-col min-w-0 rounded-[3px] ${
         isMine ? 'ring-1 ring-blue-500 dark:ring-blue-400 ring-inset' : ''
       }`}
       style={{

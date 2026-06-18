@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { FileEdit } from 'lucide-react';
 import { CorrectionRequest } from '../../types';
-import { Badge, Button, EmptyState } from '../ui';
+import { Badge, Button, ConfirmDialog, EmptyState } from '../ui';
 import type { BadgeTone } from '../ui';
 import { messages } from '../../lib/messages';
 
@@ -59,6 +59,8 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
   const [filterKey, setFilterKey] = useState<FilterKey>('all');
   // 処理中の request.id（二重 RPC 防止: 確定ボタンを loading + disabled 化）
   const [inFlight, setInFlight] = useState<string | null>(null);
+  // 巻き戻し確認ダイアログ対象の request.id
+  const [revertTarget, setRevertTarget] = useState<string | null>(null);
 
   const handleReview = async (id: string, status: 'approved' | 'rejected') => {
     setInFlight(id);
@@ -71,7 +73,6 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
   };
 
   const handleRevert = async (id: string) => {
-    if (!window.confirm(messages.confirm.revertCorrection)) return;
     setInFlight(id);
     try {
       await onRevert?.(id);
@@ -190,7 +191,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                       <Button variant="danger" size="sm" className="flex-1" onClick={() => setConfirming({ id: request.id, action: 'reject' })}>却下</Button>
                     </div>
                   ) : request.status !== 'pending' && onRevert ? (
-                    <Button variant="tertiary" size="sm" className="flex-1" loading={inFlight === request.id} onClick={() => handleRevert(request.id)}>巻き戻す</Button>
+                    <Button variant="tertiary" size="sm" className="flex-1" loading={inFlight === request.id} onClick={() => setRevertTarget(request.id)}>巻き戻す</Button>
                   ) : null}
                 </div>
               )}
@@ -266,7 +267,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                           <Button variant="danger" size="sm" onClick={() => setConfirming({ id: request.id, action: 'reject' })}>却下</Button>
                         </div>
                       ) : request.status !== 'pending' && onRevert ? (
-                        <Button variant="tertiary" size="sm" loading={inFlight === request.id} onClick={() => handleRevert(request.id)}>巻き戻す</Button>
+                        <Button variant="tertiary" size="sm" loading={inFlight === request.id} onClick={() => setRevertTarget(request.id)}>巻き戻す</Button>
                       ) : (
                         <span className="text-xs text-stone-400 dark:text-stone-500">-</span>
                       )}
@@ -278,6 +279,20 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
           </tbody>
         </table>
       </div>
+      <ConfirmDialog
+        open={revertTarget !== null}
+        title="修正申請を巻き戻す"
+        description={messages.confirm.revertCorrection}
+        confirmLabel="巻き戻す"
+        variant="normal"
+        loading={revertTarget !== null && inFlight === revertTarget}
+        onCancel={() => setRevertTarget(null)}
+        onConfirm={() => {
+          const id = revertTarget;
+          setRevertTarget(null);
+          if (id) void handleRevert(id);
+        }}
+      />
     </>
   );
 }
