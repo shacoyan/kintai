@@ -4,7 +4,7 @@ import { Trash2 } from 'lucide-react';
 import type { ShiftPreference, ShiftPreferenceType, ShiftPreset, Store } from '../../types';
 import { formatSupabaseError } from '../../lib/errors';
 import { PREFERENCE_THEME_LIST } from '../../lib/preferenceTheme';
-import { Button, Select, Textarea, ErrorBanner } from '../ui';
+import { Button, Select, Textarea, ErrorBanner, ConfirmDialog } from '../ui';
 import { messages } from '../../lib/messages';
 import { validateShiftTimeRange } from '../../utils/timeRange';
 import { formatTimeRange } from '../../utils/formatTimeRange';
@@ -68,6 +68,7 @@ export function ShiftPreferenceForm({
   );
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ start?: string; end?: string }>({});
 
@@ -336,7 +337,7 @@ export function ShiftPreferenceForm({
             loading={deleting}
             disabled={busy || lockedByApproval}
             iconLeft={<Trash2 className="w-4 h-4" />}
-            onClick={handleDelete}
+            onClick={() => setConfirmOpen(true)}
           >
             削除する
           </Button>
@@ -352,6 +353,21 @@ export function ShiftPreferenceForm({
           キャンセル
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="シフト希望を削除しますか？"
+        description="この操作は取り消せません。"
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        variant="danger"
+        loading={deleting}
+        onConfirm={async () => {
+          await handleDelete();
+          setConfirmOpen(false);
+        }}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </form>
   );
 }

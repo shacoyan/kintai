@@ -66,6 +66,10 @@ export function useProjects(opts?: UseProjectsOptions): UseProjectsResult {
   const optsRef = useRef<UseProjectsOptions | undefined>(opts);
   optsRef.current = opts;
 
+  // 初回ロード時のみ全画面ローディングを出す。refetch(mutate 後の再取得) では
+  // isLoading を立てず、ProjectsPage の全画面差し替え=スクロール位置喪失を防ぐ。
+  const hasLoadedOnceRef = useRef(false);
+
   const fetchProjects = useCallback(async () => {
     const current = optsRef.current;
     const tid = current?.tenantId;
@@ -74,7 +78,7 @@ export function useProjects(opts?: UseProjectsOptions): UseProjectsResult {
       return;
     }
 
-    setIsLoading(true);
+    if (!hasLoadedOnceRef.current) setIsLoading(true);
     setError(null);
     try {
       let query = supabase
@@ -108,6 +112,7 @@ export function useProjects(opts?: UseProjectsOptions): UseProjectsResult {
       setProjects([]);
     } finally {
       setIsLoading(false);
+      hasLoadedOnceRef.current = true;
     }
     // statusKey/storeId/tenantId の変化で再 fetch
     // eslint-disable-next-line react-hooks/exhaustive-deps

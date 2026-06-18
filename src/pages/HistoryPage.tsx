@@ -193,13 +193,16 @@ interface SelectedDayDetailProps {
   record: AttendanceRecord | undefined;
   onRequestCorrection?: (date: string, record?: AttendanceRecord) => void;
   pending: boolean;
+  /** 選択日の自分の最新修正申請（status 表示用・自分閲覧時のみ渡る）。 */
+  correction?: CorrectionRequest;
 }
 
-function SelectedDayDetail({ date, record, onRequestCorrection, pending }: SelectedDayDetailProps) {
+function SelectedDayDetail({ date, record, onRequestCorrection, pending, correction }: SelectedDayDetailProps) {
   const today = format(new Date(), 'yyyy-MM-dd');
   const isFuture = date != null && date > today;
   const workMinutes = record ? calcWorkMinutes(record) : 0;
   const breakMinutes = record ? calcBreakMinutes(record) : 0;
+  const correctionStatus = correction?.status ?? null;
 
   return (
     <Card padding="md">
@@ -210,7 +213,19 @@ function SelectedDayDetail({ date, record, onRequestCorrection, pending }: Selec
           </h2>
           {date && <span className="text-xs text-stone-500 dark:text-stone-300">({format(parseISO(date), 'E', { locale: ja })})</span>}
           <div className="flex-1" />
-          {date && record && (pending ? <Badge tone="warning">修正申請中</Badge> : <Badge tone="success">承認済</Badge>)}
+          {date && record && (
+            correctionStatus === 'pending' ? (
+              <Badge tone="warning">修正申請中</Badge>
+            ) : correctionStatus === 'rejected' ? (
+              <Badge tone="danger">修正却下</Badge>
+            ) : correctionStatus === 'approved' ? (
+              <Badge tone="success">修正承認済</Badge>
+            ) : pending ? (
+              <Badge tone="warning">修正申請中</Badge>
+            ) : (
+              <Badge tone="success">承認済</Badge>
+            )
+          )}
         </div>
 
         {date == null ? (
@@ -233,12 +248,22 @@ function SelectedDayDetail({ date, record, onRequestCorrection, pending }: Selec
                 <p className="text-[15px] lg:text-lg font-semibold tabular-nums text-stone-900 dark:text-stone-100">{formatWorkHoursDecimal(workMinutes)}h</p>
               </div>
             </div>
-            {pending && (
+            {correctionStatus === 'pending' || (correctionStatus == null && pending) ? (
               <div className="mt-3 rounded-md bg-orange-50 p-3 text-xs leading-relaxed text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                 <strong>修正申請中</strong><br />
                 この日の打刻修正を申請中です。承認されるまで現在の記録が表示されます。
               </div>
-            )}
+            ) : correctionStatus === 'rejected' ? (
+              <div className="mt-3 rounded-md bg-red-50 p-3 text-xs leading-relaxed text-red-700 dark:bg-red-900/30 dark:text-red-300">
+                <strong>修正申請が却下されました</strong><br />
+                この日の打刻修正申請は却下されています。必要であれば、内容を見直して再度申請してください。
+              </div>
+            ) : correctionStatus === 'approved' ? (
+              <div className="mt-3 rounded-md bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                <strong>修正申請が承認されました</strong><br />
+                この日の打刻修正申請は承認済みです。記録に反映されています。
+              </div>
+            ) : null}
             <p className="mt-3 text-xs text-stone-500 dark:text-stone-300 tabular-nums">休憩 {formatWorkHours(breakMinutes)}</p>
           </>
         ) : (
@@ -246,7 +271,7 @@ function SelectedDayDetail({ date, record, onRequestCorrection, pending }: Selec
         )}
 
         {date && !isFuture && onRequestCorrection && (
-          <div className="mt-auto flex gap-2 pt-3">
+          <div className="mt-auto pt-3">
             <Button
               variant="warning"
               size="md"
@@ -254,14 +279,6 @@ function SelectedDayDetail({ date, record, onRequestCorrection, pending }: Selec
               fullWidth
             >
               修正申請
-            </Button>
-            <Button
-              variant="tertiary"
-              size="md"
-              onClick={() => onRequestCorrection(date, record)}
-              className="hidden lg:inline-flex"
-            >
-              休憩を編集
             </Button>
           </div>
         )}
@@ -381,7 +398,11 @@ export function HistoryPage() {
     return new Date();
   }, []); // 初回のみ
   const [currentDate, setCurrentDate] = useState<Date>(initialDate);
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const initialViewMode = useMemo<'list' | 'calendar'>(() => {
+    const v = searchParams.get('view');
+    return v === 'calendar' || v === 'list' ? v : 'list';
+  }, []); // 初回のみ
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>(initialViewMode);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [correctionModal, setCorrectionModal] = useState<CorrectionModalState>({
     isOpen: false,
@@ -410,6 +431,17 @@ export function HistoryPage() {
       }, { replace: true });
     }
   }, [year, month, searchParams, setSearchParams]);
+
+  // viewMode を URL `view` param に同期（規律: functional updater で他クエリを温存）。
+  useEffect(() => {
+    if (searchParams.get('view') !== viewMode) {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('view', viewMode);
+        return next;
+      }, { replace: true });
+    }
+  }, [viewMode, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!tenantId) return;
@@ -488,6 +520,13 @@ export function HistoryPage() {
   const selectedDatePending = selectedDate
     ? ownCorrectionRequests.some(r => r.status === 'pending' && r.date === selectedDate)
     : false;
+  // 選択日の自分の最新修正申請（created_at 降順で1件）— status バッジ/バナー表示用。
+  const selectedDateCorrection = selectedDate
+    ? ownCorrectionRequests
+        .filter(r => r.date === selectedDate)
+        .reduce<CorrectionRequest | undefined>((latest, r) =>
+          !latest || (r.created_at ?? '') > (latest.created_at ?? '') ? r : latest, undefined)
+    : undefined;
   const pendingCorrectionCount = ownCorrectionRequests.filter(r => r.status === 'pending').length;
 
   const isCurrentMonthShown = (() => {
@@ -674,6 +713,7 @@ export function HistoryPage() {
             date={selectedDate}
             record={selectedRecord}
             pending={selectedDatePending}
+            correction={selectedDateCorrection}
             onRequestCorrection={handleCorrection}
           />
           <MonthlyBarChart

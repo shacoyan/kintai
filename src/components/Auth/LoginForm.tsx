@@ -4,7 +4,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
-import { Checkbox } from '../ui/Checkbox';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { formatSupabaseError } from '../../lib/errors';
 import { useToast } from '../../contexts/ToastContext';
@@ -204,8 +203,7 @@ export const LoginForm = function LoginForm() {
       />
 
       {isLogin ? (
-        <div className="flex items-center justify-between">
-          <Checkbox label="このデバイスを記憶する" />
+        <div className="flex items-center justify-end">
           <button
             type="button"
             onClick={() => setShowResetForm(true)}

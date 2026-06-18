@@ -10,9 +10,12 @@ import { useTenantAdmin } from '../hooks/useTenantAdmin';
 import { useTodaysActiveAttendances } from '../hooks/useTodaysActiveAttendances';
 import { ClockButton } from '../components/Attendance/ClockButton';
 import { BreakButton } from '../components/Attendance/BreakButton';
+import { Link } from 'react-router-dom';
 import { AlertTriangle, CalendarDays, ChevronRight, FileClock } from 'lucide-react';
 import { Card, StatCard, Badge, Button, DashboardSkeleton, ListRowSkeleton, Heading } from '../components/ui';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { useToast } from '../contexts/ToastContext';
+import { formatSupabaseError } from '../lib/errors';
 import { messages } from '../lib/messages';
 import { deriveTodayStatusLabel, deriveTodayStatusTone } from '../lib/todayAttendanceStatus';
 import { format, parseISO, differenceInMinutes, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays } from 'date-fns';
@@ -121,6 +124,7 @@ export function DashboardPage() {
   const tenantId = currentTenant!.id;
   const { currentStore } = useStoreContext();
   const { user } = useAuth();
+  const { showToast } = useToast();
   const isOwnerView = myRole === 'owner';
   const { members: allMembers, fetchMembers } = useTenantAdmin(tenantId);
 
@@ -256,6 +260,21 @@ export function DashboardPage() {
 
   // 日跨ぎの未退勤レコード
   const carryOverRecord = activeRecord && activeRecord.date !== todayStr ? activeRecord : null;
+
+  // 日跨ぎ「今すぐ退勤打刻」: 二重送信ガード + 成功/失敗 Toast（clockOut の実処理は不変）
+  const [carryOverProcessing, setCarryOverProcessing] = useState(false);
+  const handleCarryOverClockOut = useCallback(async () => {
+    if (carryOverProcessing) return;
+    setCarryOverProcessing(true);
+    try {
+      await clockOut();
+      showToast('退勤打刻を記録しました', 'success');
+    } catch (err) {
+      showToast(formatSupabaseError(err).message, 'error');
+    } finally {
+      setCarryOverProcessing(false);
+    }
+  }, [carryOverProcessing, clockOut, showToast]);
 
   // 申請中の休暇件数
   const pendingLeaveCount = myLeaves.filter(l => l.status === 'pending').length;
@@ -407,7 +426,7 @@ export function DashboardPage() {
                       <span className="font-num tabular-nums">{carryOverRecord.date}</span> に出勤(<span className="font-num tabular-nums">{formatTime(carryOverRecord.clock_in)}</span>) したまま退勤打刻がされていません
                     </p>
                     <div className="mt-3 max-w-sm">
-                      <Button variant="danger" size="lg" onClick={clockOut} fullWidth>今すぐ退勤打刻</Button>
+                      <Button variant="danger" size="lg" onClick={handleCarryOverClockOut} loading={carryOverProcessing} disabled={carryOverProcessing} fullWidth>今すぐ退勤打刻</Button>
                     </div>
                   </div>
                 </div>
@@ -436,7 +455,13 @@ export function DashboardPage() {
                 <span className="text-base font-semibold">今週のシフト</span>
                 <div className="flex-1" />
                 <span className="font-num text-xs text-stone-500 tabular-nums dark:text-stone-400">{weekRangeLabel}</span>
-                <ChevronRight className="h-3.5 w-3.5 text-stone-500 dark:text-stone-400" />
+                <Link
+                  to="/shift"
+                  aria-label="シフト管理を開く"
+                  className="rounded-md p-0.5 text-stone-500 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
               </header>
               {shiftLoading ? (
                 <div className="grid grid-cols-7 gap-1.5">
@@ -516,9 +541,6 @@ export function DashboardPage() {
                   <span className="text-base font-semibold">全社員 打刻状況</span>
                   <Badge tone="success" withDot>稼働中 {workingTeamCount} 名</Badge>
                   <div className="flex-1" />
-                  <button type="button" className="rounded-md px-2 py-1 text-xs text-stone-500 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100">
-                    全員を見る
-                  </button>
                 </header>
                 <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   {visibleTeamMembers.map((member) => (

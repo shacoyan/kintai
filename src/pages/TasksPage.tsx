@@ -8,6 +8,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect, type ChangeEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { format, isPast, parseISO } from 'date-fns';
 import {
   Plus,
@@ -178,8 +179,36 @@ export function TasksPage(): JSX.Element {
   // 初期値: 全 status 表示 (filter.status を空にすると enabledStatuses が全件にフォールバック)。
   // 旧実装は ['todo','in_progress'] 固定で「完了タスクが見えない」と誤解される報告があったため、
   // 既定で全件表示とし、ユーザーが必要に応じて絞り込む UX に変更。
-  const [filter, setFilter] = useState<TaskFilterValue>({});
+  // projectId は URL searchParams と同期 (ProjectsPage カードからの /tasks?projectId= ディープリンク着地)。
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [filter, setFilter] = useState<TaskFilterValue>(() => {
+    const pid = searchParams.get('projectId');
+    return pid ? { projectId: pid } : {};
+  });
   const [filterOpen, setFilterOpen] = useState<boolean>(false);
+
+  // URL の projectId が外部 (戻る/進む/共有リンク) で変わったら filter に反映。
+  const urlProjectId = searchParams.get('projectId') ?? undefined;
+  useEffect(() => {
+    setFilter((prev) => (prev.projectId === urlProjectId ? prev : { ...prev, projectId: urlProjectId }));
+  }, [urlProjectId]);
+
+  // フィルタ変更を受けて projectId を URL に書き戻す (戻る/共有可)。
+  const handleFilterChange = useCallback(
+    (next: TaskFilterValue) => {
+      setFilter(next);
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          if (next.projectId) sp.set('projectId', next.projectId);
+          else sp.delete('projectId');
+          return sp;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const enabledStatuses = useMemo<TaskStatus[]>(
     () => {
@@ -589,7 +618,7 @@ export function TasksPage(): JSX.Element {
         <div className="space-y-2 rounded-[10px] border border-stone-200/70 bg-white p-3 dark:border-stone-700/60 dark:bg-stone-800">
           <TaskFilterBar
             value={filter}
-            onChange={setFilter}
+            onChange={handleFilterChange}
             projects={selectableProjects}
             members={memberOptions}
             showStoreFilter={false}

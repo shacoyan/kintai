@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Button,
   Select,
@@ -196,15 +198,38 @@ function DeleteConfirmDialog({
 export function ProjectsPage() {
   const { currentTenant, myRole, isParttime, myStoreIds, members } = useTenant();
   const { showToast } = useToast();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   // RequireTenant ガード後の前提
   const tenantId = currentTenant!.id;
   const managerial = myRole === 'owner' || myRole === 'manager';
   const readonly = isParttime;
 
-  // フィルタ state
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('active');
+  // フィルタ state (URL searchParams 同期で共有・戻る・ディープリンク可)
+  // status: ?status=archived/all/active (param なし=active 既定)
+  // view:   ?view=list/card     (param なし=既存 localStorage 値を fallback)
+  const statusFilter: ProjectStatus | 'all' = (() => {
+    const s = searchParams.get('status');
+    return s === 'archived' || s === 'all' || s === 'active' ? s : 'active';
+  })();
+  const setStatusFilter = useCallback(
+    (next: ProjectStatus | 'all') => {
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          if (next === 'active') sp.delete('status');
+          else sp.set('status', next);
+          return sp;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
   const [storeFilter, setStoreFilter] = useState<string>('all'); // 'all' | 'company' | <storeId>
-  const [viewMode, setViewMode] = useState<'card' | 'list'>(() => {
+
+  const readStoredViewMode = (): 'card' | 'list' => {
     try {
       if (typeof window === 'undefined') return 'card';
       const stored = window.localStorage.getItem('kintai:projects:viewMode');
@@ -212,7 +237,25 @@ export function ProjectsPage() {
     } catch {
       return 'card';
     }
-  });
+  };
+  const viewMode: 'card' | 'list' = (() => {
+    const v = searchParams.get('view');
+    if (v === 'list' || v === 'card') return v;
+    return readStoredViewMode();
+  })();
+  const setViewMode = useCallback(
+    (next: 'card' | 'list') => {
+      setSearchParams(
+        (prev) => {
+          const sp = new URLSearchParams(prev);
+          sp.set('view', next);
+          return sp;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   // 店舗一覧 fetch (useStore は呼び出し側で明示 fetch が必要)
   const { stores, fetchStores } = useStore(tenantId);
@@ -272,6 +315,22 @@ export function ProjectsPage() {
     }
     return m;
   }, [tasks]);
+
+  // 各プロジェクトの「配下タスクの最短 due」(done/cancelled は除外)。
+  // list view の「期限」列 (旧: — ハードコード) を実データ表示にするための集計。
+  const minDueByProjectId = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const [projectId, list] of tasksByProjectId) {
+      let min: string | null = null;
+      for (const task of list) {
+        if (!task.due_date) continue;
+        if (task.status === 'done' || task.status === 'cancelled') continue;
+        if (min === null || task.due_date < min) min = task.due_date;
+      }
+      if (min) m.set(projectId, min);
+    }
+    return m;
+  }, [tasksByProjectId]);
 
   const getStoreLabel = useCallback(
     (storeId: string | null): string => {
@@ -354,14 +413,25 @@ export function ProjectsPage() {
     [readonly, managerial, isParttime],
   );
 
-  const handleViewModeChange = useCallback((nextMode: 'card' | 'list') => {
-    setViewMode(nextMode);
-    try {
-      window.localStorage.setItem('kintai:projects:viewMode', nextMode);
-    } catch {
-      // localStorage may be unavailable in private or restricted contexts.
-    }
-  }, []);
+  const handleViewModeChange = useCallback(
+    (nextMode: 'card' | 'list') => {
+      setViewMode(nextMode);
+      try {
+        window.localStorage.setItem('kintai:projects:viewMode', nextMode);
+      } catch {
+        // localStorage may be unavailable in private or restricted contexts.
+      }
+    },
+    [setViewMode],
+  );
+
+  // プロジェクトカード/行クリックで該当プロジェクトのタスク一覧へ遷移 (P3-9 ディープリンク)
+  const openProjectTasks = useCallback(
+    (projectId: string) => {
+      navigate(`/tasks?projectId=${encodeURIComponent(projectId)}`);
+    },
+    [navigate],
+  );
 
   // アクション ----
   const openCreate = useCallback(() => {
@@ -568,7 +638,17 @@ export function ProjectsPage() {
       <Card
         key={project.id}
         padding="sm"
-        className={`flex flex-col gap-2.5 rounded-[8px] border-t-[3px] ${colorClasses.border} transition hover:-translate-y-0.5 hover:shadow-md ${
+        role="button"
+        tabIndex={0}
+        aria-label={`${project.name} のタスクを開く`}
+        onClick={() => openProjectTasks(project.id)}
+        onKeyDown={(e: ReactKeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === ' ') e.preventDefault();
+            openProjectTasks(project.id);
+          }
+        }}
+        className={`flex cursor-pointer flex-col gap-2.5 rounded-[8px] border-t-[3px] ${colorClasses.border} transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-stone-900 ${
           project.status === 'archived' ? 'opacity-55' : ''
         }`}
       >
@@ -581,13 +661,18 @@ export function ProjectsPage() {
               {project.description || '説明はありません'}
             </div>
           </div>
-          <ActionMenu
-            items={menuItems}
-            triggerLabel={`${project.name} の操作`}
-            triggerSize="sm"
-            bottomSheetTitle="プロジェクト操作"
-            disabled={menuItems.length === 0}
-          />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <ActionMenu
+              items={menuItems}
+              triggerLabel={`${project.name} の操作`}
+              triggerSize="sm"
+              bottomSheetTitle="プロジェクト操作"
+              disabled={menuItems.length === 0}
+            />
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
@@ -653,7 +738,17 @@ export function ProjectsPage() {
     return (
       <div
         key={project.id}
-        className={`grid items-center gap-3 border-b border-stone-100 px-4 py-2.5 last:border-b-0 hover:bg-stone-50 motion-safe:transition-colors dark:border-stone-800 dark:hover:bg-stone-800/50 ${
+        role="button"
+        tabIndex={0}
+        aria-label={`${project.name} のタスクを開く`}
+        onClick={() => openProjectTasks(project.id)}
+        onKeyDown={(e: ReactKeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === ' ') e.preventDefault();
+            openProjectTasks(project.id);
+          }
+        }}
+        className={`grid cursor-pointer items-center gap-3 border-b border-stone-100 px-4 py-2.5 last:border-b-0 hover:bg-stone-50 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:border-stone-800 dark:hover:bg-stone-800/50 ${
           project.status === 'archived' ? 'opacity-55' : ''
         }`}
         style={{ gridTemplateColumns: '20px minmax(260px, 1fr) 120px 100px 100px 70px 40px' }}
@@ -705,7 +800,26 @@ export function ProjectsPage() {
           </div>
         </div>
 
-        <div className="num tabular-nums text-xs text-stone-600 dark:text-stone-300">—</div>
+        {(() => {
+          const minDue = minDueByProjectId.get(project.id);
+          if (!minDue) {
+            return (
+              <div className="num tabular-nums text-xs text-stone-600 dark:text-stone-300">—</div>
+            );
+          }
+          const dueDate = parseLocalDate(minDue);
+          const overdue = dueDate < startOfLocalDay(new Date());
+          return (
+            <div
+              className={`num tabular-nums text-xs ${
+                overdue ? 'text-red-600 dark:text-red-400' : 'text-stone-600 dark:text-stone-300'
+              }`}
+              title={overdue ? '期限切れのタスクがあります' : undefined}
+            >
+              {dueDate.getMonth() + 1}/{dueDate.getDate()}
+            </div>
+          );
+        })()}
 
         <div className="flex">
           {visibleAssignees.map((assignee) => (
@@ -729,7 +843,11 @@ export function ProjectsPage() {
           )}
         </div>
 
-        <div className="flex justify-end">
+        <div
+          className="flex justify-end"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
           <ActionMenu
             items={menuItems}
             triggerLabel={`${project.name} の操作`}
@@ -787,9 +905,7 @@ export function ProjectsPage() {
               ? 'border-blue-600 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-500 dark:bg-blue-950/40 dark:text-blue-300'
               : 'border-stone-300 bg-transparent text-stone-600 hover:border-stone-400 hover:bg-stone-50 dark:border-stone-600 dark:text-stone-300 dark:hover:bg-stone-800'
           }`}
-          onClick={() =>
-            setStatusFilter((current) => (current === 'archived' ? 'active' : 'archived'))
-          }
+          onClick={() => setStatusFilter(statusFilter === 'archived' ? 'active' : 'archived')}
           aria-pressed={statusFilter === 'archived'}
         >
           {statusFilter === 'archived' ? '✓ アーカイブを表示' : 'アーカイブを表示'}
