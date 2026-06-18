@@ -57,6 +57,13 @@ export const messages = {
     memberAdded: 'メンバーを追加しました',
     correctionRequested: '修正申請を送信しました',
     correctionDeleted: '削除依頼を送信しました',
+    shiftPreferenceSubmitted: 'シフト申請を送信しました',
+    shiftPreferenceDeleted: 'シフト申請を取り消しました',
+    correctionApproved: '修正申請を承認しました',
+    correctionRejected: '修正申請を却下しました',
+    correctionRecordDeleted: '記録を削除しました',
+    projectArchived: 'プロジェクトをアーカイブしました',
+    projectRestored: 'プロジェクトのアーカイブを解除しました',
   },
   /** @i18n-prefix error */
   error: {

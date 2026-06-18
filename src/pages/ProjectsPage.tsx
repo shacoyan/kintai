@@ -17,6 +17,8 @@ import { useProjects, useProjectMutations } from '../hooks/useProjects';
 import { useTasks } from '../hooks/useTasks';
 import { useStore } from '../hooks/useStore';
 import { useTenant } from '../contexts/TenantContext';
+import { useToast } from '../contexts/ToastContext';
+import { messages } from '../lib/messages';
 import { getProjectColor } from '../lib/projectColor';
 
 // === 2026-05-22 タスク管理 Phase 1 Loop 6 ===
@@ -193,6 +195,7 @@ function DeleteConfirmDialog({
 
 export function ProjectsPage() {
   const { currentTenant, myRole, isParttime, myStoreIds, members } = useTenant();
+  const { showToast } = useToast();
   // RequireTenant ガード後の前提
   const tenantId = currentTenant!.id;
   const managerial = myRole === 'owner' || myRole === 'manager';
@@ -419,11 +422,16 @@ export function ProjectsPage() {
       try {
         if (project.status === 'active') {
           await archiveProject(project.id);
+          await refetch();
+          // アーカイブ後の明示フィードバック。アーカイブ解除はリスト上の
+          // 復活操作（同 handler の else 分岐）で行える。
+          showToast(messages.toast.projectArchived, 'success');
         } else {
-          // 復活
+          // 復活（= 上記アーカイブの取り消し導線）
           await updateProject(project.id, { status: 'active' });
+          await refetch();
+          showToast(messages.toast.projectRestored, 'success');
         }
-        await refetch();
       } catch (e) {
         const msg = e instanceof Error ? e.message : '操作に失敗しました';
         setMutationError(msg);
@@ -431,7 +439,7 @@ export function ProjectsPage() {
         setMutationBusy(false);
       }
     },
-    [archiveProject, updateProject, refetch],
+    [archiveProject, updateProject, refetch, showToast],
   );
 
   const handleDeleteConfirm = useCallback(async () => {

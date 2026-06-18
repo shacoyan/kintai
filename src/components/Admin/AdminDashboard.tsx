@@ -3,6 +3,7 @@ import { logger } from '../../lib/logger';
 import { format, startOfMonth, endOfMonth, addWeeks } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import { formatSupabaseError } from '../../lib/errors';
+import { messages } from '../../lib/messages';
 import { MemberManagement } from './MemberManagement';
 import { PayrollCalculation } from './PayrollCalculation';
 import { AttendanceAdmin } from './AttendanceAdmin';
@@ -322,6 +323,16 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
   const handleReview = async (requestId: string, status: 'approved' | 'rejected') => {
     try {
       await reviewRequest(requestId, status);
+      if (status === 'approved') {
+        const reviewed = requests.find((r) => r.id === requestId);
+        if (reviewed?.request_type === 'delete') {
+          showToast(messages.toast.correctionRecordDeleted, 'success');
+        } else {
+          showToast(messages.toast.correctionApproved, 'success');
+        }
+      } else {
+        showToast(messages.toast.correctionRejected, 'success');
+      }
     } catch (err) {
       const formatted = formatSupabaseError(err);
       // Loop E: 持続エラーバナーに表示 (画面遷移しても消えない / 再試行可)。

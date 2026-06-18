@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeftRight, LogOut, Monitor, Moon, Sun, User } from 'lucide-react';
+import { LogOut, Monitor, Moon, PlusCircle, Sun, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useTenant } from '../../hooks/useTenant';
@@ -128,12 +128,13 @@ export function UserMenuPopover({
           <div className="border-t border-stone-200 dark:border-stone-800 my-1" aria-hidden="true" />
           <Link
             to="/tenant"
+            state={{ intent: 'add' }}
             role="menuitem"
             onClick={() => setIsMenuOpen(false)}
             className="flex items-center gap-2 px-4 py-2 text-sm text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 motion-safe:transition-colors duration-150 ease-out"
           >
-            <ArrowLeftRight size={16} aria-hidden="true" />
-            ワークスペースを切替
+            <PlusCircle size={16} aria-hidden="true" />
+            ワークスペースを追加 / 参加
           </Link>
           {showThemeToggle && (
             <button

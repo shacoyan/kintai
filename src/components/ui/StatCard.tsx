@@ -22,9 +22,9 @@ export interface StatCardProps {
 }
 
 const TREND_TONE: Record<StatTrendDirection, string> = {
-  up: 'text-emerald-500 bg-emerald-50',
-  down: 'text-red-500 bg-red-50',
-  flat: 'text-stone-700 bg-stone-100',
+  up: 'text-emerald-500 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20',
+  down: 'text-red-500 bg-red-50 dark:text-red-400 dark:bg-red-900/20',
+  flat: 'text-stone-700 bg-stone-100 dark:text-stone-300 dark:bg-stone-700/40',
 };
 
 function TrendIcon({ direction }: { direction: StatTrendDirection }): JSX.Element {
@@ -46,18 +46,18 @@ export function StatCard(props: StatCardProps): JSX.Element {
   return (
     <Card padding="md" className={className}>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-label text-stone-500">{label}</p>
+        <p className="text-label text-stone-500 dark:text-stone-400">{label}</p>
         {icon ? (
-          <span className="text-stone-500" aria-hidden="true">
+          <span className="text-stone-500 dark:text-stone-400" aria-hidden="true">
             {icon}
           </span>
         ) : null}
       </div>
 
-      <p className="mt-2 text-kpi-lg num tabular-nums text-stone-900">
+      <p className="mt-2 text-kpi-lg num tabular-nums text-stone-900 dark:text-stone-50">
         {displayValue}
         {showUnit ? (
-          <span className="ml-1 text-[18px] font-semibold text-stone-500">
+          <span className="ml-1 text-[18px] font-semibold text-stone-500 dark:text-stone-400">
             {unit}
           </span>
         ) : null}
@@ -80,7 +80,7 @@ export function StatCard(props: StatCardProps): JSX.Element {
             </span>
           ) : null}
           {hint ? (
-            <span className="text-sm text-stone-500">{hint}</span>
+            <span className="text-sm text-stone-500 dark:text-stone-400">{hint}</span>
           ) : null}
         </div>
       )}

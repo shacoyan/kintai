@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, memo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useTenant } from '../hooks/useTenant';
 import { useNow } from '../hooks/useNow';
 import { useStoreContext } from '../contexts/StoreContext';
@@ -198,18 +198,36 @@ export function DashboardPage() {
     getRemainingPaidLeave(user.id).then(days => setRemainingPaidLeave(days));
   }, [user?.id, getRemainingPaidLeave]);
 
-  // 当月のシフトを取得（月間サマリの予定算出 + 週バー用にこの範囲から再 filter）
-  useEffect(() => {
-    const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
-    const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
-    getMyShifts(monthStart, monthEnd);
+  // 週バーが月初をまたぐ場合に前月分の曜日も埋めるため、取得 range を
+  // 「当月初を含む週の月曜」〜「当月末」に拡張（月間サマリは monthStartStr..monthEndStr で
+  // filter 済のため集計値は非破壊）。
+  const fetchMyShiftsForDashboard = useCallback(() => {
+    const now = new Date();
+    const weekStart = format(startOfWeek(startOfMonth(now), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(now), 'yyyy-MM-dd');
+    getMyShifts(weekStart, monthEnd);
   }, [getMyShifts]);
 
-  // 当月の勤怠実績を取得（月間サマリの実績算出用、本人・当月スコープ）
+  // 当月のシフトを取得（月間サマリの予定算出 + 週バー用にこの範囲から再 filter）
   useEffect(() => {
+    fetchMyShiftsForDashboard();
+  }, [fetchMyShiftsForDashboard]);
+
+  // 当月の勤怠実績を取得（月間サマリの実績算出用、本人・当月スコープ）
+  const fetchAttendanceForDashboard = useCallback(() => {
     const now = new Date();
     fetchRecords(now.getFullYear(), now.getMonth() + 1);
   }, [fetchRecords]);
+
+  useEffect(() => {
+    fetchAttendanceForDashboard();
+  }, [fetchAttendanceForDashboard]);
+
+  // dashboardError バナーの再試行: シフト + 勤怠を束ねて再取得（§3-2）。
+  const handleDashboardRetry = useCallback(() => {
+    fetchMyShiftsForDashboard();
+    fetchAttendanceForDashboard();
+  }, [fetchMyShiftsForDashboard, fetchAttendanceForDashboard]);
 
   if (loading && todayRecords.length === 0) {
     return (
@@ -336,7 +354,9 @@ export function DashboardPage() {
           <Heading level={1}>打刻 / ダッシュボード</Heading>
         </header>
 
-        {dashboardError && <ErrorBanner message={messages.error.withRetry(dashboardError)} />}
+        {dashboardError && (
+          <ErrorBanner message={messages.error.withRetry(dashboardError)} onRetry={handleDashboardRetry} />
+        )}
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.1fr_1.9fr]">
           <Card padding="md" className="flex flex-col gap-[18px]">

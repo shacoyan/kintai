@@ -31,8 +31,10 @@ import {
   Heading,
   Spinner,
   ActionMenu,
+  ErrorBanner,
   type ActionMenuItem,
 } from '../components/ui';
+import { messages } from '../lib/messages';
 import type {
   Task,
   TaskPriority,
@@ -607,14 +609,10 @@ export function TasksPage(): JSX.Element {
 
       {/* エラー */}
       {tasksError && (
-        <Card padding="sm">
-          <div className="flex items-center gap-2 text-red-600">
-            <AlertTriangle size={16} />
-            <span className="text-sm">
-              {tasksError.message ?? 'タスクの取得に失敗しました'}
-            </span>
-          </div>
-        </Card>
+        <ErrorBanner
+          message={tasksError.message ?? messages.error.fetchFailed}
+          onRetry={refetch}
+        />
       )}
 
       {/* ローディング */}

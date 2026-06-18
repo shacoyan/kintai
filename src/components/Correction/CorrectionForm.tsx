@@ -13,7 +13,7 @@ import { messages } from '../../lib/messages';
 
 interface CorrectionFormProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (submitted?: boolean) => void;
   date: string;
   tenantId: string;
   attendanceRecordId?: string;
@@ -134,7 +134,7 @@ export function CorrectionForm({
         request_type: mode,
         store_id: currentStore?.id,
       });
-      onClose();
+      onClose(true);
     } catch (err) {
       setError(formatSupabaseError(err).message);
     } finally {
@@ -152,7 +152,7 @@ export function CorrectionForm({
         <div className="flex gap-3">
           <Button
             type="button"
-            onClick={onClose}
+            onClick={() => onClose()}
             disabled={submitting}
             variant="tertiary"
             className="flex-1"

@@ -20,6 +20,31 @@ const KNOWN_CODE_MESSAGES: Record<string, string> = {
   '42P01': 'システムエラーが発生しました。サポートに連絡してください。',
 };
 
+/**
+ * code に該当しない場合の第2段フォールバック。
+ * Supabase Auth (GoTrue) 等が返す英語 message を小文字部分一致で和訳する。
+ * 特異語を先・汎用語を後ろに並べ、最初にマッチした文言を採用する。
+ */
+const MESSAGE_SUBSTRING_MESSAGES: ReadonlyArray<readonly [string, string]> = [
+  ['invalid login credentials', 'メールアドレスまたはパスワードが正しくありません。'],
+  ['email not confirmed', 'メールアドレスが未確認です。確認メールのリンクを開いてください。'],
+  ['user already registered', 'このメールアドレスは登録済みです。ログインしてください。'],
+  ['password should be at least', 'パスワードは6文字以上で入力してください。'],
+  ['email rate limit exceeded', '試行回数が上限に達しました。しばらくおいて再度お試しください。'],
+  ['rate limit', '試行回数が上限に達しました。しばらくおいて再度お試しください。'],
+  ['token has expired', 'リンクの有効期限が切れました。再度お試しください。'],
+  ['failed to fetch', 'ネットワークに接続できません。電波状況を確認してください。'],
+  ['network', 'ネットワークに接続できません。電波状況を確認してください。'],
+];
+
+function translateMessage(msg: string): string | undefined {
+  const lower = msg.toLowerCase();
+  for (const [needle, friendly] of MESSAGE_SUBSTRING_MESSAGES) {
+    if (lower.includes(needle)) return friendly;
+  }
+  return undefined;
+}
+
 function extractCode(err: unknown): string | undefined {
   if (err && typeof err === 'object' && 'code' in err) {
     const code = (err as { code?: unknown }).code;
@@ -48,6 +73,12 @@ export function formatSupabaseError(err: unknown): FriendlyError {
     return { message: KNOWN_CODE_MESSAGES[code], code, original: err };
   }
   const msg = extractMessage(err);
+  if (msg) {
+    const translated = translateMessage(msg);
+    if (translated) {
+      return { message: translated, code, original: err };
+    }
+  }
   return {
     message: msg ?? '予期しないエラーが発生しました。',
     code,

@@ -1,7 +1,8 @@
 import SalesSummary from './SalesSummary';
 import TransactionList from './TransactionList';
 import OpenOrderList from './OpenOrderList';
-import { ErrorBanner } from '../ui';
+import { RefreshCw } from 'lucide-react';
+import { Button, ErrorBanner } from '../ui';
 import type { OpenOrder, Transaction } from '../../lib/sales/types';
 
 // =============================================================================
@@ -77,14 +78,29 @@ export default function DailyLiveSection({
         <p className="text-xs text-stone-500 dark:text-stone-400">
           本日の売上（リアルタイム）
         </p>
-        {!loading && lastUpdated && (
-          <p
-            className="text-[11px] text-stone-400 dark:text-stone-500 tabular-nums"
-            aria-label="最終更新時刻"
-          >
-            最終更新 {formatUpdatedAt(lastUpdated)}
-          </p>
-        )}
+        <div className="flex items-center gap-2">
+          {!loading && lastUpdated && (
+            <p
+              className="text-[11px] text-stone-400 dark:text-stone-500 tabular-nums"
+              aria-label="最終更新時刻"
+            >
+              最終更新 {formatUpdatedAt(lastUpdated)}
+            </p>
+          )}
+          {refresh && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              loading={loading}
+              disabled={loading}
+              onClick={refresh}
+              iconLeft={<RefreshCw size={14} aria-hidden="true" />}
+            >
+              更新
+            </Button>
+          )}
+        </div>
       </div>
 
       <SalesSummary total={total} count={count} loading={loading} date={date} />

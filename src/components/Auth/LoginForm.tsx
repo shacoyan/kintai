@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { Checkbox } from '../ui/Checkbox';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { formatSupabaseError } from '../../lib/errors';
+import { useToast } from '../../contexts/ToastContext';
 
 function GoogleIcon() {
   return (
@@ -33,6 +34,7 @@ function GoogleIcon() {
 
 export const LoginForm = function LoginForm() {
   const { signIn, signUp } = useAuth();
+  const { showToast } = useToast();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLogin, setIsLogin] = useState<boolean>(true);
@@ -96,6 +98,10 @@ export const LoginForm = function LoginForm() {
   const handleGoogleLogin = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     // TODO Phase 3: signInWithOAuth({ provider: 'google' })
+    showToast(
+      'Google ログインは準備中です。メールアドレスでログインしてください。',
+      'info',
+    );
   };
 
   if (showResetForm) {

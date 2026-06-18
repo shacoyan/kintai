@@ -7,6 +7,7 @@ import { Heading } from '../ui';
 import { Input } from '../ui/Input';
 import { formatSupabaseError } from '../../lib/errors';
 import { messages } from '../../lib/messages';
+import { useToast } from '../../contexts/ToastContext';
 
 interface CreateTenantProps {
   onCreate: (tenant: Tenant) => void;
@@ -21,6 +22,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
   const [error, setError] = useState<string | null>(null);
   const [createdTenant, setCreatedTenant] = useState<Tenant | null>(null);
   const [copied, setCopied] = useState(false);
+  const { showToast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +55,8 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch {
-        // HTTPS以外の環境ではclipboard APIが使えないため無視
+        // HTTPS以外の環境ではclipboard APIが使えない → 無音失敗を解消し手動コピーを促す
+        showToast(messages.invite.copyFailed, 'error');
       }
     }
   };
@@ -128,7 +131,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
             required
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="例: 山田 太郎"
+            placeholder="例: SABABA 本部"
             disabled={loading}
             id="displayName"
           />

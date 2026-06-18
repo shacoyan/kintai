@@ -57,6 +57,28 @@ function formatTime(time: string | null): string {
 export function CorrectionList({ requests, onReview, onRevert, showFilter = false, memberNames, storeNames }: CorrectionListProps) {
   const [confirming, setConfirming] = useState<{ id: string; action: 'approve' | 'reject' } | null>(null);
   const [filterKey, setFilterKey] = useState<FilterKey>('all');
+  // 処理中の request.id（二重 RPC 防止: 確定ボタンを loading + disabled 化）
+  const [inFlight, setInFlight] = useState<string | null>(null);
+
+  const handleReview = async (id: string, status: 'approved' | 'rejected') => {
+    setInFlight(id);
+    try {
+      await onReview?.(id, status);
+      setConfirming(null);
+    } finally {
+      setInFlight(null);
+    }
+  };
+
+  const handleRevert = async (id: string) => {
+    if (!window.confirm(messages.confirm.revertCorrection)) return;
+    setInFlight(id);
+    try {
+      await onRevert?.(id);
+    } finally {
+      setInFlight(null);
+    }
+  };
 
   const filtered = showFilter
     ? requests.filter(r => {
@@ -154,13 +176,13 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                 <div className="flex gap-2 pt-1">
                   {confirming?.id === request.id && confirming.action === 'approve' ? (
                     <div className="flex gap-1 flex-1">
-                      <Button variant="primary" size="sm" className="flex-1" onClick={() => { onReview?.(request.id, 'approved'); setConfirming(null); }}>確定</Button>
-                      <Button variant="tertiary" size="sm" className="flex-1" onClick={() => setConfirming(null)}>戻す</Button>
+                      <Button variant="primary" size="sm" className="flex-1" loading={inFlight === request.id} onClick={() => handleReview(request.id, 'approved')}>確定</Button>
+                      <Button variant="tertiary" size="sm" className="flex-1" disabled={inFlight === request.id} onClick={() => setConfirming(null)}>戻す</Button>
                     </div>
                   ) : confirming?.id === request.id && confirming.action === 'reject' ? (
                     <div className="flex gap-1 flex-1">
-                      <Button variant="danger" size="sm" className="flex-1" onClick={() => { onReview?.(request.id, 'rejected'); setConfirming(null); }}>確定</Button>
-                      <Button variant="tertiary" size="sm" className="flex-1" onClick={() => setConfirming(null)}>戻す</Button>
+                      <Button variant="danger" size="sm" className="flex-1" loading={inFlight === request.id} onClick={() => handleReview(request.id, 'rejected')}>確定</Button>
+                      <Button variant="tertiary" size="sm" className="flex-1" disabled={inFlight === request.id} onClick={() => setConfirming(null)}>戻す</Button>
                     </div>
                   ) : request.status === 'pending' && onReview ? (
                     <div className="flex gap-1 flex-1">
@@ -168,7 +190,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                       <Button variant="danger" size="sm" className="flex-1" onClick={() => setConfirming({ id: request.id, action: 'reject' })}>却下</Button>
                     </div>
                   ) : request.status !== 'pending' && onRevert ? (
-                    <Button variant="tertiary" size="sm" className="flex-1" onClick={() => { if (window.confirm(messages.confirm.revertCorrection)) onRevert(request.id); }}>巻き戻す</Button>
+                    <Button variant="tertiary" size="sm" className="flex-1" loading={inFlight === request.id} onClick={() => handleRevert(request.id)}>巻き戻す</Button>
                   ) : null}
                 </div>
               )}
@@ -230,13 +252,13 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                     <td className="px-4 py-3 text-sm whitespace-nowrap">
                       {confirming?.id === request.id && confirming.action === 'approve' ? (
                         <div className="flex gap-1">
-                          <Button variant="primary" size="sm" onClick={() => { onReview?.(request.id, 'approved'); setConfirming(null); }}>確定</Button>
-                          <Button variant="tertiary" size="sm" onClick={() => setConfirming(null)}>戻す</Button>
+                          <Button variant="primary" size="sm" loading={inFlight === request.id} onClick={() => handleReview(request.id, 'approved')}>確定</Button>
+                          <Button variant="tertiary" size="sm" disabled={inFlight === request.id} onClick={() => setConfirming(null)}>戻す</Button>
                         </div>
                       ) : confirming?.id === request.id && confirming.action === 'reject' ? (
                         <div className="flex gap-1">
-                          <Button variant="danger" size="sm" onClick={() => { onReview?.(request.id, 'rejected'); setConfirming(null); }}>確定</Button>
-                          <Button variant="tertiary" size="sm" onClick={() => setConfirming(null)}>戻す</Button>
+                          <Button variant="danger" size="sm" loading={inFlight === request.id} onClick={() => handleReview(request.id, 'rejected')}>確定</Button>
+                          <Button variant="tertiary" size="sm" disabled={inFlight === request.id} onClick={() => setConfirming(null)}>戻す</Button>
                         </div>
                       ) : request.status === 'pending' && onReview ? (
                         <div className="flex gap-1">
@@ -244,7 +266,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                           <Button variant="danger" size="sm" onClick={() => setConfirming({ id: request.id, action: 'reject' })}>却下</Button>
                         </div>
                       ) : request.status !== 'pending' && onRevert ? (
-                        <Button variant="tertiary" size="sm" onClick={() => { if (window.confirm(messages.confirm.revertCorrection)) onRevert(request.id); }}>巻き戻す</Button>
+                        <Button variant="tertiary" size="sm" loading={inFlight === request.id} onClick={() => handleRevert(request.id)}>巻き戻す</Button>
                       ) : (
                         <span className="text-xs text-stone-400 dark:text-stone-500">-</span>
                       )}

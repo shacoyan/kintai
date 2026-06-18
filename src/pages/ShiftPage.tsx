@@ -358,13 +358,15 @@ export function ShiftPage() {
     await submitPreference(date, type, startTime, endTime, note, storeIdOverride);
     setSelectedDate(null);
     fetchPreferenceRange();
-  }, [submitPreference, fetchPreferenceRange]);
+    showToast(messages.toast.shiftPreferenceSubmitted, 'success');
+  }, [submitPreference, fetchPreferenceRange, showToast]);
 
   const handlePrefDelete = useCallback(async (id: string) => {
     await deletePreference(id);
     setSelectedDate(null);
     fetchPreferenceRange();
-  }, [deletePreference, fetchPreferenceRange]);
+    showToast(messages.toast.shiftPreferenceDeleted, 'success');
+  }, [deletePreference, fetchPreferenceRange, showToast]);
 
   const handleApprovePreference = useCallback(async (id: string, startTime?: string, endTime?: string) => {
     await approvePreference(id, startTime, endTime);

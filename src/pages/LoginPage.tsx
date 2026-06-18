@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { LoginForm } from '../components/Auth/LoginForm';
 import { BrandMark, PageLoader, Heading } from '../components/ui';
@@ -61,6 +61,7 @@ function HeroSection() {
 
 export const LoginPage = function LoginPage() {
   const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
 
   if (authLoading) {
     return <PageLoader variant="screen" />;
@@ -74,7 +75,9 @@ export const LoginPage = function LoginPage() {
     if (pendingJoinCode) {
       return <Navigate to={`/join?code=${encodeURIComponent(pendingJoinCode)}`} replace />;
     }
-    return <Navigate to="/" replace />;
+    // 認証ガードが state.from に元の遷移先を載せていれば、ログイン後そこへ戻す。
+    const from = (location.state as { from?: string } | null)?.from;
+    return <Navigate to={from ?? '/'} replace />;
   }
 
   return (
