@@ -7,7 +7,7 @@ import type { AttendanceRecord, TenantMember, Shift, TenantRole, MemberStorePayr
 import { useTenantRoles } from '../../hooks/useTenantRoles';
 import { useMemberStorePayrolls } from '../../hooks/useMemberStorePayrolls';
 import { getMemberPayrollForStore } from '../../utils/payrollCalc';
-import { generatePayrollCsv, downloadCsv } from '../../utils/csvExport';
+import { generatePayrollCsv, downloadCsv, csvEscape } from '../../utils/csvExport';
 import { getNightMinutesInRange, getNightMinutesForShift } from '../../utils/nightShift';
 import { Download, Calculator, Lock, Printer } from 'lucide-react';
 import { EmptyState, ErrorBanner, PageSkeleton, Button, Card, Select, Badge, StatCard, Heading } from '../ui';
@@ -252,11 +252,7 @@ function generateShiftPayrollCsv(
   _year: number,
   _month: number
 ): string {
-  const csvEscape = (val: string | number): string => {
-    const s = String(val);
-    return `"${s.replace(/"/g, '""')}"`;
-  };
-
+  // CSV エスケープ・数式インジェクション対策は共通の csvEscape に一本化。
   const fmtTime = (min: number): string => {
     const h = Math.floor(min / 60);
     const m = min % 60;

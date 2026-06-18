@@ -21,6 +21,21 @@ function fmtTime(min: number): string {
 }
 
 /**
+ * CSV セル 1 個分のエスケープ（正本）。
+ * 1) CSV インジェクション対策: 先頭が = + - @ TAB CR なら ' を前置して
+ *    Excel / Sheets / LibreOffice の数式評価（=HYPERLINK / =cmd 等）を防ぐ。
+ * 2) ダブルクォートで括り、内部の " を "" にエスケープ（RFC 4180）。
+ * 給与 CSV（実績/シフト両系統）はこの 1 関数に一本化して防御の取りこぼしを防ぐ。
+ */
+export function csvEscape(val: string | number): string {
+  let s = String(val);
+  if (s.length > 0 && /^[=+\-@\t\r]/.test(s)) {
+    s = `'${s}`;
+  }
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+/**
  * 実績ベースの給与データ（PayrollRow 集計済み）から CSV を生成する。
  *
  * 旧実装は member.hourly_rate と深夜倍率 1.25 ハードコードで record 単位に独自再計算していたが、
@@ -29,15 +44,7 @@ function fmtTime(min: number): string {
  * actual / shift / CSV / 印刷 で同一値になることを保証する。
  */
 export function generatePayrollCsv(payrollData: PayrollCsvRow[]): string {
-  // CSV インジェクション対策: 先頭が = + - @ TAB CR なら ' を前置して数式評価を防ぐ。
-  const csvEscape = (val: string | number): string => {
-    let s = String(val);
-    if (s.length > 0 && /^[=+\-@\t\r]/.test(s)) {
-      s = `'${s}`;
-    }
-    return `"${s.replace(/"/g, '""')}"`;
-  };
-
+  // CSV インジェクション対策・引用符エスケープは共通の csvEscape に一本化。
   const header = ['名前', '稼働日数', '通常時間', '深夜時間', '時給/月給', '支給額', '算出モード']
     .map(csvEscape)
     .join(',');
