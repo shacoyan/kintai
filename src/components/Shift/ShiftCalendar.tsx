@@ -103,7 +103,12 @@ function ShiftCalendarInner({
   const shiftsByDate = useMemo(() => {
     const map = new Map<string, Shift[]>();
     for (const s of shifts) {
+      // Bug#1(2026-06-19): shift.status==='pending'(申請中) は statusFilter に依らず常時表示扱い
+      //   (unifiedShiftTypes.ts の設計意図)。StatusFilterValue に 'pending' メンバーが無いため
+      //   statusFilter.has('pending') は常に false となり、差し戻し後 (tentative→pending) の
+      //   shift がカレンダーから脱落していた。pending を追加で通すだけ (他 status の挙動は不変)。
       const passesFilter =
+        s.status === 'pending' ||
         !statusFilter || statusFilter.has(s.status as StatusFilterValue);
       if (passesFilter) {
         const arr = map.get(s.date) || [];

@@ -1,5 +1,5 @@
 import { AddMemberShiftForm } from './AddMemberShiftForm';
-import { useMemo, useRef, useEffect, useCallback, memo } from 'react';
+import { useMemo, useRef, useEffect, useCallback, useState, memo } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Plus } from 'lucide-react';
@@ -118,6 +118,43 @@ function ShiftStatusReadonly({ shift }: { shift: Shift }) {
         {format(new Date(shift.date + 'T00:00:00'), 'M月d日', { locale: ja })} {formatTimeRange(shift.start_time, shift.end_time)}
       </span>
     </div>
+  );
+}
+
+// 理由: Batch C(6c2f643)でカレンダーバーの自己仮承認導線(button-in-button)を撤去した結果、
+// owner/manager が「自分の」希望/シフトを仮承認する口が消滅(regression)。DayDetailModal=
+// UnifiedShiftSidebar の「あなたの申請」内に、ネイティブ <Button> 1個で導線を復旧する。
+// 親に role=button/grid を作らない(a11y 再発防止)。認可は呼び出し側 canManageStore で表示制御し、
+// 最終認可は既存 RPC が担保。
+function SelfTentativeApproveButton({
+  onApprove,
+  onMutated,
+}: {
+  onApprove: () => Promise<void>;
+  onMutated: () => void;
+}) {
+  const [processing, setProcessing] = useState(false);
+  const handleClick = useCallback(async () => {
+    if (processing) return;
+    setProcessing(true);
+    try {
+      await onApprove();
+      onMutated();
+    } finally {
+      setProcessing(false);
+    }
+  }, [processing, onApprove, onMutated]);
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      fullWidth
+      loading={processing}
+      onClick={handleClick}
+      data-testid="self-tentative-approve"
+    >
+      自分で仮承認
+    </Button>
   );
 }
 
@@ -312,13 +349,37 @@ export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
               </h4>
               {myShifts.length > 0 && (
                 <ul className="space-y-1 mb-2">
-                  {myShifts.map(s => (
-                    <li key={s.id}>
-                      <ShiftStatusReadonly shift={s} />
-                    </li>
-                  ))}
+                  {myShifts.map(s => {
+                    const canSelfApproveShift =
+                      (s.status === 'pending' || s.status === 'modified') &&
+                      canManageStore(s.store_id) &&
+                      !!onTentativeApproveShift;
+                    return (
+                      <li key={s.id} className="space-y-1">
+                        <ShiftStatusReadonly shift={s} />
+                        {canSelfApproveShift && (
+                          <SelfTentativeApproveButton
+                            onApprove={() => onTentativeApproveShift!(s.id)}
+                            onMutated={onMutated}
+                          />
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
+              {existingPreference &&
+                existingPreference.status === 'pending' &&
+                existingPreference.preference_type === 'preferred' &&
+                canManageStore(existingPreference.store_id) &&
+                onApprovePreference && (
+                  <div className="mb-2">
+                    <SelfTentativeApproveButton
+                      onApprove={() => onApprovePreference(existingPreference.id)}
+                      onMutated={onMutated}
+                    />
+                  </div>
+                )}
               <ShiftPreferenceForm
                 date={selectedDate}
                 existingPreference={existingPreference}

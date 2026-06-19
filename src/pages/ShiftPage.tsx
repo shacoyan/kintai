@@ -430,6 +430,25 @@ export function ShiftPage() {
     }
   }, [revertShiftToTentative, showToast, fetchPreferenceRange, fetchRange]);
 
+  // Bug#1(2026-06-19): 仮承認シフト (tentative) を「申請中 (pending)」へ差し戻す cancel_shift_tentative も、
+  //   他 mutation と同じく成功後に preference / shift の両レンジを再取得する必要がある。
+  //   旧実装は生 cancelShiftTentative を props 直渡ししており、RPC が tentative→pending に更新しても
+  //   allShifts/myShifts が stale tentative のまま残り、getLaborCostEstimate の COUNTABLE が拾い続けて
+  //   人件費見込みに残存していた (= revert と同型の refetch ラッパーが欠けていた)。
+  const handleCancelShiftTentative = useCallback(async (id: string) => {
+    try {
+      await cancelShiftTentative(id);
+      showToast('申請中に差し戻しました', 'success');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'シフトの差し戻しに失敗しました';
+      showToast(msg, 'error');
+      throw e;
+    } finally {
+      fetchPreferenceRange();
+      fetchRange();
+    }
+  }, [cancelShiftTentative, showToast, fetchPreferenceRange, fetchRange]);
+
   const handleRestoreShift = useCallback(async (id: string) => {
     await restoreShift(id);
   }, [restoreShift]);
@@ -1398,7 +1417,7 @@ export function ShiftPage() {
                       onApproveShift={approveShift}
                       onRejectShift={rejectShift}
                       onTentativeApproveShift={tentativeApproveShift}
-                      onCancelShiftTentative={cancelShiftTentative}
+                      onCancelShiftTentative={handleCancelShiftTentative}
                       onRevertShiftToTentative={handleRevertShiftToTentative}
                       onRestoreShift={handleRestoreShift}
                       onModifyShift={handleModifyShift}
@@ -1481,7 +1500,7 @@ export function ShiftPage() {
                 onApproveShift={approveShift}
                 onRejectShift={rejectShift}
                 onTentativeApproveShift={tentativeApproveShift}
-                onCancelShiftTentative={cancelShiftTentative}
+                onCancelShiftTentative={handleCancelShiftTentative}
                 onRevertShiftToTentative={handleRevertShiftToTentative}
                 onRestoreShift={handleRestoreShift}
                 onModifyShift={handleModifyShift}
@@ -1620,7 +1639,7 @@ export function ShiftPage() {
           onApprove={approveShift}
           onReject={rejectShift}
           onTentativeApprove={tentativeApproveShift}
-          onCancelTentative={cancelShiftTentative}
+          onCancelTentative={handleCancelShiftTentative}
           onRevertToTentative={async (id) => { await revertShiftToTentative(id); }}
           onRestore={async (id) => { await restoreShift(id); }}
           onClose={() => setSelectedShift(null)}
