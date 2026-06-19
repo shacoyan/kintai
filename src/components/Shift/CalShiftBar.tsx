@@ -6,6 +6,7 @@ interface CalShiftBarProps {
   preference?: ShiftPreference;
   member?: TenantMember;
   isMine?: boolean;
+  onClick?: () => void;
 }
 
 export function getRoleColor(member: TenantMember | undefined): string {
@@ -28,7 +29,7 @@ export function statusVisual(status: string): StatusVisual {
   return { bg: 'rgba(120,113,108,0.08)', bar: '#78716c' };
 }
 
-export function CalShiftBar({ shift, preference, member, isMine }: CalShiftBarProps) {
+export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalShiftBarProps) {
   const status = shift?.status ?? (preference ? 'pending' : 'tentative');
   const start = shift?.start_time ?? preference?.start_time ?? '';
   const end = shift?.end_time ?? preference?.end_time ?? '';
@@ -49,10 +50,12 @@ export function CalShiftBar({ shift, preference, member, isMine }: CalShiftBarPr
     : `${fmt(start)}–${fmt(end)}`;
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       title={member?.display_name ?? ''}
       aria-label={`${member?.display_name ?? ''} ${timeLabel} ${isUnavailable ? '出勤不可' : isPreference ? '申請中' : status === 'approved' ? '本承認' : status === 'tentative' ? '仮承認' : '申請中'}${isMine ? ' (自分)' : ''}`}
-      className={`group flex flex-col min-w-0 rounded-[3px] ${
+      className={`group flex flex-col min-w-0 w-full text-left appearance-none bg-transparent cursor-pointer rounded-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset ${
         isMine ? 'ring-1 ring-blue-500 dark:ring-blue-400 ring-inset' : ''
       }`}
       style={{
@@ -82,6 +85,6 @@ export function CalShiftBar({ shift, preference, member, isMine }: CalShiftBarPr
           />
         )}
       </div>
-    </div>
+    </button>
   );
 }

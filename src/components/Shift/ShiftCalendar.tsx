@@ -60,10 +60,12 @@ interface ShiftCalendarProps {
 function ShiftCalendarInner({
   shifts,
   onDateClick,
+  onShiftClick,
   memberNames,
   onViewMonthChange,
   leaves = [],
   preferences,
+  onPreferenceClick,
   statusFilter,
   showPreferenceStatus = false,
   currentUserId,
@@ -215,20 +217,26 @@ function ShiftCalendarInner({
                     : '';
 
             return (
-              <button
+              // セルはコンテナ div (クリックハンドラ無し)。導線は中の
+              // 日付ヘッダ button とバー button が担う (兄弟・ネストなし)。
+              // role=grid/gridcell は付けない (Batch C の a11y 是正を維持)。
+              <div
                 key={dateStr}
-                type="button"
-                aria-label={`${dateStr} の詳細${holidayName ? ` (${holidayName})` : ''}`}
-                aria-pressed={selectedBulkDates ? isBulkSelected : undefined}
-                onClick={() => onDateClick(dateStr)}
-                className={`relative text-left w-full ${cellBg} ${weekendTint} p-1 cursor-pointer motion-safe:transition-colors duration-150 ease-out
+                className={`relative ${cellBg} ${weekendTint} p-1 motion-safe:transition-colors duration-150 ease-out
                   min-h-[80px] lg:min-h-[130px]
                   ${isToday ? 'border-t-2 border-blue-600 dark:border-blue-400 bg-blue-600/[0.04] dark:bg-blue-500/10' : ''}
-                  ${isCurrentMonth ? 'hover:bg-stone-50 dark:hover:bg-stone-800' : ''}
                   ${isBulkSelected ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/60 dark:bg-blue-900/30' : ''}
                 `}
               >
-                <div className="flex items-center gap-1 px-0.5 pb-0.5">
+                <button
+                  type="button"
+                  aria-label={`${dateStr} の詳細${holidayName ? ` (${holidayName})` : ''}`}
+                  aria-pressed={selectedBulkDates ? isBulkSelected : undefined}
+                  onClick={() => onDateClick(dateStr)}
+                  className={`flex items-center gap-1 w-full text-left appearance-none bg-transparent cursor-pointer rounded-[3px] px-0.5 pb-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset ${
+                    isCurrentMonth ? 'hover:bg-stone-50 dark:hover:bg-stone-800' : ''
+                  }`}
+                >
                   <span
                     className={`text-[11px] tabular-nums ${
                       !isCurrentMonth
@@ -249,7 +257,7 @@ function ShiftCalendarInner({
                   {uniqueHeadcount > 0 && isCurrentMonth && (
                     <span className="ml-auto text-[9px] text-stone-400 dark:text-stone-500 tabular-nums">{uniqueHeadcount}人</span>
                   )}
-                </div>
+                </button>
 
                 <div className="flex flex-col gap-0.5 min-w-0">
                   {visible.map((it) => {
@@ -263,6 +271,7 @@ function ShiftCalendarInner({
                           shift={s}
                           member={member}
                           isMine={isMine}
+                          onClick={() => onShiftClick?.(s)}
                         />
                       );
                     }
@@ -276,11 +285,17 @@ function ShiftCalendarInner({
                         preference={p}
                         member={member}
                         isMine={isMine}
+                        onClick={() => onPreferenceClick?.(p)}
                       />
                     );
                   })}
                   {overflow > 0 && (
-                    <div className="text-[9px] text-stone-500 dark:text-stone-400 px-1 leading-tight">+ {overflow} 件</div>
+                    <button
+                      type="button"
+                      onClick={() => onDateClick(dateStr)}
+                      aria-label={`他 ${overflow} 件を表示`}
+                      className="text-[9px] text-stone-500 dark:text-stone-400 px-1 leading-tight text-left w-full appearance-none bg-transparent cursor-pointer rounded-[3px] hover:bg-stone-50 dark:hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
+                    >+ {overflow} 件</button>
                   )}
                 </div>
 
@@ -299,7 +314,7 @@ function ShiftCalendarInner({
                     )}
                   </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
