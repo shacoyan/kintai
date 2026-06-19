@@ -36,6 +36,7 @@ import { ShiftStatusFilter, readStatusFilter, writeStatusFilter } from '../compo
 import type { StatusFilterValue } from '../components/Shift/unifiedShiftTypes';
 import { BulkShiftPreferenceDialog } from '../components/Shift/BulkShiftPreferenceDialog';
 import { formatTimeRange } from '../utils/formatTimeRange';
+import { buildTentativeShiftMap, getEffectiveTime } from '../utils/preferenceEffectiveTime';
 import { useStoreContext } from '../contexts/StoreContext';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../hooks/useAuth';
@@ -157,6 +158,9 @@ export function ShiftPage() {
     () => [...myPreferences].sort((a, b) => b.date.localeCompare(a.date)),
     [myPreferences]
   );
+
+  // P3-4: staff 履歴の override 表示用（自分の確定シフトのみ＝myShifts スコープ）
+  const myOverrideShiftMap = useMemo(() => buildTentativeShiftMap(myShifts), [myShifts]);
 
   const preferenceSummary = useMemo<Record<ShiftPreferenceType, number>>(() => {
     const active = myPreferences.filter((p) => p.status !== 'rejected');
@@ -1508,6 +1512,7 @@ export function ShiftPage() {
                 <div className="mt-2">
                   <ShiftPreferenceAdminList
                     preferences={preferencesForAdminList}
+                    shifts={allShifts}
                     memberNames={memberNames}
                     onApprove={handleApprovePreference}
                     onReject={handleRejectPreference}
@@ -1534,6 +1539,9 @@ export function ShiftPage() {
                   )}
                   {myPreferencesForHistory.map((pref) => {
                     const theme = getPreferenceTheme(pref.preference_type);
+                    const eff = getEffectiveTime(pref, myOverrideShiftMap);
+                    const showOverrideRow =
+                      eff.isOverridden && !!pref.start_time && !!pref.end_time && !!eff.start && !!eff.end;
                     const statusTone: BadgeTone =
                       pref.status === 'approved'
                         ? 'success'
@@ -1554,12 +1562,28 @@ export function ShiftPage() {
                               <theme.Icon className="w-3 h-3" />
                               {theme.label}
                             </span>
-                            {pref.start_time && pref.end_time && (
+                            {pref.start_time && pref.end_time && !showOverrideRow && (
                               <span className="text-xs text-stone-500 dark:text-stone-300 tabular-nums">
                                 {formatTimeRange(pref.start_time, pref.end_time, { separator: ' - ' })}
                               </span>
                             )}
                           </div>
+                          {showOverrideRow && (
+                            <div className="text-[11px] text-stone-500 dark:text-stone-300 leading-relaxed">
+                              <div>
+                                申請:{' '}
+                                <span className="tabular-nums">
+                                  {formatTimeRange(pref.start_time!, pref.end_time!, { separator: ' 〜 ' })}
+                                </span>
+                              </div>
+                              <div>
+                                確定:{' '}
+                                <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-200">
+                                  {formatTimeRange(eff.start!, eff.end!, { separator: ' 〜 ' })}
+                                </span>
+                              </div>
+                            </div>
+                          )}
                           {pref.note && (
                             <p className="text-xs text-stone-500 dark:text-stone-300">{pref.note}</p>
                           )}

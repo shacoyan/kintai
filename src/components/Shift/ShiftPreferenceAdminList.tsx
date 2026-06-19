@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import type { ShiftPreference } from '../../types';
+import type { ShiftPreference, Shift } from '../../types';
 import { PreferenceActionRow } from './PreferenceActionRow';
 import { Button, EmptyState, Heading } from '../ui';
+import { formatTimeRange } from '../../utils/formatTimeRange';
+import { buildTentativeShiftMap, getEffectiveTime } from '../../utils/preferenceEffectiveTime';
 
 interface ShiftPreferenceAdminListProps {
   preferences: ShiftPreference[];
+  shifts?: Shift[];
   memberNames: Map<string, string>;
   onApprove: (id: string, startTime?: string, endTime?: string) => Promise<void>;
   onReject: (id: string) => Promise<void>;
@@ -40,6 +43,7 @@ function sortPrefs(arr: ShiftPreference[], key: SortKey, memberNamesMap: Map<str
 
 export function ShiftPreferenceAdminList({
   preferences,
+  shifts,
   memberNames,
   onApprove,
   onReject,
@@ -105,6 +109,8 @@ export function ShiftPreferenceAdminList({
       }
     });
   };
+
+  const overrideShiftMap = useMemo(() => buildTentativeShiftMap(shifts ?? []), [shifts]);
 
   const storeMap = useMemo(() => new Map((stores ?? []).map(s => [s.id, s.name])), [stores]);
   const showStoreBadge = (stores?.length ?? 0) >= 2;
@@ -314,24 +320,46 @@ export function ShiftPreferenceAdminList({
       )}
 
       <div className="space-y-2">
-        {visibleDisplayed.map((pref) => (
-          <PreferenceActionRow
-            key={pref.id}
-            variant="full"
-            preference={pref}
-            memberName={memberNames.get(pref.user_id) ?? '不明'}
-            onApprove={onApprove}
-            onReject={onReject}
-            canManage={canManageStore(pref.store_id)}
-            onMutated={onRefresh}
-            selectable={!historyMode}
-            selected={selectedIds.has(pref.id)}
-            onToggleSelect={toggleSelect}
-            storeName={pref.store_id ? storeMap.get(pref.store_id) : undefined}
-            showStoreBadge={showStoreBadge}
-            onRevert={onRevert}
-          />
-        ))}
+        {visibleDisplayed.map((pref) => {
+          const eff = getEffectiveTime(pref, overrideShiftMap);
+          const showOverrideRow =
+            eff.isOverridden && !!pref.start_time && !!pref.end_time && !!eff.start && !!eff.end;
+          return (
+            <div key={pref.id} className="space-y-1">
+              <PreferenceActionRow
+                variant="full"
+                preference={pref}
+                memberName={memberNames.get(pref.user_id) ?? '不明'}
+                onApprove={onApprove}
+                onReject={onReject}
+                canManage={canManageStore(pref.store_id)}
+                onMutated={onRefresh}
+                selectable={!historyMode}
+                selected={selectedIds.has(pref.id)}
+                onToggleSelect={toggleSelect}
+                storeName={pref.store_id ? storeMap.get(pref.store_id) : undefined}
+                showStoreBadge={showStoreBadge}
+                onRevert={onRevert}
+              />
+              {showOverrideRow && (
+                <div className="text-[11px] text-stone-500 dark:text-stone-300 px-2 leading-relaxed">
+                  <div>
+                    申請:{' '}
+                    <span className="tabular-nums">
+                      {formatTimeRange(pref.start_time!, pref.end_time!, { separator: ' 〜 ' })}
+                    </span>
+                  </div>
+                  <div>
+                    確定:{' '}
+                    <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-200">
+                      {formatTimeRange(eff.start!, eff.end!, { separator: ' 〜 ' })}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {overflow > 0 && (

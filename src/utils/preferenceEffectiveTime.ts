@@ -9,25 +9,52 @@ export interface EffectiveTime {
   shiftId: string | null;
 }
 
-export function buildTentativeShiftMap(shifts: Shift[]): Map<string, Shift> {
-  const map = new Map<string, Shift>();
+/**
+ * override 反映対象シフトのマップ。
+ * - byPreferenceId: migration 096 の shifts.preference_id 直結（最優先・厳密リンク）
+ * - byHeuristic: preference_id=null の旧シフト救済用（user_id|date|store_id）
+ *
+ * 採用 status は approved/tentative/modified（本承認後も時刻を保持するため approved を含む）。
+ * rejected/cancelled/pending は除外。タイブレークは created_at 最新優先。
+ */
+export interface OverrideShiftMap {
+  byPreferenceId: Map<string, Shift>;
+  byHeuristic: Map<string, Shift>;
+}
+
+const OVERRIDE_TARGET_STATUSES: ReadonlySet<Shift['status']> = new Set([
+  'approved',
+  'tentative',
+  'modified',
+]);
+
+export function buildTentativeShiftMap(shifts: Shift[]): OverrideShiftMap {
+  const byPreferenceId = new Map<string, Shift>();
+  const byHeuristic = new Map<string, Shift>();
 
   for (const shift of shifts) {
-    if (shift.status !== 'tentative') continue;
-    const key = `${shift.user_id}|${shift.date}|${shift.store_id ?? ''}`;
+    if (!OVERRIDE_TARGET_STATUSES.has(shift.status)) continue;
 
-    const existing = map.get(key);
-    if (!existing || shift.created_at > existing.created_at) {
-      map.set(key, shift);
+    if (shift.preference_id) {
+      const existing = byPreferenceId.get(shift.preference_id);
+      if (!existing || shift.created_at > existing.created_at) {
+        byPreferenceId.set(shift.preference_id, shift);
+      }
+    } else {
+      const key = `${shift.user_id}|${shift.date}|${shift.store_id ?? ''}`;
+      const existing = byHeuristic.get(key);
+      if (!existing || shift.created_at > existing.created_at) {
+        byHeuristic.set(key, shift);
+      }
     }
   }
 
-  return map;
+  return { byPreferenceId, byHeuristic };
 }
 
 export function getEffectiveTime(
   pref: ShiftPreference,
-  tentativeShiftMap: Map<string, Shift>
+  overrideShiftMap: OverrideShiftMap
 ): EffectiveTime {
   const defaultResult: EffectiveTime = {
     start: null,
@@ -53,8 +80,12 @@ export function getEffectiveTime(
     };
   }
 
-  const primaryKey = `${pref.user_id}|${pref.date}|${pref.store_id ?? ''}`;
-  const matchedShift = tentativeShiftMap.get(primaryKey);
+  // preference_id 直結を最優先 → 無ければ heuristic で救済
+  const matchedShift =
+    overrideShiftMap.byPreferenceId.get(pref.id) ??
+    overrideShiftMap.byHeuristic.get(
+      `${pref.user_id}|${pref.date}|${pref.store_id ?? ''}`
+    );
 
   if (matchedShift) {
     const isStartOverridden =
