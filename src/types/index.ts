@@ -374,9 +374,15 @@ export const TASK_PRIORITY_LABELS: Record<TaskPriority, string> = {
   3: '緊急',
 };
 
+/**
+ * タスク status の表示ラベル。
+ * 単一の真実は `src/components/Task/taskStatusMeta.ts` の `statusMeta`（`未着手/進行中/完了/中止`）。
+ * 本定数はそれと同一文字列に揃える（旧 `cancelled: 'キャンセル'` は `'中止'` に統一）。
+ * 値・遷移ロジックには影響しない表示層のみの統一。
+ */
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   todo: '未着手',
   in_progress: '進行中',
   done: '完了',
-  cancelled: 'キャンセル',
+  cancelled: '中止',
 };

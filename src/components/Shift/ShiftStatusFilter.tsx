@@ -91,7 +91,7 @@ const STATUS_OFF = {
 };
 
 const CHIP_BASE_CLASS =
-  'inline-flex items-center gap-1.5 rounded-full border h-[26px] px-[9px] text-xs font-medium motion-safe:transition-colors duration-150 cursor-pointer select-none';
+  'inline-flex items-center gap-1.5 rounded-full border h-[26px] min-h-[44px] sm:min-h-0 px-[9px] text-xs font-medium motion-safe:transition-colors duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500';
 
 export interface ShiftStatusFilterProps {
   value: Set<StatusFilterValue>;

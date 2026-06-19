@@ -4,6 +4,7 @@ import { Building2, UserPlus } from 'lucide-react';
 import { EmptyState } from '../ui/EmptyState';
 import { Button } from '../ui/Button';
 import { Heading } from '../ui';
+import { getRoleLabel } from './roleMeta';
 import type { TenantWithRole } from '../../types';
 import { messages } from '../../lib/messages';
 
@@ -19,12 +20,6 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
     owner: 'bg-blue-50 text-blue-700 dark:bg-blue-800 dark:text-blue-100',
     manager: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-800 dark:text-emerald-100',
     staff: 'bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-300',
-  };
-
-  const roleLabels: Record<string, string> = {
-    owner: 'オーナー',
-    manager: '店長',
-    staff: 'スタッフ',
   };
 
   return (
@@ -48,7 +43,7 @@ const TenantSelector: React.FC<TenantSelectorProps> = ({ tenants, onSelect, onCr
                   <p className="text-sm text-stone-500 dark:text-stone-300 truncate">{tenant.display_name}</p>
                 </div>
                 <span className={`ml-4 px-3 py-1 text-xs font-medium rounded-full ${roleColors[tenant.role] || roleColors.staff}`}>
-                  {roleLabels[tenant.role] || roleLabels.staff}
+                  {getRoleLabel(tenant.role)}
                 </span>
               </button>
             ))}

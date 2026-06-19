@@ -353,10 +353,20 @@ function ShiftMobileCalendarInner({
                   )}
                   {overflow > 0 && (
                     <span
-                      className="text-[10px] tabular-nums leading-none text-stone-500 dark:text-stone-400 text-left cursor-pointer"
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`他${overflow}件を表示`}
+                      className="inline-flex items-center self-start -my-1 -mx-1 px-1 py-1 min-w-[44px] text-[10px] tabular-nums leading-none text-stone-500 dark:text-stone-400 text-left cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleOverflow(dateStr);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleOverflow(dateStr);
+                        }
                       }}
                     >
                       +{overflow}

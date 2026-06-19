@@ -9,8 +9,10 @@ import type { TaskStatus } from '../../types';
  * `todo` の色が stone / slate でズレていた。本モジュールを TasksPage と SubtaskKanban の
  * 双方が import して重複を解消する（TasksPage 側の従来定義 = stone 系を正とする）。
  *
- * 注意: ラベルは `TASK_STATUS_LABELS`（types）と一部異なる（cancelled: 'キャンセル' vs '中止'）。
- * 既存 list/kanban の見た目を変えないため、表示は本 `statusMeta`（'中止'）を正とする。
+ * ラベルの単一の真実（single source）: タスク status の表示ラベルは本 `statusMeta`
+ * （未着手/進行中/完了/中止）を正とする。`TASK_STATUS_LABELS`（types）も同一文字列に統一済み、
+ * Kanban / MobileKanban / TaskDetailDialog の選択肢・列ヘッダも本定義由来に寄せている。
+ * （旧: `cancelled` が 'キャンセル' vs '中止' / Kanban 列が 'ToDo' でズレていた → 解消済み）
  */
 export const statusMeta: Record<TaskStatus, { label: string; text: string; dot: string }> = {
   todo: { label: '未着手', text: 'text-stone-500', dot: 'bg-stone-400' },

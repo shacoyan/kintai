@@ -72,7 +72,7 @@ export const SeriesCheckboxGroup: React.FC<SeriesCheckboxGroupProps> = ({
           {onAllOn && (
             <button
               type="button"
-              className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded"
+              className="inline-flex items-center text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded min-h-[44px] sm:min-h-0 py-2 sm:py-0"
               onClick={onAllOn}
             >
               全て表示
@@ -81,7 +81,7 @@ export const SeriesCheckboxGroup: React.FC<SeriesCheckboxGroupProps> = ({
           {onAllOff && (
             <button
               type="button"
-              className="text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded"
+              className="inline-flex items-center text-xs text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded min-h-[44px] sm:min-h-0 py-2 sm:py-0"
               onClick={onAllOff}
             >
               全て非表示

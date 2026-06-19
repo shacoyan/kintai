@@ -11,11 +11,12 @@ import { statusMeta } from './taskStatusMeta';
 import { SubtaskKanban } from './SubtaskKanban';
 
 // ③ インライン編集の選択肢。
+// ラベルは statusMeta（単一の真実: 未着手/進行中/完了/中止）由来に統一。
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
-  { value: 'todo', label: '未着手' },
-  { value: 'in_progress', label: '進行中' },
-  { value: 'done', label: '完了' },
-  { value: 'cancelled', label: '中止' },
+  { value: 'todo', label: statusMeta.todo.label },
+  { value: 'in_progress', label: statusMeta.in_progress.label },
+  { value: 'done', label: statusMeta.done.label },
+  { value: 'cancelled', label: statusMeta.cancelled.label },
 ];
 const PRIORITY_OPTIONS: { value: TaskPriority; label: string }[] = [
   { value: 0, label: TASK_PRIORITY_LABELS[0] },

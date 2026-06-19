@@ -26,7 +26,7 @@ export type StoreTabValue =
  * 単一列のメタ情報。`KanbanBoard` が 4 列を並べる際に使用。
  *
  * - `status`: TaskStatus の値 ('todo' | 'in_progress' | 'done' | 'cancelled')
- * - `label`: 列ヘッダ表示用ラベル (例: '未着手', '進行中', '完了', 'キャンセル')
+ * - `label`: 列ヘッダ表示用ラベル (例: '未着手', '進行中', '完了', '中止')
  */
 export type KanbanColumnDef = {
   status: TaskStatus;

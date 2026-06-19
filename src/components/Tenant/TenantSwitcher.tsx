@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Building2, Check, Plus, ChevronDown } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
 import { Badge } from '../ui';
+import { getRoleLabel } from './roleMeta';
 import type { TenantWithRole } from '../../types';
 
 interface TenantSwitcherProps {
@@ -151,19 +152,6 @@ export function TenantSwitcher({ compact }: TenantSwitcherProps) {
         return 'info';
       default:
         return 'neutral';
-    }
-  };
-
-  const getRoleLabel = (role: string): string => {
-    switch (role) {
-      case 'owner':
-        return 'Owner';
-      case 'manager':
-        return 'Manager';
-      case 'staff':
-        return 'Staff';
-      default:
-        return role;
     }
   };
 

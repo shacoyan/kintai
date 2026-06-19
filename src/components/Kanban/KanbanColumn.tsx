@@ -3,6 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { Plus } from 'lucide-react';
 import type { Task, TaskStatus } from '../../types';
 import { cn } from '../../lib/cn';
+import { statusMeta } from '../Task/taskStatusMeta';
 
 /**
  * KanbanColumn — 単一列の droppable container (Phase 2 Loop 1)
@@ -25,11 +26,12 @@ export type KanbanColumnProps = {
   hideHeader?: boolean;
 };
 
+// ドット色は statusMeta.dot 由来に統一（MobileKanban と単一の真実: todo=stone / cancelled=red）。
 const statusDotColor: Record<TaskStatus, string> = {
-  todo: 'bg-slate-400',
-  in_progress: 'bg-blue-500',
-  done: 'bg-emerald-500',
-  cancelled: 'bg-stone-400',
+  todo: statusMeta.todo.dot,
+  in_progress: statusMeta.in_progress.dot,
+  done: statusMeta.done.dot,
+  cancelled: statusMeta.cancelled.dot,
 };
 
 export function KanbanColumn({

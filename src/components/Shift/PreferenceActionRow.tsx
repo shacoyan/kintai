@@ -182,7 +182,7 @@ function PreferenceActionRowInner({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleApprove(); }}
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-emerald-700 bg-emerald-50 hover:bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-800 dark:hover:bg-emerald-700 motion-safe:transition-colors duration-150 ease-out"
+                  className="inline-flex items-center justify-center w-6 h-6 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-md text-emerald-700 bg-emerald-50 hover:bg-emerald-50 dark:text-emerald-200 dark:bg-emerald-800 dark:hover:bg-emerald-700 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   aria-label="承認"
                 >
                   <Check className="w-3.5 h-3.5" />
@@ -190,7 +190,7 @@ function PreferenceActionRowInner({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleReject(); }}
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-md text-red-700 bg-red-50 hover:bg-red-50 dark:text-red-200 dark:bg-red-800 dark:hover:bg-red-700 motion-safe:transition-colors duration-150 ease-out"
+                  className="inline-flex items-center justify-center w-6 h-6 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 rounded-md text-red-700 bg-red-50 hover:bg-red-50 dark:text-red-200 dark:bg-red-800 dark:hover:bg-red-700 motion-safe:transition-colors duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                   aria-label="却下"
                 >
                   <X className="w-3.5 h-3.5" />

@@ -21,6 +21,7 @@ import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
 import type { UseKanbanDndResult } from '../../hooks/useKanbanDnd';
 import type { Task, TaskStatus } from '../../types';
+import { statusMeta } from '../Task/taskStatusMeta';
 
 interface MobileKanbanProps {
   tasks: Task[];
@@ -38,18 +39,20 @@ interface MobileKanbanProps {
   onTaskDelete?: (task: Task) => void;
 }
 
+// ラベルは statusMeta（単一の真実: 未着手/進行中/完了/中止）由来に統一。
 const COLUMN_DEFINITIONS: { status: TaskStatus; label: string }[] = [
-  { status: 'todo', label: 'ToDo' },
-  { status: 'in_progress', label: '進行中' },
-  { status: 'done', label: '完了' },
-  { status: 'cancelled', label: 'キャンセル' },
+  { status: 'todo', label: statusMeta.todo.label },
+  { status: 'in_progress', label: statusMeta.in_progress.label },
+  { status: 'done', label: statusMeta.done.label },
+  { status: 'cancelled', label: statusMeta.cancelled.label },
 ];
 
+// ドット色も statusMeta.dot 由来に統一（todo=stone / cancelled=red）。
 const statusDotColor: Record<TaskStatus, string> = {
-  todo: 'bg-slate-400',
-  in_progress: 'bg-blue-500',
-  done: 'bg-emerald-500',
-  cancelled: 'bg-stone-400',
+  todo: statusMeta.todo.dot,
+  in_progress: statusMeta.in_progress.dot,
+  done: statusMeta.done.dot,
+  cancelled: statusMeta.cancelled.dot,
 };
 
 export function MobileKanban({
