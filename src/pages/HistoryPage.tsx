@@ -544,7 +544,22 @@ export function HistoryPage() {
   }
 
   return (
-    <div className={`max-w-6xl mx-auto px-4 py-6 space-y-4 motion-safe:transition-opacity duration-180 ease-out${isRefetching ? ' opacity-60 pointer-events-none' : ''}`}>
+    <div
+      aria-busy={isRefetching}
+      className={`max-w-6xl mx-auto px-4 py-6 space-y-4 motion-safe:transition-opacity duration-180 ease-out${isRefetching ? ' opacity-60 pointer-events-none' : ''}`}
+    >
+      <div role="status" aria-live="polite" className="sr-only">
+        {isRefetching ? '勤怠記録を更新中' : ''}
+      </div>
+      {isRefetching && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none flex items-center justify-center gap-2 text-xs text-stone-500 dark:text-stone-300"
+        >
+          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-stone-300 border-t-stone-600 dark:border-stone-600 dark:border-t-stone-200" />
+          更新中…
+        </div>
+      )}
       {currentStore == null && (
         <Card padding="md">
           <div className="flex items-center justify-center gap-2 text-sm">
@@ -586,13 +601,13 @@ export function HistoryPage() {
               </button>
             </div>
             <div className="hidden h-[22px] w-px bg-stone-200 dark:bg-stone-700 lg:block" />
-            <Button variant="tertiary" size="sm" iconLeft={<ChevronLeft className="h-4 w-4 text-stone-600 dark:text-stone-300" />} onClick={handlePrevMonth} aria-label="前月"><></></Button>
+            <Button variant="tertiary" size="sm" iconLeft={<ChevronLeft className="h-4 w-4 text-stone-600 dark:text-stone-300" />} onClick={handlePrevMonth} disabled={isRefetching} aria-label="前月"><></></Button>
             <div className="min-w-[70px] text-center text-[13px] font-semibold tabular-nums text-stone-900 dark:text-stone-100 lg:min-w-[90px] lg:text-sm">
               {format(currentDate, 'yyyy / MM')}
             </div>
-            <Button variant="tertiary" size="sm" iconLeft={<ChevronRight className="h-4 w-4 text-stone-600 dark:text-stone-300" />} onClick={handleNextMonth} aria-label="翌月"><></></Button>
+            <Button variant="tertiary" size="sm" iconLeft={<ChevronRight className="h-4 w-4 text-stone-600 dark:text-stone-300" />} onClick={handleNextMonth} disabled={isRefetching} aria-label="翌月"><></></Button>
             {!isCurrentMonthShown && (
-              <Button variant="tertiary" size="sm" onClick={() => setCurrentDate(new Date())} className="hidden lg:inline-flex">
+              <Button variant="tertiary" size="sm" onClick={() => setCurrentDate(new Date())} disabled={isRefetching} className="hidden lg:inline-flex">
                 今月へ
               </Button>
             )}
@@ -610,8 +625,8 @@ export function HistoryPage() {
 
           {canSwitchUser && currentStore != null && (
             <div className="flex items-center gap-2">
-              <label className="text-xs text-stone-500 dark:text-stone-300">対象メンバー</label>
-              <select value={effectiveUserId ?? ''} onChange={(e) => setSelectedUserId(e.target.value || null)}
+              <label htmlFor="history-target-member" className="text-xs text-stone-500 dark:text-stone-300">対象メンバー</label>
+              <select id="history-target-member" value={effectiveUserId ?? ''} onChange={(e) => setSelectedUserId(e.target.value || null)}
                 className="rounded-md border border-stone-300 bg-white px-2 py-1 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100">
                 {myUserId && <option value={myUserId}>自分</option>}
                 {members.filter(m => m.user_id !== myUserId).map(m => (
@@ -619,7 +634,7 @@ export function HistoryPage() {
                 ))}
               </select>
               {!isCurrentMonthShown && (
-                <Button variant="tertiary" size="sm" onClick={() => setCurrentDate(new Date())} className="lg:hidden">
+                <Button variant="tertiary" size="sm" onClick={() => setCurrentDate(new Date())} disabled={isRefetching} className="lg:hidden">
                   今月へ
                 </Button>
               )}

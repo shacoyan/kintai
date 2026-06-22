@@ -5,10 +5,12 @@
 //   - 日報タブ = DailyReportPanel（店舗/日付セレクタ + Square サマリ + 入力フォーム）。
 //   - 月報タブ = E-2 の MonthlyReportPanel を lazy import で 1 行結線（契約名準拠）。
 //     E-2 未完成でも import + Suspense で配線だけしておく（統合時にビルド確認）。
-//   - 状態は useState<'daily'|'monthly'>。WAI-ARIA tabs（role=tab/tablist/tabpanel）。
+//   - タブ状態は useUrlState<'daily'|'monthly'>('tab') で URL ?tab= へ双方向同期（T7）。
+//     WAI-ARIA tabs（role=tab/tablist/tabpanel）。
 // =============================================================================
 
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { useUrlState } from '../hooks/useUrlState';
 import { useReportStores } from '../hooks/useReportStores';
 import { useDailyReport } from '../hooks/useDailyReport';
 import { getBusinessDate } from '../lib/sales/businessDate';
@@ -38,8 +40,15 @@ const TABS: { key: ReportTab; label: string }[] = [
   { key: 'monthly', label: '月報' },
 ];
 
+// T7（2026-06-18 監査 §4-10）: 日報/月報タブを URL ?tab= へ双方向同期。
+// /reports?tab=monthly 直アクセスで月報に着地、リロード/戻るで復元、共有可。
+// 書き戻しは useUrlState 内で functional updater + { replace: true } のため
+// 他クエリを温存し履歴も汚さない。/reports に他の 'tab' 使用箇所は無い
+// （AdminDashboard は別ルートの adminTab、ShiftPage は /shift で legacy tab を削除）。
+const REPORT_TABS = ['daily', 'monthly'] as const;
+
 export function ReportsPage(): JSX.Element {
-  const [tab, setTab] = useState<ReportTab>('daily');
+  const [tab, setTab] = useUrlState<ReportTab>('tab', REPORT_TABS, 'daily');
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 space-y-6">
@@ -150,14 +159,25 @@ function DailyReportPanel(): JSX.Element {
 
       {error ? <ErrorBanner message={error} /> : null}
 
-      {loading ? (
+      {/* T11（2026-06-18 監査 §4-10）: 保存後の reload で全画面スケルトンに差し替えると
+          入力が消えたように見えるフラッシュが起きる。既に表示中のデータがある間の
+          再取得（保存直後 reload 含む）は前回表示を保持し、薄い opacity ディミング +
+          aria-busy で「更新中」を伝えるに留める。データ未取得時のみ初回スケルトンを出す。
+          SR には aria-live='polite' で更新状態を通知する（保存 toast は Form 側で維持）。 */}
+      {loading && !data ? (
         <DashboardSkeleton />
       ) : data ? (
         data.scope_ok ? (
-          <>
+          <div
+            className={
+              'space-y-6 motion-safe:transition-opacity' +
+              (loading ? ' opacity-60' : '')
+            }
+            aria-busy={loading}
+          >
             <DailySquareSummary report={data} />
             <DailyReportForm report={data} saving={saving} onSave={saveDailyReport} />
-          </>
+          </div>
         ) : (
           <EmptyState
             title="権限がありません"
@@ -171,6 +191,11 @@ function DailyReportPanel(): JSX.Element {
           description="Square 集計と入力フォームが表示されます。"
         />
       ) : null}
+
+      {/* SR への更新状態通知（視覚的には非表示）。 */}
+      <div aria-live="polite" className="sr-only">
+        {loading && data ? '最新の内容を更新しています' : ''}
+      </div>
     </div>
   );
 }

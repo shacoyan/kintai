@@ -7,7 +7,8 @@
  * 各タブには未完了タスク数を Badge で表示する。
  * ホイールおよび横スワイプでスクロール可能。
  */
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
+import type { KeyboardEvent } from 'react';
 import type { StoreTabValue } from './types';
 import { cn } from '../../lib/cn';
 
@@ -84,22 +85,59 @@ export function StoreTabBar(props: StoreTabBarProps): JSX.Element {
     [stores],
   );
 
+  // roving tabindex のフォーカス移譲用 ref 配列
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const activeIndex = tabs.findIndex((t) => eqValue(value, t.tabValue));
+
+  // WAI-ARIA tabs: 左右(/Home/End)矢印でフォーカス移動 + automatic activation
+  function handleKeyDown(e: KeyboardEvent<HTMLButtonElement>, index: number) {
+    let nextIndex: number | null = null;
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        nextIndex = (index + 1) % tabs.length;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        nextIndex = (index - 1 + tabs.length) % tabs.length;
+        break;
+      case 'Home':
+        nextIndex = 0;
+        break;
+      case 'End':
+        nextIndex = tabs.length - 1;
+        break;
+      default:
+        return;
+    }
+    if (nextIndex === null) return;
+    e.preventDefault();
+    tabRefs.current[nextIndex]?.focus();
+    onChange(tabs[nextIndex].tabValue);
+  }
+
   return (
     <div
       className="flex items-center gap-1 overflow-x-auto py-1"
       role="tablist"
       aria-label="店舗タブ"
     >
-      {tabs.map(({ tabValue, label }) => {
+      {tabs.map(({ tabValue, label }, index) => {
         const isActive = eqValue(value, tabValue);
         const count = countsMap.get(serializeKey(tabValue));
+        // roving tabindex: 選択タブ(無選択時は先頭)のみ Tab ストップ
+        const isTabStop = activeIndex >= 0 ? isActive : index === 0;
 
         return (
           <button
             key={serializeKey(tabValue)}
+            ref={(el) => { tabRefs.current[index] = el; }}
             type="button"
             role="tab"
             aria-selected={isActive}
+            tabIndex={isTabStop ? 0 : -1}
+            onKeyDown={(e) => handleKeyDown(e, index)}
             onClick={() => onChange(tabValue)}
             className={cn(
               'shrink-0 inline-flex h-[30px] items-center gap-1.5 rounded-full border px-3 text-[12px] font-medium whitespace-nowrap motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',

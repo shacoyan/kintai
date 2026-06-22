@@ -166,19 +166,19 @@ export default function TransactionList({ transactions, loading }: TransactionLi
         <table className="w-full text-sm">
           <thead className="hidden md:table-header-group bg-stone-50 border-b border-stone-200 dark:bg-stone-800 dark:border-stone-700">
             <tr>
-              <th scope="col" className="text-left px-4 py-3 font-medium text-stone-500">
+              <th scope="col" className="text-left px-4 py-3 font-medium text-stone-500 dark:text-stone-400">
                 時刻
               </th>
-              <th scope="col" className="text-right px-4 py-3 font-medium text-stone-500">
+              <th scope="col" className="text-right px-4 py-3 font-medium text-stone-500 dark:text-stone-400">
                 金額
               </th>
-              <th scope="col" className="text-left px-4 py-3 font-medium text-stone-500">
+              <th scope="col" className="text-left px-4 py-3 font-medium text-stone-500 dark:text-stone-400">
                 支払い方法
               </th>
-              <th scope="col" className="text-left px-4 py-3 font-medium text-stone-500">
+              <th scope="col" className="text-left px-4 py-3 font-medium text-stone-500 dark:text-stone-400">
                 顧客
               </th>
-              <th scope="col" className="text-left px-4 py-3 font-medium text-stone-500">
+              <th scope="col" className="text-left px-4 py-3 font-medium text-stone-500 dark:text-stone-400">
                 ステータス
               </th>
             </tr>
@@ -188,21 +188,37 @@ export default function TransactionList({ transactions, loading }: TransactionLi
               <Fragment key={tx.id}>
                 <tr
                   className={`block md:table-row border-b border-stone-200 last:border-0 even:bg-stone-50/60 hover:bg-stone-100/60 dark:border-stone-700 dark:even:bg-stone-800/40 dark:hover:bg-stone-800/60 ${MOTION.fast} ${
-                    tx.line_items.length > 0 ? 'cursor-pointer' : ''
+                    tx.line_items.length > 0
+                      ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-500'
+                      : ''
                   }`}
                   onClick={() => tx.line_items.length > 0 && toggleExpand(tx.id)}
+                  {...(tx.line_items.length > 0
+                    ? {
+                        role: 'button',
+                        tabIndex: 0,
+                        'aria-expanded': expandedIds.has(tx.id),
+                        'aria-label': expandedIds.has(tx.id) ? '伝票明細を折りたたむ' : '伝票明細を展開',
+                        onKeyDown: (e: React.KeyboardEvent) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleExpand(tx.id);
+                          }
+                        },
+                      }
+                    : {})}
                 >
                   <td className="block md:table-cell px-2 py-1 md:px-4 md:py-3 text-stone-600 dark:text-stone-300 whitespace-nowrap">
                     <span className="inline-flex items-start gap-1">
                       {tx.line_items.length > 0 && (
-                        <span className="text-stone-500 mt-0.5">
+                        <span className="text-stone-500 dark:text-stone-400 mt-0.5" aria-hidden="true">
                           {expandedIds.has(tx.id) ? '▼' : '▶'}
                         </span>
                       )}
                       <span className="flex flex-col leading-tight">
                         {tx.order_created_at_jst &&
                           formatHHMM(tx.order_created_at_jst) !== formatHHMM(tx.created_at_jst) && (
-                            <span className="text-[10px] text-stone-500">
+                            <span className="text-[10px] text-stone-500 dark:text-stone-400">
                               開始 {formatHHMM(tx.order_created_at_jst)}
                             </span>
                           )}

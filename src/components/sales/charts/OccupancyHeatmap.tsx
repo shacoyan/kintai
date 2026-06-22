@@ -46,10 +46,12 @@ interface Props {
  * - 列ヘッダは 3h 刻みの 8 本のみ（slot % 6 === 0）表示。
  */
 function OccupancyHeatmap({ matrix, activeSlots }: Props) {
-  const { avgGroups, avgPersons, maxPersons } = useMemo(() => {
+  const { avgGroups, avgPersons, maxPersons, peakWeekday, peakSlot } = useMemo(() => {
     const aG: number[][] = Array.from({ length: WEEKDAY_COUNT }, () => Array(SLOT_COUNT).fill(0));
     const aP: number[][] = Array.from({ length: WEEKDAY_COUNT }, () => Array(SLOT_COUNT).fill(0));
     let mP = 0;
+    let pW = -1;
+    let pS = -1;
     for (let w = 0; w < WEEKDAY_COUNT; w++) {
       for (let s = 0; s < SLOT_COUNT; s++) {
         const { groups, persons } = getAverages(matrix, w, s);
@@ -59,18 +61,35 @@ function OccupancyHeatmap({ matrix, activeSlots }: Props) {
     }
     for (const s of activeSlots) {
       for (let w = 0; w < WEEKDAY_COUNT; w++) {
-        if (aP[w][s] > mP) mP = aP[w][s];
+        if (aP[w][s] > mP) {
+          mP = aP[w][s];
+          pW = w;
+          pS = s;
+        }
       }
     }
-    return { avgGroups: aG, avgPersons: aP, maxPersons: mP };
+    return { avgGroups: aG, avgPersons: aP, maxPersons: mP, peakWeekday: pW, peakSlot: pS };
   }, [matrix, activeSlots]);
 
   const hasData = maxPersons > 0;
 
+  // a11y: 7×48 = 最大 336 マスにそれぞれ tabIndex を付けるとタブストップ過多になり
+  // キーボード操作を阻害する。WAI-ARIA 上、ヒートマップ全体は ChartFigure の
+  // role="img" + aria-label が代表名となり、各マス（div）は装飾扱いで aria-hidden を維持する。
+  // ホバー以外でも値が取れるよう、(1) figure の aria-label にピーク曜日・時間帯・人数の
+  // サマリを併記、(2) 凡例横に同サマリを可視テキストとして併記する。
+  const peakSummary =
+    hasData && peakWeekday >= 0 && peakSlot >= 0
+      ? `最混雑は ${WEEKDAY_LABELS[peakWeekday]}曜 ${SLOT_LABELS[peakSlot]} で平均 ${maxPersons.toFixed(1)} 人。`
+      : '';
+  const figureLabel =
+    'ヒートマップ：曜日 × 時間帯 平均同時滞在人数 (7×48 マス)。濃いほど混雑。' +
+    (peakSummary ? ` ${peakSummary}` : '');
+
   const gridTemplate = `40px repeat(${activeSlots.length}, minmax(0, 1fr))`;
 
   return (
-    <ChartFigure label="ヒートマップ：曜日 × 時間帯 平均同時滞在人数 (7×48 マス)。濃いほど混雑。" className="w-full">
+    <ChartFigure label={figureLabel} className="w-full">
       <div className="overflow-x-auto">
         <div className="min-w-[720px]">
           {/* 列ヘッダ（3h 刻み 8 本） */}
@@ -127,7 +146,14 @@ function OccupancyHeatmap({ matrix, activeSlots }: Props) {
             </div>
             <span>多</span>
             {hasData ? (
-              <span className="ml-2 tabular-nums">最濃 10 人 / 実測ピーク {maxPersons.toFixed(1)} 人（平均）</span>
+              <span className="ml-2 tabular-nums">
+                最濃 10 人 / 実測ピーク {maxPersons.toFixed(1)} 人（平均）
+                {peakWeekday >= 0 && peakSlot >= 0 && (
+                  <span className="ml-1">
+                    ・最混雑 {WEEKDAY_LABELS[peakWeekday]}曜 {SLOT_LABELS[peakSlot]}
+                  </span>
+                )}
+              </span>
             ) : (
               <span className="ml-2 text-stone-400 dark:text-stone-500">{MSG.empty.generic}</span>
             )}

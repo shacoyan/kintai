@@ -1,4 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useUrlState } from '../hooks/useUrlState';
 import { useSalesScope } from '../hooks/useSalesScope';
 import { useSalesSegment } from '../hooks/useSalesSegment';
 import { useSalesYoY } from '../hooks/useSalesYoY';
@@ -132,6 +134,17 @@ export const SalesPage: React.FC = () => {
 
   const [selected, setSelected] = useState<string>('');
 
+  // T7/T11（2026-06-18 監査 §4-9）: 店舗選択を URL ?store= へ双方向同期。
+  // 店舗値は動的（許可店舗名 or ALL_VALUE）のため useUrlState（固定 allowed）は使えず、
+  // inline パターンで実装する。初期 ?store= はマウント時 1 回だけ読み（遅延初期化）、
+  // options 確定後に「存在する値のみ採用」ガードで適用、未知 ID は無視して既定へフォールバック。
+  // 書き戻しは functional updater + { replace: true } で他クエリ（period 等）を温存し履歴も汚さない。
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialStoreRef = useRef<string | null>(
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    searchParams.get('store'),
+  );
+
   useEffect(() => {
     if (scopeLoading) return;
     if (options.length === 0) {
@@ -139,9 +152,30 @@ export const SalesPage: React.FC = () => {
       return;
     }
     if (!options.some((o) => o.value === selected)) {
-      setSelected(canViewAll ? ALL_VALUE : options[0].value);
+      // 初回シードのみ、URL ?store= が存在する店舗ならそれを採用（共有/リロード復元）。
+      const fromUrl = initialStoreRef.current;
+      initialStoreRef.current = null; // 1 回限り（以後はユーザー操作のみが state を動かす）
+      if (fromUrl !== null && options.some((o) => o.value === fromUrl)) {
+        setSelected(fromUrl);
+      } else {
+        setSelected(canViewAll ? ALL_VALUE : options[0].value);
+      }
     }
   }, [scopeLoading, options, selected, canViewAll]);
+
+  // selected -> URL: 確定済みかつ差分があるときだけ ?store= を書き戻す。
+  useEffect(() => {
+    if (selected === '') return;
+    if (searchParams.get('store') === selected) return;
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set('store', selected);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [selected, searchParams, setSearchParams]);
 
   // --- 期間セレクタ ---
   // 営業日基準の「今日」（getBusinessDate(11)）。elapsedDays・期間上限の基準。
@@ -154,7 +188,11 @@ export const SalesPage: React.FC = () => {
     return getMonthWeekCount(by, bm);
   }, [baseDate]);
 
-  const [period, setPeriod] = useState<PeriodPreset>('month');
+  // T7（2026-06-18 監査 §4-9）: 期間プリセットを URL ?period= へ双方向同期。
+  // /sales?period=week 直アクセスで週ビューに着地、リロード/戻るで復元、共有可。
+  // weekIndex/quarterIndex は従属状態のため本バッチでは URL 化しない（Phase3b）。
+  const PERIOD_PRESETS = ['today', 'week', 'month', 'quarter', 'year'] as const;
+  const [period, setPeriod] = useUrlState<PeriodPreset>('period', PERIOD_PRESETS, 'month');
   // B4: 週/四半期の初期選択を baseDate（営業日 today）の現在週・現在四半期に lazy init。
   const [weekIndex, setWeekIndex] = useState<number>(() => {
     // 正本 calculatePeriodDates の week 省略時 effectiveIndex と同一式（B4）。

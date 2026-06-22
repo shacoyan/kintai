@@ -19,6 +19,7 @@ import { useShiftPreset } from '../hooks/useShiftPreset';
 import { useShiftPreference } from '../hooks/useShiftPreference';
 import { useShiftSubmissionDeadline } from '../hooks/useShiftSubmissionDeadline';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useUrlState } from '../hooks/useUrlState';
 import { ShiftCalendar } from '../components/Shift/ShiftCalendar';
 import { ShiftMobileCalendar } from '../components/Shift/ShiftMobileCalendar';
 import { ShiftMobileMonthHeader } from '../components/Shift/ShiftMobileMonthHeader';
@@ -103,7 +104,17 @@ export function ShiftPage() {
   const [adminTargetPreference, setAdminTargetPreference] = useState<import('../types').ShiftPreference | null>(null);
   // Loop16-C: 空白セルクリックで開く「新規シフト申請モーダル」用の対象日付 state。
   const [newPreferenceDate, setNewPreferenceDate] = useState<string | null>(null);
-  const [preferenceView, setPreferenceView] = useState<PreferenceView>('current');
+  // T7（2026-06-18 監査 §4-6）: 現在/履歴タブを URL ?view= へ双方向同期。
+  // /shift?view=history 直アクセスで履歴に着地、リロード/戻るで復元、共有可。
+  // 書き戻しは useUrlState 内で functional updater + { replace: true } なので
+  // month 等の他クエリを温存し履歴も汚さない。HistoryPage も 'view' を使うが
+  // /shift と /history は別ルートのため衝突しない（監査改善案 ?view=history 準拠）。
+  const PREFERENCE_VIEWS = ['current', 'history'] as const;
+  const [preferenceView, setPreferenceView] = useUrlState<PreferenceView>(
+    'view',
+    PREFERENCE_VIEWS,
+    'current',
+  );
   const [statusFilter, setStatusFilter] = useState<Set<StatusFilterValue>>(() => readStatusFilter());
   // 一括本承認 / 一括却下の確認ダイアログ用ペイロード
   const [bulkConfirm, setBulkConfirm] = useState<
@@ -802,11 +813,14 @@ export function ShiftPage() {
               <main className="min-w-0">
                 <Card padding="none" className="overflow-hidden">
             <div className="flex items-center gap-2 flex-wrap px-4 py-2.5">
-              <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
+              {/* 現在/履歴は排他的なタブ遷移（toggle ではない）→ role=tab + aria-selected。
+                  aria-pressed は toggle button 用のため使わない（T10 監査 §4-5）。 */}
+              <div role="tablist" aria-label="シフト表示の切替" className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
                 <button
                   type="button"
+                  role="tab"
                   onClick={() => setPreferenceView('current')}
-                  aria-pressed={isCurrentPreferenceView}
+                  aria-selected={isCurrentPreferenceView}
                   className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     isCurrentPreferenceView
                       ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
@@ -817,8 +831,9 @@ export function ShiftPage() {
                 </button>
                 <button
                   type="button"
+                  role="tab"
                   onClick={() => setPreferenceView('history')}
-                  aria-pressed={isHistoryPreferenceView}
+                  aria-selected={isHistoryPreferenceView}
                   className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                     isHistoryPreferenceView
                       ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
@@ -857,13 +872,15 @@ export function ShiftPage() {
                   </div>
 
                   <div className="hidden sm:block w-px h-[20px] bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
-                  <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
+                  {/* 週/2週/月も排他的タブ遷移 → role=tab + aria-selected（toggle ではない・T10）。 */}
+                  <div role="tablist" aria-label="カレンダー期間の切替" className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
                     {(['week', '2week', 'month'] as const).map((v) => (
                       <button
                         key={v}
                         type="button"
+                        role="tab"
                         onClick={() => setShiftViewMode(v)}
-                        aria-pressed={shiftViewMode === v}
+                        aria-selected={shiftViewMode === v}
                         className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                           shiftViewMode === v
                             ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
@@ -902,6 +919,8 @@ export function ShiftPage() {
                     onClick={handleEnterBulkMode}
                     disabled={isDeadlinePassed && !canEditDeadline}
                     className="shrink-0 grow sm:grow-0"
+                    // 一括選択モードの on/off トグル（押下でその要素自身が on/off）なので
+                    // aria-pressed が正しい用法。タブ遷移ではないため残す（T10 監査 §4-5）。
                     aria-pressed={isBulkMode}
                     aria-label={messages.shiftPreference.bulk.entryButtonAria}
                   >
@@ -1155,11 +1174,13 @@ export function ShiftPage() {
           <div className="hidden lg:block">
             <Card padding="none" className="overflow-hidden">
               <div className="flex items-center gap-2 flex-wrap px-4 py-3">
-                <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
+                {/* 現在/履歴は排他的タブ遷移 → role=tab + aria-selected（toggle ではない・T10）。 */}
+                <div role="tablist" aria-label="シフト表示の切替" className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
                   <button
                     type="button"
+                    role="tab"
                     onClick={() => setPreferenceView('current')}
-                    aria-pressed={isCurrentPreferenceView}
+                    aria-selected={isCurrentPreferenceView}
                     className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                       isCurrentPreferenceView
                         ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
@@ -1170,8 +1191,9 @@ export function ShiftPage() {
                   </button>
                   <button
                     type="button"
+                    role="tab"
                     onClick={() => setPreferenceView('history')}
-                    aria-pressed={isHistoryPreferenceView}
+                    aria-selected={isHistoryPreferenceView}
                     className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                       isHistoryPreferenceView
                         ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
@@ -1190,11 +1212,13 @@ export function ShiftPage() {
           <div className="lg:hidden">
             <Card padding="none" className="overflow-hidden">
               <div className="flex items-center gap-2 flex-wrap px-4 py-3">
-                <div className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
+                {/* 現在/履歴は排他的タブ遷移 → role=tab + aria-selected（toggle ではない・T10）。 */}
+                <div role="tablist" aria-label="シフト表示の切替" className="inline-flex items-center bg-stone-100 dark:bg-stone-800 rounded-[8px] p-[3px] self-start">
                   <button
                     type="button"
+                    role="tab"
                     onClick={() => setPreferenceView('current')}
-                    aria-pressed={isCurrentPreferenceView}
+                    aria-selected={isCurrentPreferenceView}
                     className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                       isCurrentPreferenceView
                         ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
@@ -1205,8 +1229,9 @@ export function ShiftPage() {
                   </button>
                   <button
                     type="button"
+                    role="tab"
                     onClick={() => setPreferenceView('history')}
-                    aria-pressed={isHistoryPreferenceView}
+                    aria-selected={isHistoryPreferenceView}
                     className={`inline-flex items-center rounded-md px-2.5 py-[5px] text-[12px] font-medium motion-safe:transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                       isHistoryPreferenceView
                         ? 'bg-white dark:bg-stone-700 text-stone-900 dark:text-stone-50 shadow-sm'
