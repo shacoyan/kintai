@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { logger } from '../lib/logger';
 import { clearPendingJoinCode } from '../lib/inviteUrl';
 import { supabase } from '../lib/supabase';
@@ -844,13 +844,16 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [currentTenant?.id, user?.id, myMemberId, fetchMembers, fetchMyParttime, fetchMyStoreIds]);
 
-  const myMember = currentTenant && user
-    ? members.find((m) => m.user_id === user.id && m.tenant_id === currentTenant.id) ?? null
-    : null;
+  const myMember = useMemo(
+    () => (currentTenant && user
+      ? members.find((m) => m.user_id === user.id && m.tenant_id === currentTenant.id) ?? null
+      : null),
+    [currentTenant, members, user]
+  );
   const needsOnboarding = !!myMember && myMember.legal_name == null;
 
-  return (
-    <TenantContext.Provider value={{
+  const value = useMemo(
+    () => ({
       tenants,
       currentTenant,
       setCurrentTenant,
@@ -880,7 +883,44 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       myStoreIds,
       needsOnboarding,
       completeOnboarding,
-    }}>
+    }),
+    [
+      tenants,
+      currentTenant,
+      members,
+      user,
+      loading,
+      error,
+      isParttime,
+      myStoreIds,
+      myRole,
+      myMemberId,
+      myMember,
+      isOwner,
+      isManager,
+      isStaff,
+      needsOnboarding,
+      setCurrentTenant,
+      fetchTenants,
+      createTenant,
+      joinTenant,
+      joinTenantViaUrl,
+      regenerateInviteCode,
+      updateInviteSettings,
+      listInviteCodes,
+      issueInviteCode,
+      updateInviteCode,
+      revokeInviteCode,
+      updateTenantName,
+      leaveTenant,
+      deleteTenant,
+      transferOwnership,
+      completeOnboarding,
+    ]
+  );
+
+  return (
+    <TenantContext.Provider value={value}>
       {children}
     </TenantContext.Provider>
   );

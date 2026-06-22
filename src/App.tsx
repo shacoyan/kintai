@@ -10,11 +10,11 @@ import { Layout } from './components/Layout/Layout';
 import { LoginPage } from './pages/LoginPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { JoinPage } from './pages/JoinPage';
-import TenantPage from './pages/TenantPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { HistoryPage } from './pages/HistoryPage';
 import { ErrorBoundary, PageLoader } from './components/ui';
 
+const TenantPage = lazy(() => import('./pages/TenantPage').then(m => ({ default: m.default })));
+const HistoryPage = lazy(() => import('./pages/HistoryPage').then(m => ({ default: m.HistoryPage })));
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
 const ShiftPage = lazy(() => import('./pages/ShiftPage').then(m => ({ default: m.ShiftPage })));
 const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: m.default })));
@@ -58,7 +58,9 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <ErrorBoundary scope="route">
-                    <TenantPage />
+                    <Suspense fallback={<PageLoader variant="screen" />}>
+                      <TenantPage />
+                    </Suspense>
                   </ErrorBoundary>
                 </ProtectedRoute>
               }
@@ -84,7 +86,9 @@ const App: React.FC = () => {
                   <RequireTenant>
                     <Layout>
                       <ErrorBoundary scope="route">
-                        <HistoryPage />
+                        <Suspense fallback={<PageLoader variant="screen" />}>
+                          <HistoryPage />
+                        </Suspense>
                       </ErrorBoundary>
                     </Layout>
                   </RequireTenant>

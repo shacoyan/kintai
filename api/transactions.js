@@ -1,4 +1,4 @@
-import { setCors, squareHeaders, parseTimeRange, fetchCustomers, fetchCatalogVariationCategoryMap, normalizePaymentsForReporting, isValidDateStr } from './_shared.js';
+import { setCors, squareHeaders, parseTimeRange, fetchCustomers, fetchCatalogVariationCategoryMap, fetchOrdersBatch, normalizePaymentsForReporting, isValidDateStr } from './_shared.js';
 import { authenticate, resolveStartHour, assertLocationAllowed, AuthError } from './_auth.js';
 
 // maxDuration は vercel.json の functions に一本化（inline config と二重定義していたため撤去）。
@@ -84,25 +84,7 @@ export default async (req, res) => {
       allPayments.filter(p => p.order_id).map(p => p.order_id)
     )];
 
-    const ordersMap = {};
-    for (let i = 0; i < orderIds.length; i += 100) {
-      const batch = orderIds.slice(i, i + 100);
-      try {
-        const orderRes = await fetch('https://connect.squareup.com/v2/orders/batch-retrieve', {
-          method: 'POST',
-          headers: squareHeaders(),
-          body: JSON.stringify({ order_ids: batch })
-        });
-        if (orderRes.ok) {
-          const orderData = await orderRes.json();
-          for (const order of (orderData.orders ?? [])) {
-            ordersMap[order.id] = order;
-          }
-        }
-      } catch (e) {
-        // batch失敗しても続行
-      }
-    }
+    const ordersMap = await fetchOrdersBatch(orderIds);
 
     // catalog取得とcustomers取得を並列実行。
     // catalog は _shared.js の共有実装（variationId → {id,name} を返す正実装）を使う。
