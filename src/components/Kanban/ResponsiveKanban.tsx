@@ -1,32 +1,28 @@
 /**
  * @file ResponsiveKanban.tsx
- * @description 画面幅に応じてデスクトップ用 (KanbanBoard) とモバイル用 (MobileKanban) のかんばんボードを切り替えるラッパーコンポーネント。
- * 設計書 §2-2 / §3-2 準拠。
+ * @description かんばんボードのラッパー。常に単一の KanbanBoard を描画する。
  *
- * 設計書: .company/engineering/docs/2026-05-22-kintai-task-kanban-phase2-techdesign.md
+ * 設計書: .company/engineering/docs/2026-06-24-kintai-mobile-kanban-horizontal-scroll.md
  *
- * 切替方式: JS breakpoint (`useMediaQuery('(min-width: 1024px)')`) で desktop / mobile の
- *   いずれか一方のみを mount する。`lg:` (1024px) は Tailwind の lg と一致。
+ * レスポンシブ方式 (単一ボード化):
+ *   KanbanBoard 自身が `flex ... overflow-x-auto lg:grid lg:grid-cols-4` を持ち、
+ *   <lg = 横並び + 横スクロール / >=lg (1024px) = 4 列グリッド を成立させる。
+ *   旧来の MobileKanban (縦積みアコーディオン) と useMediaQuery による排他 mount は撤去。
  *
  * Loop 4.5 P1-3:
  *   `useKanbanDnd` を当ラッパーで 1 回だけ呼び、`DndContext` も親 1 つに集約する。
  *   子コンポーネントは `dnd` props を受け取り、内部で `DndContext` を巻かない。
  *
- * P2 (DnD 二重 id 解消):
- *   以前は MobileKanban と KanbanBoard を CSS (`lg:hidden` / `hidden lg:block`) で
- *   両方常時 mount していたため、同一 DndContext 内に同じ task (`task-${id}`) の
- *   sortable が 2 重登録され、dnd-kit の id 衝突 (WAI-ARIA / measure 不整合) を招いていた。
- *   JS breakpoint で片方のみ mount することで sortable id を一意化する。
- *   `useMediaQuery` は synchronous 初期評価のため初回 paint から正しい board が出る。
+ * DnD 二重 id 解消:
+ *   単一ボード化により、同一 DndContext 内に同じ task (`task-${id}`) の sortable が
+ *   2 重登録される懸念が根本的に消滅する (以前は両ボード常時 mount が原因だった)。
  */
 import { useState } from 'react';
 import { DndContext, DragOverlay, closestCorners } from '@dnd-kit/core';
 
 import { KanbanBoard } from './KanbanBoard';
-import { MobileKanban } from './MobileKanban';
 import { KanbanCardPresentation } from './KanbanCard';
 import { useKanbanDnd } from '../../hooks/useKanbanDnd';
-import { useMediaQuery } from '../../hooks/useMediaQuery';
 import type { Task } from '../../types';
 
 interface ResponsiveKanbanProps {
@@ -54,9 +50,6 @@ interface ResponsiveKanbanProps {
 
 export function ResponsiveKanban(props: ResponsiveKanbanProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-  // lg breakpoint (1024px) で desktop / mobile を排他 mount。
-  // 両方を同時 mount すると同一 DndContext に同じ task の sortable が 2 重登録される。
-  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const dnd = useKanbanDnd({
     tasks: props.tasks,
@@ -85,36 +78,20 @@ export function ResponsiveKanban(props: ResponsiveKanbanProps) {
       onDragCancel={() => setActiveTask(null)}
     >
       <div>
-        {isDesktop ? (
-          <KanbanBoard
-            tasks={props.tasks}
-            onTaskClick={props.onTaskClick}
-            myRole={props.myRole}
-            isParttime={props.isParttime}
-            currentUserId={props.currentUserId}
-            memberNames={props.memberNames}
-            projectNames={props.projectNames}
-            onSuccess={props.onSuccess}
-            onError={props.onError}
-            dnd={dnd}
-            onAddInStatus={props.onAddInStatus}
-            onTaskDelete={props.onTaskDelete}
-          />
-        ) : (
-          <MobileKanban
-            tasks={props.tasks}
-            onTaskClick={props.onTaskClick}
-            myRole={props.myRole}
-            isParttime={props.isParttime}
-            currentUserId={props.currentUserId}
-            memberNames={props.memberNames}
-            projectNames={props.projectNames}
-            onSuccess={props.onSuccess}
-            onError={props.onError}
-            dnd={dnd}
-            onTaskDelete={props.onTaskDelete}
-          />
-        )}
+        <KanbanBoard
+          tasks={props.tasks}
+          onTaskClick={props.onTaskClick}
+          myRole={props.myRole}
+          isParttime={props.isParttime}
+          currentUserId={props.currentUserId}
+          memberNames={props.memberNames}
+          projectNames={props.projectNames}
+          onSuccess={props.onSuccess}
+          onError={props.onError}
+          dnd={dnd}
+          onAddInStatus={props.onAddInStatus}
+          onTaskDelete={props.onTaskDelete}
+        />
       </div>
       <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2,0,0,1)' }}>
         {activeTask ? (
