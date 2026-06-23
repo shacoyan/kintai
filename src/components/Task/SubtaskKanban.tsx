@@ -2,10 +2,11 @@ import { DndContext, DragOverlay, closestCorners, useDroppable } from '@dnd-kit/
 import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { format, parseISO } from 'date-fns';
-import { Calendar, Check, Plus } from 'lucide-react';
+import { Calendar, Check, ChevronDown, Plus } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useKanbanDnd } from '../../hooks/useKanbanDnd';
 import type { Task, TaskPriority, TaskStatus } from '../../types';
+import { TASK_PRIORITY_LABELS } from '../../types';
 import { ActionMenu, type ActionMenuItem } from '../ui';
 import { statusMeta } from './taskStatusMeta';
 
@@ -157,6 +158,10 @@ function SubtaskCard({
     name: memberNames.get(id) ?? '?',
   }));
 
+  // 説明文のインライン展開（local 状態・初期は折り畳み）。
+  const [expanded, setExpanded] = useState(false);
+  const childDescription = (child.description ?? '').trim();
+
   // ② メニュー代替「ステータス変更」: canMove で許可された遷移先のみ。done からは reopen で
   //    in_progress のみ、parttime/staff 制約も canMove に集約済。
   const statusMenuItems: ActionMenuItem[] = STATUS_MENU_ORDER.filter(
@@ -178,6 +183,12 @@ function SubtaskCard({
       {...attributes}
       {...listeners}
       aria-disabled={!canStartDrag || undefined}
+      // カード本体クリック/タップで詳細展開トグル（移動なしクリック・短タップのみ＝DnD は activationConstraint で別判定）。
+      // KeyboardSensor 温存のため root に role/tabindex/Enter-Space は付けない。
+      onClick={() => {
+        if (isDragging) return;
+        setExpanded((v) => !v);
+      }}
       className={`flex select-none items-start gap-2 rounded-[8px] border bg-white px-2 py-2 motion-safe:transition-[box-shadow,background-color,opacity] motion-safe:duration-150 motion-safe:ease-out dark:bg-stone-800 ${
         isDragging
           ? 'border-dashed border-stone-300 opacity-40 dark:border-stone-600'
@@ -228,39 +239,95 @@ function SubtaskCard({
         >
           {child.title}
         </span>
-        <div className="flex items-center gap-2">
-          {assignees.length > 0 && (
-            <span className="flex items-center -space-x-1.5">
-              {assignees.slice(0, 2).map((a) => (
-                <span
-                  key={a.userId}
-                  className={`inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold dark:border-stone-900 ${getAvatarColor(a.userId)}`}
-                  title={a.name}
-                >
-                  {a.name.slice(0, 1)}
-                </span>
-              ))}
-              {assignees.length > 2 && (
-                <span
-                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-stone-200 text-[10px] font-semibold text-stone-600 dark:border-stone-900 dark:bg-stone-700 dark:text-stone-300"
-                  title={assignees.slice(2).map((a) => a.name).join(', ')}
-                >
-                  +{assignees.length - 2}
-                </span>
-              )}
+        {childDescription && (
+          <p
+            className={`break-words text-[11px] leading-snug text-stone-500 dark:text-stone-400 ${
+              expanded ? '' : 'line-clamp-2'
+            }`}
+            title={childDescription}
+          >
+            {childDescription}
+          </p>
+        )}
+        {expanded ? (
+          <div className="flex flex-col gap-0.5 text-[11px] text-stone-500 dark:text-stone-400">
+            {assignees.length > 0 && (
+              <span className="break-words">
+                担当: {assignees.map((a) => a.name).join(', ')}
+              </span>
+            )}
+            {child.due_date && (
+              <span className="inline-flex items-center gap-1 font-mono tabular-nums">
+                <Calendar className="h-[11px] w-[11px]" aria-hidden="true" />
+                <time dateTime={child.due_date}>{format(parseISO(child.due_date), 'yyyy-MM-dd')}</time>
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${priorityDotColor[child.priority]}`} />
+              優先度: {TASK_PRIORITY_LABELS[child.priority]}
             </span>
-          )}
-          {child.due_date && (
-            <span className="inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-stone-500 dark:text-stone-400">
-              <Calendar className="h-[11px] w-[11px]" aria-hidden="true" />
-              <time dateTime={child.due_date}>{format(parseISO(child.due_date), 'MM/dd')}</time>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            {assignees.length > 0 && (
+              <span className="flex items-center -space-x-1.5">
+                {assignees.slice(0, 2).map((a) => (
+                  <span
+                    key={a.userId}
+                    className={`inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px] font-semibold dark:border-stone-900 ${getAvatarColor(a.userId)}`}
+                    title={a.name}
+                  >
+                    {a.name.slice(0, 1)}
+                  </span>
+                ))}
+                {assignees.length > 2 && (
+                  <span
+                    className="inline-flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-stone-200 text-[10px] font-semibold text-stone-600 dark:border-stone-900 dark:bg-stone-700 dark:text-stone-300"
+                    title={assignees.slice(2).map((a) => a.name).join(', ')}
+                  >
+                    +{assignees.length - 2}
+                  </span>
+                )}
+              </span>
+            )}
+            {child.due_date && (
+              <span className="inline-flex items-center gap-1 font-mono text-[11px] tabular-nums text-stone-500 dark:text-stone-400">
+                <Calendar className="h-[11px] w-[11px]" aria-hidden="true" />
+                <time dateTime={child.due_date}>{format(parseISO(child.due_date), 'MM/dd')}</time>
+              </span>
+            )}
+            <span className="inline-flex items-center" title={`優先度 ${child.priority}`}>
+              <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${priorityDotColor[child.priority]}`} />
             </span>
-          )}
-          <span className="inline-flex items-center" title={`優先度 ${child.priority}`}>
-            <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${priorityDotColor[child.priority]}`} />
-          </span>
-        </div>
+          </div>
+        )}
       </div>
+
+      <span
+        className="flex shrink-0 items-center"
+        onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="mt-0.5 flex h-5 w-5 items-center justify-center rounded text-stone-400 hover:text-stone-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-stone-200"
+          aria-expanded={expanded}
+          aria-label="詳細を開閉"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+          // KeyboardSensor 干渉防止: Enter/Space は DnD pickup ではなく展開トグルに使う。
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') e.stopPropagation();
+          }}
+        >
+          <ChevronDown
+            className={`h-3.5 w-3.5 motion-safe:transition-transform motion-safe:duration-150 ${expanded ? 'rotate-180' : ''}`}
+            aria-hidden="true"
+          />
+        </button>
+      </span>
 
       {menuItems.length > 0 && (
         <span
@@ -493,6 +560,7 @@ function SubtaskOverlayCard({
     name: memberNames.get(id) ?? '?',
   }));
   const isDoneOrCancelled = child.status === 'done' || child.status === 'cancelled';
+  const childDescription = (child.description ?? '').trim();
 
   return (
     <div className="flex cursor-grabbing select-none items-start gap-2 rounded-[8px] border border-stone-200/70 bg-white px-2 py-2 shadow-[0_12px_28px_rgba(0,0,0,0.18)] dark:border-stone-700/60 dark:bg-stone-800">
@@ -505,6 +573,11 @@ function SubtaskOverlayCard({
         >
           {child.title}
         </span>
+        {childDescription && (
+          <p className="line-clamp-2 break-words text-[11px] leading-snug text-stone-500 dark:text-stone-400">
+            {childDescription}
+          </p>
+        )}
         <div className="flex items-center gap-2">
           {assignees.length > 0 && (
             <span className="flex items-center -space-x-1.5">
