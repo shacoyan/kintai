@@ -239,6 +239,21 @@ export function DashboardPage() {
     fetchAttendanceForDashboard();
   }, [fetchMyShiftsForDashboard, fetchAttendanceForDashboard]);
 
+  // 日跨ぎ「今すぐ退勤打刻」: 二重送信ガード + 成功/失敗 Toast（clockOut の実処理は不変）
+  const [carryOverProcessing, setCarryOverProcessing] = useState(false);
+  const handleCarryOverClockOut = useCallback(async () => {
+    if (carryOverProcessing) return;
+    setCarryOverProcessing(true);
+    try {
+      await clockOut();
+      showToast('退勤打刻を記録しました', 'success');
+    } catch (err) {
+      showToast(formatSupabaseError(err).message, 'error');
+    } finally {
+      setCarryOverProcessing(false);
+    }
+  }, [carryOverProcessing, clockOut, showToast]);
+
   if (loading && todayRecords.length === 0) {
     return (
       <div className="max-w-md mx-auto">
@@ -269,21 +284,6 @@ export function DashboardPage() {
 
   // 日跨ぎの未退勤レコード
   const carryOverRecord = activeRecord && activeRecord.date !== todayStr ? activeRecord : null;
-
-  // 日跨ぎ「今すぐ退勤打刻」: 二重送信ガード + 成功/失敗 Toast（clockOut の実処理は不変）
-  const [carryOverProcessing, setCarryOverProcessing] = useState(false);
-  const handleCarryOverClockOut = useCallback(async () => {
-    if (carryOverProcessing) return;
-    setCarryOverProcessing(true);
-    try {
-      await clockOut();
-      showToast('退勤打刻を記録しました', 'success');
-    } catch (err) {
-      showToast(formatSupabaseError(err).message, 'error');
-    } finally {
-      setCarryOverProcessing(false);
-    }
-  }, [carryOverProcessing, clockOut, showToast]);
 
   // 申請中の休暇件数
   const pendingLeaveCount = myLeaves.filter(l => l.status === 'pending').length;
