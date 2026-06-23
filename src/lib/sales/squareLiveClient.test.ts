@@ -74,7 +74,7 @@ describe('squareFetch', () => {
     await expect(squareFetch('/api/sales')).rejects.toThrow(/再度ログイン/);
   });
 
-  it('!res.ok（500）は HTTP ステータス全文を載せて throw（短縮しない）', async () => {
+  it('!res.ok（500）は HTTP ステータス全文を載せて throw（短縮しない・再ログイン非含有）', async () => {
     getSessionMock.mockResolvedValue(sessionWith('jwt-abc'));
     vi.stubGlobal(
       'fetch',
@@ -82,6 +82,44 @@ describe('squareFetch', () => {
     );
 
     await expect(squareFetch('/api/sales')).rejects.toThrow(/HTTP 500/);
+    const message = await squareFetch('/api/sales').catch((e: Error) => e.message);
+    expect(message).not.toMatch(/再ログイン|再度ログイン|ログイン/);
+  });
+
+  it('502（上流 Square / サーバ側障害）は HTTP 502 全文を載せ、再ログインに誤誘導しない', async () => {
+    getSessionMock.mockResolvedValue(sessionWith('jwt-abc'));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 502, json: async () => ({}) }),
+    );
+
+    await expect(squareFetch('/api/sales')).rejects.toThrow(/HTTP 502/);
+    const message = await squareFetch('/api/sales').catch((e: Error) => e.message);
+    expect(message).toMatch(/HTTP 502/);
+    // 「ログイン/再ログイン」の語を一切含めないこと（上流障害で再ログイン誤誘導しない）。
+    expect(message).not.toMatch(/再ログイン|再度ログイン|ログイン/);
+  });
+
+  it('503 も 5xx 分岐に入り（502 限定でない）再ログインに誤誘導しない', async () => {
+    getSessionMock.mockResolvedValue(sessionWith('jwt-abc'));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 503, json: async () => ({}) }),
+    );
+
+    await expect(squareFetch('/api/sales')).rejects.toThrow(/HTTP 503/);
+    const message = await squareFetch('/api/sales').catch((e: Error) => e.message);
+    expect(message).not.toMatch(/再ログイン|再度ログイン|ログイン/);
+  });
+
+  it('404（4xx 非ok）は既存の汎用文言（HTTP 404 全文）で throw', async () => {
+    getSessionMock.mockResolvedValue(sessionWith('jwt-abc'));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) }),
+    );
+
+    await expect(squareFetch('/api/sales')).rejects.toThrow(/HTTP 404/);
   });
 
   it('タイムアウトは明示文言で throw', async () => {

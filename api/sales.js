@@ -66,7 +66,7 @@ export default async (req, res) => {
       if (!response.ok) {
         const errorBody = await response.text();
         console.error('Square API error:', response.status, errorBody);
-        return res.status(response.status).json({ error: 'Failed to fetch payments from Square API' });
+        return res.status(502).json({ error: 'Failed to fetch payments from Square API', upstream_status: response.status });
       }
 
       const data = await response.json();

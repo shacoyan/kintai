@@ -24,6 +24,9 @@ const NO_SESSION_MESSAGE =
   'ログインセッションが見つかりません。再度ログインしてください。';
 const EXPIRED_SESSION_MESSAGE =
   'ログインセッションの有効期限が切れました。再度ログインしてください。 (HTTP 401)';
+/** 上流(Square)/サーバ側の一時障害(5xx)文言。「ログイン/再ログイン」を含めない。 */
+const UPSTREAM_ERROR_MESSAGE =
+  'Square またはサーバー側で一時的な問題が発生しました。時間をおいて再度お試しください。';
 
 export interface SquareFetchOptions {
   /** タイムアウト（ミリ秒）。省略時 30s。 */
@@ -80,7 +83,14 @@ export async function squareFetch<T>(
     if (!res.ok) {
       if (res.status === 401) {
         // タブ放置などで JWT 失効 → 再ログイン誘導（§7 R7）。
+        // API 側は上流 Square の非ok を 502 にマップするため、ここに到達する 401 は
+        // _auth.js の AuthError（genuine な JWT 失効）のみ。
         throw new Error(EXPIRED_SESSION_MESSAGE);
+      }
+      if (res.status >= 500) {
+        // 502/503/500/504 = 上流(Square)/サーバ側障害。再ログインへ誤誘導しない。
+        // ステータス全文を残す（短縮禁止＝MEMORY ルール）。
+        throw new Error(`${UPSTREAM_ERROR_MESSAGE} (HTTP ${res.status})`);
       }
       // ステータス全文を残す（短縮禁止＝MEMORY ルール）。
       throw new Error(`リクエストに失敗しました (HTTP ${res.status})`);

@@ -81,7 +81,7 @@ export default async (req, res) => {
       if (!response.ok) {
         const err = await response.text();
         console.error('Square API error (open-orders-range):', response.status, err);
-        return res.status(response.status).json({ error: 'Square API error' });
+        return res.status(502).json({ error: 'Square API error', upstream_status: response.status });
       }
 
       const data = await response.json();
