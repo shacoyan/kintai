@@ -44,7 +44,11 @@ export function useShiftPreference(tenantId: string, storeId: string | null) {
     setError(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
+      let user = session?.user ?? null;
+      if (!user) {
+        const { data: { user: refreshed } } = await supabase.auth.getUser();
+        user = refreshed ?? null;
+      }
       if (!user) return;
       const { data, error } = await supabase
         .from('shift_preferences')

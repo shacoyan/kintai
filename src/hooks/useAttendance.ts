@@ -85,7 +85,13 @@ export function useAttendance(tenantId: string, storeId: string | null) {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      const user = session?.user;
+      let user = session?.user ?? null;
+      if (!user) {
+        const {
+          data: { user: refreshed },
+        } = await supabase.auth.getUser();
+        user = refreshed ?? null;
+      }
       if (!user) {
         setLoading(false);
         return;
@@ -383,7 +389,13 @@ export function useAttendance(tenantId: string, storeId: string | null) {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      const user = session?.user;
+      let user = session?.user ?? null;
+      if (!user) {
+        const {
+          data: { user: refreshed },
+        } = await supabase.auth.getUser();
+        user = refreshed ?? null;
+      }
       if (!user) return;
       const startDate = format(new Date(year, month - 1, 1), 'yyyy-MM-dd');
       const endDate = format(new Date(year, month, 0), 'yyyy-MM-dd');

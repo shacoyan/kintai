@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { CHUNK_ERR, CHUNK_RELOAD_FLAG } from '../../lib/lazyWithRetry';
 import { Card } from './Card';
 import { Button } from './Button';
 import { Heading } from './Heading';
@@ -40,6 +41,19 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     const scope = this.props.scope ?? 'unknown';
     // eslint-disable-next-line no-console
     console.error(`[ErrorBoundary][${scope}]`, error, info);
+
+    // chunk 読み込み失敗(古いデプロイのキャッシュ等)は 1 回だけ自動 reload で復旧。
+    // 通常の render エラーは reload せず、reset() による in-app 復旧に委ねる。
+    if (CHUNK_ERR.test(error.message)) {
+      try {
+        if (sessionStorage.getItem(CHUNK_RELOAD_FLAG) !== '1') {
+          sessionStorage.setItem(CHUNK_RELOAD_FLAG, '1');
+          window.location.reload();
+        }
+      } catch {
+        /* ignore */
+      }
+    }
   }
 
   reset(): void {

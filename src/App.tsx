@@ -1,5 +1,5 @@
 // FILE: App.tsx
-import React, { lazy, Suspense } from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { TenantProvider } from './contexts/TenantContext';
@@ -12,15 +12,16 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { JoinPage } from './pages/JoinPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ErrorBoundary, PageLoader } from './components/ui';
+import { lazyWithRetry } from './lib/lazyWithRetry';
 
-const TenantPage = lazy(() => import('./pages/TenantPage').then(m => ({ default: m.default })));
-const HistoryPage = lazy(() => import('./pages/HistoryPage').then(m => ({ default: m.HistoryPage })));
-const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
-const ShiftPage = lazy(() => import('./pages/ShiftPage').then(m => ({ default: m.ShiftPage })));
-const TasksPage = lazy(() => import('./pages/TasksPage').then(m => ({ default: m.default })));
-const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then(m => ({ default: m.ProjectsPage })));
-const SalesPage = lazy(() => import('./pages/SalesPage').then(m => ({ default: m.SalesPage })));
-const ReportsPage = lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
+const TenantPage = lazyWithRetry(() => import('./pages/TenantPage').then(m => ({ default: m.default })));
+const HistoryPage = lazyWithRetry(() => import('./pages/HistoryPage').then(m => ({ default: m.HistoryPage })));
+const AdminPage = lazyWithRetry(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })));
+const ShiftPage = lazyWithRetry(() => import('./pages/ShiftPage').then(m => ({ default: m.ShiftPage })));
+const TasksPage = lazyWithRetry(() => import('./pages/TasksPage').then(m => ({ default: m.default })));
+const ProjectsPage = lazyWithRetry(() => import('./pages/ProjectsPage').then(m => ({ default: m.ProjectsPage })));
+const SalesPage = lazyWithRetry(() => import('./pages/SalesPage').then(m => ({ default: m.SalesPage })));
+const ReportsPage = lazyWithRetry(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
 
 const App: React.FC = () => {
   return (

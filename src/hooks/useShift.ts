@@ -56,7 +56,11 @@ export function useShift(tenantId: string, storeId: string | null) {
     setError(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
+      let user = session?.user ?? null;
+      if (!user) {
+        const { data: { user: refreshed } } = await supabase.auth.getUser();
+        user = refreshed ?? null;
+      }
       if (!user) throw new Error('Not authenticated');
       const { data, error: e } = await supabase
         .from('shifts')
