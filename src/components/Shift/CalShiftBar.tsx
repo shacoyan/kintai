@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Shift, ShiftPreference, TenantMember } from '../../types';
 import { getRoleColorHex } from '../../utils/getRoleColor';
 
@@ -29,7 +30,7 @@ export function statusVisual(status: string): StatusVisual {
   return { bg: 'rgba(120,113,108,0.08)', bar: '#78716c' };
 }
 
-export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalShiftBarProps) {
+function CalShiftBarImpl({ shift, preference, member, isMine, onClick }: CalShiftBarProps) {
   const status = shift?.status ?? (preference ? 'pending' : 'tentative');
   const start = shift?.start_time ?? preference?.start_time ?? '';
   const end = shift?.end_time ?? preference?.end_time ?? '';
@@ -88,3 +89,47 @@ export function CalShiftBar({ shift, preference, member, isMine, onClick }: CalS
     </button>
   );
 }
+
+// ShiftCalendar 側は `onClick={() => onShiftClick?.(s)}` のインライン arrow を毎 render 生成するため、
+// onClick の identity は比較対象から除外する。クロージャは同一 shift/preference と安定な onShiftClick を
+// 捕捉しており、表示に効くフィールドが変われば下記比較で検知され再 render される（クリック挙動は不変）。
+function arePropsEqual(prev: CalShiftBarProps, next: CalShiftBarProps): boolean {
+  if (prev.isMine !== next.isMine) return false;
+  if (prev.member !== next.member) return false;
+
+  const ps = prev.shift;
+  const ns = next.shift;
+  if (!!ps !== !!ns) return false;
+  if (ps && ns) {
+    if (
+      ps.id !== ns.id ||
+      ps.status !== ns.status ||
+      ps.start_time !== ns.start_time ||
+      ps.end_time !== ns.end_time ||
+      ps.store_id !== ns.store_id ||
+      ps.user_id !== ns.user_id
+    ) {
+      return false;
+    }
+  }
+
+  const pp = prev.preference;
+  const np = next.preference;
+  if (!!pp !== !!np) return false;
+  if (pp && np) {
+    if (
+      pp.id !== np.id ||
+      pp.preference_type !== np.preference_type ||
+      pp.start_time !== np.start_time ||
+      pp.end_time !== np.end_time ||
+      pp.store_id !== np.store_id ||
+      pp.user_id !== np.user_id
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export const CalShiftBar = memo(CalShiftBarImpl, arePropsEqual);

@@ -41,9 +41,14 @@ import { buildTentativeShiftMap, getEffectiveTime } from '../utils/preferenceEff
 import { useStoreContext } from '../contexts/StoreContext';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../hooks/useAuth';
-import type { ShiftPreferenceType, BulkSubmitPreferenceArgs, TenantMember } from '../types';
+import type { ShiftPreferenceType, BulkSubmitPreferenceArgs, TenantMember, LeaveRequest } from '../types';
 
 type PreferenceView = 'current' | 'history';
+
+// Leave 機能は撤去済みだが ShiftCalendar の leaves prop は残存。
+// 毎 render 新しい [] を生成すると memo 化済 ShiftCalendar が無効化し再描画が走るため、
+// モジュールスコープの安定参照を渡す。
+const EMPTY_LEAVES: LeaveRequest[] = [];
 
 export function ShiftPage() {
   const { user } = useAuth();
@@ -258,7 +263,7 @@ export function ShiftPage() {
     () => shifts.filter(s => s.status === 'approved').length,
     [shifts]
   );
-  const leaves = canManageTenant ? [] : []; // Leave removed, but keep variable if needed elsewhere or remove. Removing all leave logic.
+  const leaves = EMPTY_LEAVES; // Leave 機能撤去済み。安定参照で ShiftCalendar の memo を維持。
 
   const memberNames = useMemo(() => {
     const map = new Map<string, string>();
