@@ -18,6 +18,14 @@ export interface UnifiedShiftSidebarProps {
   selectedDate: string | null;
   onSelectedDateChange: (date: string | null) => void;
 
+  /**
+   * 表示形態。
+   * - 'sidebar'(既定): PC 右レール / SP BottomSheet 用。幅 360px・sticky・自前 click-outside で閉じる。
+   * - 'modal': DayDetailModal 内で親幅いっぱいに広がる。sticky/max-h/overflow と click-outside を無効化し、
+   *   閉じる導線は親 modal (X / Esc) に一元化する。manager mode の広幅時は 2 カラム化する。
+   */
+  variant?: 'sidebar' | 'modal';
+
   // データソース
   shifts: Shift[];
   preferences: ShiftPreference[];
@@ -162,6 +170,7 @@ export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
   mode,
   selectedDate,
   onSelectedDateChange,
+  variant = 'sidebar',
 
   shifts,
   preferences,
@@ -200,6 +209,14 @@ export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
   onAddShiftForMember,
 }: UnifiedShiftSidebarProps) {
   const sidebarRef = useRef<HTMLElement | null>(null);
+
+  // variant 別の aside className。
+  // 'sidebar'(既定) は従来文字列をバイト一致温存（PC 右レール / SP BottomSheet 非破壊）。
+  // 'modal' は 360px 固定・sticky・max-h・overflow を全解除し、親 modal 本体のスクロールに一元化する。
+  const asideClassName =
+    variant === 'modal'
+      ? 'w-full space-y-4'
+      : 'w-full lg:w-[360px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto space-y-4';
 
   const dateFilteredShifts = useMemo(() => {
     if (!selectedDate) return [];
@@ -318,9 +335,14 @@ export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
     return otherSectionShifts.length > 0 || otherSectionPending.length > 0;
   }, [otherSectionShifts, otherSectionPending]);
 
-  // click outside listener (manager mode のみ)
+  // modal variant かつ他メンバーセクションがある時のみ md 以上で 2 カラム化（広幅活用）。
+  // sidebar variant（PC 右レール / SP BottomSheet）は常に単一カラムで非破壊。
+  const isModalTwoCol = variant === 'modal' && showOtherSection;
+
+  // click outside listener (manager mode のみ・sidebar variant のみ)。
+  // modal variant では閉じる導線を親 DayDetailModal (X / Esc) に一元化するため無効化する。
   useEffect(() => {
-    if (mode !== 'manager') return;
+    if (mode !== 'manager' || variant === 'modal') return;
     if (!selectedDate) return;
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -336,14 +358,14 @@ export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [mode, selectedDate, onSelectedDateChange]);
+  }, [mode, variant, selectedDate, onSelectedDateChange]);
 
   if (mode === 'manager') {
     return (
       <aside
         ref={sidebarRef}
         aria-label="統合シフトサイドバー"
-        className="w-full lg:w-[360px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto space-y-4"
+        className={asideClassName}
       >
         {selectedDate && (
           <Card padding="sm">
@@ -353,7 +375,15 @@ export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
                 クリア
               </Button>
             </Card.Header>
-            <>
+            <div
+              className={
+                isModalTwoCol
+                  ? 'md:grid md:grid-cols-2 md:gap-5 md:items-start'
+                  : undefined
+              }
+            >
+              {/* 左カラム: あなたの申請 + 自己仮承認 + 申請フォーム (+ メンバー追加) */}
+              <div className={isModalTwoCol ? 'space-y-0' : undefined}>
               {/* 上段「あなたの申請」セクション */}
               <h4 className="text-xs font-semibold text-blue-600 dark:text-blue-300 mb-1.5 px-1">
                 あなたの申請
@@ -404,14 +434,34 @@ export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
                 canBypassDeadline={canBypassDeadline}
               />
 
-              {/* 理由: 「あなたの申請」と「他メンバー」セクションの divider */}
+              {/* メンバー追加フォーム (左カラム末尾)。canManageTenant 限定・スコープ境界不変。 */}
+              {canManageTenant && selectedDate && onAddShiftForMember && allMembers && (
+                <AddMemberShiftForm
+                  availableMembers={availableMembers}
+                  stores={stores}
+                  defaultStoreId={defaultStoreId}
+                  presets={presets}
+                  onAdd={(userId, storeId, startTime, endTime) =>
+                    onAddShiftForMember(selectedDate, userId, storeId, startTime, endTime)
+                  }
+                  onSuccess={onMutated}
+                />
+              )}
+              </div>
+
+              {/* 理由: 「あなたの申請」と「他メンバー」セクションの divider。
+                  2 カラム時は縦 border-l を右カラムに付けるため横線は md 未満のみ表示し二重線を避ける。 */}
               {showOtherSection && (
-                <div className="border-t border-stone-200 dark:border-stone-700 my-3" />
+                <div
+                  className={`border-t border-stone-200 dark:border-stone-700 my-3${
+                    isModalTwoCol ? ' md:hidden' : ''
+                  }`}
+                />
               )}
 
-              {/* 下段「他メンバー」セクション */}
+              {/* 下段「他メンバー」セクション (右カラム) */}
               {showOtherSection && (
-                <>
+                <div className={isModalTwoCol ? 'md:border-l md:border-stone-200 md:dark:border-stone-700 md:pl-5' : undefined}>
                   <h4 className="text-xs font-semibold text-stone-500 dark:text-stone-400 mb-1.5 px-1">
                     他メンバー
                   </h4>
@@ -479,22 +529,9 @@ export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
                       })}
                     </ul>
                   )}
-                </>
+                </div>
               )}
-
-              {canManageTenant && selectedDate && onAddShiftForMember && allMembers && (
-                <AddMemberShiftForm
-                  availableMembers={availableMembers}
-                  stores={stores}
-                  defaultStoreId={defaultStoreId}
-                  presets={presets}
-                  onAdd={(userId, storeId, startTime, endTime) =>
-                    onAddShiftForMember(selectedDate, userId, storeId, startTime, endTime)
-                  }
-                  onSuccess={onMutated}
-                />
-              )}
-            </>
+            </div>
           </Card>
         )}
       </aside>
@@ -506,7 +543,7 @@ export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
     <aside
       ref={sidebarRef}
       aria-label="統合シフトサイドバー"
-      className="w-full lg:w-[360px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto space-y-4"
+      className={asideClassName}
     >
       {/* ShiftStatusReadonly: 自分の確定シフト read-only */}
       {selectedDate && dateFilteredShifts.length > 0 && (

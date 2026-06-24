@@ -6,7 +6,8 @@ import { Button } from '../ui';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { UnifiedShiftSidebar, type UnifiedShiftSidebarProps } from './UnifiedShiftSidebar';
 
-export interface DayDetailModalProps extends Omit<UnifiedShiftSidebarProps, 'selectedDate'> {
+export interface DayDetailModalProps
+  extends Omit<UnifiedShiftSidebarProps, 'selectedDate' | 'variant'> {
   /** ISO yyyy-MM-dd。null のとき modal は描画されない */
   selectedDate: string | null;
   /** 「追加」ボタンクリック (Toolbar 右上の Quick Add)。未指定なら表示しない */
@@ -64,13 +65,11 @@ export const DayDetailModal = memo(function DayDetailModal(props: DayDetailModal
       role="dialog"
       aria-modal="true"
       aria-labelledby="day-detail-modal-title"
-      onClick={() => onSelectedDateChange(null)}
       className="fixed inset-0 z-30 bg-stone-900/30 backdrop-blur-[2px] flex items-center justify-center p-6 motion-safe:animate-[fadeIn_120ms_ease-out]"
     >
       <div
         ref={modalRef}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[480px] max-h-[85vh] bg-white dark:bg-stone-900 rounded-xl shadow-2xl flex flex-col overflow-hidden motion-safe:animate-[zoomIn_150ms_ease-out]"
+        className="w-full max-w-[720px] max-h-[85vh] bg-white dark:bg-stone-900 rounded-xl shadow-2xl flex flex-col overflow-hidden motion-safe:animate-[zoomIn_150ms_ease-out]"
       >
         <div className="px-5 py-4 flex items-center gap-3 border-b border-stone-200/70 dark:border-stone-700">
           <div className="min-w-0">
@@ -112,6 +111,7 @@ export const DayDetailModal = memo(function DayDetailModal(props: DayDetailModal
         <div className="flex-1 overflow-y-auto px-4 py-4">
           <UnifiedShiftSidebar
             {...rest}
+            variant="modal"
             selectedDate={selectedDate}
             onSelectedDateChange={onSelectedDateChange}
           />
