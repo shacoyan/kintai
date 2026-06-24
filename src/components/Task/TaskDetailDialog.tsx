@@ -96,7 +96,7 @@ export interface TaskDetailDialogProps {
  * 構成: ヘッダ（タイトル + 「編集」ボタン + 閉じる）/ メタ情報（読み取り表示）/
  * 進捗バー（subtask_done/subtask_total）/ 子タスク看板（SubtaskKanban）/「+子タスクを追加」。
  * mutation は持たない（編集は onEdit で edit フォームへ切替）。
- * BottomSheet を流用し widthClassName="md:max-w-3xl"（横3〜4カラム収容）。
+ * BottomSheet を流用し widthClassName="md:max-w-5xl"（横3〜4カラム収容）。
  */
 export function TaskDetailDialog({
   open,
@@ -172,7 +172,7 @@ export function TaskDetailDialog({
   const descriptionText = task.description != null ? String(task.description).trim() : '';
 
   return (
-    <BottomSheet isOpen={open} onClose={onClose} widthClassName="md:max-w-3xl" ariaLabel="タスク詳細">
+    <BottomSheet isOpen={open} onClose={onClose} widthClassName="md:max-w-5xl" ariaLabel="タスク詳細">
       <div className="space-y-5">
         {/* ヘッダ: タイトル + 編集 + 閉じる */}
         <div className="flex items-start justify-between gap-3">
