@@ -74,8 +74,8 @@ export function ChartTooltip({
   }
 
   const rootClass = [
-    'rounded-lg bg-surface-inverse/95 px-3 py-2 text-xs text-white shadow-lg',
-    'ring-1 ring-white/10 backdrop-blur-sm',
+    'rounded-lg bg-stone-900 px-3 py-2 text-xs text-white shadow-lg',
+    'ring-1 ring-white/10 dark:bg-stone-800 dark:ring-white/20',
     '[font-variant-numeric:tabular-nums]',
     className ?? '',
   ]
@@ -92,7 +92,7 @@ export function ChartTooltip({
   return (
     <div className={rootClass}>
       {labelText !== null && labelText !== '' && (
-        <div className="text-[11px] font-medium text-slate-300 mb-1">{labelText}</div>
+        <div className="text-[11px] font-medium text-stone-300 mb-1">{labelText}</div>
       )}
       <div className="flex flex-col gap-1">
         {payload.map((item, idx) => {
@@ -113,7 +113,7 @@ export function ChartTooltip({
                 aria-hidden="true"
               />
               {!hideName && item.name != null && (
-                <span className="text-slate-200">{item.name}</span>
+                <span className="text-stone-200">{item.name}</span>
               )}
               <span className="ml-auto font-semibold tabular-nums">{formatted}</span>
             </div>
