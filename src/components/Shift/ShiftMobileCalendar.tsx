@@ -24,8 +24,6 @@ const STATUS_RING_TENTATIVE = '#ea580c';
 const STATUS_DOT_PENDING = '#2563eb';
 const UNAVAILABLE_HEX = '#b91c1c';
 
-const MAX_CHIPS = 3;
-
 /** hex(#rrggbb) → rgba 文字列 */
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace('#', '');
@@ -178,7 +176,6 @@ function ShiftMobileCalendarInner({
   onDateClick,
   memberNames,
   roleTypeMap,
-  onOverflowClick,
 }: Props) {
   const days = useMemo(() => {
     const monthStart = startOfMonth(shiftViewMonth);
@@ -268,7 +265,9 @@ function ShiftMobileCalendarInner({
     const dates = new Set<string>([...items.keys(), ...unavailable.keys()]);
     for (const date of dates) {
       const all = items.get(date) ?? [];
-      const { visible, overflow } = prioritizeDayItems(all, MAX_CHIPS);
+      // オーナー決定: モバイルもセル内全件表示。優先ソートは維持しつつ
+      // 上限なし (全件) を描画するため limit に全件数を渡す (overflow=0)。
+      const { visible, overflow } = prioritizeDayItems(all, all.length);
       result.set(date, {
         visible,
         overflow,
@@ -280,9 +279,6 @@ function ShiftMobileCalendarInner({
   }, [shifts, preferences, currentUserId, statusFilter, showPreferenceStatus, memberNames, roleTypeMap]);
 
   const today = new Date();
-  const handleOverflow = (date: string) => {
-    (onOverflowClick ?? onDateClick)(date);
-  };
 
   return (
     <div className="lg:hidden">
@@ -297,7 +293,6 @@ function ShiftMobileCalendarInner({
           const render = dayRenderMap.get(dateStr);
           const count = render?.count ?? 0;
           const visible = render?.visible ?? [];
-          const overflow = render?.overflow ?? 0;
           const unavailableCount = render?.unavailableCount ?? 0;
           const isSelected = !isBulkMode && selectedDate === dateStr;
           const isBulkSelected = isBulkMode && selectedBulkDates?.has(dateStr);
@@ -350,27 +345,6 @@ function ShiftMobileCalendarInner({
                     ) : (
                       <ShiftChip key={`${item.userId}-shift-${i}`} item={item} />
                     ),
-                  )}
-                  {overflow > 0 && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`他${overflow}件を表示`}
-                      className="inline-flex items-center self-start -my-1 -mx-1 px-1 py-1 min-w-[44px] text-[10px] tabular-nums leading-none text-stone-500 dark:text-stone-400 text-left cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOverflow(dateStr);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleOverflow(dateStr);
-                        }
-                      }}
-                    >
-                      +{overflow}
-                    </span>
                   )}
                 </div>
               )}

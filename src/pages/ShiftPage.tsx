@@ -597,8 +597,12 @@ export function ShiftPage() {
       handleToggleBulkDate(date);
       return;
     }
-    setSelectedDate(date);
-    setMobileSheetDate(date);
+    // PC handleCalendarDateClick と対称化: 重い BottomSheet 再 render を低優先度化し、
+    // タップハンドラを即時 return させて体感を改善する。350ms ガード/bulk 分岐は外側で維持。
+    startTransition(() => {
+      setSelectedDate(date);
+      setMobileSheetDate(date);
+    });
   }, [isBulkMode, handleToggleBulkDate]);
 
   // §E-4: 横スワイプ月送り（ライブラリ非依存・pointer 実装）。

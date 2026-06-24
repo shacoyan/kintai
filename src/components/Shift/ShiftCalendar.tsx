@@ -204,8 +204,7 @@ function ShiftCalendarInner({
               ...dayShifts.map((s) => ({ kind: 'shift' as const, data: s })),
               ...dayPendingPreferences.map((p) => ({ kind: 'pref' as const, data: p })),
             ];
-            const visible = allItems.slice(0, 5);
-            const overflow = allItems.length - visible.length;
+            const visible = allItems;
             const cellBg = !isCurrentMonth ? 'bg-stone-50 dark:bg-stone-800' : 'bg-white dark:bg-stone-900';
             const weekendTint =
               isCurrentMonth && isHoliday
@@ -222,6 +221,12 @@ function ShiftCalendarInner({
               // role=grid/gridcell は付けない (Batch C の a11y 是正を維持)。
               <div
                 key={dateStr}
+                onClick={(e) => {
+                  // セルの空き余白 (このコンテナ div 自身) のクリックのみ日モーダルを起動。
+                  // 子 (日付ヘッダ button / items div / バー / 休暇 dots) は currentTarget
+                  // と一致しないため誤起動しない。role/tabIndex は付けない (既存 a11y 方針)。
+                  if (e.target === e.currentTarget) onDateClick(dateStr);
+                }}
                 className={`relative ${cellBg} ${weekendTint} p-1 motion-safe:transition-colors duration-150 ease-out
                   min-h-[80px] lg:min-h-[130px]
                   ${isToday ? 'border-t-2 border-blue-600 dark:border-blue-400 bg-blue-600/[0.04] dark:bg-blue-500/10' : ''}
@@ -289,19 +294,11 @@ function ShiftCalendarInner({
                       />
                     );
                   })}
-                  {overflow > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => onDateClick(dateStr)}
-                      aria-label={`他 ${overflow} 件を表示`}
-                      className="text-[9px] text-stone-500 dark:text-stone-400 px-1 leading-tight text-left w-full appearance-none bg-transparent cursor-pointer rounded-[3px] hover:bg-stone-50 dark:hover:bg-stone-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
-                    >+ {overflow} 件</button>
-                  )}
                 </div>
 
                 {dayLeaves.length > 0 && (
                   <div title={leaveTooltip} className="absolute bottom-1 right-1 flex items-center gap-0.5">
-                    {dayLeaves.slice(0, 4).map((l) => (
+                    {dayLeaves.map((l) => (
                       <span
                         key={l.id}
                         className={`w-1.5 h-1.5 rounded-full ${LEAVE_TYPE_DOT[l.leave_type] || 'bg-blue-500'} ${
@@ -309,9 +306,6 @@ function ShiftCalendarInner({
                         }`}
                       />
                     ))}
-                    {dayLeaves.length > 4 && (
-                      <span className="text-[9px] text-stone-500 dark:text-stone-300 leading-none">+{dayLeaves.length - 4}</span>
-                    )}
                   </div>
                 )}
               </div>

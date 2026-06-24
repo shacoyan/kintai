@@ -211,7 +211,11 @@ export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
     return preferences.filter(p => p.date === selectedDate && p.status === 'pending');
   }, [preferences, selectedDate]);
 
-  const tentativeShiftMap = useMemo(() => buildTentativeShiftMap(shifts ?? []), [shifts]);
+  // perf: getEffectiveTime はその日 (selectedDate) の pref に対してのみ呼ばれ、
+  // buildTentativeShiftMap のマッチキー(byPreferenceId=pref.id / byHeuristic=user|date|store)は
+  // いずれも同一日内対応のみ(日付跨ぎ JOIN なし)。マッチ対象 shift は必ず date===selectedDate なので
+  // dateFilteredShifts に縮小しても getEffectiveTime の結果は同値。月全件走査を回避する。
+  const tentativeShiftMap = useMemo(() => buildTentativeShiftMap(dateFilteredShifts), [dateFilteredShifts]);
 
   const existingPreference = useMemo(() => {
     if (!selectedDate) return undefined;
@@ -249,15 +253,22 @@ export const UnifiedShiftSidebar = memo(function UnifiedShiftSidebar({
     return dateFilteredPendingPreferences.filter(p => p.user_id !== currentUserId);
   }, [dateFilteredPendingPreferences, currentUserId]);
 
+  // perf: userColorMap の参照箇所(ShiftActionRow userColor)はその日の表示行のみ。
+  // 月全件 shift+pref を走査せず、その日スコープ(dateFilteredShifts + dateFilteredPendingPreferences)
+  // の user_id だけで色割当に縮小する。日跨ぎの色恒常性は要件外(同一日モーダル内で各人が区別できればよい)。
   const userColorMap = useMemo(() => {
     const map = new Map<string, string>();
-    const pendingPrefs = (preferences ?? []).filter(p => p.status === 'pending');
-    const uniqueUsers = [...new Set([...shifts.map(s => s.user_id), ...pendingPrefs.map(p => p.user_id)])];
+    const uniqueUsers = [
+      ...new Set([
+        ...dateFilteredShifts.map(s => s.user_id),
+        ...dateFilteredPendingPreferences.map(p => p.user_id),
+      ]),
+    ];
     uniqueUsers.forEach((uid, i) => {
       map.set(uid, MEMBER_COLORS[i % MEMBER_COLORS.length]);
     });
     return map;
-  }, [shifts, preferences]);
+  }, [dateFilteredShifts, dateFilteredPendingPreferences]);
 
   const availableMembers = useMemo(() => {
     if (!allMembers || !selectedDate) return [];
