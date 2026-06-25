@@ -58,7 +58,7 @@ const BottomSheetInner: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, 
     <div className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm motion-safe:transition-opacity duration-150 ease-out"
+        className="absolute inset-0 bg-black/50 motion-safe:transition-opacity duration-150 ease-out"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -68,7 +68,7 @@ const BottomSheetInner: React.FC<BottomSheetProps> = ({ isOpen, onClose, title, 
         role="dialog"
         aria-modal="true"
         {...ariaProps}
-        className={`relative w-full ${widthClassName ?? 'md:max-w-lg'} bg-white dark:bg-stone-900 rounded-t-2xl md:rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] max-h-[90vh] flex flex-col overflow-hidden motion-safe:animate-slide-up md:animate-none motion-safe:transition-transform duration-200 ease-out`}
+        className={`relative w-full ${widthClassName ?? 'md:max-w-lg'} bg-white dark:bg-stone-900 rounded-t-2xl md:rounded-xl shadow-xl max-h-[90vh] flex flex-col overflow-hidden motion-safe:animate-slide-up md:animate-none motion-safe:transition-transform duration-200 ease-out`}
       >
         {/* Handle bar (mobile only) */}
         <div className="md:hidden flex justify-center flex-shrink-0">

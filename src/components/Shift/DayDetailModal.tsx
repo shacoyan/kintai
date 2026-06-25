@@ -65,11 +65,11 @@ export const DayDetailModal = memo(function DayDetailModal(props: DayDetailModal
       role="dialog"
       aria-modal="true"
       aria-labelledby="day-detail-modal-title"
-      className="fixed inset-0 z-30 bg-stone-900/30 backdrop-blur-[2px] flex items-center justify-center p-6 motion-safe:animate-[fadeIn_120ms_ease-out]"
+      className="fixed inset-0 z-30 bg-stone-900/40 flex items-center justify-center p-6 motion-safe:animate-[fadeIn_120ms_ease-out]"
     >
       <div
         ref={modalRef}
-        className="w-full max-w-[720px] max-h-[85vh] bg-white dark:bg-stone-900 rounded-xl shadow-2xl flex flex-col overflow-hidden motion-safe:animate-[zoomIn_150ms_ease-out]"
+        className="w-full max-w-[720px] max-h-[85vh] bg-white dark:bg-stone-900 rounded-xl shadow-xl flex flex-col overflow-hidden motion-safe:animate-[zoomIn_150ms_ease-out]"
       >
         <div className="px-5 py-4 flex items-center gap-3 border-b border-stone-200/70 dark:border-stone-700">
           <div className="min-w-0">

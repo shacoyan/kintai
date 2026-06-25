@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ToastViewport, type ToastTone, type ToastItem } from '../components/ui';
 
 type LegacyToastType = 'success' | 'error' | 'info';
@@ -60,8 +60,10 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setToasts((prev) => [...prev, item]);
   }, []);
 
+  const value = useMemo(() => ({ showToast }), [showToast]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={value}>
       {children}
       <ToastViewport items={toasts} onDismiss={dismiss} position="bottom-right" />
     </ToastContext.Provider>

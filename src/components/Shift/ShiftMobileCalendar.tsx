@@ -307,6 +307,7 @@ function ShiftMobileCalendarInner({
               onClick={() => onDateClick(dateStr)}
               className={[
                 'w-full min-h-[88px] p-1 flex flex-col gap-[2px] text-left relative',
+                '[content-visibility:auto] [contain-intrinsic-size:auto_88px]',
                 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset',
                 'motion-safe:transition-colors duration-150',
                 otherMonth ? 'bg-stone-50 dark:bg-stone-900' : 'bg-white dark:bg-stone-800',

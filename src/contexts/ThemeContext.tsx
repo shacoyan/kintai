@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState, useEffect } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -47,17 +47,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => mq.removeEventListener('change', handler);
   }, [theme]);
 
-  const setTheme = (t: Theme) => {
+  const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
     try {
       if (typeof localStorage !== 'undefined') localStorage.setItem('kintai_theme', t);
     } catch {
       // 書込不可は無視 (UI 上の切替は state で維持される)
     }
-  };
+  }, []);
+
+  const value = useMemo(() => ({ theme, setTheme, isDark }), [theme, setTheme, isDark]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, isDark }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );

@@ -228,7 +228,7 @@ function ShiftCalendarInner({
                   if (e.target === e.currentTarget) onDateClick(dateStr);
                 }}
                 className={`relative cursor-pointer ${cellBg} ${weekendTint} p-1 motion-safe:transition-colors duration-150 ease-out
-                  min-h-[80px] lg:min-h-[130px]
+                  min-h-[80px] lg:min-h-[130px] [content-visibility:auto] [contain-intrinsic-size:auto_130px]
                   ${isToday ? 'border-t-2 border-blue-600 dark:border-blue-400 bg-blue-600/[0.04] dark:bg-blue-500/10' : ''}
                   ${isBulkSelected ? 'ring-2 ring-blue-500 ring-inset bg-blue-50/60 dark:bg-blue-900/30' : ''}
                 `}

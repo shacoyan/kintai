@@ -25,7 +25,7 @@ export function ShiftMobileMonthHeader({
   onToday,
 }: Props) {
   return (
-    <div className="sticky top-0 z-10 bg-stone-50/95 dark:bg-stone-900/95 backdrop-blur -mx-4 px-3 pt-2 pb-2 lg:hidden">
+    <div className="sticky top-0 z-10 bg-stone-50 dark:bg-stone-900 -mx-4 px-3 pt-2 pb-2 lg:hidden">
       {/* 上段: 月ラベル + 前後送り + 今日 */}
       <div className="flex items-center gap-1">
         <button
