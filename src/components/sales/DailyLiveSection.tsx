@@ -4,6 +4,7 @@ import OpenOrderList from './OpenOrderList';
 import { RefreshCw } from 'lucide-react';
 import { Button, ErrorBanner } from '../ui';
 import type { OpenOrder, Transaction } from '../../lib/sales/types';
+import { computeDailyTotals } from '../../lib/sales/dailyTotals';
 
 // =============================================================================
 // DailyLiveSection — 当日明細タブ本体（W4-P1 / 設計書 §4.3.5）
@@ -69,8 +70,8 @@ export default function DailyLiveSection({
     return <ErrorBanner message={error} onRetry={refresh} />;
   }
 
-  const total = sales?.total_amount ?? 0;
-  const count = sales?.transaction_count ?? 0;
+  // 決済済み + 未決済を集計（唯一の真実源・二重計上ゼロ）。
+  const totals = computeDailyTotals(sales, openOrders);
 
   return (
     <div className="space-y-5">
@@ -103,7 +104,18 @@ export default function DailyLiveSection({
         </div>
       </div>
 
-      <SalesSummary total={total} count={count} loading={loading} date={date} />
+      <SalesSummary
+        settledTotal={totals.settledTotal}
+        settledCount={totals.settledCount}
+        openTotal={totals.openTotal}
+        openCount={totals.openCount}
+        grandTotal={totals.grandTotal}
+        grandCount={totals.grandCount}
+        loading={loading}
+        openLoading={openOrdersLoading}
+        openError={openOrdersError}
+        date={date}
+      />
 
       <OpenOrderList
         orders={openOrders}
