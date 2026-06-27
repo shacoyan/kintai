@@ -7,7 +7,7 @@ const cn = (...classes: Array<string | false | null | undefined>) =>
   classes.filter(Boolean).join(' ');
 
 const PERIOD_TABS: { key: PeriodPreset; label: string }[] = [
-  { key: 'today', label: '今日' },
+  { key: 'today', label: '指定日' },
   { key: 'week', label: '週' },
   { key: 'month', label: '今月' },
   { key: 'quarter', label: '四半期' },
@@ -22,6 +22,12 @@ export interface PeriodSelectorProps {
   availableWeeks: number;
   quarterIndex: number;
   onQuarterIndexChange: (n: number) => void;
+  /** 「指定日」(period==='today') で選択中の対象日 (YYYY-MM-DD)。 */
+  selectedDate: string;
+  /** 対象日が変更されたとき (YYYY-MM-DD)。 */
+  onDateChange: (d: string) => void;
+  /** 選択可能な最大日 (営業日today・未来日不可)。 */
+  maxDate: string;
   ariaLabel?: string;
   className?: string;
 }
@@ -82,6 +88,9 @@ export function PeriodSelector({
   availableWeeks,
   quarterIndex,
   onQuarterIndexChange,
+  selectedDate,
+  onDateChange,
+  maxDate,
   ariaLabel = '期間選択',
   className,
 }: PeriodSelectorProps) {
@@ -124,6 +133,23 @@ export function PeriodSelector({
           );
         })}
       </div>
+
+      {period === 'today' && (
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="date"
+            value={selectedDate}
+            max={maxDate}
+            aria-label="対象日"
+            onChange={(e) => onDateChange(e.target.value)}
+            className={cn(
+              'px-3 py-1.5 text-sm font-medium rounded-lg border border-border bg-surface-subtle text-text',
+              MOTION.fast,
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+            )}
+          />
+        </div>
+      )}
 
       {period === 'week' && availableWeeks > 0 && (
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="週選択">

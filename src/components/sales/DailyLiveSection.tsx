@@ -45,6 +45,14 @@ export interface DailyLiveSectionProps {
   openOrdersLoading: boolean;
   /** 未会計伝票の取得エラー（全文・OpenOrderList 内で自前表示） */
   openOrdersError: string | null;
+  /**
+   * 未決済(OPEN)を表示するか（=対象日が営業日today か）。
+   * 未決済は「今この瞬間に未会計の伝票」概念のため【今日のみ】表示する。
+   * false（過去日）のとき: OpenOrderList 非表示・ヘッダ文言「指定日の売上」・
+   * リアルタイム/最終更新/更新ボタンは出さない・SalesSummary へ showOpen=false 伝播。
+   * TransactionList（決済済み伝票）は過去日でも表示する。
+   */
+  showOpen: boolean;
 }
 
 function formatUpdatedAt(d: Date): string {
@@ -64,6 +72,7 @@ export default function DailyLiveSection({
   openOrders,
   openOrdersLoading,
   openOrdersError,
+  showOpen,
 }: DailyLiveSectionProps) {
   // error は全文表示（短縮しない＝MEMORY ルール）。再取得手段があれば併設。
   if (error) {
@@ -77,31 +86,34 @@ export default function DailyLiveSection({
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-stone-500 dark:text-stone-400">
-          本日の売上（リアルタイム）
+          {showOpen ? '本日の売上（リアルタイム）' : '指定日の売上'}
         </p>
-        <div className="flex items-center gap-2">
-          {!loading && lastUpdated && (
-            <p
-              className="text-[11px] text-stone-400 dark:text-stone-500 tabular-nums"
-              aria-label="最終更新時刻"
-            >
-              最終更新 {formatUpdatedAt(lastUpdated)}
-            </p>
-          )}
-          {refresh && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              loading={loading}
-              disabled={loading}
-              onClick={refresh}
-              iconLeft={<RefreshCw size={14} aria-hidden="true" />}
-            >
-              更新
-            </Button>
-          )}
-        </div>
+        {/* リアルタイム/最終更新/更新ボタンは今日(showOpen)のみ。過去日は確定値なので出さない。 */}
+        {showOpen && (
+          <div className="flex items-center gap-2">
+            {!loading && lastUpdated && (
+              <p
+                className="text-[11px] text-stone-400 dark:text-stone-500 tabular-nums"
+                aria-label="最終更新時刻"
+              >
+                最終更新 {formatUpdatedAt(lastUpdated)}
+              </p>
+            )}
+            {refresh && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                loading={loading}
+                disabled={loading}
+                onClick={refresh}
+                iconLeft={<RefreshCw size={14} aria-hidden="true" />}
+              >
+                更新
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <SalesSummary
@@ -115,13 +127,17 @@ export default function DailyLiveSection({
         openLoading={openOrdersLoading}
         openError={openOrdersError}
         date={date}
+        showOpen={showOpen}
       />
 
-      <OpenOrderList
-        orders={openOrders}
-        loading={openOrdersLoading}
-        error={openOrdersError}
-      />
+      {/* 未決済リストは今日(showOpen)のみ。過去日は未会計概念が無いので非表示。 */}
+      {showOpen && (
+        <OpenOrderList
+          orders={openOrders}
+          loading={openOrdersLoading}
+          error={openOrdersError}
+        />
+      )}
 
       <TransactionList transactions={transactions} loading={loading} />
     </div>

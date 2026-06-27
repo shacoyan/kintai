@@ -55,6 +55,12 @@ export interface UseSquareLiveAllStoresArgs {
   endHour: number;
   /** false のときフェッチをスキップ。省略時 true。 */
   enabled?: boolean;
+  /**
+   * 未決済(OPEN orders)を取得するか。省略時 true（=今日の従来挙動）。
+   * false（過去日）のとき各店 /api/open-orders を呼ばず openTotal/openCount=0 とする
+   * （未決済は「今この瞬間に未会計の伝票」概念のため今日のみ。過去日は決済済みのみ）。
+   */
+  includeOpen?: boolean;
 }
 
 /** 1 店舗分の取得結果（単店 computeDailyTotals 相当＋取得成否）。 */
@@ -113,7 +119,7 @@ const EMPTY_AGGREGATE = computeMultiStoreDailyTotals(EMPTY_PER_STORE);
 export function useSquareLiveAllStores(
   args: UseSquareLiveAllStoresArgs,
 ): UseSquareLiveAllStoresResult {
-  const { date, stores, startHour, endHour, enabled = true } = args;
+  const { date, stores, startHour, endHour, enabled = true, includeOpen = true } = args;
 
   const active = enabled && !!date && stores.length > 0;
 
@@ -164,12 +170,17 @@ export function useSquareLiveAllStores(
           start_hour: String(startHour),
           end_hour: String(endHour),
         });
+        // 過去日（includeOpen=false）は未決済を取得しない（無駄打ち排除＋概念整合）。
+        // 決済済みのみ取得し open=[] で集計＝openTotal/openCount=0。
+        // 今日（includeOpen=true）は従来どおり sales/open-orders を並列取得（perf 不変）。
         const [salesRaw, openRaw] = await Promise.all([
           squareFetch<unknown>(`/api/sales?${params.toString()}`),
-          squareFetch<unknown>(`/api/open-orders?${params.toString()}`),
+          includeOpen
+            ? squareFetch<unknown>(`/api/open-orders?${params.toString()}`)
+            : Promise.resolve(null),
         ]);
         const sales = normalizeLiveSales(salesRaw);
-        const openOrders = normalizeOpenOrders(openRaw);
+        const openOrders = includeOpen ? normalizeOpenOrders(openRaw) : [];
         // 単店集計は唯一の真実源 computeDailyTotals を再利用（二重計上ゼロ）。
         const t = computeDailyTotals(sales, openOrders);
         return {
@@ -213,7 +224,7 @@ export function useSquareLiveAllStores(
     setLastUpdated(new Date());
     setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, date, startHour, endHour, storesKey]);
+  }, [active, date, startHour, endHour, storesKey, includeOpen]);
 
   useEffect(() => {
     if (!active) {

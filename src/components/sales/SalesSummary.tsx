@@ -55,6 +55,13 @@ interface SalesSummaryProps {
   settledError?: string | null;
   /** 表示対象日 (YYYY-MM-DD)。指定時は KPI カード上に期間ラベルを表示 */
   date?: string;
+  /**
+   * 未決済(OPEN)カードを表示するか（既定 true）。
+   * 未決済は「今この瞬間に未会計の伝票」概念のため【今日(=対象日が営業日today)のみ】表示する。
+   * false（過去日）のときは決済済みのみを「売上」+「取引件数」の簡潔表示にし、
+   * 合計 = 決済済み なので合計カード・未決済カードは出さない。
+   */
+  showOpen?: boolean;
 }
 
 /** loading 中の KPI カードプレースホルダ（既存スタイル踏襲） */
@@ -79,6 +86,7 @@ export default function SalesSummary({
   openError,
   settledError,
   date,
+  showOpen = true,
 }: SalesSummaryProps) {
   // 未決済が「不可知」= 取得失敗。¥0 誤表示を避けるため、未決済・合計を — 表示にする。
   const openUnknown = Boolean(openError);
@@ -88,6 +96,43 @@ export default function SalesSummary({
   const grandUnknown = settledUnknown || openUnknown;
   // 合計カードの不可知注記（決済済み側のエラーを優先表示。なければ未決済側）。
   const grandUnknownHint = settledError ?? '未決済の取得に失敗';
+
+  // 過去日（showOpen=false）: 未決済概念が無い → 決済済みのみ。
+  // 合計 = 決済済み なので「売上」+「取引件数」の 2 カードに簡潔表示し、
+  // 合計カード・未決済カードは出さない（過少表示ではなく、その日の確定売上）。
+  if (!showOpen) {
+    return (
+      <div className="space-y-2">
+        {date && (
+          <p className="text-xs text-stone-500 dark:text-stone-400" aria-label="表示対象日">
+            対象日: {date}
+          </p>
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* 売上カード: 取得中は skeleton、ALL 不可知（settledError）は ¥0 を出さず — */}
+          {loading ? (
+            <SkeletonCard />
+          ) : settledUnknown ? (
+            <StatCard label="売上" value="—" hint="取得に失敗" />
+          ) : (
+            <StatCard label="売上" value={formatYen(settledTotal)} />
+          )}
+
+          {/* 取引件数カード */}
+          {loading ? (
+            <SkeletonCard />
+          ) : settledUnknown ? (
+            <StatCard label="取引件数" value="—" hint="取得に失敗" />
+          ) : (
+            <StatCard
+              label="取引件数"
+              value={`${settledCount.toLocaleString('ja-JP')} 件`}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">

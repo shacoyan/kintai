@@ -62,6 +62,34 @@ const ALL_VALUE = '__ALL__';
 // SABABA 全 7 店は営業開始 11:00（営業日区切り 11 時）。
 const STORE_START_HOUR = 11;
 
+// 要件1: 最後に選んだ店舗を記憶（localStorage・tenant 非依存グローバルキー）。
+// 採用は「options（=許可店）に含まれる値のみ」ガードで fail-closed（別テナント店名等は破棄）。
+const STORE_LS_KEY = 'kintai_sales_store';
+
+/** localStorage 読取（try/catch + typeof guard・SSR/プライベートモードで白画面にしない）。 */
+function readStoredStore(): string | null {
+  try {
+    if (typeof localStorage === 'undefined') return null;
+    return localStorage.getItem(STORE_LS_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** localStorage 書込（try/catch・例外は無視＝白画面防止）。 */
+function writeStoredStore(value: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(STORE_LS_KEY, value);
+  } catch {
+    /* SSR / Safari プライベート / quota 超過などは無視（既定動作を継続） */
+  }
+}
+
+/** YYYY-MM-DD 形式判定（URL ?date= 復元の妥当性チェック用）。 */
+function isYmd(s: string | null): s is string {
+  return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
 // セグメント別 KPI カードのラベル定義（B7）。new/repeat/regular/staff=客数+YoY、
 // unlisted=売上額のみ（YoY なし）。yoy.data に unlisted 客数 YoY が無いため出さない。
 const SEGMENT_LABELS = [
@@ -155,11 +183,17 @@ export const SalesPage: React.FC = () => {
       return;
     }
     if (!options.some((o) => o.value === selected)) {
-      // 初回シードのみ、URL ?store= が存在する店舗ならそれを採用（共有/リロード復元）。
+      // 初回シード優先度（fail-closed・いずれも options 内のみ採用）:
+      //   ① URL ?store=（共有/リロード復元を最優先）
+      //   ② localStorage（要件1: 最後に選んだ店舗を記憶）
+      //   ③ 既定（canViewAll ? ALL : options[0]）
       const fromUrl = initialStoreRef.current;
       initialStoreRef.current = null; // 1 回限り（以後はユーザー操作のみが state を動かす）
+      const fromStore = readStoredStore();
       if (fromUrl !== null && options.some((o) => o.value === fromUrl)) {
         setSelected(fromUrl);
+      } else if (fromStore !== null && options.some((o) => o.value === fromStore)) {
+        setSelected(fromStore);
       } else {
         setSelected(canViewAll ? ALL_VALUE : options[0].value);
       }
@@ -179,6 +213,13 @@ export const SalesPage: React.FC = () => {
       { replace: true },
     );
   }, [selected, searchParams, setSearchParams]);
+
+  // selected -> localStorage: 確定値に変わるたび記憶（次回起動時に復元・要件1）。
+  // '' は保存しない（未確定）。ALL_VALUE も保存対象（owner の ALL 常用を記憶）。
+  useEffect(() => {
+    if (selected === '') return;
+    writeStoredStore(selected);
+  }, [selected]);
 
   // --- 期間セレクタ ---
   // 営業日基準の「今日」（getBusinessDate(11)）。elapsedDays・期間上限の基準。
@@ -206,6 +247,54 @@ export const SalesPage: React.FC = () => {
     const [, bm0] = baseDate.split('-').map(Number);
     return Math.floor((bm0 - 1) / 3) + 1;
   });
+
+  // --- 指定日（要件2）: 期間タブ「指定日」（key='today' 温存）の対象日 ---
+  // selectedDate（既定 baseDate=営業日today）。必ず <= baseDate にクランプ（未来日不可）。
+  // URL ?date= は inline 双方向同期（?store= と同作法・date は自由値で useUrlState 不適）。
+  const clampDate = (d: string): string => {
+    if (!isYmd(d)) return baseDate; // 空/不正は今日へ正規化
+    return d > baseDate ? baseDate : d; // 未来日は今日へクランプ
+  };
+  const initialDateRef = useRef<string | null>(
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    searchParams.get('date'),
+  );
+  const [selectedDate, setSelectedDateRaw] = useState<string>(() => {
+    const fromUrl = initialDateRef.current;
+    if (isYmd(fromUrl) && fromUrl <= baseDate) return fromUrl; // 形式 OK かつ未来でない
+    return baseDate;
+  });
+  // 全入口でクランプを通す setter（input onChange / 任意呼び出し）。
+  const setSelectedDate = (d: string) => setSelectedDateRaw(clampDate(d));
+
+  // selectedDate -> URL ?date=: baseDate と異なるときだけ set、同値なら delete（URL を汚さない）。
+  useEffect(() => {
+    const cur = searchParams.get('date');
+    if (selectedDate === baseDate) {
+      if (cur === null) return;
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete('date');
+          return next;
+        },
+        { replace: true },
+      );
+    } else {
+      if (cur === selectedDate) return;
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('date', selectedDate);
+          return next;
+        },
+        { replace: true },
+      );
+    }
+  }, [selectedDate, baseDate, searchParams, setSearchParams]);
+
+  // 指定日が今日（営業日today）か。未決済(open)は今日のみ＝過去日は !isPickedToday。
+  const isPickedToday = selectedDate === baseDate;
 
   // --- dates（from/to）を一度だけ算出して 3 hook に共有（二重計算・期間ズレ防止）---
   const { from, to } = useMemo(() => {
@@ -282,7 +371,7 @@ export const SalesPage: React.FC = () => {
 
   // 当日 live（決済済み売上 + 取引一覧）。単店選択かつ id 解決済みのときのみ起動。
   const live = useSquareLiveSales({
-    date: baseDate,
+    date: selectedDate,
     // 契約は non-null。未解決時は空文字 + enabled=false で hook 側が「何もしない」。
     locationId: selectedLocationId ?? '',
     startHour: STORE_START_HOUR,
@@ -295,11 +384,12 @@ export const SalesPage: React.FC = () => {
 
   // 当日 未会計伝票（OPEN orders）。today 単店選択かつ id 解決済みのときのみ起動（§4.3.4）。
   const liveOpenOrders = useSquareOpenOrders({
-    date: baseDate,
+    date: selectedDate,
     locationId: selectedLocationId ?? '',
     startHour: STORE_START_HOUR,
     endHour: (STORE_START_HOUR + 23) % 24,
-    enabled: scopeReady && isToday && selectedLocationId !== null,
+    // 未決済は今日のみ取得（過去日は概念上存在しない＝isPickedToday を AND）。
+    enabled: scopeReady && isToday && selectedLocationId !== null && isPickedToday,
   });
 
   // ALL×today の全店 live 対象（要件B）。許可店名すべてを渡す（スコープ＝許可店のみ＝fail-closed）。
@@ -319,11 +409,13 @@ export const SalesPage: React.FC = () => {
   // 全店 live（決済済み + 未決済を許可店すべてで取得し全店合計＋店舗別内訳を算出）。
   // ALL×today かつ少なくとも 1 店の id が解決済みのときのみ起動（単店経路には無影響）。
   const allStores = useSquareLiveAllStores({
-    date: baseDate,
+    date: selectedDate,
     stores: allStoresList,
     startHour: STORE_START_HOUR,
     endHour: (STORE_START_HOUR + 23) % 24,
     enabled: scopeReady && isAllToday && allStoresList.length > 0,
+    // 未決済は今日のみ（過去日は各店 /api/open-orders を呼ばず open=0）。
+    includeOpen: isPickedToday,
   });
 
   // 獲得経路 live 補完（§4.1.3）。非 today × 単店選択 × id 解決済みのときのみ起動。
@@ -509,6 +601,9 @@ export const SalesPage: React.FC = () => {
             availableWeeks={availableWeeks}
             quarterIndex={quarterIndex}
             onQuarterIndexChange={setQuarterIndex}
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+            maxDate={baseDate}
           />
         )}
       </header>
@@ -557,14 +652,17 @@ export const SalesPage: React.FC = () => {
                       )}）。店舗別の内訳は下表でご確認ください。`
                     : null
                 }
-                date={baseDate}
+                date={selectedDate}
+                showOpen={isPickedToday}
               />
 
-              {/* 下: 店舗別（本日）内訳。失敗/未解決店はその行に「—」+全文 error を表示。 */}
+              {/* 下: 店舗別内訳。失敗/未解決店はその行に「—」+全文 error を表示。
+                  過去日（showOpen=false）は未決済列を隠し決済済みのみ。 */}
               <StoreTodayBreakdown
                 perStore={allStores.perStore}
                 loading={allStores.loading}
-                date={baseDate}
+                date={selectedDate}
+                showOpen={isPickedToday}
               />
             </div>
           )
@@ -577,12 +675,13 @@ export const SalesPage: React.FC = () => {
             transactions={live.transactions}
             loading={live.loading}
             error={live.error}
-            date={baseDate}
+            date={selectedDate}
             lastUpdated={live.lastUpdated}
             refresh={live.refresh}
             openOrders={liveOpenOrders.orders}
             openOrdersLoading={liveOpenOrders.loading}
             openOrdersError={liveOpenOrders.error}
+            showOpen={isPickedToday}
           />
         )
       ) : segment.error ? (

@@ -23,10 +23,17 @@ interface StoreTodayBreakdownProps {
   loading: boolean;
   /** 表示対象営業日 (YYYY-MM-DD)。任意。 */
   date?: string;
+  /**
+   * 未決済(OPEN)列を表示するか（既定 true）。
+   * 未決済は「今この瞬間に未会計の伝票」概念のため【今日のみ】表示する。
+   * false（過去日）のとき: 未決済列を隠し、合計(=決済済み)と二重になるため
+   * 「売上」1 列に集約した決済済みのみの表示にする。
+   */
+  showOpen?: boolean;
 }
 
-/** loading 中の行スケルトン。 */
-function SkeletonRows() {
+/** loading 中の行スケルトン。dataCols = 店舗名以外の数値列数。 */
+function SkeletonRows({ dataCols }: { dataCols: number }) {
   return (
     <>
       {[0, 1, 2].map((i) => (
@@ -34,7 +41,7 @@ function SkeletonRows() {
           <td className="px-3 py-2.5">
             <div className="h-4 w-24 rounded bg-stone-200 dark:bg-stone-700 animate-pulse" />
           </td>
-          {[0, 1, 2].map((j) => (
+          {Array.from({ length: dataCols }, (_, j) => (
             <td key={j} className="px-3 py-2.5 text-right">
               <div className="ml-auto h-4 w-16 rounded bg-stone-200 dark:bg-stone-700 animate-pulse" />
             </td>
@@ -49,12 +56,19 @@ export default function StoreTodayBreakdown({
   perStore,
   loading,
   date,
+  showOpen = true,
 }: StoreTodayBreakdownProps) {
+  // 今日: 合計/決済済み/未決済 の 3 数値列。過去日: 売上(=決済済み) の 1 数値列。
+  const dataCols = showOpen ? 3 : 1;
+  // colSpan: 失敗店の「—」+ error を数値列ぶんまたぐ。
+  const failColSpan = dataCols;
+  // 空表示の colSpan は 店舗名 + 数値列。
+  const emptyColSpan = dataCols + 1;
   return (
     <Card>
       <div className="mb-2 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-stone-700 dark:text-stone-200">
-          店舗別（本日）
+          {showOpen ? '店舗別（本日）' : '店舗別'}
         </h2>
         {date && (
           <p className="text-xs text-stone-500 dark:text-stone-400" aria-label="表示対象日">
@@ -65,30 +79,40 @@ export default function StoreTodayBreakdown({
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm tabular-nums">
-          <caption className="sr-only">店舗別の本日の売上内訳</caption>
+          <caption className="sr-only">
+            {showOpen ? '店舗別の本日の売上内訳' : '店舗別の売上内訳'}
+          </caption>
           <thead>
             <tr className="border-b border-stone-200 text-xs text-stone-500 dark:border-stone-700 dark:text-stone-400">
               <th scope="col" className="px-3 py-2 text-left font-medium">
                 店舗
               </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
-                合計
-              </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
-                決済済み
-              </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
-                未決済
-              </th>
+              {showOpen ? (
+                <>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                    合計
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                    決済済み
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                    未決済
+                  </th>
+                </>
+              ) : (
+                <th scope="col" className="px-3 py-2 text-right font-medium">
+                  売上
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
             {loading ? (
-              <SkeletonRows />
+              <SkeletonRows dataCols={dataCols} />
             ) : perStore.length === 0 ? (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={emptyColSpan}
                   className="px-3 py-6 text-center text-sm text-stone-400 dark:text-stone-500"
                 >
                   対象店舗がありません
@@ -109,7 +133,7 @@ export default function StoreTodayBreakdown({
                     {failed ? (
                       // 取得失敗店: ¥0 を出さず — 表示し、行内に全文 error を併記（過少表示禁止）。
                       <td
-                        colSpan={3}
+                        colSpan={failColSpan}
                         className="px-3 py-2.5 text-right text-xs text-amber-600 dark:text-amber-400"
                       >
                         <span className="mr-2 font-medium text-stone-400 dark:text-stone-500">
@@ -117,7 +141,7 @@ export default function StoreTodayBreakdown({
                         </span>
                         取得に失敗しました：{s.error}
                       </td>
-                    ) : (
+                    ) : showOpen ? (
                       <>
                         <td className="px-3 py-2.5 text-right font-semibold">
                           {formatYen(s.grandTotal)}
@@ -138,6 +162,14 @@ export default function StoreTodayBreakdown({
                           </span>
                         </td>
                       </>
+                    ) : (
+                      // 過去日: 売上(=決済済み) 1 列のみ。未決済概念が無い。
+                      <td className="px-3 py-2.5 text-right font-semibold">
+                        {formatYen(s.settledTotal)}
+                        <span className="ml-1 text-xs font-normal text-stone-400 dark:text-stone-500">
+                          {s.settledCount.toLocaleString('ja-JP')}件
+                        </span>
+                      </td>
                     )}
                   </tr>
                 );
