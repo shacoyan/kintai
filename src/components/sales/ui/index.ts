@@ -8,3 +8,5 @@ export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 export { PeriodSelector } from './PeriodSelector';
 export type { PeriodSelectorProps } from './PeriodSelector';
+export { StoreSelector } from './StoreSelector';
+export type { StoreSelectorProps, StoreSelectorOption } from './StoreSelector';

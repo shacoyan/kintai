@@ -8,6 +8,7 @@ import { useSalesByLocation } from '../hooks/useSalesByLocation';
 import { useSalesByLocationDaily } from '../hooks/useSalesByLocationDaily';
 import { useSquareLiveSales } from '../hooks/useSquareLiveSales';
 import { useSquareOpenOrders } from '../hooks/useSquareOpenOrders';
+import { useSquareLiveAllStores } from '../hooks/useSquareLiveAllStores';
 import { useSalesAcquisitionLive } from '../hooks/useSalesAcquisitionLive';
 import { squareFetch } from '../lib/sales/squareLiveClient';
 import {
@@ -19,8 +20,10 @@ import {
   type StatCardTrend,
   DashboardSkeleton,
 } from '../components/ui';
-import { PeriodSelector } from '../components/sales/ui';
+import { PeriodSelector, StoreSelector } from '../components/sales/ui';
 import DailyLiveSection from '../components/sales/DailyLiveSection';
+import SalesSummary from '../components/sales/SalesSummary';
+import StoreTodayBreakdown from '../components/sales/StoreTodayBreakdown';
 import {
   SegmentPieChart,
   SegmentTrendChart,
@@ -235,7 +238,7 @@ export const SalesPage: React.FC = () => {
   // RPC 経路は今日では enabled=false（無駄打ち停止）。他 period は完全に現状不変。
   const isToday = period === 'today';
 
-  // ALL（全店）+ today は live が店舗単位のため未対応 → 単店選択を促す（P1 は合算しない）。
+  // ALL（全店）+ today は live が店舗単位 → 許可店すべてを取得して全店合計＋店舗別内訳を表示（要件B）。
   const isAllToday = isToday && locationNames === null;
   // 単店選択時の Square location_name。live の location_id 解決キー。
   const selectedLocationName = useMemo<string | null>(
@@ -247,9 +250,11 @@ export const SalesPage: React.FC = () => {
   // today 表示かつ単店選択時のみ取得（owner ALL / 非 today では往復しない）。
   const [locationIdMap, setLocationIdMap] = useState<Record<string, string>>({});
   const [locationsError, setLocationsError] = useState<string | null>(null);
-  // Square location_id が要るのは (a) today live/open-orders と (b) 非 today 単店の
-  // acquisition live 補完（§4.1.3）。どちらも単店選択時のみ。ALL では往復しない。
-  const needLocationId = scopeReady && selectedLocationName !== null;
+  // Square location_id が要るのは (a) today live/open-orders（単店）と (b) 非 today 単店の
+  // acquisition live 補完（§4.1.3）と (c) ALL×today の全店 live（要件B・許可店すべての id 解決）。
+  // (c) のときは locations マップから許可店ぶんの id を一括解決する（スコープ外は引かない＝fail-closed）。
+  const needLocationId =
+    scopeReady && (selectedLocationName !== null || isAllToday);
   useEffect(() => {
     if (!needLocationId) return;
     let cancelled = false;
@@ -295,6 +300,30 @@ export const SalesPage: React.FC = () => {
     startHour: STORE_START_HOUR,
     endHour: (STORE_START_HOUR + 23) % 24,
     enabled: scopeReady && isToday && selectedLocationId !== null,
+  });
+
+  // ALL×today の全店 live 対象（要件B）。許可店名すべてを渡す（スコープ＝許可店のみ＝fail-closed）。
+  // id 未解決店も除外せず {locationId:''} のまま渡す → hook 側が「未解決＝失敗扱い（fetch せず
+  // error 付き PerStoreResult）」にし、computeMultiStoreDailyTotals が complete=false で全店合計を
+  // 不可知に倒す（過少表示禁止）。未解決店は内訳にも事由付きで明示される。canViewAll でないと
+  // isAllToday は成立しない。
+  const allStoresList = useMemo(
+    () =>
+      allowedLocationNames.map((name) => ({
+        name,
+        locationId: locationIdMap[name] ?? '',
+      })),
+    [allowedLocationNames, locationIdMap],
+  );
+
+  // 全店 live（決済済み + 未決済を許可店すべてで取得し全店合計＋店舗別内訳を算出）。
+  // ALL×today かつ少なくとも 1 店の id が解決済みのときのみ起動（単店経路には無影響）。
+  const allStores = useSquareLiveAllStores({
+    date: baseDate,
+    stores: allStoresList,
+    startHour: STORE_START_HOUR,
+    endHour: (STORE_START_HOUR + 23) % 24,
+    enabled: scopeReady && isAllToday && allStoresList.length > 0,
   });
 
   // 獲得経路 live 補完（§4.1.3）。非 today × 単店選択 × id 解決済みのときのみ起動。
@@ -453,24 +482,20 @@ export const SalesPage: React.FC = () => {
 
           {allowedLocationNames.length > 0 && (
             <div className="flex items-center gap-2">
-              <label
-                htmlFor="sales-store-select"
+              <span
+                id="sales-store-label"
                 className="text-sm text-stone-600 dark:text-stone-300"
               >
                 店舗
-              </label>
-              <select
-                id="sales-store-select"
+              </span>
+              {/* T7: 店舗選択を <select> からボタン型（WAI-ARIA tabs）へ（要件A）。
+                  selected/setSelected と URL ?store= 同期は不変。onChange に値を渡すだけ。 */}
+              <StoreSelector
+                options={options}
                 value={selected}
-                onChange={(e) => setSelected(e.target.value)}
-                className="rounded-md border border-stone-300 bg-white px-2 py-1 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-100"
-              >
-                {options.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelected}
+                ariaLabel="店舗選択"
+              />
             </div>
           )}
         </div>
@@ -497,11 +522,52 @@ export const SalesPage: React.FC = () => {
         // 当日は Square live（決済済み売上 + 取引一覧）を表示する（W4-P1 / §4.3.3）。
         // RPC 集計系（前日まで確定）は today では停止済み。
         isAllToday ? (
-          // ALL+today は live が店舗単位のため P1 では単店選択を促す（合算は P2 以降）。
-          <EmptyState
-            title="今日のデータは店舗を 1 つ選んでください"
-            description="当日のリアルタイム売上は店舗ごとに表示します。上の店舗セレクタで店舗を選択してください。"
-          />
+          // ALL+today: 許可店すべての当日 live を取得し、上=全店合計3カード／下=店舗別内訳を表示（要件B）。
+          // /api/locations 自体が失敗し全体が不可知なら、まずそのエラーを全文表示（短縮しない）。
+          locationsError ? (
+            <ErrorBanner message={locationsError} />
+          ) : (
+            <div className="space-y-5">
+              {/* 上: 全店合計の3カード（決済済+未決済）。失敗/未解決店があると aggregate.complete=false。
+                  その場合は settledError/openError 双方に同じ不可知注記を渡し、決済済み・未決済・合計の
+                  3カードすべてを「—」に倒す（全店として一貫した誠実な不可知表示・過少表示禁止）。
+                  失敗/未解決店は computeMultiStoreDailyTotals が合計から除外済み（¥0 誤算入なし）。 */}
+              <SalesSummary
+                settledTotal={allStores.aggregate.settledTotal}
+                settledCount={allStores.aggregate.settledCount}
+                openTotal={allStores.aggregate.openTotal}
+                openCount={allStores.aggregate.openCount}
+                grandTotal={allStores.aggregate.grandTotal}
+                grandCount={allStores.aggregate.grandCount}
+                loading={allStores.loading}
+                openLoading={allStores.loading}
+                // complete=false（一部店舗の取得失敗 or ID 未解決）は不可知 → 決済済み・未決済・合計の
+                // 3カードすべてを「—」に倒す。全文の対象店舗名を注記に載せる（過少表示禁止・短縮禁止）。
+                settledError={
+                  !allStores.loading && !allStores.aggregate.complete
+                    ? `一部店舗の取得に失敗（または店舗ID未解決）のため全店合計は表示できません（対象店: ${allStores.aggregate.failedStores.join(
+                        '、',
+                      )}）。店舗別の内訳は下表でご確認ください。`
+                    : null
+                }
+                openError={
+                  !allStores.loading && !allStores.aggregate.complete
+                    ? `一部店舗の取得に失敗（または店舗ID未解決）のため全店合計は表示できません（対象店: ${allStores.aggregate.failedStores.join(
+                        '、',
+                      )}）。店舗別の内訳は下表でご確認ください。`
+                    : null
+                }
+                date={baseDate}
+              />
+
+              {/* 下: 店舗別（本日）内訳。失敗/未解決店はその行に「—」+全文 error を表示。 */}
+              <StoreTodayBreakdown
+                perStore={allStores.perStore}
+                loading={allStores.loading}
+                date={baseDate}
+              />
+            </div>
+          )
         ) : locationsError ? (
           // 店舗 ID 解決エラーは全文表示（短縮しない＝MEMORY ルール）。
           <ErrorBanner message={locationsError} />
