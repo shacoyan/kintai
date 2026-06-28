@@ -10,7 +10,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { PageSkeleton } from '../ui/Skeleton';
 import { Store as StoreIcon } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
-import { useTenant } from '../../hooks/useTenant';
+import { useCan } from '../../lib/permissions/useCan';
 import { Card, Button, Badge } from '../ui';
 import { messages } from '../../lib/messages';
 
@@ -27,8 +27,9 @@ export function StoreManagement({ tenantId }: StoreManagementProps) {
     setStoreMemberManager,
   } = useStore(tenantId);
   const { members: allMembers, fetchMembers } = useTenantAdmin(tenantId);
-  const { myRole } = useTenant();
-  const isOwner = myRole === 'owner';
+  const can = useCan();
+  // C6 assignStoreManager（店長任命・is_manager UPDATE は migration 082 で別途 RLS 強制）。挙動不変。
+  const isOwner = can('assignStoreManager');
 
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [newStoreName, setNewStoreName] = useState('');

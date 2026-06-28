@@ -1,10 +1,12 @@
 import { Navigate } from 'react-router-dom';
 import { useTenant } from '../hooks/useTenant';
+import { useCan } from '../lib/permissions/useCan';
 import { AdminDashboard } from '../components/Admin/AdminDashboard';
 import { AdminSkeleton } from '../components/ui';
 
 export function AdminPage() {
   const { currentTenant, myRole } = useTenant();
+  const can = useCan();
   // RequireTenant ガードにより currentTenant は必ず存在する
   const tenantId = currentTenant!.id;
 
@@ -16,7 +18,8 @@ export function AdminPage() {
     );
   }
 
-  if (myRole !== 'owner' && myRole !== 'manager') {
+  // C1 accessAdmin（admin 内データは各々 RLS で別途強制）。挙動不変。
+  if (!can('accessAdmin')) {
     return <Navigate to="/" replace />;
   }
 

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link2 } from 'lucide-react';
 import { useTenant } from '../../contexts/TenantContext';
+import { useCan } from '../../lib/permissions/useCan';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
 import { Heading } from '../ui/Heading';
@@ -43,7 +44,8 @@ function formatExpiresAt(iso: string | null | undefined): string {
 export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps> = ({
   tenantId,
 }) => {
-  const { currentTenant, isOwner, isManager, regenerateInviteCode } = useTenant();
+  const { currentTenant, regenerateInviteCode } = useTenant();
+  const can = useCan();
   const { showToast } = useToast();
 
   const [expiresInDays, setExpiresInDays] = useState<ExpiresOption>(7);
@@ -52,7 +54,8 @@ export const InviteCodeSettingsSection: React.FC<InviteCodeSettingsSectionProps>
   const [error, setError] = useState<string | null>(null);
   const [urlModalOpen, setUrlModalOpen] = useState<boolean>(false);
 
-  const canManageInvite = isOwner || isManager;
+  // C8 manageTenantSettings（書込 RPC 認可は TenantContext 内 throw + RLS で別途強制）。挙動不変。
+  const canManageInvite = can('manageTenantSettings');
 
   const inviteCode = currentTenant?.invite_code ?? '';
   const expiresAt = currentTenant?.invite_code_expires_at ?? null;

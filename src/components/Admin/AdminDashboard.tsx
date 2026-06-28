@@ -13,6 +13,7 @@ import { useLeave } from '../../hooks/useLeave';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useUnsubmittedMembers } from '../../hooks/useUnsubmittedMembers';
 import { useTenant, usePayrollCloseDay } from '../../hooks/useTenant';
+import { useCan } from '../../lib/permissions/useCan';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { useToast } from '../../contexts/ToastContext';
 import { usePersistentError } from '../../contexts/PersistentErrorContext';
@@ -150,12 +151,14 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
     }
   }, [isPC]);
 
-  const { currentTenant, isOwner, myRole, regenerateInviteCode } = useTenant();
+  const { currentTenant, isOwner, regenerateInviteCode } = useTenant();
   const { currentStore, stores } = useStoreContext();
   const storeNames = useMemo(() => new Map(stores.map(s => [s.id, s.name])), [stores]);
   const { showToast } = useToast();
   const { addError } = usePersistentError();
-  const canEditDeadline = isOwner || myRole === 'manager';
+  const can = useCan();
+  // C9 editShiftDeadline（deadline 書込は RLS で別途強制）。挙動不変。
+  const canEditDeadline = can('editShiftDeadline');
   // === Loop 7 (Engineer A) ===
   const {
     closeDay: payrollCloseDay,

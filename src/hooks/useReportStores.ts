@@ -4,6 +4,7 @@ import { logger } from '../lib/logger';
 import { formatSupabaseError } from '../lib/errors';
 import { useTenant } from '../contexts/TenantContext';
 import { useStoreContext } from '../contexts/StoreContext';
+import { useCan } from '../lib/permissions/useCan';
 import type { Store } from '../types';
 
 // =============================================================================
@@ -25,9 +26,11 @@ export interface UseReportStoresResult {
 }
 
 export function useReportStores(): UseReportStoresResult {
-  const { myRole, currentTenant } = useTenant();
+  const { currentTenant } = useTenant();
   const { stores: contextStores, loading: contextLoading } = useStoreContext();
-  const isManagerial = myRole === 'owner' || myRole === 'manager';
+  const can = useCan();
+  // C26 viewAllReportStores（全 active stores 取得可否。bool のみ can 化・fetch ロジックは据え置き）。挙動不変。
+  const isManagerial = can('viewAllReportStores');
   const tenantId = currentTenant?.id ?? null;
 
   const [managerialStores, setManagerialStores] = useState<Store[] | null>(null);

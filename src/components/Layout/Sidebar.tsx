@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Clock, List, Calendar, LayoutDashboard, CheckSquare, FolderKanban, TrendingUp, FileText, type LucideIcon } from 'lucide-react';
 import { useTenant } from '../../hooks/useTenant';
+import { useCan } from '../../lib/permissions/useCan';
 import { Badge, BrandMark } from '../ui';
 
 function NavItem({
@@ -40,7 +41,10 @@ function SectionLabel({ label }: { label: string }) {
 
 export function Sidebar() {
   const { myRole } = useTenant();
-  const isManagerial = myRole === 'owner' || myRole === 'manager';
+  const can = useCan();
+  // C2 viewManagerialNav（ナビ「管理」表示・UI のみ）。挙動不変。
+  // ※下の Owner/Manager バッジは myRole の表示ラベルなので据え置き（§4.5）。
+  const isManagerial = can('viewManagerialNav');
 
   return (
     <nav aria-label="メインナビゲーション" className="h-full flex flex-col p-3 gap-1.5">

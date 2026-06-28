@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Select } from '../ui';
 import { useTenant } from '../../contexts/TenantContext';
+import { useCan } from '../../lib/permissions/useCan';
 import { useReportStores } from '../../hooks/useReportStores';
 import { useMonthlyReport } from '../../hooks/useMonthlyReport';
 import { useMonthlyReportAll } from '../../hooks/useMonthlyReportAll';
@@ -33,9 +34,12 @@ function parseYearMonth(isoDate: string): { year: number; month: number } {
 }
 
 export const MonthlyReportPanel: React.FC = () => {
-  const { myRole, currentTenant } = useTenant();
+  const { currentTenant } = useTenant();
+  const can = useCan();
   const { stores } = useReportStores();
-  const isManagerial = myRole === 'owner' || myRole === 'manager';
+  // C13 viewManagerialReports（月報 全社/利益/人件費の出し分け。076/RLS で reports 店舗スコープ強制）。
+  // ※算出した isManagerial は配下 leaf へ同名 prop で伝播（leaf は不変・据え置き）。挙動不変。
+  const isManagerial = can('viewManagerialReports');
 
   // 既定 = 当月（営業日区切り 11 時基準の年月）。
   const initial = useMemo(() => parseYearMonth(getBusinessDate(STORE_START_HOUR)), []);

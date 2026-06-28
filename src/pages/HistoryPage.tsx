@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTenant } from '../hooks/useTenant';
+import { useCan } from '../lib/permissions/useCan';
 import { useAuth } from '../hooks/useAuth';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
 import { useAttendanceViewer } from '../hooks/useAttendanceViewer';
@@ -356,13 +357,15 @@ function MonthlyBarChart({ year, month, records, onBarClick, selectedDate }: Mon
 }
 
 export function HistoryPage() {
-  const { currentTenant, myRole, isOwner, tenants } = useTenant();
+  const { currentTenant, tenants } = useTenant();
+  const can = useCan();
   const tenantId = currentTenant!.id;
   const { currentStore } = useStoreContext();
   const { user } = useAuth();
   
   const myUserId = user?.id ?? null;
-  const canSwitchUser = isOwner || myRole === 'manager';
+  // C15 switchAttendanceUser（⚠️ 現状 UI のみ・他人の勤怠履歴閲覧。Phase1 で RLS 化予定）。挙動不変。
+  const canSwitchUser = can('switchAttendanceUser');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const effectiveUserId = selectedUserId ?? myUserId;
 

@@ -22,6 +22,7 @@ import {
 import { useTasks, useTaskMutations, type TaskInput } from '../hooks/useTasks';
 import { useProjects } from '../hooks/useProjects';
 import { useTenant } from '../contexts/TenantContext';
+import { useCan } from '../lib/permissions/useCan';
 import { useStoreContext } from '../contexts/StoreContext';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../contexts/ToastContext';
@@ -151,9 +152,11 @@ export function TasksPage(): JSX.Element {
   const { myRole, members, isParttime, currentTenant, myStoreIds } = useTenant();
   const { stores, currentStore } = useStoreContext();
   const { showToast } = useToast();
+  const can = useCan();
 
   const tenantId = currentTenant?.id ?? '';
-  const canManage = myRole === 'owner' || myRole === 'manager';
+  // C17 manageTasks（タスク全操作・削除・reopen の基底。migration 058 でタスク RLS 強制）。挙動不変。
+  const canManage = can('manageTasks');
 
   // ── View Mode ──
   const [viewMode, setViewMode] = useState<ViewMode>(() => readViewMode());
@@ -173,7 +176,8 @@ export function TasksPage(): JSX.Element {
   // isParttime===true の場合は自動的に「自分のタスクのみ」を強制 ON。
   // 非バイトはチェックボックスで手動 ON/OFF。
   const [mineOnlyManual, setMineOnlyManual] = useState<boolean>(false);
-  const effectiveMineOnly = isParttime || mineOnlyManual;
+  // C20 forceMineOnlyTasks（バイトは強制 ON。mineOnlyManual は手動 UI 状態で据え置き）。挙動不変。
+  const effectiveMineOnly = can('forceMineOnlyTasks') || mineOnlyManual;
 
   // ── フィルタ状態 ──
   // 初期値: 全 status 表示 (filter.status を空にすると enabledStatuses が全件にフォールバック)。
@@ -526,13 +530,10 @@ export function TasksPage(): JSX.Element {
   }, [deletingTaskId, deleteTask, refetch, showToast]);
 
   // バイトの場合: 自分が担当でないタスクのアクションは非表示
+  // C21 canActOnTask（canManage || 担当者に自分が含まれる。userId 無し→false。migration 058 RLS）。挙動不変。
   const canActOnTask = useCallback(
-    (t: Task): boolean => {
-      if (canManage) return true;
-      if (!user?.id) return false;
-      return (t.assignee_user_ids ?? []).includes(user.id);
-    },
-    [canManage, user?.id],
+    (t: Task): boolean => can('canActOnTask', { assigneeUserIds: t.assignee_user_ids }),
+    [can],
   );
 
   // ── Kanban myRole fallback (UserRole | null → 'owner' | 'manager' | 'staff') ──

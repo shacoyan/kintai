@@ -12,7 +12,8 @@ import { getNightMinutesInRange, getNightMinutesForShift } from '../../utils/nig
 import { Download, Calculator, Lock, Printer } from 'lucide-react';
 import { EmptyState, ErrorBanner, PageSkeleton, Button, Card, Select, Badge, StatCard, Heading, ConfirmDialog } from '../ui';
 import { usePayrollRun } from '../../hooks/usePayrollRun';
-import { useTenant, usePayrollCloseDay } from '../../hooks/useTenant';
+import { usePayrollCloseDay } from '../../hooks/useTenant';
+import { useCan } from '../../lib/permissions/useCan';
 import { PayrollSlipPrintView } from './PayrollSlipPrintView';
 import { messages } from '../../lib/messages';
 
@@ -340,7 +341,7 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
   const { members, allAttendance, loading, error, fetchMembers, fetchAllAttendance } = useTenantAdmin(tenantId);
   const { currentStore } = useStoreContext();
   const { allShifts, loading: shiftsLoading, getAllShifts } = useShift(tenantId, currentStore?.id ?? null);
-  const { myRole } = useTenant();
+  const can = useCan();
   const { closeDay } = usePayrollCloseDay(tenantId);
   const { fetchRun, finalizeRun, unfinalizeRun, loading: runLoading } = usePayrollRun(tenantId, currentStore?.id ?? null);
   // === Loop 11b L11b-3: 役職時給フォールバック ===
@@ -605,7 +606,8 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
             計算
           </Button>
 
-          {!isFinalized && calculated && hasData && (myRole === 'owner' || myRole === 'manager') && (
+          {/* C10 finalizePayroll（RPC finalize 087/090 で別途 owner/manager 強制。UI 状態は据え置き）。挙動不変。 */}
+          {!isFinalized && calculated && hasData && can('finalizePayroll') && (
             <Button
               variant="primary"
               size="md"
@@ -619,7 +621,8 @@ export function PayrollCalculation({ tenantId }: PayrollCalculationProps) {
             </Button>
           )}
 
-          {isFinalized && myRole === 'owner' && (
+          {/* C11 unfinalizePayroll（RPC unfinalize で別途 owner 限定。isFinalized は据え置き）。挙動不変。 */}
+          {isFinalized && can('unfinalizePayroll') && (
             <Button
               variant="danger"
               size="md"

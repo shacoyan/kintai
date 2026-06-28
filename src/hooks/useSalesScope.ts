@@ -5,6 +5,7 @@ import { supabaseSquare, withSquareSession } from '../lib/supabaseSquare';
 import { resolveSquareLocationName } from '../lib/squareStoreMap';
 import { useTenant } from '../contexts/TenantContext';
 import { useStoreContext } from '../contexts/StoreContext';
+import { useCan } from '../lib/permissions/useCan';
 
 // =============================================================================
 // useSalesScope — Square 売上の閲覧スコープ（許可 location 名集合）を算出する hook
@@ -33,10 +34,12 @@ interface LocationMetaRow {
 }
 
 export function useSalesScope(): SalesScope {
-  const { currentTenant, isOwner, isManager } = useTenant();
+  const { currentTenant } = useTenant();
   const { stores, loading: storesLoading } = useStoreContext();
+  const can = useCan();
 
-  const canViewAll = isOwner || isManager;
+  // C25 viewAllSales（全店 ALL 選択肢の可否。bool のみ can 化・allowedLocationNames 算出は据え置き）。挙動不変。
+  const canViewAll = can('viewAllSales');
 
   const [activeLocationNames, setActiveLocationNames] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

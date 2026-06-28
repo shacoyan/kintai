@@ -4,6 +4,7 @@ import { LogOut, Monitor, Moon, PlusCircle, Sun, User } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useTenant } from '../../hooks/useTenant';
+import { useCan } from '../../lib/permissions/useCan';
 import { StoreSelector } from '../Store/StoreSelector';
 import LeaveTenantButton from '../Tenant/LeaveTenantButton';
 import { TenantSwitcher } from '../Tenant/TenantSwitcher';
@@ -39,6 +40,7 @@ export function UserMenuPopover({
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
   const { myRole } = useTenant();
+  const can = useCan();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -112,7 +114,8 @@ export function UserMenuPopover({
               {user.email}
             </div>
           )}
-          {showRoleBadge && (myRole === 'owner' || myRole === 'manager') && (
+          {/* C16 showRoleBadge（表示のみ）。showRoleBadge prop=UI 状態は据え置き・myRole はバッジラベル用に残す。挙動不変。 */}
+          {showRoleBadge && can('showRoleBadge') && (
             <div className="px-4 py-1.5">
               {myRole === 'owner' ? (
                 <Badge tone="primary" withDot>

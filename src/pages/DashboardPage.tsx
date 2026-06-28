@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useTenant } from '../hooks/useTenant';
+import { useCan } from '../lib/permissions/useCan';
 import { useNow } from '../hooks/useNow';
 import { useStoreContext } from '../contexts/StoreContext';
 import { useAttendance } from '../hooks/useAttendance';
@@ -125,7 +126,9 @@ export function DashboardPage() {
   const { currentStore } = useStoreContext();
   const { user } = useAuth();
   const { showToast } = useToast();
-  const isOwnerView = myRole === 'owner';
+  const can = useCan();
+  // C7 viewOwnerDashboardOps（稼働中 N 名集計の表示。myRole はロールラベル等で据え置き）。挙動不変。
+  const isOwnerView = can('viewOwnerDashboardOps');
   const { members: allMembers, fetchMembers } = useTenantAdmin(tenantId);
 
   const {

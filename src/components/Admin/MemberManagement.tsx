@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTenantAdmin } from '../../hooks/useTenantAdmin';
 import { useTenantRoles } from '../../hooks/useTenantRoles';
-import { useTenant } from '../../hooks/useTenant';
+import { useCan } from '../../lib/permissions/useCan';
 import { useAuth } from '../../hooks/useAuth';
 import type { TenantMember } from '../../types';
 import { useToast } from '../../contexts/ToastContext';
@@ -48,7 +48,7 @@ function avatarColor(name: string): string {
 
 export function MemberManagement({ tenantId }: MemberManagementProps) {
   const { showToast } = useToast();
-  const { myRole } = useTenant();
+  const can = useCan();
   const { user } = useAuth();
   const { currentStore } = useStoreContext();
   const { members, loading, error, fetchMembers, updateHourlyRate, updateNightShift, updateParttime, updatePayType, updateMonthlySalary, deleteMember, updateRole, updatePaidLeaveDays, updateRoleId } = useTenantAdmin(tenantId);
@@ -283,7 +283,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
     setDeletingId(null);
   };
 
-  if (myRole !== 'owner' && myRole !== 'manager') {
+  // C3 manageMembers（書込は migration 082 で別途 RLS 強制）。挙動不変。
+  if (!can('manageMembers')) {
     return (
       <div className="bg-orange-50 border border-orange-100 rounded-lg p-4 text-center dark:bg-orange-800/20 dark:border-orange-700">
         <p className="text-orange-700 dark:text-orange-200">この機能を使用する権限がありません</p>
@@ -367,7 +368,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           {(() => {
                             const isSelf = member.user_id === user?.id;
                             const isOwner = member.role === 'owner';
-                            const isStaffViewer = (myRole as string) === 'staff';
+                            // C5 toggleMemberParttime（閲覧者の役割述語のみ can 化。isSelf/member.role は据え置き・§4.5）。挙動不変。
+                            const isStaffViewer = !can('toggleMemberParttime');
                             const disabled = isStaffViewer || isSelf || isOwner;
                             const title = isOwner
                               ? 'オーナーはバイト判定の対象外です'
@@ -398,7 +400,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                           <div className="flex flex-col gap-2 min-w-0">
                             <div className="flex flex-col items-start gap-1 min-w-0">
                               <span className={`inline-flex max-w-full truncate px-2 py-0.5 rounded-full text-[11px] font-medium ${badge.className}`}>{badge.label}</span>
-                              {member.role !== 'owner' && myRole === 'owner' && (
+                              {member.role !== 'owner' && can('toggleMemberRole') && (
                                 <button
                                   role="switch"
                                   aria-checked={member.role === 'manager'}
@@ -686,7 +688,7 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                             </option>
                           ))}
                         </select>
-                        {member.role !== 'owner' && myRole === 'owner' && (
+                        {member.role !== 'owner' && can('toggleMemberRole') && (
                           <button
                             role="switch"
                             aria-checked={member.role === 'manager'}
@@ -792,7 +794,8 @@ export function MemberManagement({ tenantId }: MemberManagementProps) {
                         {(() => {
                           const isSelf = member.user_id === user?.id;
                           const isOwner = member.role === 'owner';
-                          const isStaffViewer = (myRole as string) === 'staff';
+                          // C5 toggleMemberParttime（閲覧者の役割述語のみ can 化。isSelf/member.role は据え置き・§4.5）。挙動不変。
+                          const isStaffViewer = !can('toggleMemberParttime');
                           const disabled = isStaffViewer || isSelf || isOwner;
                           const title = isOwner
                             ? 'オーナーはバイト判定の対象外です'

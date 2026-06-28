@@ -11,6 +11,7 @@ import { Spinner } from '../components/ui/Spinner';
 import type { BadgeTone } from '../components/ui';
 import { supabase } from '../lib/supabase';
 import { useTenant } from '../hooks/useTenant';
+import { useCan } from '../lib/permissions/useCan';
 import { useShift } from '../hooks/useShift';
 import { useTenantAdmin } from '../hooks/useTenantAdmin';
 import { useTenantRoles } from '../hooks/useTenantRoles';
@@ -53,9 +54,11 @@ const EMPTY_LEAVES: LeaveRequest[] = [];
 export function ShiftPage() {
   const { user } = useAuth();
   const currentUserId = user?.id ?? null;
-  const { currentTenant, myRole, isOwner } = useTenant();
+  const { currentTenant, isOwner } = useTenant();
+  const can = useCan();
   const tenantId = currentTenant?.id || '';
-  const canManageTenant = myRole === 'owner' || myRole === 'manager';
+  // C14 viewAllStaffShifts（⚠️ 現状 UI のみ・全員シフト/希望/人件費の取得表示。Phase1 で RLS 化予定）。挙動不変。
+  const canManageTenant = can('viewAllStaffShifts');
   const { currentStore, stores, isManagerOf } = useStoreContext();
   const storeId = currentStore?.id ?? null;
   // Loop7 / 要望 X: PC では BottomSheet を完全 unmount し、useBodyScrollLock を発火させない。

@@ -19,6 +19,7 @@ import { useProjects, useProjectMutations } from '../hooks/useProjects';
 import { useTasks } from '../hooks/useTasks';
 import { useStore } from '../hooks/useStore';
 import { useTenant } from '../contexts/TenantContext';
+import { useCan } from '../lib/permissions/useCan';
 import { useToast } from '../contexts/ToastContext';
 import { messages } from '../lib/messages';
 import { getProjectColor } from '../lib/projectColor';
@@ -127,14 +128,16 @@ function SummaryCard({ label, value, hint, tone = 'default' }: SummaryCardProps)
 }
 
 export function ProjectsPage() {
-  const { currentTenant, myRole, isParttime, myStoreIds, members } = useTenant();
+  const { currentTenant, members } = useTenant();
+  const can = useCan();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   // RequireTenant ガード後の前提
   const tenantId = currentTenant!.id;
-  const managerial = myRole === 'owner' || myRole === 'manager';
-  const readonly = isParttime;
+  // C18 manageProjects（PJ 操作の基底。migration 058/076 RLS）。C19 isTaskReadonly（= isParttime）。挙動不変。
+  const managerial = can('manageProjects');
+  const readonly = can('isTaskReadonly');
 
   // フィルタ state (URL searchParams 同期で共有・戻る・ディープリンク可)
   // status: ?status=archived/all/active (param なし=active 既定)
@@ -316,18 +319,10 @@ export function ProjectsPage() {
   // 権限判定 ----
   // 2026-05-22 Loop 4 P0-2 fix:
   //   staff の編集権限を「自店舗 (myStoreIds に含まれる) のみ」に厳密化。
+  // C22 canEditProject（readonly→false; managerial→true; staff→自店舗のみ。migration 058/076 RLS）。挙動不変。
   const canEdit = useCallback(
-    (project: Project): boolean => {
-      if (readonly) return false;
-      if (managerial) return true;
-      // staff: 自店舗 (myStoreIds に含まれる store_id) のみ編集可。
-      // 全社 (store_id === null) および他店舗は不可。
-      if (myRole === 'staff') {
-        return project.store_id !== null && myStoreIds.includes(project.store_id);
-      }
-      return false;
-    },
-    [readonly, managerial, myRole, myStoreIds],
+    (project: Project): boolean => can('canEditProject', { storeId: project.store_id }),
+    [can],
   );
 
   const canArchiveOrRestore = useCallback(
@@ -335,14 +330,10 @@ export function ProjectsPage() {
     [canEdit],
   );
 
-  // 削除は managerial のみ。isParttime は readonly に含まれるため readonly で弾く。
+  // C23 canDeleteProject（!isParttime && managerial。削除認可は RLS で別途強制）。挙動不変。
   const canDelete = useCallback(
-    (_project: Project): boolean => {
-      if (readonly) return false;
-      if (isParttime) return false;
-      return managerial;
-    },
-    [readonly, managerial, isParttime],
+    (_project: Project): boolean => can('canDeleteProject'),
+    [can],
   );
 
   const handleViewModeChange = useCallback(

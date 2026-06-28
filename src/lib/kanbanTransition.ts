@@ -12,6 +12,7 @@
  * Loop 2 の `useKanbanDnd.ts` 側で role + assignee 情報と組み合わせて実装する。
  */
 import type { TaskStatus } from '../types';
+import { can } from './permissions/can';
 
 /**
  * 遷移時に呼ぶ API の抽象タグ。
@@ -101,7 +102,8 @@ export function canTransitionStatus(
 
   // managerial (owner / manager) は基本全許可、ただし Phase 2 では done → todo/cancelled を禁止 (Q-T4)
   // Phase 3 で reopen_task RPC に p_target_status 引数を追加して解禁予定
-  if (myRole === 'owner' || myRole === 'manager') {
+  // C17 manageTasks（純関数 can にこの ctx の myRole を渡す。§5.6 hook 非使用）。挙動不変。
+  if (can('manageTasks', { role: myRole, isParttime, myStoreIds, userId: currentUserId, managedStoreIds: [] })) {
     if (from === 'done' && (to === 'todo' || to === 'cancelled')) return false;
     return true;
   }

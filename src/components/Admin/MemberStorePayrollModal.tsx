@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Building2, RotateCcw, Store as StoreIcon } from 'lucide-react';
 import { useMemberStorePayrolls } from '../../hooks/useMemberStorePayrolls';
-import { useTenant } from '../../hooks/useTenant';
+import { useCan } from '../../lib/permissions/useCan';
 import { useStoreContext } from '../../contexts/StoreContext';
 import { useToast } from '../../contexts/ToastContext';
 import { supabase } from '../../lib/supabase';
@@ -42,7 +42,7 @@ export function MemberStorePayrollModal({
   member,
   members,
 }: MemberStorePayrollModalProps) {
-  const { myRole } = useTenant();
+  const can = useCan();
   const { stores } = useStoreContext();
   const { showToast } = useToast();
   const {
@@ -57,7 +57,8 @@ export function MemberStorePayrollModal({
   const [loading, setLoading] = useState(false);
   const [storeIds, setStoreIds] = useState<string[]>([]);
 
-  const canEdit = myRole === 'owner' || myRole === 'manager';
+  // C12 editMemberStorePayroll（給与は VIEW089 + RLS で別途強制）。挙動不変。
+  const canEdit = can('editMemberStorePayroll');
   const dirtyCount = rows.filter((row) => row.dirty).length;
 
   const attachedStores = useMemo(

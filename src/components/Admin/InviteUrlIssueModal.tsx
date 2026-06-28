@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { useTenant } from '../../contexts/TenantContext';
+import { useCan } from '../../lib/permissions/useCan';
 import { useToast } from '../../contexts/ToastContext';
 import { useStore } from '../../hooks/useStore';
 import { formatSupabaseError } from '../../lib/errors';
@@ -46,11 +47,10 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
 }) => {
   const {
     currentTenant,
-    isOwner,
-    isManager,
     listInviteCodes,
     revokeInviteCode,
   } = useTenant();
+  const can = useCan();
   const { showToast } = useToast();
   const { stores: selectableStores, fetchStores } = useStore(tenantId);
 
@@ -64,7 +64,8 @@ export const InviteUrlIssueModal: React.FC<InviteUrlIssueModalProps> = ({
   // 失効確認ダイアログ対象
   const [revokeTarget, setRevokeTarget] = useState<InviteCode | null>(null);
 
-  const canIssue = isOwner || isManager;
+  // C8 manageTenantSettings（書込 RPC 認可は TenantContext 内 throw + RLS で別途強制）。挙動不変。
+  const canIssue = can('manageTenantSettings');
   const tenantName = currentTenant?.name ?? '';
 
   const fetchCodes = useCallback(async () => {

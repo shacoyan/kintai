@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { startOfMonth, format, subMonths, setDate, startOfDay, addHours, addMinutes } from 'date-fns';
 import { useTenant } from './useTenant';
 import { useStoreContext } from '../contexts/StoreContext';
+import { useCan } from '../lib/permissions/useCan';
 import { formatSupabaseError, type FriendlyError } from '../lib/errors';
 
 // AC-4: 権限判定は RLS (tenant_members.role IN ('owner','manager')) と一致させる。
@@ -22,8 +23,9 @@ export interface UseShiftSubmissionDeadlineResult {
 }
 
 export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissionDeadlineResult {
-  const { currentTenant, isOwner, myRole } = useTenant();
+  const { currentTenant } = useTenant();
   const { currentStore } = useStoreContext();
+  const can = useCan();
 
   const tenantId = currentTenant?.id ?? null;
   const storeId = currentStore?.id ?? null;
@@ -35,7 +37,8 @@ export function useShiftSubmissionDeadline(targetMonth: Date): UseShiftSubmissio
   const [error, setError] = useState<FriendlyError | null>(null);
   const clearError = useCallback(() => setError(null), []);
 
-  const canEdit = isOwner || myRole === 'manager';
+  // C9 editShiftDeadline（deadline 書込は RLS で別途強制。AC-4: RLS と一致・store_members.is_manager 非依存）。挙動不変。
+  const canEdit = can('editShiftDeadline');
 
   useEffect(() => {
     let isMounted = true;

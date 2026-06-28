@@ -12,7 +12,7 @@ import {
   MoreHorizontal,
   type LucideIcon,
 } from 'lucide-react';
-import { useTenant } from '../../hooks/useTenant';
+import { useCan } from '../../lib/permissions/useCan';
 import { BottomSheet } from '../ui/BottomSheet';
 
 interface NavItemDef {
@@ -43,8 +43,9 @@ const MORE_ITEMS_MANAGERIAL: NavItemDef[] = [
 
 export function BottomNav() {
   const { pathname } = useLocation();
-  const { myRole } = useTenant();
-  const isManagerial = myRole === 'owner' || myRole === 'manager';
+  const can = useCan();
+  // C2 viewManagerialNav（ナビ「管理」表示・UI のみ）。挙動不変。
+  const isManagerial = can('viewManagerialNav');
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const moreItems = isManagerial

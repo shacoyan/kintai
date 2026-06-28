@@ -13,6 +13,7 @@
  */
 import React, { useMemo } from 'react';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { can } from '../../lib/permissions/can';
 
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanCard } from './KanbanCard';
@@ -58,7 +59,14 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onTaskDelete,
 }) => {
   const { optimisticOverrides, canStartDrag } = dnd;
-  const canManage = myRole === 'owner' || myRole === 'manager';
+  // C17 manageTasks（純関数 can に prop の myRole を渡す。pure component なので hook 不使用・§5.6 方式）。挙動不変。
+  const canManage = can('manageTasks', {
+    role: myRole,
+    isParttime: false,
+    userId: null,
+    myStoreIds: [],
+    managedStoreIds: [],
+  });
 
   const columnMap = useMemo(() => {
     const map: Record<TaskStatus, Task[]> = {
