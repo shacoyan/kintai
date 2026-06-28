@@ -59,6 +59,7 @@ export function DailySquareSummary({ report }: DailySquareSummaryProps): JSX.Ele
             />
             <SummaryRow label="その他売上" value={formatYen(square.other_amount)} />
             <SummaryRow label="取引件数" value={`${formatCount(square.transaction_count)} 件`} />
+            <SummaryRow label="シーシャ本数" value={`${formatCount(square.shisha_count)} 本`} />
             <div>
               <dt className="text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
                 人件費（バイト）

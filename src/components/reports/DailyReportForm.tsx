@@ -119,14 +119,13 @@ export function DailyReportForm({ report, saving, onSave }: DailyReportFormProps
 
   // バリデーション集計。
   const expenseErrors = EXPENSE_FIELDS.some((f) => !isNonNegInt(fields[f.key as string] ?? ''));
-  const shishaError = !isNonNegInt(fields.shisha_count ?? '');
   const poolError = !isInt(fields.pool_amount ?? '');
   const cashCountError = DENOMINATIONS.some(
     (d) => !isNonNegInt(cashCounts[String(d)] ?? '')
   );
   const manualDiscrepancyError = manualOverride && !isInt(manualDiscrepancy);
   const hasError =
-    expenseErrors || shishaError || poolError || cashCountError || manualDiscrepancyError;
+    expenseErrors || poolError || cashCountError || manualDiscrepancyError;
 
   const setField = (key: string, value: string) =>
     setFields((prev) => ({ ...prev, [key]: value }));
@@ -144,7 +143,6 @@ export function DailyReportForm({ report, saving, onSave }: DailyReportFormProps
       expense_flavor: toNum(fields.expense_flavor ?? ''),
       expense_supplies: toNum(fields.expense_supplies ?? ''),
       expense_other: toNum(fields.expense_other ?? ''),
-      shisha_count: toNum(fields.shisha_count ?? ''),
       cash_counts: normalizeCounts(parseCounts(cashCounts)),
       pool_amount: toNum(fields.pool_amount ?? ''),
       discrepancy_amount: manualOverride
@@ -187,24 +185,6 @@ export function DailyReportForm({ report, saving, onSave }: DailyReportFormProps
                 rightSlot={<span className="text-xs text-stone-400">円</span>}
               />
             ))}
-          </div>
-        </Card.Body>
-      </Card>
-
-      {/* シーシャ本数 */}
-      <Card padding="md">
-        <Card.Header>シーシャ提供本数</Card.Header>
-        <Card.Body>
-          <div className="max-w-xs">
-            <Input
-              label="本数"
-              {...numProps}
-              value={fields.shisha_count ?? ''}
-              onChange={(e) => setField('shisha_count', e.target.value)}
-              error={shishaError ? '0 以上の整数で入力' : undefined}
-              disabled={saving}
-              rightSlot={<span className="text-xs text-stone-400">本</span>}
-            />
           </div>
         </Card.Body>
       </Card>
@@ -349,7 +329,6 @@ function buildFieldStrings(f: FormState): Record<string, string> {
     expense_flavor: s(f.expense_flavor),
     expense_supplies: s(f.expense_supplies),
     expense_other: s(f.expense_other),
-    shisha_count: s(f.shisha_count),
     pool_amount: f.pool_amount === 0 ? '' : String(f.pool_amount),
   };
 }

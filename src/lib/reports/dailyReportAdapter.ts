@@ -70,6 +70,8 @@ export function adaptDailyReport(raw: unknown): DailyReport {
       external_amount: num(square.external_amount),
       other_amount: num(square.other_amount),
       transaction_count: num(square.transaction_count),
+      // 移行窓フォールバック（§7.4）: square.shisha_count 未提供時は manual.shisha_count を一時参照。窓が閉じたら後続 Loop で除去。
+      shisha_count: num(square.shisha_count ?? manual.shisha_count),
       new_customer_count: num(square.new_customer_count),
       repeat_customer_count: num(square.repeat_customer_count),
       regular_customer_count: num(square.regular_customer_count),
@@ -83,7 +85,6 @@ export function adaptDailyReport(raw: unknown): DailyReport {
       expense_flavor: num(manual.expense_flavor),
       expense_supplies: num(manual.expense_supplies),
       expense_other: num(manual.expense_other),
-      shisha_count: num(manual.shisha_count),
       cash_total: num(manual.cash_total),
       cash_counts: normalizeCashCounts(manual.cash_counts),
       pool_amount: num(manual.pool_amount),
@@ -115,7 +116,6 @@ export function manualToForm(report: DailyReport): DailyReportForm {
     expense_flavor: m.expense_flavor,
     expense_supplies: m.expense_supplies,
     expense_other: m.expense_other,
-    shisha_count: m.shisha_count,
     cash_counts: normalizeCashCounts(m.cash_counts),
     pool_amount: m.pool_amount,
     discrepancy_amount: m.discrepancy_amount_manual, // null=自動
@@ -150,7 +150,6 @@ export function formToDailyReportRow(
     expense_flavor: num(form.expense_flavor),
     expense_supplies: num(form.expense_supplies),
     expense_other: num(form.expense_other),
-    shisha_count: num(form.shisha_count),
     ...cashCountsToColumns(form.cash_counts),
     discrepancy_amount: intOrNull(form.discrepancy_amount),
     pool_amount: Math.trunc(num(form.pool_amount)),

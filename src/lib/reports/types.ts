@@ -47,6 +47,7 @@ export interface DailyReportSquare {
   external_amount: number;
   other_amount: number;
   transaction_count: number;
+  shisha_count: number;
   new_customer_count: number;
   repeat_customer_count: number;
   regular_customer_count: number;
@@ -62,7 +63,6 @@ export interface DailyReportManual {
   expense_flavor: number;
   expense_supplies: number;
   expense_other: number;
-  shisha_count: number;
   /** DB GENERATED（送らない）。表示・参照用。 */
   cash_total: number;
   cash_counts: CashCounts;
@@ -113,7 +113,6 @@ export interface DailyReportForm {
   expense_flavor: number;
   expense_supplies: number;
   expense_other: number;
-  shisha_count: number;
   /** 金種9の枚数（額面文字列キー）。 */
   cash_counts: CashCounts;
   /** プール金（符号許容）。 */

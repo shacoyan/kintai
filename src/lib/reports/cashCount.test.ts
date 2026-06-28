@@ -137,13 +137,13 @@ describe('formToDailyReportRow / cashCountsToColumns', () => {
       expense_flavor: 0,
       expense_supplies: 0,
       expense_other: 0,
-      shisha_count: 5,
       cash_counts: { '10000': 1 },
       pool_amount: 200,
       discrepancy_amount: null,
       note: '',
     });
     expect('cash_total' in row).toBe(false);
+    expect('shisha_count' in row).toBe(false); // shisha_count は daily_reports へ書かない（Square 自動集計へ移行）
     expect(row['cash_count_10000']).toBe(1);
     expect(row['discrepancy_amount']).toBeNull();
     expect(row['note']).toBeNull(); // 空文字は null
@@ -158,7 +158,6 @@ describe('formToDailyReportRow / cashCountsToColumns', () => {
       expense_flavor: 0,
       expense_supplies: 0,
       expense_other: 0,
-      shisha_count: 0,
       cash_counts: {},
       pool_amount: 0,
       discrepancy_amount: -1200,
