@@ -63,7 +63,8 @@ export type Capability =
   | 'canDeleteProject'
   | 'isManagerOfStore'
   | 'viewAllSales'
-  | 'viewAllReportStores';
+  | 'viewAllReportStores'
+  | 'manageViewScopes';
 
 // 引数を取らない capability。
 export type NoArgCapability = Exclude<
@@ -229,6 +230,12 @@ export function can(
     case 'viewAllReportStores':
       return role === 'owner' || role === 'manager';
 
+    // C27 manageViewScopes: 閲覧範囲設定 UI（Phase2）の編集可否 = owner のみ。
+    //   Phase1 tvs_insert/update/delete = is_tenant_owner 限定 / set_view_scope RPC も is_tenant_owner で RAISE。
+    //   UI の owner 専用ゲート（manager/staff/null は false）。
+    case 'manageViewScopes':
+      return role === 'owner';
+
     default: {
       // 網羅性ガード（union 追加忘れを型でも検出）。
       const _exhaustive: never = capability;
@@ -265,4 +272,5 @@ export const ALL_CAPABILITIES: Capability[] = [
   'isManagerOfStore',
   'viewAllSales',
   'viewAllReportStores',
+  'manageViewScopes',
 ];

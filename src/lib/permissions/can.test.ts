@@ -60,6 +60,7 @@ const noArgOracles: Record<string, (ctx: PermissionContext) => boolean> = {
   canDeleteProject: (c) => !c.isParttime && managerial(c.role),
   viewAllSales: (c) => c.role === 'owner' || c.role === 'manager',
   viewAllReportStores: (c) => c.role === 'owner' || c.role === 'manager',
+  manageViewScopes: (c) => c.role === 'owner', // C27 閲覧範囲設定（Phase2）= owner のみ
 };
 
 describe('can() — role 基底（引数なし）capability パリティ', () => {

@@ -78,6 +78,48 @@ export type Database = {
           },
         ]
       }
+      // ── 手動追加（Phase2 / migration 105 tenant_view_scopes・本番在）─────────────
+      //   2026-05-29 生成時点では未存在のため、当該テーブル Row/Insert/Update のみ手動補完。
+      //   設計: .company/engineering/docs/2026-06-30-kintai-permissions-phase2-view-scope-ui.md §5.1
+      //   ※ 全体再生成は他 Loop 依存型への波及を避けるため見送り（スコープ限定の追補）。
+      tenant_view_scopes: {
+        Row: {
+          created_at: string | null
+          domain: string
+          id: string
+          role: string
+          scope: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          domain: string
+          id?: string
+          role: string
+          scope: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string
+          id?: string
+          role?: string
+          scope?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_view_scopes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       breaks: {
         Row: {
           attendance_record_id: string

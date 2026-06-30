@@ -3,6 +3,7 @@ import { OwnerTransferSection } from './OwnerTransferSection';
 import { InviteCodeSettingsSection } from './InviteCodeSettingsSection';
 import { TenantDeleteSection } from './TenantDeleteSection';
 import { TenantNameEditSection } from './TenantNameEditSection';
+import { AdminViewScopeSettings } from './AdminViewScopeSettings';
 
 interface AdminSettingsProps {
   tenantId: string;
@@ -35,6 +36,9 @@ export function AdminSettings({ tenantId }: AdminSettingsProps) {
 
       {/* --- Operational: 招待コード設定 (Loop 12 Phase 2 C / L12-8) --- */}
       <InviteCodeSettingsSection tenantId={tenantId} />
+
+      {/* --- Safe section: 閲覧範囲設定 (Phase2 / 閲覧スコープ・owner 専用) --- */}
+      <AdminViewScopeSettings tenantId={tenantId} />
 
       {/* --- Danger zone: オーナー権限移譲 (Engineer E / L11b-5) --- */}
       <OwnerTransferSection tenantId={tenantId} />
