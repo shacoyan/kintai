@@ -4,6 +4,7 @@ import { clearPendingJoinCode } from '../lib/inviteUrl';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { formatSupabaseError } from '../lib/errors';
+import { isManagerial } from '../lib/permissions/can';
 import type {
   Tenant,
   TenantMember,
@@ -332,7 +333,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   ): Promise<string> => {
     if (!currentTenant) throw new Error('テナントが選択されていません');
-    if (myRole !== 'owner' && myRole !== 'manager') throw new Error('オーナーまたは店長のみ実行可能です');
+    if (!isManagerial(myRole)) throw new Error('オーナーまたは店長のみ実行可能です');
 
     const targetId = tenantId ?? currentTenant.id;
     if (targetId !== currentTenant.id) {
@@ -397,7 +398,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   ): Promise<void> => {
     if (!currentTenant) throw new Error('テナントが選択されていません');
-    if (myRole !== 'owner' && myRole !== 'manager') {
+    if (!isManagerial(myRole)) {
       throw new Error('オーナーまたは店長のみ実行可能です');
     }
 

@@ -77,7 +77,7 @@ export type NoArgCapability = Exclude<
 // P3-0b: admin=managerial（会社管理者は manager と同等の managerial 権限）。
 // admin 該当0の間は到達不能で挙動不変。owner 専用 capability(C4/C6/C7/C11/C27)・
 // C24 isManagerOfStore はこの述語を使わず個別に owner 判定を維持する。
-function isManagerial(role: UserRole | null): boolean {
+export function isManagerial(role: UserRole | null): boolean {
   return role === 'owner' || role === 'admin' || role === 'manager';
 }
 
