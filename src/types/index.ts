@@ -14,7 +14,7 @@ export interface TenantMember {
   id: string;
   tenant_id: string;
   user_id: string;
-  role: 'owner' | 'manager' | 'staff';
+  role: 'owner' | 'admin' | 'manager' | 'staff';
   display_name: string;
   legal_name: string | null;
   onboarded_at: string | null;
@@ -61,7 +61,9 @@ export interface AttendanceRecord {
   breaks?: Break[];
 }
 
-export type UserRole = 'owner' | 'manager' | 'staff';
+// admin = 会社管理者（P3-0b で新設・owner と manager の間）。
+// 001 の旧 admin（017 で manager に消滅）とは無関係。
+export type UserRole = 'owner' | 'admin' | 'manager' | 'staff';
 
 export interface UserProfile {
   user_id: string;

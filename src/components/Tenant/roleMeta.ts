@@ -6,6 +6,7 @@ import type { UserRole } from '../../types';
 /** ロール → 日本語肩書ラベル（表示用の唯一の真実） */
 export const ROLE_LABEL: Record<UserRole, string> = {
   owner: 'オーナー',
+  admin: '会社管理者',
   manager: '店長',
   staff: 'スタッフ',
 };

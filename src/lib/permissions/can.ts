@@ -74,8 +74,11 @@ export type NoArgCapability = Exclude<
 
 // 共通の役割述語（現行式の逐語移植のための内部ヘルパ）。
 // 「myRole === 'owner' || myRole === 'manager'」が現行で多用される managerial 述語。
+// P3-0b: admin=managerial（会社管理者は manager と同等の managerial 権限）。
+// admin 該当0の間は到達不能で挙動不変。owner 専用 capability(C4/C6/C7/C11/C27)・
+// C24 isManagerOfStore はこの述語を使わず個別に owner 判定を維持する。
 function isManagerial(role: UserRole | null): boolean {
-  return role === 'owner' || role === 'manager';
+  return role === 'owner' || role === 'admin' || role === 'manager';
 }
 
 // オーバーロード: args 不要 capability には args を渡せない / 必要 capability は必須。
@@ -94,15 +97,15 @@ export function can(
     // ── role 基底（引数なし）─────────────────────────────────────────
     // C1 accessAdmin: AdminPage.tsx:19（否定形 myRole!=='owner'&&!=='manager' で Navigate）
     case 'accessAdmin':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C2 viewManagerialNav: Sidebar.tsx / BottomNav.tsx（isManagerial）
     case 'viewManagerialNav':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C3 manageMembers: MemberManagement.tsx:286（!owner&&!manager で return null）
     case 'manageMembers':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C4 toggleMemberRole: MemberManagement.tsx:401,689 の閲覧者側 myRole === 'owner'。
     //   ※対象メンバー側の `member.role !== 'owner'` は呼び出し側のローカル条件として残す（§4.5）。
@@ -127,17 +130,17 @@ export function can(
     // C8 manageTenantSettings: InviteCodeSettingsSection.tsx:55 / InviteUrlIssueModal.tsx:67
     //   （canManageInvite / canIssue = isOwner || isManager）
     case 'manageTenantSettings':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C9 editShiftDeadline: AdminDashboard.tsx:158 / useShiftSubmissionDeadline.ts:38
     //   （canEditDeadline / canEdit = isOwner || myRole === 'manager'）
     case 'editShiftDeadline':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C10 finalizePayroll: PayrollCalculation.tsx:608（myRole === 'owner' || myRole === 'manager'）
     //   ※UI 状態 !isFinalized && calculated && hasData は呼び出し側に残す。
     case 'finalizePayroll':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C11 unfinalizePayroll: PayrollCalculation.tsx:622（myRole === 'owner'）
     //   ※isFinalized は呼び出し側。
@@ -146,33 +149,33 @@ export function can(
 
     // C12 editMemberStorePayroll: MemberStorePayrollModal.tsx:60（canEdit）
     case 'editMemberStorePayroll':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C13 viewManagerialReports: MonthlyReportPanel.tsx:38（isManagerial）
     case 'viewManagerialReports':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C14 viewAllStaffShifts: ShiftPage.tsx:58（canManageTenant）⚠️ UI のみ・Phase1 で RLS 化予定
     case 'viewAllStaffShifts':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C15 switchAttendanceUser: HistoryPage.tsx:365（canSwitchUser = isOwner || myRole === 'manager'）
     //   ⚠️ UI のみ・Phase1 で RLS 化予定
     case 'switchAttendanceUser':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C16 showRoleBadge: UserMenuPopover.tsx:115（myRole === 'owner' || myRole === 'manager'）
     //   ※call site の `showRoleBadge` prop（UI 状態）は呼び出し側に残す。
     case 'showRoleBadge':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C17 manageTasks: TasksPage.tsx:156 / KanbanBoard.tsx:61 / kanbanTransition.ts:104（canManage / managerial）
     case 'manageTasks':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C18 manageProjects: ProjectsPage.tsx:136（managerial）
     case 'manageProjects':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C19 isTaskReadonly: ProjectsPage.tsx:137 / TasksPage.tsx（readonly = isParttime）
     case 'isTaskReadonly':
@@ -223,12 +226,12 @@ export function can(
     // C25 viewAllSales: useSalesScope.ts:39（canViewAll = isOwner || isManager）
     //   ※allowedLocationNames 算出（fetch + intersection）は hook 側に据え置き。
     case 'viewAllSales':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C26 viewAllReportStores: useReportStores.ts:30（isManagerial）
     //   ※fetch ロジックは hook 側に据え置き。
     case 'viewAllReportStores':
-      return role === 'owner' || role === 'manager';
+      return isManagerial(role); // P3-0b: owner|admin|manager（admin=managerial）
 
     // C27 manageViewScopes: 閲覧範囲設定 UI（Phase2）の編集可否 = owner のみ。
     //   Phase1 tvs_insert/update/delete = is_tenant_owner 限定 / set_view_scope RPC も is_tenant_owner で RAISE。

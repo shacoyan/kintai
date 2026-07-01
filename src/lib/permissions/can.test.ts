@@ -13,7 +13,8 @@ import { describe, it, expect } from 'vitest';
 import { can, ALL_CAPABILITIES, type Capability, type PermissionContext } from './can';
 import type { UserRole } from '../../types';
 
-const ROLES: (UserRole | null)[] = ['owner', 'manager', 'staff', null];
+// P3-0b: admin(会社管理者) をパリティ直積に追加。admin=managerial（owner 専用 5件・C24 は false）。
+const ROLES: (UserRole | null)[] = ['owner', 'admin', 'manager', 'staff', null];
 const PARTTIMES = [true, false];
 const USER_IDS: (string | null)[] = ['U1', null];
 const MY_STORE_IDS: string[][] = [[], ['S1'], ['S1', 'S2']];
@@ -33,33 +34,35 @@ function makeCtx(over: Partial<PermissionContext>): PermissionContext {
 }
 
 // ── oracle 群（§4 現行条件式の逐語移植）───────────────────────────────
-const managerial = (role: UserRole | null): boolean => role === 'owner' || role === 'manager';
+// P3-0b: admin=managerial。canActOnTask/canEditProject/canDeleteProject の oracle はこの helper 経由。
+const managerial = (role: UserRole | null): boolean =>
+  role === 'owner' || role === 'admin' || role === 'manager';
 
 // 引数なし capability の oracle（ctx → boolean）。
 const noArgOracles: Record<string, (ctx: PermissionContext) => boolean> = {
-  accessAdmin: (c) => c.role === 'owner' || c.role === 'manager',
-  viewManagerialNav: (c) => c.role === 'owner' || c.role === 'manager',
-  manageMembers: (c) => c.role === 'owner' || c.role === 'manager',
+  accessAdmin: (c) => managerial(c.role),
+  viewManagerialNav: (c) => managerial(c.role),
+  manageMembers: (c) => managerial(c.role),
   toggleMemberRole: (c) => c.role === 'owner',
   toggleMemberParttime: (c) => c.role !== 'staff', // disabled の isStaffViewer 否定
   assignStoreManager: (c) => c.role === 'owner',
   viewOwnerDashboardOps: (c) => c.role === 'owner',
-  manageTenantSettings: (c) => c.role === 'owner' || c.role === 'manager',
-  editShiftDeadline: (c) => c.role === 'owner' || c.role === 'manager',
-  finalizePayroll: (c) => c.role === 'owner' || c.role === 'manager',
+  manageTenantSettings: (c) => managerial(c.role),
+  editShiftDeadline: (c) => managerial(c.role),
+  finalizePayroll: (c) => managerial(c.role),
   unfinalizePayroll: (c) => c.role === 'owner',
-  editMemberStorePayroll: (c) => c.role === 'owner' || c.role === 'manager',
-  viewManagerialReports: (c) => c.role === 'owner' || c.role === 'manager',
-  viewAllStaffShifts: (c) => c.role === 'owner' || c.role === 'manager',
-  switchAttendanceUser: (c) => c.role === 'owner' || c.role === 'manager',
-  showRoleBadge: (c) => c.role === 'owner' || c.role === 'manager',
-  manageTasks: (c) => c.role === 'owner' || c.role === 'manager',
-  manageProjects: (c) => c.role === 'owner' || c.role === 'manager',
+  editMemberStorePayroll: (c) => managerial(c.role),
+  viewManagerialReports: (c) => managerial(c.role),
+  viewAllStaffShifts: (c) => managerial(c.role),
+  switchAttendanceUser: (c) => managerial(c.role),
+  showRoleBadge: (c) => managerial(c.role),
+  manageTasks: (c) => managerial(c.role),
+  manageProjects: (c) => managerial(c.role),
   isTaskReadonly: (c) => c.isParttime,
   forceMineOnlyTasks: (c) => c.isParttime,
   canDeleteProject: (c) => !c.isParttime && managerial(c.role),
-  viewAllSales: (c) => c.role === 'owner' || c.role === 'manager',
-  viewAllReportStores: (c) => c.role === 'owner' || c.role === 'manager',
+  viewAllSales: (c) => managerial(c.role),
+  viewAllReportStores: (c) => managerial(c.role),
   manageViewScopes: (c) => c.role === 'owner', // C27 閲覧範囲設定（Phase2）= owner のみ
 };
 

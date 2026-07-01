@@ -25,6 +25,9 @@ interface MemberManagementProps {
 
 const roleBadge: Record<string, { label: string; className: string }> = {
   owner: { label: 'オーナー', className: 'bg-blue-100 text-blue-700 dark:bg-blue-700/30 dark:text-blue-300' },
+  // admin = 会社管理者（P3-0b 新設）。owner(blue) と manager(emerald) の中間色 indigo で識別。
+  // ※役職選択トグルには admin を出さない（任命 UI は P3-6）。現状 admin 該当0のため未表示。
+  admin: { label: '会社管理者', className: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-700/30 dark:text-indigo-300' },
   manager: { label: '店長', className: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-800/30 dark:text-emerald-200' },
   staff: { label: 'スタッフ', className: 'bg-stone-100 text-stone-800 dark:bg-stone-700 dark:text-stone-200' },
 };
