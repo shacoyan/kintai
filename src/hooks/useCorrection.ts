@@ -148,25 +148,20 @@ export function useCorrection(tenantId: string) {
   const revertRequest = async (requestId: string) => {
     setError(null);
     try {
-      const { data, error } = await supabase
-        .from('correction_requests')
-        .update({ status: 'pending', reviewed_by: null, reviewed_at: null })
-        .eq('id', requestId)
-        .select('id');
+      // FG6: 直 UPDATE を撤去し RPC 経由へ。承認済みの attendance 反映を
+      // applied_snapshot に基づき原子的に逆操作する（二重計上・過払いを根治）。
+      // RPC は失敗を RAISE で返すため 0 行無音 success は発生しない。
+      const { data, error } = await supabase.rpc('revert_correction_request', {
+        p_request_id: requestId,
+      });
       if (error) {
         logger.error('Revert correction request error:', formatSupabaseError(error));
-        setError(formatSupabaseError(error).message);
-        throw error;
+        const friendly = mapReviewErrorCode(error);
+        setError(friendly);
+        throw new Error(friendly);
       }
-      // RLS / 対象不在で 0 行更新は無音 success になるため明示エラー化
-      if (!data || data.length === 0) {
-        const msg = '差し戻しに失敗しました（権限不足または対象が見つかりません）';
-        logger.error('Revert correction request error:', msg);
-        setError(msg);
-        throw new Error(msg);
-      }
-      // 承認済の場合、すでに attendance_records へ反映済の修正は取り消さない（巻き戻しは別途手動で）
       await fetchRequests();
+      return data;
     } catch (err: unknown) {
       logger.error('Revert correction request error:', formatSupabaseError(err));
       setError(formatSupabaseError(err).message);

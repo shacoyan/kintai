@@ -28,12 +28,28 @@ export function usePayrollRun(tenantId: string, storeId: string | null) {
         query = query.eq('store_id', storeId);
       }
 
-      const { data, error: fetchError } = await query.maybeSingle();
+      // FG3(111): 全店舗 run は store_id=NULL で過去に UNIQUE が効かず重複確定し得た。
+      // 111 の部分 UNIQUE で新規重複は封じるが、既存重複が残るケースに備え
+      // .maybeSingle()（複数行で error → 画面が開けない）を撤去し配列で受ける。
+      const { data, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
-      if (!data) return null;
 
-      const { items, ...run } = data as { items: PayrollRunItem[] } & PayrollRun;
+      const rows = (data ?? []) as Array<{ items: PayrollRunItem[] } & PayrollRun>;
+      if (rows.length === 0) return null;
+
+      if (rows.length > 1) {
+        // 重複確定の疑い。無音 null で「開けない」にせず明示メッセージ＋全 run id を全文ログ。
+        logger.error(
+          'fetchRun: multiple payroll_runs matched (duplicate finalization suspected). ' +
+            `tenantId=${tenantId} storeId=${String(storeId)} targetMonth=${targetMonth} mode=${mode} ` +
+            `runIds=${rows.map((r) => r.id).join(',')}`
+        );
+        setError('この対象月・モードで確定データが複数見つかりました。管理者に連絡してください（重複確定の可能性）');
+        return null;
+      }
+
+      const { items, ...run } = rows[0];
       return { run: run as PayrollRun, items: (items ?? []) as PayrollRunItem[] };
     } catch (err) {
       logger.error('fetchRun error:', formatSupabaseError(err));
