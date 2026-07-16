@@ -4,7 +4,13 @@ import { PenLine } from 'lucide-react';
 import type { Shift, ShiftPreference } from '../../types';
 import type { StatusFilterValue } from './unifiedShiftTypes';
 import { ROLE_COLOR_HEX, type RoleColorKey } from '../../utils/getRoleColor';
-import { formatStartHour2, extractLastName, prioritizeDayItems, type DayChipItem } from '../../utils/shiftSlot';
+import {
+  formatChipTimeRange,
+  NO_START_TIME_SENTINEL,
+  extractLastName,
+  prioritizeDayItems,
+  type DayChipItem,
+} from '../../utils/shiftSlot';
 
 // === ローカル色定数（getRoleColor.ts は改変しない / §B-3・§C-8） ===
 // 役職別 700 相当 hex（AA 担保 / light text）
@@ -107,7 +113,7 @@ function StatusMarker({ status }: { status: string }) {
 function ShiftChip({ item }: { item: DayChipItem }) {
   const roleHex = roleHexOf(item.roleType);
   const textClass = ROLE_TEXT_CLASS[item.roleType ?? 'fulltime'];
-  const hh = formatStartHour2(item.startTime);
+  const timeRange = formatChipTimeRange(item.startTime, item.endTime);
 
   return (
     <div
@@ -120,10 +126,12 @@ function ShiftChip({ item }: { item: DayChipItem }) {
         backgroundColor: hexToRgba(roleHex, 0.1),
       }}
     >
-      <span className={`text-[11px] leading-none tabular-nums shrink-0 ${textClass}`}>
-        {hh}
-      </span>
-      <span className={`text-[11px] leading-none font-medium truncate ${textClass}`}>
+      {timeRange && (
+        <span className={`text-[11px] leading-none tabular-nums shrink-0 ${textClass}`}>
+          {timeRange}
+        </span>
+      )}
+      <span className={`text-[11px] leading-none font-medium truncate min-w-0 ${textClass}`}>
         {item.lastName}
       </span>
       <span className="ml-auto shrink-0">
@@ -137,6 +145,7 @@ function ShiftChip({ item }: { item: DayChipItem }) {
 function PreferenceChip({ item }: { item: DayChipItem }) {
   const roleHex = roleHexOf(item.roleType);
   const textClass = ROLE_TEXT_CLASS[item.roleType ?? 'fulltime'];
+  const timeRange = formatChipTimeRange(item.startTime, item.endTime);
 
   return (
     <div
@@ -152,10 +161,12 @@ function PreferenceChip({ item }: { item: DayChipItem }) {
       }}
     >
       <PenLine className={`w-[8px] h-[8px] shrink-0 ${textClass}`} aria-hidden />
-      <span className={`text-[10px] leading-none shrink-0 ${textClass}`}>
-        希望
-      </span>
-      <span className={`text-[11px] leading-none truncate font-medium ${textClass}`}>
+      {timeRange && (
+        <span className={`text-[10px] leading-none tabular-nums shrink-0 ${textClass}`}>
+          {timeRange}
+        </span>
+      )}
+      <span className={`text-[11px] leading-none truncate font-medium min-w-0 ${textClass}`}>
         {item.lastName}
       </span>
     </div>
@@ -210,6 +221,7 @@ function ShiftMobileCalendarInner({
         kind: 'shift',
         userId: shift.user_id,
         startTime: shift.start_time,
+        endTime: shift.end_time,
         lastName: nameOf(shift.user_id),
         roleType,
         status: shift.status,
@@ -251,7 +263,8 @@ function ShiftMobileCalendarInner({
       arr.push({
         kind: 'preference',
         userId: preference.user_id,
-        startTime: preference.start_time ?? '99:99',
+        startTime: preference.start_time ?? NO_START_TIME_SENTINEL,
+        endTime: preference.end_time,
         lastName: nameOf(preference.user_id),
         roleType,
         status: 'pending',

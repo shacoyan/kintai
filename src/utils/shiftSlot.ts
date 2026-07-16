@@ -135,7 +135,8 @@ export function isSlotWarning(n: number): boolean {
 export interface DayChipItem {
   kind: 'shift' | 'preference';
   userId: string;
-  startTime: string; // preference で未指定なら '99:99' 等で末尾送り
+  startTime: string; // ソート用。preference で未指定なら '99:99' 等で末尾送り。表示は formatChipTimeRange がセンチネルを吸収。
+  endTime: string | null; // 表示専用。shift.end_time(非null)/preference.end_time(null可)。ソートには未使用。
   lastName: string;
   roleType: RoleColorKey;
   status: string; // shift.status or 'pending'
@@ -214,4 +215,49 @@ export function extractLastName(displayName: string | undefined | null): string 
   const chars = Array.from(tokens[0]);
   if (chars.length <= 2) return tokens[0];
   return chars.slice(0, 2).join('');
+}
+
+// ============================================================
+// C-9. チップ時間帯レンジ
+// ============================================================
+
+/** preference.start_time が null のときソート用に代入するセンチネル。表示時は「時刻なし」扱い。 */
+export const NO_START_TIME_SENTINEL = '99:99';
+
+function parseHM(t: string): { hour: number; minute: number } | null {
+  const parts = String(t).trim().split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1] ?? '0', 10);
+  if (!Number.isFinite(h)) return null;
+  return { hour: h, minute: Number.isFinite(m) ? m : 0 };
+}
+
+function formatClock(hour: number, minute: number): string {
+  const hh = String(hour).padStart(2, '0'); // 24+ もそのまま2桁（24,26,29…）
+  return minute === 0 ? hh : `${hh}:${String(minute).padStart(2, '0')}`;
+}
+
+/**
+ * SPシフト/希望チップ用の時間帯レンジ文字列（純関数・色/DOM非依存）。
+ *  - start が null/''/NO_START_TIME_SENTINEL → '' （呼び側は時間帯を出さず姓のみ）。"99"は絶対に出さない。
+ *  - end が null/''/NO_START_TIME_SENTINEL → `${startFmt}-`（開始のみ・末尾ハイフン）。
+ *  - end<=start（HH:mm再構成の文字列比較, formatTimeRange と同境界）は翌日跨ぎ→end hour に +24（24+表記）。
+ *    ※既に24+で来た値は再加算しない（"24:30">"18:00" で分岐に入らないため冪等）。
+ *  - 分0は省略、非0は ':MM'(2桁)。hour は常に2桁 padStart。
+ */
+export function formatChipTimeRange(
+  startTime: string | null | undefined,
+  endTime: string | null | undefined,
+): string {
+  if (startTime == null || startTime === '' || startTime === NO_START_TIME_SENTINEL) return '';
+  const s = parseHM(startTime);
+  if (s == null) return '';
+  const startFmt = formatClock(s.hour, s.minute);
+  if (endTime == null || endTime === '' || endTime === NO_START_TIME_SENTINEL) return `${startFmt}-`;
+  const e = parseHM(endTime);
+  if (e == null) return `${startFmt}-`;
+  const sHM = `${String(s.hour).padStart(2, '0')}:${String(s.minute).padStart(2, '0')}`;
+  const eHM = `${String(e.hour).padStart(2, '0')}:${String(e.minute).padStart(2, '0')}`;
+  const endHour = eHM <= sHM ? e.hour + 24 : e.hour; // 翌日跨ぎ→24+
+  return `${startFmt}-${formatClock(endHour, e.minute)}`;
 }

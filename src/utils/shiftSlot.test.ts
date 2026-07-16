@@ -4,6 +4,7 @@ import {
   computeSlotCoverage,
   judgeStaffing,
   formatStartHour2,
+  formatChipTimeRange,
   extractLastName,
   prioritizeDayItems,
   isSlotWarning,
@@ -157,6 +158,7 @@ describe('prioritizeDayItems', () => {
     kind: 'shift',
     userId: 'u',
     startTime: '12:00',
+    endTime: '22:00',
     lastName: '田中',
     roleType: 'parttime',
     status: 'approved',
@@ -218,5 +220,62 @@ describe('prioritizeDayItems', () => {
     ];
     const { visible } = prioritizeDayItems(items, 10);
     expect(visible.map((v) => v.userId)).toEqual(['x', 'y', 'z']);
+  });
+});
+
+describe('formatChipTimeRange', () => {
+  it('分00両省略: 18:00-23:00 → "18-23"', () => {
+    expect(formatChipTimeRange('18:00', '23:00')).toBe('18-23');
+  });
+  it('開始分保持: 18:30-23:00 → "18:30-23"', () => {
+    expect(formatChipTimeRange('18:30', '23:00')).toBe('18:30-23');
+  });
+  it('終了分保持: 18:00-23:30 → "18-23:30"', () => {
+    expect(formatChipTimeRange('18:00', '23:30')).toBe('18-23:30');
+  });
+  it('両分保持: 18:15-23:45 → "18:15-23:45"', () => {
+    expect(formatChipTimeRange('18:15', '23:45')).toBe('18:15-23:45');
+  });
+  it('翌日跨ぎ+30分: 18:00-00:30 → "18-24:30"', () => {
+    expect(formatChipTimeRange('18:00', '00:30')).toBe('18-24:30');
+  });
+  it('翌日跨ぎ丁度: 18:00-00:00 → "18-24"', () => {
+    expect(formatChipTimeRange('18:00', '00:00')).toBe('18-24');
+  });
+  it('深夜跨ぎ: 22:00-05:00 → "22-29"', () => {
+    expect(formatChipTimeRange('22:00', '05:00')).toBe('22-29');
+  });
+  it('24+入力は二重加算しない: 18:00-24:30 → "18-24:30"', () => {
+    expect(formatChipTimeRange('18:00', '24:30')).toBe('18-24:30');
+  });
+  it('HH:mm:ss形式: 18:00:00-23:00:00 → "18-23"', () => {
+    expect(formatChipTimeRange('18:00:00', '23:00:00')).toBe('18-23');
+  });
+  it('HH:mm:ss形式+分保持: 18:30:00-23:30:00 → "18:30-23:30"', () => {
+    expect(formatChipTimeRange('18:30:00', '23:30:00')).toBe('18:30-23:30');
+  });
+  it('1桁時パディング: 9:00-18:00 → "09-18"', () => {
+    expect(formatChipTimeRange('9:00', '18:00')).toBe('09-18');
+  });
+  it('センチネル開始: "99:99"/"23:00" → ""（"99"を出さない）', () => {
+    expect(formatChipTimeRange('99:99', '23:00')).toBe('');
+  });
+  it('start null → ""', () => {
+    expect(formatChipTimeRange(null, '23:00')).toBe('');
+  });
+  it('start undefined, end null → ""', () => {
+    expect(formatChipTimeRange(undefined, null)).toBe('');
+  });
+  it('start 空文字 → ""', () => {
+    expect(formatChipTimeRange('', '23:00')).toBe('');
+  });
+  it('end null → 開始のみ: 18:00/null → "18-"', () => {
+    expect(formatChipTimeRange('18:00', null)).toBe('18-');
+  });
+  it('end センチネル → 開始のみ: 18:30/"99:99" → "18:30-"', () => {
+    expect(formatChipTimeRange('18:30', '99:99')).toBe('18:30-');
+  });
+  it('end 空文字 → 開始のみ: 18:00/"" → "18-"', () => {
+    expect(formatChipTimeRange('18:00', '')).toBe('18-');
   });
 });
