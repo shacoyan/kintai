@@ -31,6 +31,7 @@ function makeShift(overrides: Partial<Shift> = {}): Shift {
     tentative_approved_at: null,
     store_id: STORE,
     preference_id: null,
+    frame_id: null,
     ...overrides,
   };
 }

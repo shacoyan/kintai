@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, startTransition } fr
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { format, startOfMonth, endOfMonth, addWeeks, subMonths, addMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Plus, ChevronLeft, ChevronRight, AlertTriangle, X } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, AlertTriangle, X, LayoutGrid } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Button, Card, Badge, BottomSheet, ShiftSkeleton, EmptyState, Heading, ConfirmDialog } from '../components/ui';
 import { messages } from '../lib/messages';
@@ -37,6 +37,7 @@ import { LaborCostCard } from '../components/Shift/LaborCostCard';
 import { ShiftStatusFilter, readStatusFilter, writeStatusFilter } from '../components/Shift/ShiftStatusFilter';
 import type { StatusFilterValue } from '../components/Shift/unifiedShiftTypes';
 import { BulkShiftPreferenceDialog } from '../components/Shift/BulkShiftPreferenceDialog';
+import { FrameAssignSheet } from '../components/Shift/FrameAssignSheet';
 import { formatTimeRange } from '../utils/formatTimeRange';
 import { buildTentativeShiftMap, getEffectiveTime } from '../utils/preferenceEffectiveTime';
 import { useStoreContext } from '../contexts/StoreContext';
@@ -137,6 +138,10 @@ export function ShiftPage() {
   const [selectedBulkDates, setSelectedBulkDates] = useState<Set<string>>(() => new Set());
   const [isBulkDialogOpen, setIsBulkDialogOpen] = useState<boolean>(false);
   const BULK_MAX_DATES = 31;
+
+  // 116: 枠割当シート（管理者が空白セルではなく「枠割当」ボタンから起動）
+  const [frameSheetOpen, setFrameSheetOpen] = useState(false);
+  const [frameSheetDate, setFrameSheetDate] = useState<string>(() => format(new Date(), 'yyyy-MM-dd'));
 
   useEffect(() => {
     writeStatusFilter(statusFilter);
@@ -999,6 +1004,21 @@ export function ShiftPage() {
                     </Button>
                   );
                 })()}
+                {canManageTenant && storeId && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setFrameSheetDate(selectedDate ?? format(new Date(), 'yyyy-MM-dd'));
+                      setFrameSheetOpen(true);
+                    }}
+                    iconLeft={<LayoutGrid className="w-3.5 h-3.5" />}
+                    className="shrink-0 grow sm:grow-0"
+                    aria-label="シフト枠へ割当"
+                  >
+                    枠割当
+                  </Button>
+                )}
               </div>
             )}
 
@@ -1756,6 +1776,25 @@ export function ShiftPage() {
             setNewPreferenceDate(null);
           }}
           onClose={() => setNewPreferenceDate(null)}
+        />
+      )}
+
+      {/* 116: 枠割当シート — 管理者ツールバー「枠割当」から起動 */}
+      {frameSheetOpen && canManageTenant && storeId && (
+        <FrameAssignSheet
+          tenantId={tenantId}
+          storeId={storeId}
+          date={frameSheetDate}
+          onDateChange={setFrameSheetDate}
+          members={members}
+          allShifts={allShifts}
+          allPreferences={allPreferences}
+          addShiftForMember={addShiftForMember}
+          onClose={() => setFrameSheetOpen(false)}
+          onMutated={() => {
+            fetchRange();
+            fetchPreferenceRange();
+          }}
         />
       )}
 

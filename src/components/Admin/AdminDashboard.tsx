@@ -22,6 +22,7 @@ import { LeaveList } from '../Leave/LeaveList';
 import { RejectLeaveModal } from '../Leave/RejectLeaveModal';
 import { BottomSheet } from '../ui/BottomSheet';
 import { ShiftPresetManager } from './ShiftPresetManager';
+import { ShiftFrameManager } from './ShiftFrameManager';
 import { StoreManagement } from './StoreManagement';
 import { ShiftMismatchAlert } from './ShiftMismatchAlert';
 import { ShiftDeadlineSettingsModal } from './ShiftDeadlineSettingsModal';
@@ -47,6 +48,7 @@ import {
   UserX,
   RefreshCw,
   Settings,
+  LayoutGrid,
 } from 'lucide-react';
 import { StatCard, Card, PageSkeleton, Button, Heading } from '../ui';
 import type { Shift, AttendanceRecord } from '../../types';
@@ -64,6 +66,7 @@ const tabs = [
   // hidden 2026-05-10: ナビからは filter で除外、render ロジック・型は温存（backlog で復活予定）
   { id: 'leaves' as const, label: '休暇', icon: Plane },
   { id: 'presets' as const, label: 'プリセット', icon: Sliders },
+  { id: 'frames' as const, label: 'シフト枠', icon: LayoutGrid },
   { id: 'stores' as const, label: '店舗', icon: Store },
   { id: 'mismatch' as const, label: '不一致', icon: AlertCircle },
   { id: 'settings' as const, label: '設定', icon: Settings },
@@ -80,7 +83,7 @@ const SECTIONS = [
   { label: 'メンバー管理', items: ['members'] },
   // hidden 2026-05-10: 'leaves' は backlog で復活予定
   { label: '給与・勤怠', items: ['payroll', 'attendance', 'corrections', 'mismatch'] },
-  { label: '設定', items: ['presets', 'stores', 'settings'] },
+  { label: '設定', items: ['presets', 'frames', 'stores', 'settings'] },
 ] as const;
 
 export function AdminDashboard({ tenantId }: AdminDashboardProps) {
@@ -531,6 +534,9 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
         )}
         {activeTab === 'presets' && (
           <ShiftPresetManager tenantId={tenantId} storeId={currentStore?.id ?? null} />
+        )}
+        {activeTab === 'frames' && (
+          <ShiftFrameManager tenantId={tenantId} storeId={currentStore?.id ?? null} />
         )}
         {activeTab === 'stores' && (
           <div className="space-y-4">

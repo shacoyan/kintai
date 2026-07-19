@@ -21,6 +21,7 @@ function makeShift(over: Partial<Shift> = {}): Shift {
     tentative_approved_at: null,
     store_id: 's1',
     preference_id: 'pref-1',
+    frame_id: null,
     ...over,
   };
 }

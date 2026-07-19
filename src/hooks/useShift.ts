@@ -130,7 +130,7 @@ export function useShift(tenantId: string, storeId: string | null) {
     }
   }, [tenantId, storeId]);
 
-  const addShiftForMember = useCallback(async (date: string, userId: string, storeId: string, startTime: string, endTime: string, note?: string): Promise<Shift> => {
+  const addShiftForMember = useCallback(async (date: string, userId: string, storeId: string, startTime: string, endTime: string, note?: string, frameId?: string | null): Promise<Shift> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
     const { data, error: e } = await supabase
@@ -144,6 +144,7 @@ export function useShift(tenantId: string, storeId: string | null) {
         end_time: endTime,
         status: 'tentative',
         note: note ?? null,
+        frame_id: frameId ?? null,
       })
       .select()
       .single();

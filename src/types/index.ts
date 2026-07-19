@@ -96,6 +96,8 @@ export interface Shift {
   store_id: string | null;
   // 096: 承認元の希望 id。revert/approve が時刻ではなく id で厳密に当該仮承認シフトを扱う。
   preference_id: string | null;
+  // 116: 割当元のシフト枠 id。frame_id リンクされた shifts の数が枠の充足数になる。
+  frame_id: string | null;
 }
 
 export type LeaveType =
@@ -126,6 +128,41 @@ export interface ShiftPreset {
   sort_order: number;
   created_at: string;
   store_id: string | null;
+}
+
+// 116: シフト枠テンプレート（店舗×曜日の毎週テンプレ / 特定日のみの単発枠）。
+// day_of_week と date は XOR（片方のみ非 null）。
+export interface ShiftFrame {
+  id: string;
+  tenant_id: string;
+  store_id: string;
+  day_of_week: number | null;
+  date: string | null;
+  name: string;
+  start_time: string;
+  end_time: string;
+  required_count: number;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// 116: 毎週テンプレ枠（shift_frames.day_of_week NOT NULL）の特定日のみの上書き。
+// kind='cancel' はその日だけ休止（name/start_time/end_time/required_count は null）。
+// kind='modify' は丸ごと差替（NULL 継承なし・全フィールド必須）。
+export interface ShiftFrameOverride {
+  id: string;
+  tenant_id: string;
+  frame_id: string;
+  date: string;
+  kind: 'cancel' | 'modify';
+  name: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  required_count: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CorrectionRequest {
