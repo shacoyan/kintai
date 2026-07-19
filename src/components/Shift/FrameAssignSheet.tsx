@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { addDays, format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, X, UserPlus, Ban, CalendarClock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, UserPlus, Ban, CalendarClock, Pencil } from 'lucide-react';
 import { useShiftFrames } from '../../hooks/useShiftFrames';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
@@ -13,7 +13,7 @@ import {
   timeRangesOverlapOvernight,
   type EffectiveFrame,
 } from '../../utils/shiftFrames';
-import { BottomSheet, Button, Badge, Select, Card, EmptyState } from '../ui';
+import { BottomSheet, Button, Badge, Select, Card, EmptyState, Input } from '../ui';
 import type { Shift, ShiftPreference, TenantMember } from '../../types';
 
 interface FrameAssignSheetProps {
@@ -115,6 +115,12 @@ export function FrameAssignSheet({
   const [manualStart, setManualStart] = useState('09:00');
   const [manualEnd, setManualEnd] = useState('17:00');
 
+  const [modifyFrameId, setModifyFrameId] = useState<string | null>(null);
+  const [modifyName, setModifyName] = useState('');
+  const [modifyStart, setModifyStart] = useState('09:00');
+  const [modifyEnd, setModifyEnd] = useState('17:00');
+  const [modifyRequiredCount, setModifyRequiredCount] = useState(1);
+
   const goPrevDay = useCallback(() => onDateChange(format(addDays(parseISO(date), -1), 'yyyy-MM-dd')), [date, onDateChange]);
   const goNextDay = useCallback(() => onDateChange(format(addDays(parseISO(date), 1), 'yyyy-MM-dd')), [date, onDateChange]);
 
@@ -184,6 +190,36 @@ export function FrameAssignSheet({
     try {
       await upsertOverride(frame.frameId, date, { kind: 'cancel' });
       showToast('この日だけ休止しました', 'success');
+      onMutated();
+      await fetchFrames(date, date);
+    } catch (err) {
+      showToast(formatSupabaseError(err).message, 'error');
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const openModifyDay = (frame: EffectiveFrame) => {
+    setModifyFrameId(frame.frameId);
+    setModifyName(frame.name);
+    setModifyStart(frame.startTime.slice(0, 5));
+    setModifyEnd(frame.endTime.slice(0, 5));
+    setModifyRequiredCount(frame.requiredCount);
+  };
+
+  const handleModifyDay = async (frame: EffectiveFrame) => {
+    if (!modifyName || !modifyStart || !modifyEnd || modifyRequiredCount < 1) return;
+    setBusyKey(`modify-${frame.frameId}`);
+    try {
+      await upsertOverride(frame.frameId, date, {
+        kind: 'modify',
+        name: modifyName,
+        startTime: modifyStart,
+        endTime: modifyEnd,
+        requiredCount: modifyRequiredCount,
+      });
+      showToast('この日だけ変更しました', 'success');
+      setModifyFrameId(null);
       onMutated();
       await fetchFrames(date, date);
     } catch (err) {
@@ -279,21 +315,63 @@ export function FrameAssignSheet({
                 </div>
 
                 {!frame.isOneOff && (
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-3">
                     {hasOverride ? (
-                      <Button variant="secondary" size="sm" onClick={() => handleRemoveOverride(frame)} disabled={busyKey === `removeoverride-${frame.frameId}`}>
-                        上書き解除
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button variant="secondary" size="sm" onClick={() => handleRemoveOverride(frame)} disabled={busyKey === `removeoverride-${frame.frameId}`}>
+                          上書き解除
+                        </Button>
+                      </div>
+                    ) : modifyFrameId === frame.frameId ? (
+                      <div className="flex flex-wrap items-end gap-2">
+                        <div className="w-full sm:w-auto sm:flex-1 min-w-[140px]">
+                          <Input label="枠名" value={modifyName} onChange={(e) => setModifyName(e.target.value)} size="sm" />
+                        </div>
+                        <Select label="開始" value={modifyStart} onChange={(e) => setModifyStart(e.target.value)} options={TIME_OPTION_OBJECTS} />
+                        <Select label="終了" value={modifyEnd} onChange={(e) => setModifyEnd(e.target.value)} options={TIME_OPTION_OBJECTS} />
+                        <div className="w-20">
+                          <Input
+                            label="必要人数"
+                            type="number"
+                            min={1}
+                            max={50}
+                            value={modifyRequiredCount}
+                            onChange={(e) => setModifyRequiredCount(Number(e.target.value))}
+                            size="sm"
+                          />
+                        </div>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleModifyDay(frame)}
+                          disabled={!modifyName || !modifyStart || !modifyEnd || modifyRequiredCount < 1 || busyKey === `modify-${frame.frameId}`}
+                        >
+                          保存
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={() => setModifyFrameId(null)}>
+                          キャンセル
+                        </Button>
+                      </div>
                     ) : (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => handleCancelDay(frame)}
-                        disabled={busyKey === `cancel-${frame.frameId}`}
-                        iconLeft={<Ban className="w-3.5 h-3.5" />}
-                      >
-                        この日だけ休止
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleCancelDay(frame)}
+                          disabled={busyKey === `cancel-${frame.frameId}`}
+                          iconLeft={<Ban className="w-3.5 h-3.5" />}
+                        >
+                          この日だけ休止
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => openModifyDay(frame)}
+                          iconLeft={<Pencil className="w-3.5 h-3.5" />}
+                        >
+                          この日だけ変更
+                        </Button>
+                      </div>
                     )}
                   </div>
                 )}
