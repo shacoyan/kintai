@@ -37,8 +37,8 @@ describe('normalizeByLocation', () => {
     // totalSales = total_amount + open_total_amount。
     expect(rows[0].totalSales).toBe(1200);
     expect(rows[0].locationName).toBe('吸暮');
-    // B13: 色は表示 location 全体への getLocationColors 一括適用で割当（衝突回避版）。
-    expect(rows[0].color).toBe(getLocationColors(['LOC_A'])['LOC_A']);
+    // 2026-07-21 D3: 色は location_name 由来（location_name マージの決定的色割当）。
+    expect(rows[0].color).toBe(getLocationColors(['吸暮'])['吸暮']);
   });
 
   it('B13: desired index が衝突する複数店でも color が相異なる（getLocationColors 一括適用）', () => {
@@ -59,10 +59,10 @@ describe('normalizeByLocation', () => {
     const colors = rows.map((r) => r.color);
     // 7 店すべて相異なる色（衝突回避が効いている）。
     expect(new Set(colors).size).toBe(colors.length);
-    // hook 内の colorMap と純関数 getLocationColors の割当が一致する。
-    const ids = raw.byLocation.map((r) => r.location_id);
-    const map = getLocationColors(ids);
-    rows.forEach((r) => expect(r.color).toBe(map[r.locationId]));
+    // 2026-07-21 D3: マージ関数内の colorMap と純関数 getLocationColors(sorted names) の割当が一致する。
+    const names = [...raw.byLocation.map((r) => r.location_name)].sort();
+    const map = getLocationColors(names);
+    rows.forEach((r) => expect(r.color).toBe(map[r.locationName]));
   });
 
   it('B18: 数値文字列 / null / Infinity の total_amount でも有限数（NaN/文字列連結なし）', () => {
@@ -127,6 +127,34 @@ describe('normalizeByLocation', () => {
     const { rows } = normalizeByLocation(raw);
     expect(rows[0].totalSales).toBe(500); // open_total_amount 省略 → 0
     expect(rows[0].totalCustomers).toBe(4); // repeat/regular/staff 省略 → 0
+  });
+
+  it('2026-07-21 D-01: 同名 2 location_id 行は location_name マージで 1 行に合算される', () => {
+    const raw = {
+      byLocation: [
+        {
+          location_id: 'OLD_SOUQ',
+          location_name: '吸暮',
+          total_amount: 1000,
+          open_total_amount: 0,
+          new_customer_count: 5,
+        },
+        {
+          location_id: 'NEW_SOUQ',
+          location_name: '吸暮',
+          total_amount: 500,
+          open_total_amount: 0,
+          new_customer_count: 3,
+        },
+      ],
+    };
+    const { rows } = normalizeByLocation(raw);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].locationName).toBe('吸暮');
+    // 代表 locationId = 初出行(OLD_SOUQ)。
+    expect(rows[0].locationId).toBe('OLD_SOUQ');
+    expect(rows[0].totalSales).toBe(1500);
+    expect(rows[0].totalCustomers).toBe(8);
   });
 
   it('meta は欠落フィールドを既定値で補う', () => {
