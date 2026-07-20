@@ -6,7 +6,12 @@ import {
   LocationTrendChart,
 } from './charts';
 import WeekdayLocationAnalysisSection from './WeekdayLocationAnalysisSection';
+import SalesLocationCompareTable from './SalesLocationCompareTable';
+import { buildLocationCompareTable } from '../../lib/sales/locationCompareTable';
+import { inclusiveDaySpan } from '../../lib/sales/avgDailyYoY';
+import { shiftDateOneYearBack } from '../../lib/sales/yoy';
 import type { SalesByLocationRow } from '../../hooks/useSalesByLocation';
+import type { UseSalesAcquisitionAllStoresResult } from '../../hooks/useSalesAcquisitionAllStores';
 import type { DailySegmentPoint, PeriodPreset } from '../../lib/sales/types';
 
 // =============================================================================
@@ -47,15 +52,38 @@ interface DailyResult {
   error: string | null;
 }
 
+interface LastYearResult {
+  rows: SalesByLocationRow[];
+  loading: boolean;
+  error: string | null;
+}
+
 interface Props {
   /** 071 hook の rows（期間合算・既存）。バー＋構成の母数。 */
   byLocRows: SalesByLocationRow[];
   /** 077 hook の返り（日次・トレンド/曜日/構成セグの源）。 */
   daily: DailyResult;
   period: PeriodPreset;
+  /** 前年同期 071 rows（②の YoY 4 列の源。§6-D）。 */
+  lastYear: LastYearResult;
+  /** ②の獲得経路 5 列（§6-D）。 */
+  acquisition: UseSalesAcquisitionAllStoresResult;
+  from: string;
+  to: string;
+  /** month/quarter/year のみ true（②の YoY 小行の表示ゲート）。 */
+  showTableYoY: boolean;
 }
 
-const SalesLocationComparison: React.FC<Props> = ({ byLocRows, daily, period }) => {
+const SalesLocationComparison: React.FC<Props> = ({
+  byLocRows,
+  daily,
+  period,
+  lastYear,
+  acquisition,
+  from,
+  to,
+  showTableYoY,
+}) => {
   // バーは表示棒の高さ（totalSales=決済済+未決済）で再ソート（SalesPage 既存契約と一致）。
   const sortedByLocRows = useMemo(
     () => [...byLocRows].sort((a, b) => b.totalSales - a.totalSales),
@@ -65,10 +93,11 @@ const SalesLocationComparison: React.FC<Props> = ({ byLocRows, daily, period }) 
   // お客様構成（積み上げ）の rows: 071 rows は 4 セグ合計の totalCustomers しか持たない
   // ため、セグメント別客数は 077 daily の各店 points を全期間合算して作る。
   // 並びはバーと同じく totalSales DESC に寄せる（sortedByLocRows の順）。
-  // 突合は locationId で行う（両 RPC とも location_id を契約に含むため、
-  // 店舗改名・同名追加でも壊れない）。表示ラベルは locationName のまま。
+  // 突合は locationName で行う（2026-07-21 D-01 対応: マージ後の代表 locationId は
+  // 071/077 間で一致を保証しないため、id 突合は同名店を silently drop し得る。
+  // locationName は B のマージ済みデータで両 RPC とも name-unique）。
   const stackRows = useMemo(() => {
-    const byId = new Map<string, { new: number; repeat: number; regular: number; staff: number; unlisted: number }>();
+    const byName = new Map<string, { new: number; repeat: number; regular: number; staff: number; unlisted: number }>();
     for (const loc of daily.locationSeries) {
       const acc = { new: 0, repeat: 0, regular: 0, staff: 0, unlisted: 0 };
       for (const p of loc.points) {
@@ -78,12 +107,12 @@ const SalesLocationComparison: React.FC<Props> = ({ byLocRows, daily, period }) 
         acc.staff += p.staff;
         acc.unlisted += p.unlisted;
       }
-      byId.set(loc.locationId, acc);
+      byName.set(loc.locationName, acc);
     }
     return sortedByLocRows
-      .filter((r) => byId.has(r.locationId))
+      .filter((r) => byName.has(r.locationName))
       .map((r) => {
-        const acc = byId.get(r.locationId)!;
+        const acc = byName.get(r.locationName)!;
         return { locationName: r.locationName, ...acc };
       });
   }, [daily.locationSeries, sortedByLocRows]);
@@ -102,8 +131,59 @@ const SalesLocationComparison: React.FC<Props> = ({ byLocRows, daily, period }) 
   const dailyError = daily.error;
   const dailyLoading = daily.loading;
 
+  // ②全店舗比較テーブル: elapsedDays/lastYearDays は inclusiveDaySpan（カード elapsedDays
+  // と同一集合）・shiftDateOneYearBack（前年期間の対称化分母）で算出する。
+  const elapsedDays = useMemo(() => inclusiveDaySpan(from, to), [from, to]);
+  const lastYearFrom = useMemo(() => shiftDateOneYearBack(from), [from]);
+  const lastYearTo = useMemo(() => shiftDateOneYearBack(to), [to]);
+  const lastYearDays = useMemo(
+    () => inclusiveDaySpan(lastYearFrom, lastYearTo),
+    [lastYearFrom, lastYearTo],
+  );
+
+  // dailySeries は daily.loading/error 中は null にする（セグ 5 列 `--`。071 由来 4 列は
+  // byLoc 確定時点で即表示するプログレッシブ表示を維持）。
+  const compareDailySeries = useMemo(
+    () =>
+      dailyLoading || dailyError
+        ? null
+        : daily.locationSeries.map((s) => ({ locationName: s.locationName, points: s.points })),
+    [dailyLoading, dailyError, daily.locationSeries],
+  );
+
+  // YoY 非適用期間（week/指定日）または前年 071 未取得時は lastYearRows=null。
+  const compareLastYearRows = showTableYoY && !lastYear.loading && !lastYear.error ? lastYear.rows : null;
+
+  const compareData = useMemo(
+    () =>
+      buildLocationCompareTable({
+        currentRows: byLocRows,
+        lastYearRows: compareLastYearRows,
+        dailySeries: compareDailySeries,
+        acquisitionByName: acquisition.loading ? null : acquisition.byName,
+        elapsedDays,
+        lastYearDays,
+      }),
+    [byLocRows, compareLastYearRows, compareDailySeries, acquisition.loading, acquisition.byName, elapsedDays, lastYearDays],
+  );
+
   return (
     <div className="space-y-5">
+      {/* ②全店舗比較テーブル（先頭）。071 由来 4 列は byLocRows 確定時点で即表示する
+          プログレッシブ表示（LY・獲得経路・077 の loading/error でブロックしない）。 */}
+      <SalesLocationCompareTable
+        data={compareData}
+        showYoY={showTableYoY}
+        from={from}
+        to={to}
+        elapsedDays={elapsedDays}
+        acquisitionClamped={acquisition.clamped}
+        acquisitionFailedStores={acquisition.failedStores}
+        acquisitionLoading={acquisition.loading}
+        acquisitionError={acquisition.error}
+        lastYearError={showTableYoY ? lastYear.error : null}
+      />
+
       {/* 1. 店舗別 売上・客数（071 rows・常に表示） */}
       <Card>
         <h2 className="mb-2 text-sm font-semibold text-stone-700 dark:text-stone-200">

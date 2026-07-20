@@ -6,6 +6,7 @@ import { useSalesSegment } from '../hooks/useSalesSegment';
 import { useSalesYoY } from '../hooks/useSalesYoY';
 import { useSalesByLocation } from '../hooks/useSalesByLocation';
 import { useSalesByLocationDaily } from '../hooks/useSalesByLocationDaily';
+import { useSalesAcquisitionAllStores } from '../hooks/useSalesAcquisitionAllStores';
 import { useSquareLiveSales } from '../hooks/useSquareLiveSales';
 import { useSquareOpenOrders } from '../hooks/useSquareOpenOrders';
 import { useSquareLiveAllStores } from '../hooks/useSquareLiveAllStores';
@@ -39,7 +40,7 @@ import { calculatePeriodDates, getMonthWeekCount, currentWeekIndex } from '../li
 import { granularityFor, cardTitleByGranularity } from '../lib/sales/trendAggregation';
 import { aggregateByWeekday } from '../lib/sales/weekdayAggregation';
 import type { PeriodPreset } from '../lib/sales/types';
-import { calculateYoY } from '../lib/sales/yoy';
+import { calculateYoY, shiftDateOneYearBack } from '../lib/sales/yoy';
 import type { YoYDelta, DailyTotalPoint, SalesRangeYoYResult } from '../lib/sales/yoy';
 import { computeAvgDailyYoY } from '../lib/sales/avgDailyYoY';
 
@@ -468,6 +469,25 @@ export const SalesPage: React.FC = () => {
     enabled: scopeReady && !isToday && showLocationCompare,
   });
 
+  // ②全店舗比較テーブルの前年同期 071（D6）。YoY は month/quarter/year のみ
+  // （enabled ゲートに yoyApplicable を含める＝week/指定日で LY RPC を叩かない）。
+  const byLocLY = useSalesByLocation({
+    from: shiftDateOneYearBack(from),
+    to: shiftDateOneYearBack(to),
+    locationNames: null,
+    enabled: scopeReady && !isToday && showLocationCompare && yoyApplicable,
+  });
+
+  // ②全店舗比較テーブルの獲得経路 5 列（D7）。owner/manager × ALL × 非 today のみ。
+  const acqAll = useSalesAcquisitionAllStores({
+    locationNames: allowedLocationNames,
+    startDate: from,
+    endDate: to,
+    startHour: STORE_START_HOUR,
+    endHour: (STORE_START_HOUR + 23) % 24,
+    enabled: scopeReady && !isToday && showLocationCompare,
+  });
+
   // --- 前年比バッジ・YoY 系列の導出 ---
   // yoy.loading 中は stale な前年値を出さない（前年比バッジ・前年系列を抑制）。
   // loading が明けて新範囲の data が確定してから表示する。
@@ -884,6 +904,11 @@ export const SalesPage: React.FC = () => {
                 byLocRows={byLoc.rows}
                 daily={byLocDaily}
                 period={period}
+                lastYear={{ rows: byLocLY.rows, loading: byLocLY.loading, error: byLocLY.error }}
+                acquisition={acqAll}
+                from={from}
+                to={to}
+                showTableYoY={yoyApplicable}
               />
             ))}
         </div>
