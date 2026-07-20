@@ -74,6 +74,15 @@ const collisionDetection: CollisionDetection = (args) => {
   return within.length > 0 ? within : rectIntersection(args);
 };
 
+// 設計書 §3.3: draggable(シフト)対象 status。充足カウント規則(countFrameAssignments)と同一集合の
+// ローカルコピー(wave 1 のチーム間 import を作らない・前ループの collisionDetection と同じ裁定)。
+const ASSIGNED_STATUSES = new Set(['tentative', 'approved', 'modified']);
+
+// 設計書 §5.3: HH:MM 正規化比較(ローカル定義・utils 側 planShiftToFrameSnap 内の正規化と論理同一)。
+function normalizeHHMM(t: string): string {
+  return t.slice(0, 5);
+}
+
 const TONE_STYLES: Record<'danger' | 'warning' | 'success' | 'info', { border: string; bg: string }> = {
   danger: { border: '#dc2626', bg: 'bg-red-50 dark:bg-red-900/20' },
   warning: { border: '#f59e0b', bg: 'bg-amber-50 dark:bg-amber-900/20' },
@@ -105,6 +114,8 @@ interface ShiftCalendarProps {
   canAssignFrames?: boolean;
   onAssignPreferenceToFrame?: (preferenceId: string, frameId: string, date: string) => Promise<void>;
   onFrameBarClick?: (date: string) => void;
+  // 設計書 §6.3: 枠外シフト→枠 D&D(時間スナップ)。未指定時はシフト draggable を一切出さない。
+  onAssignShiftToFrame?: (shift: Shift, frame: EffectiveFrame) => Promise<void>;
 }
 
 // ============================================================
@@ -135,22 +146,51 @@ function DraggableCalPrefBar({ pref, member, isMine, disabled, onClick }: Dragga
 }
 
 // ============================================================
+// DnD: ドラッグ可能なシフトバー(§4/§6.3 DraggableCalShiftBar。DraggableCalPrefBar と同型)
+// ============================================================
+
+interface DraggableCalShiftBarProps {
+  shift: Shift;
+  member?: TenantMember;
+  isMine: boolean;
+  disabled: boolean;
+  hideTime?: boolean;
+  onClick?: () => void;
+}
+
+function DraggableCalShiftBar({ shift, member, isMine, disabled, hideTime, onClick }: DraggableCalShiftBarProps) {
+  // §4 の id 名前空間: calshift-{shiftId}。data ペイロードで判定(id 文字列 parse は業務判定に使わない)。
+  const { setNodeRef, listeners } = useDraggable({
+    id: `calshift-${shift.id}`,
+    data: { type: 'shift' as const, shift },
+    disabled,
+  });
+
+  return (
+    <div ref={setNodeRef} {...listeners} style={{ touchAction: 'none' }}>
+      <CalShiftBar shift={shift} member={member} isMine={isMine} hideTime={hideTime} onClick={onClick} />
+    </div>
+  );
+}
+
+// ============================================================
 // DnD: 枠バー(droppable。§5.1 CalFrameBar)
 // ============================================================
 
 interface CalFrameBarProps {
   frame: EffectiveFrame;
   assigned: number;
-  dragPrefDate: string | null;
+  dragSourceDate: string | null;
   onFrameBarClick?: (date: string) => void;
 }
 
-function CalFrameBar({ frame, assigned, dragPrefDate, onFrameBarClick }: CalFrameBarProps) {
-  // §4.5: droppable(枠) はドラッグ中の希望と同日のときのみ enabled。ドラッグしていない間(dragPrefDate===null)は常に enabled。
-  const eligible = dragPrefDate === null || dragPrefDate === frame.date;
+function CalFrameBar({ frame, assigned, dragSourceDate, onFrameBarClick }: CalFrameBarProps) {
+  // §4.5: droppable(枠) はドラッグ中の希望/シフトと同日のときのみ enabled。ドラッグしていない間(dragSourceDate===null)は常に enabled。
+  const eligible = dragSourceDate === null || dragSourceDate === frame.date;
   const { setNodeRef, isOver } = useDroppable({
     id: `calframe-${frame.frameId}@${frame.date}`,
-    data: { type: 'frame' as const, frameId: frame.frameId, date: frame.date },
+    // 設計書 §4: data に frame 本体(EffectiveFrame)を追加(ハンドラが実効時間を要するため)。
+    data: { type: 'frame' as const, frameId: frame.frameId, date: frame.date, frame },
     disabled: !eligible,
   });
   const verdict = judgeFrameFulfillment(assigned, frame.requiredCount);
@@ -159,7 +199,7 @@ function CalFrameBar({ frame, assigned, dragPrefDate, onFrameBarClick }: CalFram
     ? 'opacity-40'
     : isOver
       ? 'ring-2 ring-blue-600 bg-blue-100/60'
-      : dragPrefDate !== null
+      : dragSourceDate !== null
         ? 'ring-1 ring-blue-500'
         : '';
   const label = formatTimeRange(frame.startTime, frame.endTime);
@@ -208,6 +248,14 @@ function DragOverlayPrefBar({ pref, member, isMine }: { pref: ShiftPreference; m
   );
 }
 
+function DragOverlayShiftBar({ shift, member, isMine }: { shift: Shift; member?: TenantMember; isMine: boolean }) {
+  return (
+    <div className="w-40 pointer-events-none shadow-lg rounded-[3px]">
+      <CalShiftBar shift={shift} member={member} isMine={isMine} />
+    </div>
+  );
+}
+
 // Perf: 親 (ShiftPage) の頻繁な再 render に追従させないため React.memo でラップ。
 // 親側で handler/ data を useCallback / useMemo 化済みなので、prop 浅比較で skip できる。
 function ShiftCalendarInner({
@@ -232,14 +280,18 @@ function ShiftCalendarInner({
   canAssignFrames = false,
   onAssignPreferenceToFrame,
   onFrameBarClick,
+  onAssignShiftToFrame,
 }: ShiftCalendarProps) {
   const [internalViewMode] = useState<ViewMode>('month');
   const [internalBaseDate] = useState(getInitialShiftMonth);
   const viewMode = viewModeProp ?? internalViewMode;
   const baseDate = baseDateProp ?? internalBaseDate;
 
-  // 設計書 §4.2 状態機械: idle | dragging | submitting
-  const [activePref, setActivePref] = useState<ShiftPreference | null>(null);
+  // 設計書 §4.2 状態機械: idle | dragging | submitting。
+  // §4: activeDrag は pref/shift の判別 union(旧 activePref を置換)。
+  const [activeDrag, setActiveDrag] = useState<
+    { kind: 'pref'; pref: ShiftPreference } | { kind: 'shift'; shift: Shift } | null
+  >(null);
   const [busy, setBusy] = useState(false);
 
   // 設計書 §4.3: センサー正規値(Pointer distance:5 / Touch delay:250 tolerance:5・KeyboardSensor なし)
@@ -346,40 +398,56 @@ function ShiftCalendarInner({
     return map;
   }, [shifts, framesByDate]);
 
-  // 設計書 §4.2: onDragStart → dragging(activePref セット)
+  // 設計書 §4.2: onDragStart → dragging(activeDrag セット。data.type から kind 判別)
   const handleDragStart = useCallback((event: DragStartEvent) => {
-    const data = event.active.data.current as { type?: string; preference?: ShiftPreference } | undefined;
+    const data = event.active.data.current as
+      | { type?: string; preference?: ShiftPreference; shift?: Shift }
+      | undefined;
     if (data?.type === 'pref' && data.preference) {
-      setActivePref(data.preference);
+      setActiveDrag({ kind: 'pref', pref: data.preference });
+    } else if (data?.type === 'shift' && data.shift) {
+      setActiveDrag({ kind: 'shift', shift: data.shift });
     }
   }, []);
 
-  // 設計書 §4.2: onDragEnd
-  //   over == null                        → idle(無音キャンセル)
-  //   over.data.date !== activePref.date  → idle(第2層防御。disabled により通常到達しない)
-  //   over 有効枠                          → submitting(onAssign 呼び出し・busy 管理・throw しない)
+  // 設計書 §4.2/§6.3: onDragEnd
+  //   over == null                → idle(無音キャンセル)
+  //   over.data.date !== source.date → idle(第2層防御。disabled により通常到達しない)
+  //   over 有効枠                  → submitting(onAssign 呼び出し・busy 管理・throw しない)
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      const pref = activePref;
-      setActivePref(null);
-      if (!pref) return;
+      const drag = activeDrag;
+      setActiveDrag(null);
+      if (!drag) return;
       const { over } = event;
       if (!over) return;
-      const overData = over.data.current as { type?: string; frameId?: string; date?: string } | undefined;
-      if (overData?.type !== 'frame' || !overData.frameId || !overData.date) return;
-      if (overData.date !== pref.date) return;
-      if (!onAssignPreferenceToFrame) return;
+      const overData = over.data.current as
+        | { type?: string; frameId?: string; date?: string; frame?: EffectiveFrame }
+        | undefined;
+      if (overData?.type !== 'frame' || !overData.frameId || !overData.date || !overData.frame) return;
+
+      if (drag.kind === 'pref') {
+        if (overData.date !== drag.pref.date) return;
+        if (!onAssignPreferenceToFrame) return;
+        setBusy(true);
+        onAssignPreferenceToFrame(drag.pref.id, overData.frameId, drag.pref.date).finally(() => setBusy(false));
+        return;
+      }
+
+      // kind === 'shift'(§3.2 canonical: 時間スナップ + リンク。呼び出し側が両ステップを実行する契約)
+      if (overData.date !== drag.shift.date) return;
+      if (!onAssignShiftToFrame) return;
       setBusy(true);
-      onAssignPreferenceToFrame(pref.id, overData.frameId, pref.date).finally(() => setBusy(false));
+      onAssignShiftToFrame(drag.shift, overData.frame).finally(() => setBusy(false));
     },
-    [activePref, onAssignPreferenceToFrame],
+    [activeDrag, onAssignPreferenceToFrame, onAssignShiftToFrame],
   );
 
   const handleDragCancel = useCallback(() => {
-    setActivePref(null);
+    setActiveDrag(null);
   }, []);
 
-  const dragPrefDate = activePref?.date ?? null;
+  const dragSourceDate = activeDrag?.kind === 'pref' ? activeDrag.pref.date : activeDrag?.kind === 'shift' ? activeDrag.shift.date : null;
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -437,8 +505,33 @@ function ShiftCalendarInner({
                 for (const p of dayPendingPreferences) ids.add(p.user_id);
                 return ids.size;
               })();
+              // 設計書 §5.2: 分配規則。枠グループ入り = frame_id が当日実効枠のいずれか && ASSIGNED_STATUSES。
+              // 1 シフトは必ずどちらか一方(グループ or rest)にのみ描画する(重複・脱落ゼロ)。
+              const frameGroups = new Map<string, Shift[]>();
+              const groupedShiftIds = new Set<string>();
+              if (dayFrames.length > 0) {
+                const dayFrameIds = new Set(dayFrames.map((f) => f.frameId));
+                for (const s of dayShifts) {
+                  if (s.frame_id && dayFrameIds.has(s.frame_id) && ASSIGNED_STATUSES.has(s.status)) {
+                    const arr = frameGroups.get(s.frame_id) || [];
+                    arr.push(s);
+                    frameGroups.set(s.frame_id, arr);
+                    groupedShiftIds.add(s.id);
+                  }
+                }
+                for (const arr of frameGroups.values()) {
+                  arr.sort((a, b) => a.start_time.localeCompare(b.start_time));
+                }
+              }
+              const restShifts = dayShifts.filter((s) => !groupedShiftIds.has(s.id));
+              // §3.3: シフト draggable 述語(グループ行/rest 共通)。busy は disabled 側で別途反映する。
+              const isShiftDraggable = (s: Shift) =>
+                canAssignFrames &&
+                ASSIGNED_STATUSES.has(s.status) &&
+                (!frameStoreId || s.store_id === frameStoreId) &&
+                dayFrames.length > 0;
               const allItems: Array<{ kind: 'shift'; data: Shift } | { kind: 'pref'; data: ShiftPreference }> = [
-                ...dayShifts.map((s) => ({ kind: 'shift' as const, data: s })),
+                ...restShifts.map((s) => ({ kind: 'shift' as const, data: s })),
                 ...dayPendingPreferences.map((p) => ({ kind: 'pref' as const, data: p })),
               ];
               const visible = allItems;
@@ -503,15 +596,55 @@ function ShiftCalendarInner({
 
                   {dayFrames.length > 0 && (
                     <div className="flex flex-col gap-0.5 min-w-0 mb-0.5">
-                      {dayFrames.map((frame) => (
-                        <CalFrameBar
-                          key={frame.frameId}
-                          frame={frame}
-                          assigned={frameAssignCounts.get(`${frame.date}@${frame.frameId}`) ?? 0}
-                          dragPrefDate={dragPrefDate}
-                          onFrameBarClick={onFrameBarClick}
-                        />
-                      ))}
+                      {dayFrames.map((frame) => {
+                        const groupShifts = frameGroups.get(frame.frameId) ?? [];
+                        return (
+                          <div key={frame.frameId} className="flex flex-col gap-0.5 min-w-0">
+                            <CalFrameBar
+                              frame={frame}
+                              assigned={frameAssignCounts.get(`${frame.date}@${frame.frameId}`) ?? 0}
+                              dragSourceDate={dragSourceDate}
+                              onFrameBarClick={onFrameBarClick}
+                            />
+                            {groupShifts.length > 0 && (
+                              // 設計書 §5.1: グループ行(インデント + 中立色の縦レール)。
+                              <div className="ml-1.5 pl-1 border-l-2 border-stone-300 dark:border-stone-600 flex flex-col gap-px">
+                                {groupShifts.map((s) => {
+                                  const member = membersById?.get(s.user_id);
+                                  const isMine = !!currentUserId && s.user_id === currentUserId;
+                                  // §5.3: 枠時間と同一なら名前のみ(hideTime)。
+                                  const hideTime =
+                                    normalizeHHMM(s.start_time) === normalizeHHMM(frame.startTime) &&
+                                    normalizeHHMM(s.end_time) === normalizeHHMM(frame.endTime);
+                                  if (isShiftDraggable(s)) {
+                                    return (
+                                      <DraggableCalShiftBar
+                                        key={`gs-${s.id}`}
+                                        shift={s}
+                                        member={member}
+                                        isMine={isMine}
+                                        disabled={busy}
+                                        hideTime={hideTime}
+                                        onClick={() => onShiftClick?.(s)}
+                                      />
+                                    );
+                                  }
+                                  return (
+                                    <CalShiftBar
+                                      key={`gs-${s.id}`}
+                                      shift={s}
+                                      member={member}
+                                      isMine={isMine}
+                                      hideTime={hideTime}
+                                      onClick={() => onShiftClick?.(s)}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -521,6 +654,18 @@ function ShiftCalendarInner({
                         const s = it.data;
                         const member = membersById?.get(s.user_id);
                         const isMine = !!currentUserId && s.user_id === currentUserId;
+                        if (isShiftDraggable(s)) {
+                          return (
+                            <DraggableCalShiftBar
+                              key={`s-${s.id}`}
+                              shift={s}
+                              member={member}
+                              isMine={isMine}
+                              disabled={busy}
+                              onClick={() => onShiftClick?.(s)}
+                            />
+                          );
+                        }
                         return (
                           <CalShiftBar
                             key={`s-${s.id}`}
@@ -588,11 +733,17 @@ function ShiftCalendarInner({
       {typeof document !== 'undefined' &&
         createPortal(
           <DragOverlay>
-            {activePref ? (
+            {activeDrag?.kind === 'pref' ? (
               <DragOverlayPrefBar
-                pref={activePref}
-                member={membersById?.get(activePref.user_id)}
-                isMine={!!currentUserId && activePref.user_id === currentUserId}
+                pref={activeDrag.pref}
+                member={membersById?.get(activeDrag.pref.user_id)}
+                isMine={!!currentUserId && activeDrag.pref.user_id === currentUserId}
+              />
+            ) : activeDrag?.kind === 'shift' ? (
+              <DragOverlayShiftBar
+                shift={activeDrag.shift}
+                member={membersById?.get(activeDrag.shift.user_id)}
+                isMine={!!currentUserId && activeDrag.shift.user_id === currentUserId}
               />
             ) : null}
           </DragOverlay>,
