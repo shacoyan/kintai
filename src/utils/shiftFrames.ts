@@ -4,6 +4,7 @@
 //   設計書: .company/engineering/docs/2026-07-20-kintai-shift-frames.md §5/§7.2
 
 import type { Shift, ShiftFrame, ShiftFrameOverride, ShiftPreference } from '../types';
+import { formatTimeRange } from './formatTimeRange';
 
 // ============================================================
 // 曜日ラベル（表示順=月→日。value は 0=日 の getDay 値・EXTRACT(DOW) 互換）
@@ -260,4 +261,82 @@ export function timeRangesOverlapOvernight(
     if (aS < shiftedEnd && shiftedStart < aE) return true;
   }
   return false;
+}
+
+// ============================================================
+// 枠外シフト→枠 DnD（時間スナップ）計画関数 + toast 文言ビルダー（§3.2/§6.1 正規定義）
+//   設計書: .company/engineering/docs/2026-07-21-kintai-shift-to-frame-dnd.md §3.2/§6.1
+// ============================================================
+
+export interface ShiftToFrameSnapPlan {
+  /** 時間が枠と不一致か（HH:MM 正規化比較）。 */
+  needsTimeUpdate: boolean;
+  /** frame_id が対象枠と異なるか（未リンク or 別枠にリンク済み）。 */
+  needsLink: boolean;
+  /** status==='approved' && needsTimeUpdate。update_shift_time RPC が tentative に降格する見込み。 */
+  demotesApproved: boolean;
+  /** 'HH:MM'（slice(0,5) 正規化済）。 */
+  oldStartTime: string;
+  oldEndTime: string;
+  /** 枠の実効時間 'HH:MM'（slice(0,5) 正規化済）。 */
+  newStartTime: string;
+  newEndTime: string;
+}
+
+/**
+ * シフト s を実効枠 f へ割り当てる際の計画を導出する（純関数・副作用なし）。
+ * 時刻比較・出力はすべて slice(0,5) の HH:MM 正規化（'HH:MM:SS' / 'HH:MM' の混在を吸収）。
+ */
+export function planShiftToFrameSnap(
+  shift: Pick<Shift, 'start_time' | 'end_time' | 'frame_id' | 'status'>,
+  frame: Pick<EffectiveFrame, 'frameId' | 'startTime' | 'endTime'>,
+): ShiftToFrameSnapPlan {
+  const oldStartTime = shift.start_time.slice(0, 5);
+  const oldEndTime = shift.end_time.slice(0, 5);
+  const newStartTime = frame.startTime.slice(0, 5);
+  const newEndTime = frame.endTime.slice(0, 5);
+  const needsTimeUpdate = oldStartTime !== newStartTime || oldEndTime !== newEndTime;
+  const needsLink = shift.frame_id !== frame.frameId;
+  const demotesApproved = shift.status === 'approved' && needsTimeUpdate;
+
+  return {
+    needsTimeUpdate,
+    needsLink,
+    demotesApproved,
+    oldStartTime,
+    oldEndTime,
+    newStartTime,
+    newEndTime,
+  };
+}
+
+/**
+ * 割当成功 toast 文言を組み立てる（§7 一覧を一字一句閉じ込め）。
+ * 時間変更ありの場合は旧→新時間を併記し、demotesApproved のときは降格文言を末尾に付加する。
+ */
+export function buildAssignShiftSuccessMessage(
+  memberName: string,
+  frameName: string,
+  plan: ShiftToFrameSnapPlan,
+): string {
+  if (!plan.needsTimeUpdate) {
+    return `${memberName}さんを枠「${frameName}」に割り当てました`;
+  }
+  const oldRange = formatTimeRange(plan.oldStartTime, plan.oldEndTime);
+  const newRange = formatTimeRange(plan.newStartTime, plan.newEndTime);
+  const base = `${memberName}さんを枠「${frameName}」に割り当てました（時間 ${oldRange} → ${newRange}）`;
+  return plan.demotesApproved ? `${base}。本承認だったため仮承認に戻りました` : base;
+}
+
+/**
+ * 部分失敗（時間変更成功・リンク失敗）toast 文言を組み立てる。
+ * errorMessage は全文埋め込み（substring/slice/truncate 禁止）。
+ */
+export function buildAssignShiftLinkFailureMessage(
+  plan: ShiftToFrameSnapPlan,
+  errorMessage: string,
+): string {
+  const oldRange = formatTimeRange(plan.oldStartTime, plan.oldEndTime);
+  const newRange = formatTimeRange(plan.newStartTime, plan.newEndTime);
+  return `時間を ${oldRange} → ${newRange} に変更済みですが、枠への紐付けに失敗しました。もう一度ドロップするか、シフトを開いて手動で調整してください: ${errorMessage}`;
 }

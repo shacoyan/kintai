@@ -9,7 +9,11 @@ import {
   resolveUnassignAction,
   isCandidatePreferenceType,
   sortFrameCandidates,
+  planShiftToFrameSnap,
+  buildAssignShiftSuccessMessage,
+  buildAssignShiftLinkFailureMessage,
 } from './shiftFrames';
+import type { EffectiveFrame } from './shiftFrames';
 import type { Shift, ShiftFrame, ShiftFrameOverride, ShiftPreference } from '../types';
 
 function makeFrame(overrides: Partial<ShiftFrame>): ShiftFrame {
@@ -267,5 +271,150 @@ describe('timeRangesOverlapOvernight', () => {
   });
   it('"HH:MM:SS" 入力に対応する', () => {
     expect(timeRangesOverlapOvernight('21:00:00', '05:00:00', '22:00:00', '02:00:00')).toBe(true);
+  });
+});
+
+function makeShiftForSnap(overrides: Partial<Shift>): Pick<Shift, 'start_time' | 'end_time' | 'frame_id' | 'status'> {
+  return {
+    start_time: '09:00:00',
+    end_time: '17:00:00',
+    frame_id: null,
+    status: 'tentative',
+    ...overrides,
+  };
+}
+
+function makeEffFrame(overrides: Partial<EffectiveFrame>): Pick<EffectiveFrame, 'frameId' | 'startTime' | 'endTime'> {
+  return {
+    frameId: 'frame-1',
+    startTime: '09:00:00',
+    endTime: '17:00:00',
+    ...overrides,
+  };
+}
+
+describe('planShiftToFrameSnap', () => {
+  it('(1) 時間差+未リンク → needsTimeUpdate/needsLink とも true', () => {
+    const shift = makeShiftForSnap({ start_time: '10:00:00', end_time: '18:00:00', frame_id: null });
+    const frame = makeEffFrame({ frameId: 'frame-1', startTime: '09:00:00', endTime: '17:00:00' });
+    const plan = planShiftToFrameSnap(shift, frame);
+    expect(plan.needsTimeUpdate).toBe(true);
+    expect(plan.needsLink).toBe(true);
+  });
+
+  it('(2) "HH:MM:SS" vs "HH:MM" 混在で一致判定（正規化）→ link のみ', () => {
+    const shift = makeShiftForSnap({ start_time: '09:00:00', end_time: '17:00:00', frame_id: null });
+    const frame = makeEffFrame({ frameId: 'frame-1', startTime: '09:00', endTime: '17:00' });
+    const plan = planShiftToFrameSnap(shift, frame);
+    expect(plan.needsTimeUpdate).toBe(false);
+    expect(plan.needsLink).toBe(true);
+  });
+
+  it('(3) 時間差+同枠リンク済 → time のみ', () => {
+    const shift = makeShiftForSnap({ start_time: '10:00:00', end_time: '18:00:00', frame_id: 'frame-1' });
+    const frame = makeEffFrame({ frameId: 'frame-1', startTime: '09:00:00', endTime: '17:00:00' });
+    const plan = planShiftToFrameSnap(shift, frame);
+    expect(plan.needsTimeUpdate).toBe(true);
+    expect(plan.needsLink).toBe(false);
+  });
+
+  it('(4) 完全一致 → needsTimeUpdate/needsLink とも false（無音 no-op 対象）', () => {
+    const shift = makeShiftForSnap({ start_time: '09:00:00', end_time: '17:00:00', frame_id: 'frame-1' });
+    const frame = makeEffFrame({ frameId: 'frame-1', startTime: '09:00:00', endTime: '17:00:00' });
+    const plan = planShiftToFrameSnap(shift, frame);
+    expect(plan.needsTimeUpdate).toBe(false);
+    expect(plan.needsLink).toBe(false);
+  });
+
+  it('(5) approved+時間差 → demotesApproved=true', () => {
+    const shift = makeShiftForSnap({ status: 'approved', start_time: '10:00:00', end_time: '18:00:00' });
+    const frame = makeEffFrame({ startTime: '09:00:00', endTime: '17:00:00' });
+    const plan = planShiftToFrameSnap(shift, frame);
+    expect(plan.demotesApproved).toBe(true);
+  });
+
+  it('(6) approved+一致 → demotesApproved=false', () => {
+    const shift = makeShiftForSnap({ status: 'approved', start_time: '09:00:00', end_time: '17:00:00' });
+    const frame = makeEffFrame({ startTime: '09:00:00', endTime: '17:00:00' });
+    const plan = planShiftToFrameSnap(shift, frame);
+    expect(plan.demotesApproved).toBe(false);
+  });
+
+  it('(7) tentative/modified+時間差 → demotesApproved=false', () => {
+    const tentative = planShiftToFrameSnap(
+      makeShiftForSnap({ status: 'tentative', start_time: '10:00:00', end_time: '18:00:00' }),
+      makeEffFrame({ startTime: '09:00:00', endTime: '17:00:00' }),
+    );
+    expect(tentative.demotesApproved).toBe(false);
+    const modified = planShiftToFrameSnap(
+      makeShiftForSnap({ status: 'modified', start_time: '10:00:00', end_time: '18:00:00' }),
+      makeEffFrame({ startTime: '09:00:00', endTime: '17:00:00' }),
+    );
+    expect(modified.demotesApproved).toBe(false);
+  });
+
+  it('oldStartTime/oldEndTime/newStartTime/newEndTime は HH:MM 正規化済みで返る', () => {
+    const shift = makeShiftForSnap({ start_time: '10:00:00', end_time: '18:00:00' });
+    const frame = makeEffFrame({ startTime: '09:00:00', endTime: '17:00:00' });
+    const plan = planShiftToFrameSnap(shift, frame);
+    expect(plan.oldStartTime).toBe('10:00');
+    expect(plan.oldEndTime).toBe('18:00');
+    expect(plan.newStartTime).toBe('09:00');
+    expect(plan.newEndTime).toBe('17:00');
+  });
+});
+
+describe('buildAssignShiftSuccessMessage', () => {
+  it('旧→新時間が含まれる（時間変更あり）', () => {
+    const plan = planShiftToFrameSnap(
+      makeShiftForSnap({ start_time: '10:00:00', end_time: '18:00:00' }),
+      makeEffFrame({ startTime: '09:00:00', endTime: '17:00:00' }),
+    );
+    const msg = buildAssignShiftSuccessMessage('山田', '早番', plan);
+    expect(msg).toContain('10:00-18:00');
+    expect(msg).toContain('09:00-17:00');
+    expect(msg).toContain('山田さんを枠「早番」に割り当てました');
+  });
+
+  it('日跨ぎ枠で「翌」表記になる', () => {
+    const plan = planShiftToFrameSnap(
+      makeShiftForSnap({ start_time: '18:00:00', end_time: '23:00:00' }),
+      makeEffFrame({ startTime: '21:00:00', endTime: '05:00:00' }),
+    );
+    const msg = buildAssignShiftSuccessMessage('山田', '深夜番', plan);
+    expect(msg).toContain('21:00-翌05:00');
+  });
+
+  it('demotesApproved 時に降格文が付く', () => {
+    const plan = planShiftToFrameSnap(
+      makeShiftForSnap({ status: 'approved', start_time: '10:00:00', end_time: '18:00:00' }),
+      makeEffFrame({ startTime: '09:00:00', endTime: '17:00:00' }),
+    );
+    const msg = buildAssignShiftSuccessMessage('山田', '早番', plan);
+    expect(msg).toContain('本承認だったため仮承認に戻りました');
+  });
+
+  it('時間一致（リンクのみ）は降格文・時間併記なしのシンプル文言', () => {
+    const plan = planShiftToFrameSnap(
+      makeShiftForSnap({ start_time: '09:00:00', end_time: '17:00:00' }),
+      makeEffFrame({ startTime: '09:00:00', endTime: '17:00:00' }),
+    );
+    const msg = buildAssignShiftSuccessMessage('山田', '早番', plan);
+    expect(msg).toBe('山田さんを枠「早番」に割り当てました');
+  });
+});
+
+describe('buildAssignShiftLinkFailureMessage', () => {
+  it('link failure 文に errorMessage 全文が含まれる', () => {
+    const plan = planShiftToFrameSnap(
+      makeShiftForSnap({ start_time: '10:00:00', end_time: '18:00:00' }),
+      makeEffFrame({ startTime: '09:00:00', endTime: '17:00:00' }),
+    );
+    const errorMessage = 'ネットワークエラー: 接続がタイムアウトしました（詳細コード: ETIMEDOUT-12345）';
+    const msg = buildAssignShiftLinkFailureMessage(plan, errorMessage);
+    expect(msg).toContain(errorMessage);
+    expect(msg).toContain('10:00-18:00');
+    expect(msg).toContain('09:00-17:00');
+    expect(msg).toContain('枠への紐付けに失敗しました');
   });
 });
