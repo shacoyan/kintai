@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, addMonths, endOfMonth } from 'date-fns';
 import { LayoutGrid, Trash2, Pencil, Save, X, Power } from 'lucide-react';
 import { useShiftFrames } from '../../hooks/useShiftFrames';
+import { useShiftPreset } from '../../hooks/useShiftPreset';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
 import { validateShiftTimeRange } from '../../utils/timeRange';
@@ -22,6 +23,7 @@ for (let h = 0; h < 24; h++) {
   }
 }
 const TIME_OPTION_OBJECTS = TIME_OPTIONS.map((t) => ({ value: t, label: t }));
+const TIME_OPTION_SET = new Set(TIME_OPTIONS);
 const REQUIRED_COUNT_OPTIONS = Array.from({ length: 50 }, (_, i) => ({ value: String(i + 1), label: `${i + 1}人` }));
 
 export function ShiftFrameManager({ tenantId, storeId }: ShiftFrameManagerProps) {
@@ -35,6 +37,7 @@ export function ShiftFrameManager({ tenantId, storeId }: ShiftFrameManagerProps)
     updateFrame,
     deleteFrame,
   } = useShiftFrames(tenantId, storeId);
+  const { presets, fetchPresets } = useShiftPreset(tenantId, storeId);
 
   // 単発枠一覧は「今日〜3ヶ月先」の範囲を fetch する。毎週テンプレは or() で全件取得される。
   const reloadFrames = useCallback(() => {
@@ -47,6 +50,11 @@ export function ShiftFrameManager({ tenantId, storeId }: ShiftFrameManagerProps)
   useEffect(() => {
     reloadFrames();
   }, [reloadFrames]);
+
+  useEffect(() => {
+    if (storeId === null) return;
+    fetchPresets();
+  }, [storeId, fetchPresets]);
 
   // 追加フォーム（毎週テンプレ）
   const [newDayOfWeek, setNewDayOfWeek] = useState<number>(1);
@@ -90,6 +98,21 @@ export function ShiftFrameManager({ tenantId, storeId }: ShiftFrameManagerProps)
     () => frames.filter((f) => f.date !== null && f.date >= todayStr).sort((a, b) => (a.date! < b.date! ? -1 : a.date! > b.date! ? 1 : 0)),
     [frames, todayStr],
   );
+
+  // shift_frames は DB CHECK で15分刻み必須のため、15分刻みに乗らないプリセット（秒指定含む）は
+  // 選択肢から除外する（丸めない・toast も出さない。理由は設計参照）。
+  const presetOptions = useMemo(() => {
+    const isAlignedTime = (t: string) => TIME_OPTION_SET.has(t.slice(0, 5)) && (t.slice(5) === '' || t.slice(5) === ':00');
+    const aligned = presets.filter((p) => isAlignedTime(p.start_time) && isAlignedTime(p.end_time));
+    if (aligned.length === 0) return [];
+    return [
+      { value: '', label: 'プリセットから入力' },
+      ...aligned.map((p) => ({
+        value: p.id,
+        label: `${p.name}（${formatTimeRange(p.start_time, p.end_time, { separator: ' - ' })}）`,
+      })),
+    ];
+  }, [presets]);
 
   if (storeId === null) {
     return (
@@ -207,10 +230,37 @@ export function ShiftFrameManager({ tenantId, storeId }: ShiftFrameManagerProps)
     }
   };
 
+  // プリセット選択は常に value='' の action 方式（新規 state を持たない）。
+  // 適用後は自動でプレースホルダ表示に戻り、同じプリセットの連続選択でも onChange が発火する。
+  const renderPresetSelect = (apply: (name: string, start: string, end: string) => void) => {
+    if (presetOptions.length === 0) return null;
+    return (
+      <Select
+        label="プリセット"
+        value=""
+        onChange={(e) => {
+          const id = e.target.value;
+          if (!id) return;
+          const preset = presets.find((p) => p.id === id);
+          if (!preset) return;
+          apply(preset.name, preset.start_time.slice(0, 5), preset.end_time.slice(0, 5));
+        }}
+        options={presetOptions}
+      />
+    );
+  };
+
   const renderFrameRow = (frame: ShiftFrame) => (
     <div key={frame.id} className="px-6 py-3 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-stone-800/50 motion-safe:transition-colors duration-150 ease-out">
       {editingId === frame.id ? (
         <div className="flex flex-wrap items-end gap-3 flex-1">
+          <div className="w-full md:w-auto">
+            {renderPresetSelect((name, start, end) => {
+              setEditName(name);
+              setEditStart(start);
+              setEditEnd(end);
+            })}
+          </div>
           <div className="flex-1 min-w-[120px]">
             <Input label="枠名" type="text" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="例: 早番" />
           </div>
@@ -266,6 +316,13 @@ export function ShiftFrameManager({ tenantId, storeId }: ShiftFrameManagerProps)
                 options={FRAME_DAY_LABELS.map((d) => ({ value: String(d.value), label: d.label }))}
               />
             </div>
+            <div className="w-full md:w-auto">
+              {renderPresetSelect((name, start, end) => {
+                setNewName(name);
+                setNewStart(start);
+                setNewEnd(end);
+              })}
+            </div>
             <div className="w-full md:flex-1 md:min-w-[120px]">
               <Input label="枠名" type="text" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="例: 早番" />
             </div>
@@ -316,6 +373,13 @@ export function ShiftFrameManager({ tenantId, storeId }: ShiftFrameManagerProps)
             <div className="w-full md:w-auto">
               <Input label="日付" type="date" value={oneOffDate} onChange={(e) => setOneOffDate(e.target.value)} min={todayStr} />
             </div>
+            <div className="w-full md:w-auto">
+              {renderPresetSelect((name, start, end) => {
+                setOneOffName(name);
+                setOneOffStart(start);
+                setOneOffEnd(end);
+              })}
+            </div>
             <div className="w-full md:flex-1 md:min-w-[120px]">
               <Input label="枠名" type="text" value={oneOffName} onChange={(e) => setOneOffName(e.target.value)} placeholder="例: イベント特番" />
             </div>
@@ -344,6 +408,13 @@ export function ShiftFrameManager({ tenantId, storeId }: ShiftFrameManagerProps)
               <div key={frame.id} className="px-6 py-3 flex items-center justify-between hover:bg-stone-50 dark:hover:bg-stone-800/50 motion-safe:transition-colors duration-150 ease-out">
                 {editingId === frame.id ? (
                   <div className="flex flex-wrap items-end gap-3 flex-1">
+                    <div className="w-full md:w-auto">
+                      {renderPresetSelect((name, start, end) => {
+                        setEditName(name);
+                        setEditStart(start);
+                        setEditEnd(end);
+                      })}
+                    </div>
                     <div className="flex-1 min-w-[120px]">
                       <Input label="枠名" type="text" value={editName} onChange={(e) => setEditName(e.target.value)} />
                     </div>
