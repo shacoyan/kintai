@@ -8,6 +8,8 @@ interface CalShiftBarProps {
   member?: TenantMember;
   isMine?: boolean;
   onClick?: () => void;
+  /** true のとき時間行を描画せず名前のみの1行バーにする（§5.3）。aria-label/title は時間を保持する。 */
+  hideTime?: boolean;
 }
 
 export function getRoleColor(member: TenantMember | undefined): string {
@@ -30,7 +32,7 @@ export function statusVisual(status: string): StatusVisual {
   return { bg: 'rgba(120,113,108,0.08)', bar: '#78716c' };
 }
 
-function CalShiftBarImpl({ shift, preference, member, isMine, onClick }: CalShiftBarProps) {
+function CalShiftBarImpl({ shift, preference, member, isMine, onClick, hideTime }: CalShiftBarProps) {
   const status = shift?.status ?? (preference ? 'pending' : 'tentative');
   const start = shift?.start_time ?? preference?.start_time ?? '';
   const end = shift?.end_time ?? preference?.end_time ?? '';
@@ -67,18 +69,12 @@ function CalShiftBarImpl({ shift, preference, member, isMine, onClick }: CalShif
         borderBottom: hourly && !isUnavailable ? `1px dashed ${rc}88` : undefined,
       }}
     >
-      <span className={`text-[10px] leading-[1.2] truncate font-medium ${isUnavailable ? 'text-red-700 dark:text-red-300 line-through' : 'text-stone-900 dark:text-stone-100'}`}>
-        {member?.display_name ?? '?'}
-      </span>
       <div className="flex items-center gap-1">
-        <span
-          className={`text-[9px] tabular-nums leading-[1.2] truncate flex-shrink-0 ${isUnavailable ? 'text-red-700 dark:text-red-300 font-semibold' : 'text-stone-700 dark:text-stone-200'}`}
-          style={{ fontVariantNumeric: 'tabular-nums' }}
-        >
-          {timeLabel}
+        <span className={`text-[10px] leading-[1.2] truncate font-medium min-w-0 ${isUnavailable ? 'text-red-700 dark:text-red-300 line-through' : 'text-stone-900 dark:text-stone-100'}`}>
+          {member?.display_name ?? '?'}
         </span>
-        {/* approved 以外は右端に status dot 1 個 (出勤不可は赤 dot で識別) */}
-        {(status !== 'approved' || isUnavailable) && (
+        {/* hideTime 時は status dot を名前行の右端に表示（approved 以外・出勤不可は常に表示） */}
+        {hideTime && (status !== 'approved' || isUnavailable) && (
           <span
             className="ml-auto inline-block w-1 h-1 rounded-full flex-shrink-0"
             style={{ background: visual.bar }}
@@ -86,6 +82,24 @@ function CalShiftBarImpl({ shift, preference, member, isMine, onClick }: CalShif
           />
         )}
       </div>
+      {!hideTime && (
+        <div className="flex items-center gap-1">
+          <span
+            className={`text-[9px] tabular-nums leading-[1.2] truncate flex-shrink-0 ${isUnavailable ? 'text-red-700 dark:text-red-300 font-semibold' : 'text-stone-700 dark:text-stone-200'}`}
+            style={{ fontVariantNumeric: 'tabular-nums' }}
+          >
+            {timeLabel}
+          </span>
+          {/* approved 以外は右端に status dot 1 個 (出勤不可は赤 dot で識別) */}
+          {(status !== 'approved' || isUnavailable) && (
+            <span
+              className="ml-auto inline-block w-1 h-1 rounded-full flex-shrink-0"
+              style={{ background: visual.bar }}
+              aria-hidden
+            />
+          )}
+        </div>
+      )}
     </button>
   );
 }
@@ -96,6 +110,7 @@ function CalShiftBarImpl({ shift, preference, member, isMine, onClick }: CalShif
 function arePropsEqual(prev: CalShiftBarProps, next: CalShiftBarProps): boolean {
   if (prev.isMine !== next.isMine) return false;
   if (prev.member !== next.member) return false;
+  if (prev.hideTime !== next.hideTime) return false;
 
   const ps = prev.shift;
   const ns = next.shift;
