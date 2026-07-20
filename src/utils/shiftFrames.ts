@@ -3,7 +3,7 @@
 // React / DOM 非依存。shiftSlot.ts の流儀（純関数・色は持たない・tone 付き判定型）を踏襲。
 //   設計書: .company/engineering/docs/2026-07-20-kintai-shift-frames.md §5/§7.2
 
-import type { Shift, ShiftFrame, ShiftFrameOverride } from '../types';
+import type { Shift, ShiftFrame, ShiftFrameOverride, ShiftPreference } from '../types';
 
 // ============================================================
 // 曜日ラベル（表示順=月→日。value は 0=日 の getDay 値・EXTRACT(DOW) 互換）
@@ -191,6 +191,47 @@ function toMinutes(t: string): number {
   const h = Number.isFinite(hh) ? hh : 0;
   const m = Number.isFinite(mm) ? mm : 0;
   return h * 60 + m;
+}
+
+// ============================================================
+// 「枠から外す」セマンティクス（§3.2 正規定義）
+//   設計書: .company/engineering/docs/2026-07-21-kintai-frame-dnd.md §3.2/§5.4
+// ============================================================
+
+export type UnassignAction = 'revert_preference' | 'unlink';
+
+/**
+ * 「枠から外す」操作の解決。tentative かつ希望由来のみ差戻し（revert_preference）。
+ * それ以外（手動追加の tentative / approved / modified）は従来のリンク解除（unlink）。
+ */
+export function resolveUnassignAction(
+  shift: Pick<Shift, 'status' | 'preference_id'>,
+): UnassignAction {
+  return shift.status === 'tentative' && shift.preference_id !== null
+    ? 'revert_preference'
+    : 'unlink';
+}
+
+// ============================================================
+// 候補希望の判定・ソート（FrameAssignSheet.tsx / FrameDndSection.tsx 共用）
+// ============================================================
+
+/** 枠割当候補として扱う希望種別か（preferred / available のみ。unavailable は不可）。 */
+export function isCandidatePreferenceType(t: string): boolean {
+  return t === 'preferred' || t === 'available';
+}
+
+/**
+ * 枠割当候補の希望配列をソートする（preferred 優先 → start_time 昇順）。
+ * 非破壊（新配列を返す）。
+ */
+export function sortFrameCandidates(prefs: ShiftPreference[]): ShiftPreference[] {
+  return [...prefs].sort((a, b) => {
+    if (a.preference_type !== b.preference_type) return a.preference_type === 'preferred' ? -1 : 1;
+    const aStart = a.start_time ?? '';
+    const bStart = b.start_time ?? '';
+    return aStart < bStart ? -1 : aStart > bStart ? 1 : 0;
+  });
 }
 
 /**

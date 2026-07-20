@@ -6,8 +6,11 @@ import {
   countFrameAssignments,
   judgeFrameFulfillment,
   timeRangesOverlapOvernight,
+  resolveUnassignAction,
+  isCandidatePreferenceType,
+  sortFrameCandidates,
 } from './shiftFrames';
-import type { Shift, ShiftFrame, ShiftFrameOverride } from '../types';
+import type { Shift, ShiftFrame, ShiftFrameOverride, ShiftPreference } from '../types';
 
 function makeFrame(overrides: Partial<ShiftFrame>): ShiftFrame {
   return {
@@ -172,6 +175,80 @@ describe('getEffectiveFramesForDate', () => {
     ];
     const result = getEffectiveFramesForDate(frames, [], 's1', '2026-07-20');
     expect(result.map((r) => r.frameId)).toEqual(['f-c', 'f-a', 'f-b']);
+  });
+});
+
+describe('resolveUnassignAction', () => {
+  it('tentative + preference_id あり(希望由来) → revert_preference', () => {
+    expect(resolveUnassignAction({ status: 'tentative', preference_id: 'p1' })).toBe('revert_preference');
+  });
+  it('tentative + preference_id なし(手動追加) → unlink', () => {
+    expect(resolveUnassignAction({ status: 'tentative', preference_id: null })).toBe('unlink');
+  });
+  it('approved + preference_id あり → unlink(本承認は差戻し対象外)', () => {
+    expect(resolveUnassignAction({ status: 'approved', preference_id: 'p1' })).toBe('unlink');
+  });
+  it('modified + preference_id あり → unlink', () => {
+    expect(resolveUnassignAction({ status: 'modified', preference_id: 'p1' })).toBe('unlink');
+  });
+  it('pending + preference_id あり → unlink(tentative でないため差戻し対象外)', () => {
+    expect(resolveUnassignAction({ status: 'pending', preference_id: 'p1' })).toBe('unlink');
+  });
+});
+
+describe('isCandidatePreferenceType', () => {
+  it('preferred は候補', () => {
+    expect(isCandidatePreferenceType('preferred')).toBe(true);
+  });
+  it('available は候補', () => {
+    expect(isCandidatePreferenceType('available')).toBe(true);
+  });
+  it('unavailable は候補でない', () => {
+    expect(isCandidatePreferenceType('unavailable')).toBe(false);
+  });
+});
+
+describe('sortFrameCandidates', () => {
+  function makePref(overrides: Partial<ShiftPreference>): ShiftPreference {
+    return {
+      id: 'p1',
+      tenant_id: 't1',
+      user_id: 'u1',
+      date: '2026-07-20',
+      preference_type: 'preferred',
+      start_time: null,
+      end_time: null,
+      note: null,
+      status: 'pending',
+      created_at: '2026-01-01T00:00:00Z',
+      store_id: 's1',
+      ...overrides,
+    };
+  }
+
+  it('preferred が available より先頭に来る', () => {
+    const prefs = [
+      makePref({ id: 'avail', preference_type: 'available' as ShiftPreference['preference_type'] }),
+      makePref({ id: 'pref', preference_type: 'preferred' }),
+    ];
+    const result = sortFrameCandidates(prefs);
+    expect(result.map((p) => p.id)).toEqual(['pref', 'avail']);
+  });
+
+  it('同種別内は start_time 昇順', () => {
+    const prefs = [
+      makePref({ id: 'late', start_time: '13:00:00' }),
+      makePref({ id: 'early', start_time: '09:00:00' }),
+    ];
+    const result = sortFrameCandidates(prefs);
+    expect(result.map((p) => p.id)).toEqual(['early', 'late']);
+  });
+
+  it('非破壊(元配列を変更しない)', () => {
+    const prefs = [makePref({ id: 'a', start_time: '13:00:00' }), makePref({ id: 'b', start_time: '09:00:00' })];
+    const original = [...prefs];
+    sortFrameCandidates(prefs);
+    expect(prefs).toEqual(original);
   });
 });
 
