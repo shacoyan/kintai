@@ -42,7 +42,16 @@ import { FrameDndSection } from '../components/Shift/FrameDndSection';
 import { formatTimeRange } from '../utils/formatTimeRange';
 import { buildTentativeShiftMap, getEffectiveTime } from '../utils/preferenceEffectiveTime';
 import { useShiftFrames } from '../hooks/useShiftFrames';
-import { getEffectiveFramesForDate, isCandidatePreferenceType, sortFrameCandidates, resolveUnassignAction } from '../utils/shiftFrames';
+import {
+  getEffectiveFramesForDate,
+  isCandidatePreferenceType,
+  sortFrameCandidates,
+  resolveUnassignAction,
+  planShiftToFrameSnap,
+  buildAssignShiftSuccessMessage,
+  buildAssignShiftLinkFailureMessage,
+  type EffectiveFrame,
+} from '../utils/shiftFrames';
 import { formatSupabaseError } from '../lib/errors';
 import { useStoreContext } from '../contexts/StoreContext';
 import { useToast } from '../contexts/ToastContext';
@@ -553,6 +562,36 @@ export function ShiftPage() {
       handleMutated();
     }
   }, [revertPreference, setShiftFrame, showToast, handleMutated]);
+
+  // §3.2: 枠外シフト→枠 DnD の canonical シーケンス（時間スナップ + リンク・skip-if-equal 厳守）。
+  const handleAssignShiftToFrame = useCallback(async (shift: Shift, frame: EffectiveFrame) => {
+    const plan = planShiftToFrameSnap(shift, frame);
+    if (!plan.needsTimeUpdate && !plan.needsLink) return; // 完全 no-op: 無音（toast/mutate なし）
+
+    const memberName = memberNames.get(shift.user_id) ?? '—';
+    setFrameDndBusyKey(`snapshift-${shift.id}`);
+    let timeUpdated = false;
+    try {
+      if (plan.needsTimeUpdate) {
+        await modifyShift(shift.id, plan.newStartTime, plan.newEndTime);
+        timeUpdated = true;
+      }
+      if (plan.needsLink) {
+        await setShiftFrame(shift.id, frame.frameId);
+      }
+      showToast(buildAssignShiftSuccessMessage(memberName, frame.name, plan), 'success');
+    } catch (err) {
+      const msg = formatSupabaseError(err).message;
+      if (timeUpdated && plan.needsLink) {
+        showToast(buildAssignShiftLinkFailureMessage(plan, msg), 'error');
+      } else {
+        showToast(msg, 'error');
+      }
+    } finally {
+      setFrameDndBusyKey(null);
+      handleMutated();
+    }
+  }, [modifyShift, setShiftFrame, memberNames, showToast, handleMutated]);
 
   const handleFrameBarClick = useCallback((date: string) => {
     setFrameSheetDate(date);
@@ -1170,6 +1209,7 @@ export function ShiftPage() {
                     frameStoreId={storeId}
                     canAssignFrames={canManageTenant && !!storeId}
                     onAssignPreferenceToFrame={handleAssignPreferenceToFrame}
+                    onAssignShiftToFrame={handleAssignShiftToFrame}
                     onFrameBarClick={handleFrameBarClick}
                   />
                 </div>
@@ -1565,6 +1605,7 @@ export function ShiftPage() {
                           busyKey={frameDndBusyKey}
                           onAssign={(pid, fid) => handleAssignPreferenceToFrame(pid, fid, mobileSheetDate)}
                           onUnassign={handleUnassignFrameShift}
+                          onAssignShift={handleAssignShiftToFrame}
                         />
                       </div>
                     )}
@@ -1901,6 +1942,7 @@ export function ShiftPage() {
           allPreferences={allPreferences}
           addShiftForMember={addShiftForMember}
           revertPreference={revertPreference}
+          modifyShift={modifyShift}
           onClose={() => setFrameSheetOpen(false)}
           onMutated={handleMutated}
         />

@@ -6,16 +6,18 @@ import { ChevronLeft, ChevronRight, UserPlus, Ban, CalendarClock, Pencil } from 
 import { useShiftFrames } from '../../hooks/useShiftFrames';
 import { useToast } from '../../contexts/ToastContext';
 import { formatSupabaseError } from '../../lib/errors';
-import { formatTimeRange } from '../../utils/formatTimeRange';
 import {
   getEffectiveFramesForDate,
   isCandidatePreferenceType,
   resolveUnassignAction,
   sortFrameCandidates,
+  planShiftToFrameSnap,
+  buildAssignShiftSuccessMessage,
+  buildAssignShiftLinkFailureMessage,
   type EffectiveFrame,
 } from '../../utils/shiftFrames';
 import { FrameDndSection } from './FrameDndSection';
-import { BottomSheet, Button, Select, Card, EmptyState, Input } from '../ui';
+import { BottomSheet, Button, Select, EmptyState, Input } from '../ui';
 import type { Shift, ShiftPreference, TenantMember } from '../../types';
 
 interface FrameAssignSheetProps {
@@ -37,6 +39,8 @@ interface FrameAssignSheetProps {
   ) => Promise<Shift>;
   /** 希望を pending に戻す(§3.2 差戻し)。ShiftPage の useShiftPreference().revertPreference をそのまま渡す。 */
   revertPreference: (preferenceId: string) => Promise<void>;
+  /** シフト時間更新(update_shift_time RPC)。§3.2 の時間スナップ経路。ShiftPage の useShift().modifyShift をそのまま渡す。 */
+  modifyShift: (shiftId: string, startTime: string, endTime: string, storeId?: string) => Promise<void>;
   onClose: () => void;
   onMutated: () => void;
 }
@@ -49,9 +53,6 @@ for (let h = 0; h < 24; h++) {
 }
 const TIME_OPTION_OBJECTS = TIME_OPTIONS.map((t) => ({ value: t, label: t }));
 
-/** 「配置として数える」status 集合（ShiftDayCoverageHeader / shiftFrames.ts と同一）。 */
-const ASSIGNED_STATUSES = new Set<Shift['status']>(['tentative', 'approved', 'modified']);
-
 export function FrameAssignSheet({
   tenantId,
   storeId,
@@ -62,6 +63,7 @@ export function FrameAssignSheet({
   allPreferences,
   addShiftForMember,
   revertPreference,
+  modifyShift,
   onClose,
   onMutated,
 }: FrameAssignSheetProps) {
@@ -100,11 +102,6 @@ export function FrameAssignSheet({
         ),
       ),
     [allPreferences, date, storeId],
-  );
-
-  const unassignedShifts = useMemo(
-    () => dayShifts.filter((s) => s.frame_id === null && ASSIGNED_STATUSES.has(s.status)),
-    [dayShifts],
   );
 
   const [busyKey, setBusyKey] = useState<string | null>(null);
@@ -157,16 +154,33 @@ export function FrameAssignSheet({
     }
   };
 
-  const handleAssignExisting = async (shiftId: string, frameId: string) => {
-    setBusyKey(`link-${shiftId}`);
+  // §3.2 canonical: 時間スナップ（skip-if-equal）+ リンク。旧 handleAssignExisting（リンクのみ）を統合・撤去。
+  const handleAssignShift = async (shift: Shift, frame: EffectiveFrame) => {
+    const plan = planShiftToFrameSnap(shift, frame);
+    if (!plan.needsTimeUpdate && !plan.needsLink) return; // 完全 no-op: 無音
+
+    const memberName = memberNames.get(shift.user_id) ?? '—';
+    setBusyKey(`snapshift-${shift.id}`);
+    let timeUpdated = false;
     try {
-      await setShiftFrame(shiftId, frameId);
-      showToast('枠へ割り当てました', 'success');
-      onMutated();
+      if (plan.needsTimeUpdate) {
+        await modifyShift(shift.id, plan.newStartTime, plan.newEndTime);
+        timeUpdated = true;
+      }
+      if (plan.needsLink) {
+        await setShiftFrame(shift.id, frame.frameId);
+      }
+      showToast(buildAssignShiftSuccessMessage(memberName, frame.name, plan), 'success');
     } catch (err) {
-      showToast(formatSupabaseError(err).message, 'error');
+      const msg = formatSupabaseError(err).message;
+      if (timeUpdated && plan.needsLink) {
+        showToast(buildAssignShiftLinkFailureMessage(plan, msg), 'error');
+      } else {
+        showToast(msg, 'error');
+      }
     } finally {
       setBusyKey(null);
+      onMutated();
     }
   };
 
@@ -382,34 +396,10 @@ export function FrameAssignSheet({
             busyKey={busyKey}
             onAssign={handleAssign}
             onUnassign={handleUnassign}
+            onAssignShift={handleAssignShift}
             renderFrameExtras={renderFrameExtras}
           />
         )}
-
-        <Card padding="md">
-          <div className="text-xs font-semibold text-stone-500 dark:text-stone-400 mb-2">枠外シフト</div>
-          {unassignedShifts.length === 0 ? (
-            <span className="text-xs text-stone-400 dark:text-stone-500">枠外シフトなし</span>
-          ) : (
-            <div className="space-y-1.5">
-              {unassignedShifts.map((s) => (
-                <div key={s.id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="text-stone-700 dark:text-stone-200">
-                    {memberNames.get(s.user_id) ?? '—'}（{formatTimeRange(s.start_time, s.end_time, { separator: '-' })}）
-                  </span>
-                  {effectiveFrames.length > 0 && (
-                    <Select
-                      value=""
-                      onChange={(e) => e.target.value && handleAssignExisting(s.id, e.target.value)}
-                      options={[{ value: '', label: '枠へ割当' }, ...effectiveFrames.map((f) => ({ value: f.frameId, label: f.name }))]}
-                      aria-label={`${memberNames.get(s.user_id) ?? ''}のシフトを枠へ割当`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
       </div>
     </BottomSheet>
   );
