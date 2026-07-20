@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef, startTransition } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { format, startOfMonth, endOfMonth, addWeeks, subMonths, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subMonths, addMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Plus, ChevronLeft, ChevronRight, AlertTriangle, X, LayoutGrid } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
@@ -38,12 +38,16 @@ import { ShiftStatusFilter, readStatusFilter, writeStatusFilter } from '../compo
 import type { StatusFilterValue } from '../components/Shift/unifiedShiftTypes';
 import { BulkShiftPreferenceDialog } from '../components/Shift/BulkShiftPreferenceDialog';
 import { FrameAssignSheet } from '../components/Shift/FrameAssignSheet';
+import { FrameDndSection } from '../components/Shift/FrameDndSection';
 import { formatTimeRange } from '../utils/formatTimeRange';
 import { buildTentativeShiftMap, getEffectiveTime } from '../utils/preferenceEffectiveTime';
+import { useShiftFrames } from '../hooks/useShiftFrames';
+import { getEffectiveFramesForDate, isCandidatePreferenceType, sortFrameCandidates, resolveUnassignAction } from '../utils/shiftFrames';
+import { formatSupabaseError } from '../lib/errors';
 import { useStoreContext } from '../contexts/StoreContext';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../hooks/useAuth';
-import type { ShiftPreferenceType, BulkSubmitPreferenceArgs, TenantMember, LeaveRequest } from '../types';
+import type { ShiftPreferenceType, BulkSubmitPreferenceArgs, TenantMember, LeaveRequest, ShiftFrame, ShiftFrameOverride, Shift } from '../types';
 
 type PreferenceView = 'current' | 'history';
 
@@ -51,6 +55,9 @@ type PreferenceView = 'current' | 'history';
 // 毎 render 新しい [] を生成すると memo 化済 ShiftCalendar が無効化し再描画が走るため、
 // モジュールスコープの安定参照を渡す。
 const EMPTY_LEAVES: LeaveRequest[] = [];
+// 同上の理由でシフト枠 props も安定参照を用意（枠機能 OFF / canManageTenant=false 時）。
+const EMPTY_FRAMES: ShiftFrame[] = [];
+const EMPTY_OVERRIDES: ShiftFrameOverride[] = [];
 
 export function ShiftPage() {
   const { user } = useAuth();
@@ -142,6 +149,10 @@ export function ShiftPage() {
   // 116: 枠割当シート（管理者が空白セルではなく「枠割当」ボタンから起動）
   const [frameSheetOpen, setFrameSheetOpen] = useState(false);
   const [frameSheetDate, setFrameSheetDate] = useState<string>(() => format(new Date(), 'yyyy-MM-dd'));
+
+  // §5.5: ページ専有の useShiftFrames インスタンス（FrameAssignSheet 内の別インスタンスとは独立）。
+  const { frames, overrides, fetchFrames, assignPreferenceToFrame, setShiftFrame } = useShiftFrames(tenantId, storeId);
+  const [frameDndBusyKey, setFrameDndBusyKey] = useState<string | null>(null);
 
   useEffect(() => {
     writeStatusFilter(statusFilter);
@@ -246,6 +257,20 @@ export function ShiftPage() {
       fetchPreferenceRange();
     }
   }, [tenantId, fetchPreferenceRange]);
+
+  // §5.5: シフト枠を月グリッド範囲（ShiftCalendar と同套）で取得。canManageTenant && storeId のときのみ。
+  const fetchFramesRange = useCallback(() => {
+    if (!canManageTenant || !storeId) return;
+    const start = format(startOfWeek(startOfMonth(shiftViewMonth), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const end = format(endOfWeek(endOfMonth(shiftViewMonth), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    void fetchFrames(start, end);
+  }, [canManageTenant, storeId, shiftViewMonth, fetchFrames]);
+
+  useEffect(() => {
+    if (tenantId && storeId && canManageTenant) {
+      fetchFramesRange();
+    }
+  }, [tenantId, storeId, canManageTenant, shiftViewMonth, fetchFramesRange]);
 
   // Loop17: roles を取得して人件費サマリ Card で role.default_monthly_salary を参照する
   useEffect(() => {
@@ -492,7 +517,70 @@ export function ShiftPage() {
   const handleMutated = useCallback(() => {
     fetchPreferenceRange();
     fetchRange();
-  }, [fetchPreferenceRange, fetchRange]);
+    fetchFramesRange();
+  }, [fetchPreferenceRange, fetchRange, fetchFramesRange]);
+
+  // §5.5: 枠へ割当（D&D / Select / ボタン共通）。throw しない契約（§4.2）。
+  const handleAssignPreferenceToFrame = useCallback(async (preferenceId: string, frameId: string, _date: string) => {
+    setFrameDndBusyKey(`assign-${preferenceId}`);
+    try {
+      await assignPreferenceToFrame(preferenceId, frameId);
+      showToast('枠へ割り当てました（仮承認）', 'success');
+    } catch (err) {
+      showToast(formatSupabaseError(err).message, 'error');
+    } finally {
+      setFrameDndBusyKey(null);
+      handleMutated();
+    }
+  }, [assignPreferenceToFrame, showToast, handleMutated]);
+
+  // §5.5 / §3.2: 枠から外す（希望由来 tentative は差戻し、それ以外はリンク解除）。
+  const handleUnassignFrameShift = useCallback(async (shift: Shift) => {
+    const action = resolveUnassignAction(shift);
+    setFrameDndBusyKey(`unassign-${shift.id}`);
+    try {
+      if (action === 'revert_preference' && shift.preference_id) {
+        await revertPreference(shift.preference_id);
+        showToast('枠から外し、希望を申請中に戻しました', 'success');
+      } else {
+        await setShiftFrame(shift.id, null);
+        showToast('枠から外しました', 'success');
+      }
+    } catch (err) {
+      showToast(formatSupabaseError(err).message, 'error');
+    } finally {
+      setFrameDndBusyKey(null);
+      handleMutated();
+    }
+  }, [revertPreference, setShiftFrame, showToast, handleMutated]);
+
+  const handleFrameBarClick = useCallback((date: string) => {
+    setFrameSheetDate(date);
+    setFrameSheetOpen(true);
+  }, []);
+
+  // §5.5 SP 注入: 当該日の有効枠・全 status シフト・候補希望（statusFilter 非適用）。
+  const sheetEffectiveFrames = useMemo(() => {
+    if (!canManageTenant || !storeId || !mobileSheetDate) return [];
+    return getEffectiveFramesForDate(frames, overrides, storeId, mobileSheetDate);
+  }, [canManageTenant, storeId, mobileSheetDate, frames, overrides]);
+
+  const sheetDayShifts = useMemo(() => {
+    if (!mobileSheetDate || !storeId) return [];
+    return allShifts.filter(s => s.date === mobileSheetDate && s.store_id === storeId);
+  }, [allShifts, mobileSheetDate, storeId]);
+
+  const sheetCandidates = useMemo(() => {
+    if (!mobileSheetDate || !storeId) return [];
+    return sortFrameCandidates(
+      allPreferences.filter(
+        p => p.date === mobileSheetDate
+          && p.store_id === storeId
+          && p.status === 'pending'
+          && isCandidatePreferenceType(p.preference_type),
+      ),
+    );
+  }, [allPreferences, mobileSheetDate, storeId]);
 
   const handleQuickAdd = useCallback(() => {
     if (selectedDate) {
@@ -1077,6 +1165,12 @@ export function ShiftPage() {
                     currentUserId={currentUserId}
                     selectedBulkDates={isBulkMode ? selectedBulkDates : undefined}
                     membersById={membersById}
+                    frames={canManageTenant && storeId ? frames : EMPTY_FRAMES}
+                    frameOverrides={canManageTenant && storeId ? overrides : EMPTY_OVERRIDES}
+                    frameStoreId={storeId}
+                    canAssignFrames={canManageTenant && !!storeId}
+                    onAssignPreferenceToFrame={handleAssignPreferenceToFrame}
+                    onFrameBarClick={handleFrameBarClick}
                   />
                 </div>
 
@@ -1458,6 +1552,22 @@ export function ShiftPage() {
                         currentUserId={currentUserId}
                       />
                     )}
+                    {canManageTenant && storeId && (
+                      <div className="px-4 pt-3">
+                        <div className="text-xs font-semibold text-stone-500 dark:text-stone-400 mb-1.5">シフト枠</div>
+                        <FrameDndSection
+                          idPrefix="sp"
+                          date={mobileSheetDate}
+                          effectiveFrames={sheetEffectiveFrames}
+                          dayShifts={sheetDayShifts}
+                          candidates={sheetCandidates}
+                          memberNames={memberNames}
+                          busyKey={frameDndBusyKey}
+                          onAssign={(pid, fid) => handleAssignPreferenceToFrame(pid, fid, mobileSheetDate)}
+                          onUnassign={handleUnassignFrameShift}
+                        />
+                      </div>
+                    )}
                     <UnifiedShiftSidebar
                       mode={canManageTenant ? "manager" : "staff"}
                       currentUserId={currentUserId}
@@ -1790,11 +1900,9 @@ export function ShiftPage() {
           allShifts={allShifts}
           allPreferences={allPreferences}
           addShiftForMember={addShiftForMember}
+          revertPreference={revertPreference}
           onClose={() => setFrameSheetOpen(false)}
-          onMutated={() => {
-            fetchRange();
-            fetchPreferenceRange();
-          }}
+          onMutated={handleMutated}
         />
       )}
 
