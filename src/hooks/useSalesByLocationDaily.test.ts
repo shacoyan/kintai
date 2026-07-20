@@ -170,9 +170,41 @@ describe('normalizeByLocationDaily', () => {
     expect(totalsSeries).toHaveLength(1);
     expect(totalsSeries[0].new).toBe(locationSeries[0].points[0].new);
     expect(totalsSeries[0].newSales).toBe(700);
-    // 色は B13 一括適用と一致。
-    expect(colorMap).toEqual(getLocationColors(['LOC_A']));
+    // 2026-07-21 D3: 色は location_name 由来。colorMap は代表 locationId キー。
+    expect(colorMap).toEqual({ LOC_A: getLocationColors(['吸暮'])['吸暮'] });
     expect(locationSeries[0].color).toBe(colorMap['LOC_A']);
+  });
+
+  it('2026-07-21 D-01: 同名 2 location_id 系列は location_name マージで 1 系列に合算される（同日重複はフィールド毎加算）', () => {
+    const raw = {
+      byLocationDaily: [
+        {
+          location_id: 'OLD_SOUQ',
+          location_name: '吸暮',
+          days: {
+            '2026-07-25': mkDay({ new_customer_count: 2, new_sales: 200 }),
+          },
+        },
+        {
+          location_id: 'NEW_SOUQ',
+          location_name: '吸暮',
+          days: {
+            // 切替当日は旧新双方にデータが入り得る → 同日合算されること。
+            '2026-07-25': mkDay({ new_customer_count: 3, new_sales: 300 }),
+          },
+        },
+      ],
+      allDates: ['2026-07-25'],
+    };
+
+    const { locationSeries } = normalizeByLocationDaily(raw);
+    expect(locationSeries).toHaveLength(1);
+    expect(locationSeries[0].locationName).toBe('吸暮');
+    // 代表 locationId = 初出行(OLD_SOUQ)。
+    expect(locationSeries[0].locationId).toBe('OLD_SOUQ');
+    expect(locationSeries[0].points).toHaveLength(1);
+    expect(locationSeries[0].points[0].new).toBe(5);
+    expect(locationSeries[0].points[0].newSales).toBe(500);
   });
 
   it('allDates が RPC から欠落しても全店 days キーの和集合を昇順 distinct で再構築する', () => {

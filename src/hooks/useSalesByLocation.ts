@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { logger } from '../lib/logger';
 import { formatSupabaseError } from '../lib/errors';
 import { supabaseSquare, withSquareSession } from '../lib/supabaseSquare';
-import { getLocationColors } from '../lib/sales/locationColors';
+import { mergeSalesByLocationRowsByName } from '../lib/sales/locationNameMerge';
 import { toFiniteNumber } from '../lib/sales/salesRangeAdapter';
 import type { SalesRangeMeta } from '../lib/sales/salesRangeAdapter';
 
@@ -25,16 +25,25 @@ import type { SalesRangeMeta } from '../lib/sales/salesRangeAdapter';
 //   RPC が返す `customer_count`（ユニーク ID 系）は使わない。本体 §2 と
 //   LocationBarChart の客数表示の母数を「表示客数」に一致させる。
 //   ※ unlisted（記載なし）は含めない（表示客数 = 4 セグ合計と整合）。
+//
+// location_name マージ（2026-07-21 D-01 対応）:
+//   locations_meta に旧新アカウントの同名 14 行が is_active=true で並存するため、
+//   071 が返す行は同一店舗が旧 ID 行 / 新 ID 行の 2 行に割れ得る。normalizeByLocation
+//   の最終段で `mergeSalesByLocationRowsByName` を適用し、location_name をキーに
+//   totalSales/totalCustomers を加算・1 行に統合する（詳細は locationNameMerge.ts）。
+//   色は location_name 由来（切替前後で同色）。locationId は代表 ID（初出行）で
+//   071/077 間の一致は保証しない — 下流の id 突合は禁止。
 // =============================================================================
 
 export interface SalesByLocationRow {
+  /** マージ後の代表 locationId（初出行の id。071/077 間の一致は保証しない）。 */
   locationId: string;
   locationName: string;
-  /** 決済済 + 未決済（total_amount + open_total_amount）。本体 total 定義 §3.3 と整合。 */
+  /** 決済済 + 未決済（total_amount + open_total_amount）。本体 total 定義 §3.3 と整合。同名行はマージ加算済み。 */
   totalSales: number;
-  /** 4 セグメント合計（new+repeat+regular+staff）。customer_count(ユニークID) は使わない。 */
+  /** 4 セグメント合計（new+repeat+regular+staff）。customer_count(ユニークID) は使わない。同名行はマージ加算済み。 */
   totalCustomers: number;
-  /** 系列色（location_id 由来の安定色）。 */
+  /** 系列色（location_name 由来の安定色。2026-07-21 D3）。 */
   color: string;
 }
 
@@ -107,8 +116,9 @@ function normalizeMeta(raw: unknown): SalesRangeMeta {
  *
  *   - totalSales     = total_amount + open_total_amount（決済済+未決済）
  *   - totalCustomers = new+repeat+regular+staff（4 セグ合計。customer_count は不使用）
- *   - color          = getLocationColor(location_id)
- * RPC 側の total_amount DESC 並びを尊重（ここでは再ソートしない）。
+ *   - RPC 側の total_amount DESC 並びを尊重する行構築の後、最終段で
+ *     `mergeSalesByLocationRowsByName` により同名行をマージする（初出順維持・
+ *     代表 locationId=初出行・色は location_name 由来で決定的に割当）。
  */
 export function normalizeByLocation(raw: unknown): {
   rows: SalesByLocationRow[];
@@ -117,12 +127,7 @@ export function normalizeByLocation(raw: unknown): {
   const obj = (raw ?? {}) as { byLocation?: unknown; meta?: unknown };
   const list = Array.isArray(obj.byLocation) ? (obj.byLocation as RawLocationRow[]) : [];
 
-  // B13: 表示 location 全体に getLocationColors を 1 回適用し、djb2 hash%N の
-  // desired index が衝突しても色を相異にする（行内 getLocationColor の独立適用を廃止）。
-  const ids = list.map((r) => (typeof r.location_id === 'string' ? r.location_id : ''));
-  const colorMap = getLocationColors(ids);
-
-  const rows: SalesByLocationRow[] = list.map((r) => {
+  const preMergeRows: SalesByLocationRow[] = list.map((r) => {
     const locationId = typeof r.location_id === 'string' ? r.location_id : '';
     // B18: 数値正規化を toFiniteNumber 経由にし、数値文字列連結 / null+x=NaN を防ぐ。
     const totalSales =
@@ -137,9 +142,11 @@ export function normalizeByLocation(raw: unknown): {
       locationName: typeof r.location_name === 'string' ? r.location_name : '',
       totalSales,
       totalCustomers,
-      color: colorMap[locationId],
+      color: '', // マージ関数側で location_name 由来色に上書きされる。
     };
   });
+
+  const rows = mergeSalesByLocationRowsByName(preMergeRows);
 
   return { rows, meta: normalizeMeta(obj.meta) };
 }

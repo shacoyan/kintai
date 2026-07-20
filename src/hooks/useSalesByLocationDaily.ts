@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { logger } from '../lib/logger';
 import { formatSupabaseError } from '../lib/errors';
 import { supabaseSquare, withSquareSession } from '../lib/supabaseSquare';
-import { getLocationColors } from '../lib/sales/locationColors';
+import { mergeLocationDailySeriesByName } from '../lib/sales/locationNameMerge';
 import {
   dayMetricsToTrendPoint,
   toFiniteNumber,
@@ -32,6 +32,16 @@ import type { DailySegmentPoint } from '../lib/sales/types';
 //   （dayMetricsToTrendPoint）。RPC が返す customer_count（ユニーク ID 系）は使わない。
 //   売上は new/repeat/regular/staff/unlisted の各 *_sales をそのまま載せる（open 込みの
 //   合計はトレンド系列のセグ売上合算で構成）。
+//
+// location_name マージ（2026-07-21 D-01 対応）:
+//   locations_meta に旧新アカウントの同名 14 行が is_active=true で並存するため、
+//   077 が返す行は同一店舗が旧 ID 行 / 新 ID 行の 2 行に割れ得る。
+//   normalizeByLocationDaily の最終段で `mergeLocationDailySeriesByName` を適用し、
+//   location_name をキーに points を date 毎フィールド合算する（詳細は
+//   locationNameMerge.ts）。totalsSeries はマージ後の locationSeries から算出する
+//   ため合計値は不変（マージは分配の付け替え）。色は location_name 由来（D3）。
+//   colorMap はマージ後の代表 locationId をキーに供給し、LocationTrendChart 等の
+//   `colorMap[loc.locationId]` 参照は無改変で成立する。
 // =============================================================================
 
 export interface UseSalesByLocationDailyArgs {
@@ -49,9 +59,10 @@ export interface UseSalesByLocationDailyArgs {
 }
 
 export interface LocationDailySeries {
+  /** マージ後の代表 locationId（初出行の id。071/077 間の一致は保証しない）。 */
   locationId: string;
   locationName: string;
-  /** 系列色（location_id 由来の安定色）。 */
+  /** 系列色（location_name 由来の安定色。2026-07-21 D3）。 */
   color: string;
   points: DailySegmentPoint[];
 }
@@ -62,7 +73,7 @@ export interface UseSalesByLocationDailyResult {
   totalsSeries: DailySegmentPoint[];
   /** 全店横断の日付キー集合（昇順 distinct）。 */
   allDates: string[];
-  /** location_id → 色のマップ（B13 衝突回避版）。 */
+  /** 代表 locationId → 色のマップ（location_name 由来色。2026-07-21 D3/D4）。 */
   colorMap: Record<string, string>;
   loading: boolean;
   error: string | null;
@@ -133,7 +144,9 @@ function rawDayToSalesRangeDay(raw: RawDay): SalesRangeDay {
  *     DailySegmentPoint 化 → points（数値は toFiniteNumber 経由で NaN 防止）。
  *   - totalsSeries = allDates ごとに全店 points をフィールド合算（new..unlistedSales）。
  *   - allDates は RPC の allDates を尊重しつつ、欠落時は全店 days のキー和集合を昇順 distinct。
- *   - colorMap = getLocationColors(byLocationDaily の location_id 配列)（B13 衝突回避）。
+ *   - 行構築後、最終段で `mergeLocationDailySeriesByName` により同名店の points を
+ *     date キーでフィールド合算する（初出順維持・代表 locationId=初出行・
+ *     colorMap は代表 locationId キーで location_name 由来色を供給）。
  */
 export function normalizeByLocationDaily(raw: unknown): {
   locationSeries: LocationDailySeries[];
@@ -153,10 +166,6 @@ export function normalizeByLocationDaily(raw: unknown): {
     return { ...EMPTY_RESULT };
   }
 
-  // B13: 表示 location 全体に getLocationColors を 1 回適用（djb2 hash 衝突を相異化）。
-  const ids = list.map((r) => (typeof r.location_id === 'string' ? r.location_id : ''));
-  const colorMap = getLocationColors(ids);
-
   // allDates: RPC 値を尊重。欠落時は全店 days キーの和集合を昇順 distinct で再構築。
   let allDates: string[];
   if (Array.isArray(obj.allDates) && obj.allDates.every((d) => typeof d === 'string')) {
@@ -170,7 +179,7 @@ export function normalizeByLocationDaily(raw: unknown): {
     allDates = [...dateSet].sort();
   }
 
-  const locationSeries: LocationDailySeries[] = list.map((r) => {
+  const preMergeSeries: LocationDailySeries[] = list.map((r) => {
     const locationId = typeof r.location_id === 'string' ? r.location_id : '';
     const days = r.days ?? {};
     const sortedDates = Object.keys(days).sort();
@@ -180,10 +189,12 @@ export function normalizeByLocationDaily(raw: unknown): {
     return {
       locationId,
       locationName: typeof r.location_name === 'string' ? r.location_name : '',
-      color: colorMap[locationId],
+      color: '', // マージ関数側で location_name 由来色に上書きされる。
       points,
     };
   });
+
+  const { locationSeries, colorMap } = mergeLocationDailySeriesByName(preMergeSeries);
 
   // totalsSeries: allDates ごとに全店 points をフィールド合算。
   // 日付→DailySegmentPoint の索引を店舗ごとに作って高速合算。
