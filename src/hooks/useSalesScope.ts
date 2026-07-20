@@ -18,6 +18,13 @@ import { useCan } from '../lib/permissions/useCan';
 //     resolveSquareLocationName で Square 名に変換し、locations_meta(active) との
 //     intersection のみ。Square に未マッチの所属店（例「経営内勤」）は対象外
 //     （エラーにしない）。canViewAll=false。
+//
+// 2026-07-21 D-01: Square 法人成り移行 Phase A（07-17）により locations_meta に
+// 新旧アカウントの同名 7 店 × 2 = 14 行が is_active=true で恒常並存する。
+// owner/manager の allowedLocationNames（＝店舗セレクタ・ALL×today 内訳の起点）
+// が同名 2 重表示・二重 fetch にならないよう、fetch 正規化点で location_name を
+// 初出順 unique 化する（uniqueActiveLocationNames）。staff 分岐は Set 突合の
+// ため元々重複無害＝挙動不変。
 // =============================================================================
 
 export interface SalesScope {
@@ -31,6 +38,25 @@ export interface SalesScope {
 interface LocationMetaRow {
   location_name: string;
   is_active: boolean;
+}
+
+/**
+ * locations_meta の行群から「location_name の truthy・初出順 unique」配列を作る純関数。
+ * 2026-07-21 D-01: 新旧 Square アカウントの同名 14 行並存に対応（§6-A D1）。
+ * staff 分岐と同じ seen Set 作法。null・空文字の name は除外する。
+ */
+export function uniqueActiveLocationNames(
+  rows: LocationMetaRow[] | null | undefined,
+): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const r of rows ?? []) {
+    const name = r?.location_name;
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    result.push(name);
+  }
+  return result;
 }
 
 export function useSalesScope(): SalesScope {
@@ -72,9 +98,7 @@ export function useSalesScope(): SalesScope {
         if (error) throw error;
         if (cancelled) return;
 
-        const names = ((data as LocationMetaRow[] | null) ?? [])
-          .map((r) => r.location_name)
-          .filter((n): n is string => !!n);
+        const names = uniqueActiveLocationNames(data as LocationMetaRow[] | null);
         setActiveLocationNames(names);
       } catch (err) {
         if (!cancelled) {
