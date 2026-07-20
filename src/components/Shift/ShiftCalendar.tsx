@@ -1,10 +1,51 @@
-import { useState, useMemo, useEffect, memo } from 'react';
+import { useState, useMemo, useEffect, memo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { format, startOfWeek, addDays, startOfMonth, endOfMonth } from 'date-fns';
-import type { Shift, LeaveRequest, ShiftPreference, TenantMember } from '../../types';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  useDraggable,
+  useDroppable,
+  pointerWithin,
+  rectIntersection,
+  type CollisionDetection,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import { LayoutGrid } from 'lucide-react';
+import type { Shift, LeaveRequest, ShiftPreference, TenantMember, ShiftFrame, ShiftFrameOverride } from '../../types';
 import type { StatusFilterValue } from './unifiedShiftTypes';
 import { isJapaneseHoliday, getJapaneseHolidayName } from '../../lib/holidays';
 import { getInitialShiftMonth } from '../../utils/initialShiftMonth';
 import { CalShiftBar } from './CalShiftBar';
+import {
+  getEffectiveFramesForDate,
+  countFrameAssignments,
+  judgeFrameFulfillment,
+  type EffectiveFrame,
+} from '../../utils/shiftFrames';
+import { formatTimeRange, formatTimeRangeA11y } from '../../utils/formatTimeRange';
+
+// 設計書: .company/engineering/docs/2026-07-21-kintai-frame-dnd.md §4/§5.1
+// DnD 正規値（§4.3）。3 コンテキスト共通・各ファイルにローカル定義（wave 1 のチーム間 import を作らない）。
+const collisionDetection: CollisionDetection = (args) => {
+  const within = pointerWithin(args);
+  return within.length > 0 ? within : rectIntersection(args);
+};
+
+const TONE_STYLES: Record<
+  'danger' | 'warning' | 'success' | 'info',
+  { border: string; bg: string }
+> = {
+  danger: { border: '#dc2626', bg: 'bg-red-50 dark:bg-red-900/20' },
+  warning: { border: '#f59e0b', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+  success: { border: '#059669', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+  info: { border: '#2563eb', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+};
 
 type ViewMode = 'week' | '2week' | 'month';
 
@@ -53,6 +94,106 @@ interface ShiftCalendarProps {
   onViewModeChange?: (v: ViewMode) => void;
   baseDate?: Date;
   membersById?: Map<string, TenantMember>;
+  // 設計書 §5.1: シフト枠のカレンダー表示 + D&D 割当（全 optional・未指定時は完全従来挙動）。
+  frames?: ShiftFrame[];
+  frameOverrides?: ShiftFrameOverride[];
+  frameStoreId?: string | null;
+  canAssignFrames?: boolean;
+  onAssignPreferenceToFrame?: (preferenceId: string, frameId: string, date: string) => Promise<void>;
+  onFrameBarClick?: (date: string) => void;
+}
+
+// ============================================================
+// DnD: ドラッグ可能な希望バー（§5.1 DraggableCalPrefBar）
+// ============================================================
+
+interface DraggableCalPrefBarProps {
+  pref: ShiftPreference;
+  member?: TenantMember;
+  isMine: boolean;
+  disabled: boolean;
+  onClick?: () => void;
+}
+
+function DraggableCalPrefBar({ pref, member, isMine, disabled, onClick }: DraggableCalPrefBarProps) {
+  const { setNodeRef, listeners } = useDraggable({
+    id: `calpref-${pref.id}`,
+    data: { type: 'pref' as const, preference: pref },
+    disabled,
+  });
+
+  return (
+    <div ref={setNodeRef} {...listeners} style={{ touchAction: 'none' }}>
+      <CalShiftBar preference={pref} member={member} isMine={isMine} onClick={onClick} />
+    </div>
+  );
+}
+
+// ============================================================
+// DnD: 枠バー（droppable。§5.1 CalFrameBar）
+// ============================================================
+
+interface CalFrameBarProps {
+  frame: EffectiveFrame;
+  assigned: number;
+  dragPrefDate: string | null;
+  onFrameBarClick?: (date: string) => void;
+}
+
+function CalFrameBar({ frame, assigned, dragPrefDate, onFrameBarClick }: CalFrameBarProps) {
+  const eligible = dragPrefDate === null || dragPrefDate === frame.date;
+  const { setNodeRef, isOver } = useDroppable({
+    id: `calframe-${frame.frameId}@${frame.date}`,
+    data: { type: 'frame' as const, frameId: frame.frameId, date: frame.date },
+    disabled: !eligible,
+  });
+  const verdict = judgeFrameFulfillment(assigned, frame.requiredCount);
+  const tone = TONE_STYLES[verdict.tone];
+  const dragState = !eligible ? 'opacity-40' : isOver ? 'ring-2 ring-blue-600 bg-blue-100/60' : 'ring-1 ring-blue-500';
+  const label = formatTimeRange(frame.startTime, frame.endTime);
+  const a11yLabel = `${frame.name} ${formatTimeRangeA11y(frame.startTime, frame.endTime)} 配置${assigned}人/必要${frame.requiredCount}人 ${verdict.label}。クリックで枠割当を開く`;
+
+  return (
+    <div
+      ref={setNodeRef}
+      role="button"
+      tabIndex={0}
+      aria-label={a11yLabel}
+      onClick={(e) => {
+        e.stopPropagation();
+        onFrameBarClick?.(frame.date);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          onFrameBarClick?.(frame.date);
+        }
+      }}
+      className={`flex flex-col min-w-0 w-full text-left cursor-pointer rounded-[3px] py-1 px-1 border-l-2 ${tone.bg} ${dragState} motion-safe:transition-shadow duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`}
+      style={{ borderLeftColor: tone.border }}
+    >
+      <span className="flex items-center gap-0.5 text-[10px] font-semibold text-stone-700 dark:text-stone-200 truncate">
+        <LayoutGrid className="w-2 h-2 shrink-0" aria-hidden="true" />
+        <span className="truncate">{frame.name}</span>
+      </span>
+      <span className="text-[9px] text-stone-500 dark:text-stone-400 tabular-nums truncate">
+        {label} {assigned}/{frame.requiredCount}人 {verdict.label}
+      </span>
+    </div>
+  );
+}
+
+// ============================================================
+// DnD: DragOverlay 用の簡易バークローン（§4.4。onClick 等は持たせない）
+// ============================================================
+
+function DragOverlayPrefBar({ pref, member, isMine }: { pref: ShiftPreference; member?: TenantMember; isMine: boolean }) {
+  return (
+    <div className="w-40 pointer-events-none shadow-lg rounded-[3px]">
+      <CalShiftBar preference={pref} member={member} isMine={isMine} />
+    </div>
+  );
 }
 
 // Perf: 親 (ShiftPage) の頻繁な再 render に追従させないため React.memo でラップ。
@@ -73,11 +214,26 @@ function ShiftCalendarInner({
   viewMode: viewModeProp,
   baseDate: baseDateProp,
   membersById,
+  frames,
+  frameOverrides,
+  frameStoreId,
+  canAssignFrames = false,
+  onAssignPreferenceToFrame,
+  onFrameBarClick,
 }: ShiftCalendarProps) {
   const [internalViewMode] = useState<ViewMode>('month');
   const [internalBaseDate] = useState(getInitialShiftMonth);
   const viewMode = viewModeProp ?? internalViewMode;
   const baseDate = baseDateProp ?? internalBaseDate;
+
+  // 設計書 §4.2 状態機械: idle | dragging | submitting
+  const [activePref, setActivePref] = useState<ShiftPreference | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+  );
 
   useEffect(() => {
     onViewMonthChange?.(baseDate);
@@ -152,9 +308,71 @@ function ShiftCalendarInner({
     return map;
   }, [leaves]);
 
+  // 設計書 §5.1: framesByDate。枠機能 OFF（frameStoreId 未指定）なら空 Map。
+  const framesByDate = useMemo(() => {
+    const map = new Map<string, EffectiveFrame[]>();
+    if (!frames || !frameStoreId) return map;
+    for (const d of dates) {
+      const dateStr = format(d, 'yyyy-MM-dd');
+      const effective = getEffectiveFramesForDate(frames, frameOverrides ?? [], frameStoreId, dateStr);
+      if (effective.length > 0) map.set(dateStr, effective);
+    }
+    return map;
+  }, [frames, frameOverrides, frameStoreId, dates]);
+
+  // 設計書 §5.1 注意書き: 充足カウントは statusFilter 非適用の生 shifts から算出（shiftsByDate はフィルタ済のため使用禁止）。
+  const frameAssignCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    if (framesByDate.size === 0) return map;
+    for (const effective of framesByDate.values()) {
+      for (const frame of effective) {
+        const key = `${frame.date}@${frame.frameId}`;
+        map.set(key, countFrameAssignments(shifts, frame.frameId, frame.date));
+      }
+    }
+    return map;
+  }, [shifts, framesByDate]);
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const data = event.active.data.current as { type?: string; preference?: ShiftPreference } | undefined;
+    if (data?.type === 'pref' && data.preference) {
+      setActivePref(data.preference);
+    }
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const pref = activePref;
+      setActivePref(null);
+      if (!pref) return;
+      const { over } = event;
+      if (!over) return; // 無音キャンセル
+      const overData = over.data.current as { type?: string; frameId?: string; date?: string } | undefined;
+      if (overData?.type !== 'frame' || !overData.frameId || !overData.date) return;
+      if (overData.date !== pref.date) return; // 第2層防御（disabled で通常到達しない）
+      if (!onAssignPreferenceToFrame) return;
+      setBusy(true);
+      onAssignPreferenceToFrame(pref.id, overData.frameId, pref.date).finally(() => setBusy(false));
+    },
+    [activePref, onAssignPreferenceToFrame],
+  );
+
+  const handleDragCancel = useCallback(() => {
+    setActivePref(null);
+  }, []);
+
+  const dragPrefDate = activePref?.date ?? null;
+
   const today = format(new Date(), 'yyyy-MM-dd');
 
   return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collisionDetection}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
     <div className="space-y-3">
       <div className="rounded-[10px] overflow-hidden border border-stone-200/70 dark:border-stone-700/70 bg-stone-200/70 dark:bg-stone-700/70">
         <div className="grid grid-cols-7 gap-px bg-stone-200/70 dark:bg-stone-700/70">
