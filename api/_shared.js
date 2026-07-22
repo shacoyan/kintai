@@ -9,6 +9,16 @@
  *     fetchCustomers / fetchAllPayments / fetchOrdersBatch / fetchCatalogVariationCategoryMap /
  *     normalizePaymentsForReporting は無改変（Square fetch ロジックは見本パリティ）。
  *   - env は SQUARE_ACCESS_TOKEN（kintai 標準）。
+ *
+ * Phase 2（2026-07-22 デュアルトークン合算・square-dashboard Phase 1/2 と同型）:
+ *   - squareHeaders(token = process.env.SQUARE_ACCESS_TOKEN) / getSquareTokens() は
+ *     square-dashboard/api/_shared.js（Phase 1 実装 L38-44 / L53-74）からの無改変移植。
+ *   - fetchAllPayments / fetchOrdersBatch / fetchCatalogVariationCategoryMap / fetchCustomers は
+ *     token 引数を追加（省略時は現行 = squareHeaders() デフォルト経由で完全同一）。
+ *   - nameGroupKey / fetchAllLocationsMulti / expandSameNameLocations / dedupeLocationsByName /
+ *     resolveSameNameLocationGroup は square-dashboard Phase 2 と同名・同セマンティクスの新規実装
+ *     （fetchAllLocationsMulti は squareFetch 経由の独立実装。TARGET_LOCATION_NAMES /
+ *     fetchTargetLocationsMulti は kintai に移植しない = 対象集合は DB 認可が正）。
  */
 
 
@@ -109,12 +119,43 @@ export function rangeDays(start_date, end_date) {
 }
 
 
-export function squareHeaders() {
+export function squareHeaders(token = process.env.SQUARE_ACCESS_TOKEN) {
   return {
-    'Authorization': `Bearer ${process.env.SQUARE_ACCESS_TOKEN}`,
+    'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
     'Square-Version': '2024-01-18'
   };
+}
+
+/**
+ * 設定済み Square アクセストークンの列挙。
+ * - ''/空白のみは「未設定」として扱う
+ * - SQUARE_ACCESS_TOKEN_2 === SQUARE_ACCESS_TOKEN は値 dedupe して 1 件扱い
+ * - 0 件は throw（SQUARE_ACCESS_TOKEN すら未設定の壊れた構成）
+ * square-dashboard/api/_shared.js（Phase 1）L53-74 の無改変移植。
+ * @returns {Array<{ tokenIndex: 1|2, envKey: string, token: string }>}
+ */
+export function getSquareTokens() {
+  const raw = [
+    { tokenIndex: 1, envKey: 'SQUARE_ACCESS_TOKEN', token: process.env.SQUARE_ACCESS_TOKEN },
+    { tokenIndex: 2, envKey: 'SQUARE_ACCESS_TOKEN_2', token: process.env.SQUARE_ACCESS_TOKEN_2 },
+  ];
+
+  const configured = raw.filter(t => typeof t.token === 'string' && t.token.trim() !== '');
+
+  const seen = new Set();
+  const deduped = [];
+  for (const t of configured) {
+    if (seen.has(t.token)) continue;
+    seen.add(t.token);
+    deduped.push(t);
+  }
+
+  if (deduped.length === 0) {
+    throw new Error('No Square access token configured (SQUARE_ACCESS_TOKEN is required)');
+  }
+
+  return deduped;
 }
 
 export function parseTimeRange({ date, start_hour, end_hour }) {
@@ -135,7 +176,7 @@ export function parseTimeRange({ date, start_hour, end_hour }) {
   };
 }
 
-export async function fetchCustomers(customerIds) {
+export async function fetchCustomers(customerIds, token) {
   const customersMap = {};
   const uniqueIds = [...new Set(customerIds.filter(Boolean))];
 
@@ -150,7 +191,7 @@ export async function fetchCustomers(customerIds) {
     try {
       const res = await squareFetch('https://connect.squareup.com/v2/customers/bulk-retrieve', {
         method: 'POST',
-        headers: squareHeaders(),
+        headers: squareHeaders(token),
         body: JSON.stringify({ customer_ids: batch })
       });
       if (res.ok) {
@@ -215,7 +256,7 @@ export function computeBusinessDate(createdAtISO, startHour) {
   return `${yy}-${mm}-${dd}`;
 }
 
-export async function fetchAllPayments({ beginTimeJST, endTimeJST, location_id }) {
+export async function fetchAllPayments({ beginTimeJST, endTimeJST, location_id, token }) {
   const payments = [];
   let cursor = undefined;
   let pages = 0;
@@ -236,7 +277,7 @@ export async function fetchAllPayments({ beginTimeJST, endTimeJST, location_id }
     // タイムアウトのみ付与し、無限待ちを防ぐ。AbortError は下の !res.ok と同列で
     // catch されず上位へ伝播し、致命パスとして明示エラー化される。
     const res = await squareFetch(`https://connect.squareup.com/v2/payments?${params.toString()}`, {
-      headers: squareHeaders(),
+      headers: squareHeaders(token),
     });
 
     if (!res.ok) {
@@ -251,7 +292,7 @@ export async function fetchAllPayments({ beginTimeJST, endTimeJST, location_id }
   return payments;
 }
 
-export async function fetchOrdersBatch(orderIds) {
+export async function fetchOrdersBatch(orderIds, token) {
   const ordersMap = {};
   const uniqueIds = [...new Set(orderIds.filter(Boolean))];
 
@@ -265,7 +306,7 @@ export async function fetchOrdersBatch(orderIds) {
     try {
       const res = await squareFetch('https://connect.squareup.com/v2/orders/batch-retrieve', {
         method: 'POST',
-        headers: squareHeaders(),
+        headers: squareHeaders(token),
         body: JSON.stringify({ order_ids: batch })
       });
 
@@ -281,7 +322,7 @@ export async function fetchOrdersBatch(orderIds) {
   return ordersMap;
 }
 
-export async function fetchCatalogVariationCategoryMap(ordersMap) {
+export async function fetchCatalogVariationCategoryMap(ordersMap, token) {
   const catalogObjectIds = [...new Set(
     Object.values(ordersMap).flatMap(order =>
       (order.line_items ?? [])
@@ -304,7 +345,7 @@ export async function fetchCatalogVariationCategoryMap(ordersMap) {
     try {
       const catalogRes = await squareFetch('https://connect.squareup.com/v2/catalog/batch-retrieve', {
         method: 'POST',
-        headers: squareHeaders(),
+        headers: squareHeaders(token),
         body: JSON.stringify({ object_ids: batch, include_related_objects: true })
       });
       if (!catalogRes.ok) {
@@ -342,7 +383,7 @@ export async function fetchCatalogVariationCategoryMap(ordersMap) {
     try {
       const catRes = await squareFetch('https://connect.squareup.com/v2/catalog/batch-retrieve', {
         method: 'POST',
-        headers: squareHeaders(),
+        headers: squareHeaders(token),
         body: JSON.stringify({ object_ids: batch })
       });
       if (!catRes.ok) {
@@ -395,4 +436,203 @@ export function normalizePaymentsForReporting(payments) {
       // 部分返金 → 売上を純額に差し替え
       return [{ ...p, amount_money: { ...p.amount_money, amount: gross - refunded } }];
     });
+}
+
+// ========== Phase 2（2026-07-22 デュアルトークン合算・square-dashboard と同名・同セマンティクス） ==========
+
+/**
+ * name group キー正規化（純関数）。
+ * @param {string|null|undefined} name
+ * @returns {string}
+ */
+export function nameGroupKey(name) {
+  return String(name ?? '').trim();
+}
+
+/**
+ * 設定済み全トークンで /v2/locations を取得し、location_id で dedupe して合算する
+ * 無フィルタ版。片トークン失敗は fail-soft で続行し、全トークン失敗のみ throw する。
+ * square-dashboard/api/_shared.js の fetchTargetLocationsMulti と同一規約・同一 shape
+ * （tokenSummary にフィールド追加禁止）だが、kintai は squareFetch（timeout 付き）経由の
+ * 独立実装とし、店舗名フィルタは行わない（対象集合は DB 認可 = allowedLocationIds が正）。
+ * @returns {Promise<{ locations: Array, tokenSummary: Array }>}
+ */
+export async function fetchAllLocationsMulti() {
+  const tokens = getSquareTokens();
+
+  const tokenSummary = [];
+  const mergedLocations = [];
+  const seenLocationIds = new Set();
+  const errors = [];
+
+  for (const { tokenIndex, envKey, token } of tokens) {
+    try {
+      const res = await squareFetch('https://connect.squareup.com/v2/locations', {
+        headers: squareHeaders(token),
+      });
+
+      if (!res.ok) {
+        const bodyText = await res.text();
+        throw new Error(`Square /v2/locations failed: ${res.status} - ${bodyText}`);
+      }
+
+      const data = await res.json();
+      const locs = data.locations || [];
+
+      for (const loc of locs) {
+        if (seenLocationIds.has(loc.id)) continue;
+        seenLocationIds.add(loc.id);
+        mergedLocations.push({ ...loc, _token: token, _tokenIndex: tokenIndex });
+      }
+
+      tokenSummary.push({
+        token_index: tokenIndex,
+        env_key: envKey,
+        ok: true,
+        location_count: locs.length,
+        error: null,
+      });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      errors.push(errorMessage);
+      tokenSummary.push({
+        token_index: tokenIndex,
+        env_key: envKey,
+        ok: false,
+        location_count: 0,
+        error: errorMessage,
+      });
+    }
+  }
+
+  if (tokenSummary.every(t => !t.ok)) {
+    throw new Error(`All Square tokens failed to fetch locations: ${errors.join(' | ')}`);
+  }
+
+  return { locations: mergedLocations, tokenSummary };
+}
+
+/**
+ * 決定的ソート比較関数: tokenIndex 降順 → id 昇順（辞書順）。
+ * 新アカウント（tokenIndex 大）優先の代表選出・展開順に共通利用する純関数。
+ */
+function byTokenIndexDescThenIdAsc(a, b) {
+  if (b.tokenIndex !== a.tokenIndex) return b.tokenIndex - a.tokenIndex;
+  if (a.id < b.id) return -1;
+  if (a.id > b.id) return 1;
+  return 0;
+}
+
+/**
+ * 同名グループ展開（純関数・fetch しない）。
+ * @param {Array} locations - fetchAllLocationsMulti() の locations（_token/_tokenIndex 付き）
+ * @param {string} locationId - 展開の起点となる要求 location_id
+ * @returns {{ groupName: string|null, members: Array<{ id, token, tokenIndex }> }}
+ */
+export function expandSameNameLocations(locations, locationId) {
+  const target = (locations || []).find(l => l.id === locationId);
+  if (!target) return { groupName: null, members: [] };
+
+  const key = nameGroupKey(target.name);
+  const members = (locations || [])
+    .filter(l => nameGroupKey(l.name) === key)
+    .map(l => ({ id: l.id, token: l._token, tokenIndex: l._tokenIndex }))
+    .sort(byTokenIndexDescThenIdAsc);
+
+  return { groupName: key, members };
+}
+
+/**
+ * locations 一覧の name dedupe（純関数）。
+ * - 出力順 = nameGroupKey の初出順（入力順保存）
+ * - 各グループの代表 = tokenIndex 降順 → id 昇順の先頭（= 新アカウント優先・決定的）
+ * - 単一トークン時は入力と完全同一（順序・件数・要素）
+ * @param {Array} locations
+ * @returns {Array}
+ */
+export function dedupeLocationsByName(locations) {
+  const order = [];
+  const groups = new Map();
+
+  for (const loc of (locations || [])) {
+    const key = nameGroupKey(loc.name);
+    if (!groups.has(key)) {
+      groups.set(key, []);
+      order.push(key);
+    }
+    groups.get(key).push(loc);
+  }
+
+  return order.map((key) => {
+    const group = groups.get(key);
+    group.sort(byTokenIndexDescThenIdAsc);
+    return group[0];
+  });
+}
+
+/**
+ * 統合オーケストレータ（各エンドポイントが呼ぶ唯一の入口）。
+ * - 内部で getSquareTokens() → fetchAllLocationsMulti()（片 token 失敗は fail-soft）
+ *   → expandSameNameLocations。
+ * - 片 token の locations 取得失敗 → warnings に token_locations_failed（error 全文・token 値なし）。
+ * - 要求 id 未解決（全 token 失敗 / 失敗 token 配下 / 不明 id）→
+ *   members = [{ id: locationId, token: tokens[0].token, tokenIndex: tokens[0].tokenIndex }]
+ *   + warnings に location_unresolved。fetchAllLocationsMulti の全滅 throw は内部 catch する
+ *   （NEVER throws。例外は getSquareTokens の 0 件 throw のみ）。
+ * - allowedLocationIds（配列）指定時: members を積集合に制限（kintai 認可 fail-closed 用）。
+ * @param {string} locationId
+ * @param {{ allowedLocationIds?: string[]|null }} [options]
+ * @returns {Promise<{ groupName: string|null, members: Array, tokenSummary: Array, warnings: Array }>}
+ */
+export async function resolveSameNameLocationGroup(locationId, { allowedLocationIds = null } = {}) {
+  const tokens = getSquareTokens(); // 0 件のみ throw（現行も壊れている構成）
+
+  const warnings = [];
+  let locations = [];
+  let tokenSummary = [];
+
+  try {
+    const result = await fetchAllLocationsMulti();
+    locations = result.locations;
+    tokenSummary = result.tokenSummary;
+    for (const t of tokenSummary) {
+      if (!t.ok) {
+        warnings.push({
+          type: 'token_locations_failed',
+          token_index: t.token_index,
+          env_key: t.env_key,
+          error: t.error,
+        });
+      }
+    }
+  } catch (e) {
+    // fetchAllLocationsMulti の全滅 throw を内部 catch（NEVER throws）。
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    for (const t of tokens) {
+      warnings.push({
+        type: 'token_locations_failed',
+        token_index: t.tokenIndex,
+        env_key: t.envKey,
+        error: errorMessage,
+      });
+    }
+    locations = [];
+    tokenSummary = [];
+  }
+
+  let { groupName, members } = expandSameNameLocations(locations, locationId);
+
+  if (members.length === 0 || !members.some(m => m.id === locationId)) {
+    const fallback = tokens[0];
+    members = [{ id: locationId, token: fallback.token, tokenIndex: fallback.tokenIndex }];
+    groupName = null;
+    warnings.push({ type: 'location_unresolved', location_id: locationId });
+  }
+
+  if (Array.isArray(allowedLocationIds)) {
+    const allowedSet = new Set(allowedLocationIds);
+    members = members.filter(m => allowedSet.has(m.id));
+  }
+
+  return { groupName, members, tokenSummary, warnings };
 }
