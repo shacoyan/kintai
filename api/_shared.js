@@ -517,7 +517,9 @@ export async function fetchAllLocationsMulti() {
  * 新アカウント（tokenIndex 大）優先の代表選出・展開順に共通利用する純関数。
  */
 function byTokenIndexDescThenIdAsc(a, b) {
-  if (b.tokenIndex !== a.tokenIndex) return b.tokenIndex - a.tokenIndex;
+  const aIdx = a._tokenIndex ?? a.tokenIndex;
+  const bIdx = b._tokenIndex ?? b.tokenIndex;
+  if (bIdx !== aIdx) return bIdx - aIdx;
   if (a.id < b.id) return -1;
   if (a.id > b.id) return 1;
   return 0;

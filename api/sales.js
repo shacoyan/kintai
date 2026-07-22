@@ -91,7 +91,7 @@ export default async (req, res) => {
     const { beginTimeJST, endTimeJST } = parseTimeRange({ date, start_hour: resolvedStartHour, end_hour });
 
     // 同名グループ展開（デュアルトークン合算）。members は要求 id を必ず含み、許可集合との積集合に限定される。
-    const { members } = await resolveSameNameLocationGroup(location_id, { allowedLocationIds });
+    const { members, warnings } = await resolveSameNameLocationGroup(location_id, { allowedLocationIds });
 
     let paymentsByMember;
     try {
@@ -117,11 +117,16 @@ export default async (req, res) => {
       transactionCount++;
     }
 
-    return res.status(200).json({
+    const body = {
       total_amount: totalAmount,
       transaction_count: transactionCount,
       currency: 'JPY'
-    });
+    };
+    if (warnings && warnings.length > 0) {
+      body.warnings = warnings;
+    }
+
+    return res.status(200).json(body);
   } catch (error) {
     if (error instanceof AuthError) {
       return res.status(error.status).json({ error: error.message });

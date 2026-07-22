@@ -50,8 +50,8 @@ function makeReq() {
 }
 
 const STORE_NAMES = ['Goodbye', 'KITUNE', 'LR', 'moumou', '吸暮', '狛犬', '金魚'];
-const OLD_LOCS = STORE_NAMES.map((name, i) => ({ id: `OLD-${i}`, name }));
-const NEW_LOCS = STORE_NAMES.map((name, i) => ({ id: `NEW-${i}`, name }));
+const OLD_LOCS = STORE_NAMES.map((name, i) => ({ id: `A-OLD-${i}`, name }));
+const NEW_LOCS = STORE_NAMES.map((name, i) => ({ id: `Z-NEW-${i}`, name }));
 
 function locationsResponse(locations) {
   return {
@@ -110,7 +110,7 @@ describe('locations.js — Phase 2 dedupe', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.locations).toHaveLength(7);
-    expect(res.body.locations.every((l) => l.id.startsWith('NEW-'))).toBe(true);
+    expect(res.body.locations.every((l) => l.id.startsWith('Z-NEW-'))).toBe(true);
   });
 
   it('allowedSet filter が dedupe より前: 許可集合が旧 id のみなら新 id は混入しない', async () => {
@@ -132,7 +132,7 @@ describe('locations.js — Phase 2 dedupe', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.locations).toHaveLength(7);
-    expect(res.body.locations.every((l) => l.id.startsWith('OLD-'))).toBe(true);
+    expect(res.body.locations.every((l) => l.id.startsWith('A-OLD-'))).toBe(true);
   });
 
   it('出力順 = nameGroupKey 初出順（Square API 返却順を保存）', async () => {
