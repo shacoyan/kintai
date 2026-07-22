@@ -1,4 +1,4 @@
-import { setCors, parseRangeTimeRange, computeBusinessDate, fetchAllPayments, fetchOrdersBatch, fetchCatalogVariationCategoryMap, fetchCustomers, normalizePaymentsForReporting, isValidDateStr, rangeDays, MAX_RANGE_DAYS } from './_shared.js';
+import { setCors, parseRangeTimeRange, computeBusinessDate, fetchAllPayments, fetchOrdersBatch, fetchCatalogVariationCategoryMap, fetchCustomers, normalizePaymentsForReporting, isValidDateStr, rangeDays, MAX_RANGE_DAYS, resolveSameNameLocationGroup } from './_shared.js';
 import { authenticate, resolveStartHour, assertLocationAllowed, AuthError } from './_auth.js';
 
 export default async (req, res) => {
@@ -27,13 +27,14 @@ export default async (req, res) => {
     }
 
     // 越権ガード: 要求 location_id が許可集合に無ければ空を返す（存在を漏らさない・§2.2）。
+    // 展開ロジック（resolveSameNameLocationGroup）はこの後にのみ到達する（fail-closed・§7）。
     if (!assertLocationAllowed(allowedLocationIds, location_id)) {
       return res.status(200).json({ byDate: {} });
     }
 
     // start_hour（営業日の日付変更線）はサーバ正本(startHourMap)から店舗別に解決する。
     // 後方互換: query で明示された 0-23 の値があればそれを優先。startHour は時間窓算出と
-    // computeBusinessDate の両方で使う。
+    // computeBusinessDate の両方で使う。要求 location_id 由来で不変（§9）。
     const qsh = req.query.start_hour;
     const parsedQsh = qsh !== undefined ? parseInt(qsh, 10) : NaN;
     const startHour = (!Number.isNaN(parsedQsh) && parsedQsh >= 0 && parsedQsh <= 23)
@@ -41,20 +42,60 @@ export default async (req, res) => {
       : resolveStartHour(startHourMap, location_id);
 
     const { beginTimeJST, endTimeJST } = parseRangeTimeRange({ start_date, end_date, start_hour: startHour, end_hour });
-    const allPayments0 = await fetchAllPayments({ beginTimeJST, endTimeJST, location_id });
 
-    // COMPLETED 抽出 + 返金正規化（Square Web レポート整合）
-    const allPayments = normalizePaymentsForReporting(allPayments0);
+    // 同名グループ展開（許可集合との積集合に限定・fail-closed）。
+    const { members, warnings } = await resolveSameNameLocationGroup(location_id, { allowedLocationIds });
 
-    const orderIds = [...new Set(allPayments.filter(p => p.order_id).map(p => p.order_id))];
-    const ordersMap = await fetchOrdersBatch(orderIds);
+    // 60 秒予算（vercel.json maxDuration）のため member 間並列は必須（§9）。
+    // 1 メンバーでも失敗 → 現行のエラー経路で全体エラー（部分金額を返さない・§4-6）。
+    let memberPaymentsList;
+    try {
+      memberPaymentsList = await Promise.all(
+        members.map((member) =>
+          fetchAllPayments({ beginTimeJST, endTimeJST, location_id: member.id, token: member.token })
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
 
-    const customerIds = allPayments.filter(p => p.customer_id).map(p => p.customer_id);
+    // COMPLETED 抽出 + 返金正規化（Square Web レポート整合）。concat 後に 1 回適用（§9）。
+    const allPayments = normalizePaymentsForReporting(memberPaymentsList.flat());
 
-    const [customersMap, variationCategoryMap] = await Promise.all([
-      fetchCustomers(customerIds),
-      fetchCatalogVariationCategoryMap(ordersMap)
-    ]);
+    // orders / customers / catalog は「その payment が来た token」でのみ取得（token 跨ぎ取得禁止）。
+    // メンバー間は並列可・マージは tokenIndex 昇順に代入（後勝ち = 新優先・§9）。
+    const perMemberMaps = await Promise.all(
+      members.map(async (member, i) => {
+        const memberPayments = memberPaymentsList[i];
+        const orderIds = [...new Set(memberPayments.filter(p => p.order_id).map(p => p.order_id))];
+        const memberOrdersMap = await fetchOrdersBatch(orderIds, member.token);
+        const customerIds = memberPayments.filter(p => p.customer_id).map(p => p.customer_id);
+
+        const [memberCustomersMap, memberCatalogMap] = await Promise.all([
+          fetchCustomers(customerIds, member.token),
+          fetchCatalogVariationCategoryMap(memberOrdersMap, member.token)
+        ]);
+
+        return {
+          tokenIndex: member.tokenIndex,
+          ordersMap: memberOrdersMap,
+          customersMap: memberCustomersMap,
+          catalogMap: memberCatalogMap
+        };
+      })
+    );
+
+    perMemberMaps.sort((a, b) => a.tokenIndex - b.tokenIndex);
+
+    const ordersMap = {};
+    const customersMap = {};
+    const variationCategoryMap = {};
+    for (const m of perMemberMaps) {
+      Object.assign(ordersMap, m.ordersMap);
+      Object.assign(customersMap, m.customersMap);
+      Object.assign(variationCategoryMap, m.catalogMap);
+    }
 
     const byDate = {};
 
@@ -98,7 +139,12 @@ export default async (req, res) => {
       });
     }
 
-    return res.status(200).json({ byDate });
+    const body = { byDate };
+    if (warnings && warnings.length > 0) {
+      body.warnings = warnings;
+    }
+
+    return res.status(200).json(body);
   } catch (err) {
     if (err instanceof AuthError) {
       return res.status(err.status).json({ error: err.message });
