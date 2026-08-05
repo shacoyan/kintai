@@ -119,16 +119,16 @@ describe('ShiftStatusFilter - 自分のみチップ', () => {
     expect(onMineOnlyChange).toHaveBeenCalledWith(true);
   });
 
-  it('mineOnly=true のとき aria-checked=true でバナーが表示される', () => {
+  it('mineOnly=true のとき aria-checked=true になる（バナー表示は ShiftPage 側の責務）', () => {
     renderFilter({ mineOnly: true });
     const chips = screen.getAllByLabelText('自分のみ表示');
     for (const chip of chips) {
       expect(chip.getAttribute('aria-checked')).toBe('true');
     }
-    expect(screen.getByText(/自分のみ表示中/)).not.toBeNull();
+    expect(screen.queryByText(/自分のみ表示中/)).toBeNull();
   });
 
-  it('mineOnly=false のときはバナーが表示されない', () => {
+  it('mineOnly=false のときも自分のみ表示中バナーは描画されない', () => {
     renderFilter({ mineOnly: false });
     expect(screen.queryByText(/自分のみ表示中/)).toBeNull();
   });

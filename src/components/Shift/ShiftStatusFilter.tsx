@@ -337,19 +337,6 @@ export function ShiftStatusFilter({
           </>
         )}
       </div>
-
-      {renderMineOnly && mineOnly && (
-        <div
-          role="status"
-          className="mt-2 flex items-center gap-1.5 rounded-md border border-violet-300 bg-violet-50 px-2.5 py-1.5 text-xs font-medium text-violet-800 dark:border-violet-500/40 dark:bg-violet-900/20 dark:text-violet-200"
-        >
-          <span
-            aria-hidden="true"
-            className="inline-block w-1.5 h-1.5 rounded-full shrink-0 bg-violet-600 dark:bg-violet-400"
-          />
-          <span>自分のみ表示中（他のメンバーのシフト・希望は非表示です）</span>
-        </div>
-      )}
     </div>
   );
 }
