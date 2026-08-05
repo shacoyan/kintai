@@ -37,6 +37,7 @@ import { LaborCostCard } from '../components/Shift/LaborCostCard';
 import { ShiftStatusFilter, readStatusFilter, writeStatusFilter } from '../components/Shift/ShiftStatusFilter';
 import type { StatusFilterValue } from '../components/Shift/unifiedShiftTypes';
 import { BulkShiftPreferenceDialog } from '../components/Shift/BulkShiftPreferenceDialog';
+import { BulkSelectionBar } from '../components/Shift/BulkSelectionBar';
 import { FrameAssignSheet } from '../components/Shift/FrameAssignSheet';
 import { FrameDndSection } from '../components/Shift/FrameDndSection';
 import { formatTimeRange } from '../utils/formatTimeRange';
@@ -67,6 +68,69 @@ const EMPTY_LEAVES: LeaveRequest[] = [];
 // 同上の理由でシフト枠 props も安定参照を用意（枠機能 OFF / canManageTenant=false 時）。
 const EMPTY_FRAMES: ShiftFrame[] = [];
 const EMPTY_OVERRIDES: ShiftFrameOverride[] = [];
+
+// 2026-08-05 kintai-shift-mine-filter 機能1:
+// 「自分のみ」表示トグルの永続化キー。既存 STATUS_FILTER_STORAGE_KEY とは別キーにする
+// （型もドメインも違う: こちらは boolean 単体）。
+export const MINE_ONLY_STORAGE_KEY = 'kintai.shift.mineOnly.v1';
+
+/**
+ * localStorage から「自分のみ」トグル状態を読み出す。
+ * ShiftStatusFilter.tsx の readStatusFilter と同型: SSR 安全 + try/catch。
+ * 壊れた値 (非 boolean JSON 等) はデフォルト false 扱い。
+ */
+export function readMineOnly(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const raw = localStorage.getItem(MINE_ONLY_STORAGE_KEY);
+    if (raw == null) return false;
+    return JSON.parse(raw) === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * localStorage へ「自分のみ」トグル状態を保存する。
+ * ShiftStatusFilter.tsx の writeStatusFilter と同型: SSR 安全 + try/catch。
+ */
+export function writeMineOnly(value: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(MINE_ONLY_STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    // ignore quota / serialization errors
+  }
+}
+
+/**
+ * 「自分のみ」トグルの実効値を計算するガード関数。
+ * - canManageTenant=false (staff) は元々自分スコープのため常に無効
+ * - currentUserId が null のとき（未ログイン相当・取得前）は誤って全件を隠さないよう常に無効
+ * localStorage に true が残っていても、上記条件下では絶対に true を返さない。
+ */
+export function computeEffectiveMineOnly(
+  mineOnly: boolean,
+  canManageTenant: boolean,
+  currentUserId: string | null,
+): boolean {
+  return mineOnly && canManageTenant && !!currentUserId;
+}
+
+/**
+ * user_id を持つ行配列を「自分の行のみ」に絞る汎用の純関数。
+ * effectiveMineOnly=false または currentUserId=null のときは絞らず全件を返す
+ * （currentUserId=null での全件消失事故防止・UnifiedShiftSidebar.tsx:257 と同じ思想）。
+ * ShiftCalendar / ShiftMobileCalendar 側の mineOnly 適用ロジックと等価な参照実装。
+ */
+export function filterRowsByMine<T extends { user_id: string }>(
+  rows: T[],
+  effectiveMineOnly: boolean,
+  currentUserId: string | null,
+): T[] {
+  if (!effectiveMineOnly || !currentUserId) return rows;
+  return rows.filter((row) => !!currentUserId && row.user_id === currentUserId);
+}
 
 export function ShiftPage() {
   const { user } = useAuth();
@@ -141,6 +205,8 @@ export function ShiftPage() {
     'current',
   );
   const [statusFilter, setStatusFilter] = useState<Set<StatusFilterValue>>(() => readStatusFilter());
+  // 2026-08-05 kintai-shift-mine-filter 機能1: 「自分のみ」表示トグル。永続化は別 effect で行う。
+  const [mineOnly, setMineOnly] = useState<boolean>(() => readMineOnly());
   // 一括本承認 / 一括却下の確認ダイアログ用ペイロード
   const [bulkConfirm, setBulkConfirm] = useState<
     | { kind: 'approve'; count: number; monthStart: string; monthEnd: string }
@@ -166,6 +232,10 @@ export function ShiftPage() {
   useEffect(() => {
     writeStatusFilter(statusFilter);
   }, [statusFilter]);
+
+  useEffect(() => {
+    writeMineOnly(mineOnly);
+  }, [mineOnly]);
 
   useEffect(() => {
     if (searchParams.has('tab')) {
@@ -297,6 +367,11 @@ export function ShiftPage() {
   }, [tenantId, canManageTenant, fetchMemberStorePayrolls]);
 
   const shifts = canManageTenant ? allShifts : myShifts;
+  // 2026-08-05 kintai-shift-mine-filter 機能1: 「自分のみ」表示トグルの実効値。
+  // canManageTenant=false または currentUserId=null のときは常に無効（他人分が誤って全消えしない）。
+  const effectiveMineOnly = computeEffectiveMineOnly(mineOnly, canManageTenant, currentUserId);
+  // チップ自体の表示可否（currentUserId=null / staff では「自分のみ」チップを出さない）。
+  const canShowMineOnly = canManageTenant && !!currentUserId;
   const tentativeCount = useMemo(
     () => shifts.filter(s => s.status === 'tentative').length,
     [shifts]
@@ -955,6 +1030,16 @@ export function ShiftPage() {
           <div className="hidden lg:block">
             <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-5 lg:items-start">
               <main className="min-w-0">
+                {/* 機能2: 一括選択バーはカレンダーの上に出す（PC / SP 共通コンポーネント）。 */}
+                {storeId && isBulkMode && (
+                  <BulkSelectionBar
+                    selectedCount={selectedBulkDates.size}
+                    onClearAll={handleClearAllBulkDates}
+                    onCancel={handleCancelBulkMode}
+                    onProceed={handleProceedBulkDialog}
+                    className="mb-3"
+                  />
+                )}
                 <Card padding="none" className="overflow-hidden">
             <div className="flex items-center gap-2 flex-wrap px-4 py-2.5">
               {/* 現在/履歴は排他的なタブ遷移（toggle ではない）→ role=tab + aria-selected。
@@ -1047,6 +1132,9 @@ export function ShiftPage() {
                         tentative: tentativeCount,
                         approved: approvedCount,
                       }}
+                      mineOnly={mineOnly}
+                      onMineOnlyChange={setMineOnly}
+                      canShowMineOnly={canShowMineOnly}
                     />
                   </div>
                 </>
@@ -1187,6 +1275,15 @@ export function ShiftPage() {
                     </div>
                   )}
 
+                {effectiveMineOnly && (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="border-t border-stone-100 dark:border-stone-700/60 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-xs font-semibold text-blue-700 dark:text-blue-200"
+                  >
+                    「自分のみ」表示中 — 他のメンバーのシフト・シフト申請は非表示です
+                  </div>
+                )}
                 <div className="border-t border-stone-100 dark:border-stone-700/60">
                   <ShiftCalendar
                     shifts={shifts}
@@ -1211,6 +1308,7 @@ export function ShiftPage() {
                     onAssignPreferenceToFrame={handleAssignPreferenceToFrame}
                     onAssignShiftToFrame={handleAssignShiftToFrame}
                     onFrameBarClick={handleFrameBarClick}
+                    mineOnly={effectiveMineOnly}
                   />
                 </div>
 
@@ -1271,50 +1369,6 @@ export function ShiftPage() {
                   </div>
                 </div>
                 </Card>
-
-                {storeId && isBulkMode && (
-                  /* 理由: 一括選択モード active 状態の枠線強調 (例外③) */
-                  <div
-                    role="region"
-                    aria-label="一括シフト申請 選択モード"
-                    className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 flex-wrap rounded-md border border-blue-100 dark:border-blue-700 bg-blue-50 dark:bg-blue-800/30 px-3 py-2 static shadow-none"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-blue-700 dark:text-blue-100 tabular-nums">
-                        {messages.shiftPreference.bulk.selectedCount(selectedBulkDates.size)}
-                      </span>
-                      {selectedBulkDates.size > 0 && (
-                        <button
-                          type="button"
-                          onClick={handleClearAllBulkDates}
-                          className="text-xs font-semibold text-blue-700 dark:text-blue-200 hover:underline focus-ring"
-                        >
-                          {messages.shiftPreference.bulk.clearAll}
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        iconLeft={<X className="w-4 h-4" />}
-                        onClick={handleCancelBulkMode}
-                        className="grow sm:grow-0"
-                      >
-                        {messages.shiftPreference.bulk.cancelMode}
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={handleProceedBulkDialog}
-                        disabled={selectedBulkDates.size === 0}
-                        className="grow sm:grow-0"
-                      >
-                        {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </main>
 
               <aside
@@ -1456,51 +1510,6 @@ export function ShiftPage() {
                 </Card>
               )}
 
-              {/* Bulk Toolbar — エントリーボタンは上の StatusFilter 行に移動。ここには isBulkMode 選択中のバーのみ残す */}
-              {storeId && isBulkMode && (
-                /* 理由: 一括選択モード active 状態の枠線強調 (例外③) */
-                <div
-                  role="region"
-                  aria-label="一括シフト申請 選択モード"
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 flex-wrap rounded-md border border-blue-100 dark:border-blue-700 bg-blue-50 dark:bg-blue-800/30 px-3 py-2 sticky bottom-2 z-30 sm:static shadow-md sm:shadow-none"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-blue-700 dark:text-blue-100 tabular-nums">
-                      {messages.shiftPreference.bulk.selectedCount(selectedBulkDates.size)}
-                    </span>
-                    {selectedBulkDates.size > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleClearAllBulkDates}
-                        className="text-xs font-semibold text-blue-700 dark:text-blue-200 hover:underline focus-ring"
-                      >
-                        {messages.shiftPreference.bulk.clearAll}
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      iconLeft={<X className="w-4 h-4" />}
-                      onClick={handleCancelBulkMode}
-                      className="grow sm:grow-0"
-                    >
-                      {messages.shiftPreference.bulk.cancelMode}
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={handleProceedBulkDialog}
-                      disabled={selectedBulkDates.size === 0}
-                      className="grow sm:grow-0"
-                    >
-                      {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
               {/* Grid Content: ShiftCalendar */}
               {shiftLoading && (
                 <div className="flex items-center justify-center py-6">
@@ -1530,10 +1539,13 @@ export function ShiftPage() {
                       tentative: tentativeCount,
                       approved: approvedCount,
                     }}
+                    mineOnly={mineOnly}
+                    onMineOnlyChange={setMineOnly}
+                    canShowMineOnly={canShowMineOnly}
                   />
                 </div>
 
-                {/* ②-b まとめて申請ボタン（常設・FAB と並存／bulk 中は下部確定バーがあるので非表示） */}
+                {/* ②-b まとめて申請ボタン（常設・FAB と並存／bulk 中は選択バーに置き換わる） */}
                 {storeId && !isBulkMode && (
                   <Button
                     variant="success"
@@ -1546,6 +1558,27 @@ export function ShiftPage() {
                   >
                     {messages.shiftPreference.bulk.entryButton}
                   </Button>
+                )}
+
+                {/* 機能2: 一括選択バーはカレンダーの上（in-flow・sticky bottom はやめる。PC/SP 共通コンポーネント） */}
+                {storeId && isBulkMode && (
+                  <BulkSelectionBar
+                    selectedCount={selectedBulkDates.size}
+                    onClearAll={handleClearAllBulkDates}
+                    onCancel={handleCancelBulkMode}
+                    onProceed={handleProceedBulkDialog}
+                  />
+                )}
+
+                {/* 機能1: 「自分のみ」表示中バナー（常時わかる表示・カレンダー直上） */}
+                {effectiveMineOnly && (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="rounded-md border border-blue-100 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 text-xs font-semibold text-blue-700 dark:text-blue-200"
+                  >
+                    「自分のみ」表示中 — 他のメンバーのシフト・シフト申請は非表示です
+                  </div>
                 )}
 
                 {/* ③ 月グリッド（名前チップ化・横スワイプ対応ラッパー §E-4） */}
@@ -1569,6 +1602,7 @@ export function ShiftPage() {
                     roleTypeMap={spRoleTypeMap}
                     onDateClick={handleMobileCellOpen}
                     onOverflowClick={handleMobileCellOpen}
+                    mineOnly={effectiveMineOnly}
                   />
                 </div>
               </div>
