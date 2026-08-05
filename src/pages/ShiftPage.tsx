@@ -1134,7 +1134,7 @@ export function ShiftPage() {
                       }}
                       mineOnly={mineOnly}
                       onMineOnlyChange={setMineOnly}
-                      canShowMineOnly={canShowMineOnly}
+                      showMineOnlyFilter={canShowMineOnly}
                     />
                   </div>
                 </>
@@ -1541,7 +1541,7 @@ export function ShiftPage() {
                     }}
                     mineOnly={mineOnly}
                     onMineOnlyChange={setMineOnly}
-                    canShowMineOnly={canShowMineOnly}
+                    showMineOnlyFilter={canShowMineOnly}
                   />
                 </div>
 
