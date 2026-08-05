@@ -151,6 +151,33 @@ function MineOnlyChip({
   );
 }
 
+/**
+ * 「自分のみ」チップのグループ (区切り線 + fieldset) を 1 要素にまとめたもの。
+ * PC/SP 両方でこの単一コンポーネントを使うことで、行送りが起きても
+ * 区切り線とチップが常に同じ行に留まる (区切り線だけが前行末に取り残される
+ * レイアウト崩れを防ぐ)。PC/SP で二重定義しない。
+ */
+function MineOnlyGroup({
+  isActive,
+  onToggle,
+}: {
+  isActive: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="inline-flex items-center gap-2 flex-nowrap shrink-0">
+      {/* ステータス軸とメンバー軸を視覚的に区切る */}
+      <span
+        aria-hidden="true"
+        className="w-px h-4 bg-stone-300 dark:bg-stone-600 shrink-0"
+      />
+      <fieldset className="flex flex-wrap gap-2" aria-label="表示するメンバー">
+        <MineOnlyChip isActive={isActive} onToggle={onToggle} />
+      </fieldset>
+    </div>
+  );
+}
+
 function StatusChip({
   status,
   isActive,
@@ -262,19 +289,7 @@ export function ShiftStatusFilter({
         {renderMineOnly && (
           // FIX-3: 区切り線とチップを 1 要素にまとめ、行送り時も常に同じ行に留める
           // (区切り線だけが前行末に取り残されチップが孤立するレイアウト崩れを防ぐ)。
-          <div className="inline-flex items-center gap-2 flex-nowrap shrink-0">
-            {/* ステータス軸とメンバー軸を視覚的に区切る */}
-            <span
-              aria-hidden="true"
-              className="w-px h-4 bg-stone-300 dark:bg-stone-600 shrink-0"
-            />
-            <fieldset
-              className="flex flex-wrap gap-2"
-              aria-label="表示するメンバー"
-            >
-              <MineOnlyChip isActive={mineOnly} onToggle={toggleMineOnly} />
-            </fieldset>
-          </div>
+          <MineOnlyGroup isActive={mineOnly} onToggle={toggleMineOnly} />
         )}
       </div>
 
@@ -296,18 +311,9 @@ export function ShiftStatusFilter({
         </fieldset>
 
         {renderMineOnly && (
-          <>
-            <span
-              aria-hidden="true"
-              className="w-px h-4 bg-stone-300 dark:bg-stone-600"
-            />
-            <fieldset
-              className="flex flex-wrap gap-2"
-              aria-label="表示するメンバー"
-            >
-              <MineOnlyChip isActive={mineOnly} onToggle={toggleMineOnly} />
-            </fieldset>
-          </>
+          // FIX-3 取りこぼし補修: PC 側と同じ MineOnlyGroup を使い、
+          // 区切り線とチップを 1 要素にまとめて行送り時も同じ行に留める。
+          <MineOnlyGroup isActive={mineOnly} onToggle={toggleMineOnly} />
         )}
       </div>
     </div>
