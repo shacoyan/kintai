@@ -102,6 +102,10 @@ interface ShiftCalendarProps {
   statusFilter?: Set<StatusFilterValue>;
   showPreferenceStatus?: boolean;
   currentUserId?: string | null;
+  // 設計書 2026-08-05-kintai-shift-mine-filter §機能1: 「自分のみ」表示トグル。
+  // canManageTenant 用の絞り込み(自分の行だけ表示)。currentUserId が null のときは無効化される
+  // (呼び出し側は必ずこのガードを効かせること。ここでも二重にガードする)。
+  mineOnly?: boolean;
   selectedBulkDates?: Set<string>;
   viewMode?: ViewMode;
   onViewModeChange?: (v: ViewMode) => void;
@@ -270,6 +274,7 @@ function ShiftCalendarInner({
   statusFilter,
   showPreferenceStatus = false,
   currentUserId,
+  mineOnly = false,
   selectedBulkDates,
   viewMode: viewModeProp,
   baseDate: baseDateProp,
@@ -304,6 +309,10 @@ function ShiftCalendarInner({
     onViewMonthChange?.(baseDate);
   }, [baseDate, onViewMonthChange]);
 
+  // 設計書 §機能1 ガード: currentUserId が null の間は mineOnly を絶対に適用しない
+  // (全件が消える事故防止。UnifiedShiftSidebar.tsx の defensive guard と同じ思想)。
+  const effectiveMineOnly = mineOnly && !!currentUserId;
+
   const dates = useMemo(() => {
     const result: Date[] = [];
     if (viewMode === 'month') {
@@ -333,14 +342,16 @@ function ShiftCalendarInner({
       const passesFilter =
         s.status === 'pending' ||
         !statusFilter || statusFilter.has(s.status as StatusFilterValue);
-      if (passesFilter) {
+      // 設計書 §機能1: mineOnly は pending 常時表示の例外より優先(他人の pending も隠す)。
+      const passesMine = !effectiveMineOnly || s.user_id === currentUserId;
+      if (passesFilter && passesMine) {
         const arr = map.get(s.date) || [];
         arr.push(s);
         map.set(s.date, arr);
       }
     }
     return map;
-  }, [shifts, statusFilter]);
+  }, [shifts, statusFilter, effectiveMineOnly, currentUserId]);
 
   const preferencesByDate = useMemo(() => {
     const map = new Map<string, ShiftPreference[]>();
@@ -352,26 +363,30 @@ function ShiftCalendarInner({
       const filterKey: StatusFilterValue =
         p.preference_type === 'unavailable' ? 'unavailable_preference' : 'pending_preference';
       const showByFilter = !showPreferenceStatus || !statusFilter || statusFilter.has(filterKey);
-      if (showByFilter) {
+      // 設計書 §機能1: mineOnly は希望バーにも適用(絞る対象=確定シフト+希望の両方)。
+      const passesMine = !effectiveMineOnly || p.user_id === currentUserId;
+      if (showByFilter && passesMine) {
         const arr = map.get(p.date) || [];
         arr.push(p);
         map.set(p.date, arr);
       }
     }
     return map;
-  }, [preferences, statusFilter, showPreferenceStatus]);
+  }, [preferences, statusFilter, showPreferenceStatus, effectiveMineOnly, currentUserId]);
 
   const leavesByDate = useMemo(() => {
     const map = new Map<string, LeaveRequest[]>();
     for (const l of leaves) {
-      if (l.status === 'approved' || l.status === 'pending') {
+      // 設計書 §機能1: 出勤不可マーカー(休暇 dot)も mineOnly の絞り込み対象。
+      const passesMine = !effectiveMineOnly || l.user_id === currentUserId;
+      if ((l.status === 'approved' || l.status === 'pending') && passesMine) {
         const arr = map.get(l.date) || [];
         arr.push(l);
         map.set(l.date, arr);
       }
     }
     return map;
-  }, [leaves]);
+  }, [leaves, effectiveMineOnly, currentUserId]);
 
   // 設計書 §5.1: framesByDate。枠機能 OFF(frameStoreId 未指定)なら空 Map。
   const framesByDate = useMemo(() => {
