@@ -5,6 +5,7 @@ import {
   STATUS_FILTER_LABELS,
   STATUS_FILTER_STORAGE_KEY,
   DEFAULT_STATUS_FILTER,
+  MINE_ONLY_STORAGE_KEY,
 } from './unifiedShiftTypes';
 
 /**
@@ -36,6 +37,34 @@ export function writeStatusFilter(set: Set<StatusFilterValue>): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STATUS_FILTER_STORAGE_KEY, JSON.stringify([...set]));
+  } catch {
+    // ignore quota / serialization errors
+  }
+}
+
+/**
+ * localStorage から「自分のみ」表示トグルを読み出す。
+ * SSR 安全。失敗時はデフォルト (false = 全員分表示)。
+ */
+export function readMineOnly(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const raw = localStorage.getItem(MINE_ONLY_STORAGE_KEY);
+    if (raw === null) return false;
+    return raw === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * localStorage へ「自分のみ」表示トグルを保存する。
+ * SSR 安全。失敗時は無視。
+ */
+export function writeMineOnly(mineOnly: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(MINE_ONLY_STORAGE_KEY, mineOnly ? 'true' : 'false');
   } catch {
     // ignore quota / serialization errors
   }
@@ -93,6 +122,16 @@ const STATUS_OFF = {
 const CHIP_BASE_CLASS =
   'inline-flex items-center gap-1.5 rounded-full border h-[26px] min-h-[44px] sm:min-h-0 px-[9px] text-xs font-medium motion-safe:transition-colors duration-150 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500';
 
+/** 「自分のみ」チップの ON/OFF スタイル (ステータス系の色とは衝突しない violet 系) */
+const MINE_ONLY_ON_STYLE = {
+  chip: 'bg-violet-50 border-violet-600 text-violet-700 dark:bg-violet-900/30 dark:border-violet-400 dark:text-violet-300',
+  dot: 'bg-violet-600 dark:bg-violet-400',
+};
+const MINE_ONLY_OFF_STYLE = {
+  chip: 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50 dark:bg-stone-800 dark:border-stone-700 dark:text-stone-300',
+  dot: 'bg-stone-400 dark:bg-stone-500',
+};
+
 export interface ShiftStatusFilterProps {
   value: Set<StatusFilterValue>;
   onChange: (next: Set<StatusFilterValue>) => void;
@@ -103,6 +142,42 @@ export interface ShiftStatusFilterProps {
   showPreferenceStatus?: boolean;
   /** chip 右端に件数を出す (オプション)。未指定は従来通り件数なし */
   counts?: Partial<Record<StatusFilterValue, number>>;
+  /**
+   * 「自分のみ」チップを表示するか。呼び出し側で
+   * canManageTenant && currentUserId != null を判定して渡す。
+   * false / 未指定なら「自分のみ」チップ・バナーは一切描画しない。
+   */
+  showMineOnlyFilter?: boolean;
+  /** 「自分のみ」表示トグルの現在値 */
+  mineOnly?: boolean;
+  /** 「自分のみ」表示トグル変更ハンドラ */
+  onMineOnlyChange?: (next: boolean) => void;
+}
+
+function MineOnlyChip({
+  isActive,
+  onToggle,
+}: {
+  isActive: boolean;
+  onToggle: () => void;
+}) {
+  const style = isActive ? MINE_ONLY_ON_STYLE : MINE_ONLY_OFF_STYLE;
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={isActive}
+      aria-label="自分のみ表示"
+      onClick={onToggle}
+      className={`${CHIP_BASE_CLASS} ${style.chip}`}
+    >
+      <span
+        aria-hidden="true"
+        className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`}
+      />
+      <span>自分のみ</span>
+    </button>
+  );
 }
 
 function StatusChip({
@@ -154,6 +229,9 @@ export function ShiftStatusFilter({
   onChange,
   showPreferenceStatus = false,
   counts,
+  showMineOnlyFilter = false,
+  mineOnly = false,
+  onMineOnlyChange,
 }: ShiftStatusFilterProps) {
   const toggle = useCallback(
     (status: StatusFilterValue) => {
@@ -167,6 +245,14 @@ export function ShiftStatusFilter({
     },
     [value, onChange]
   );
+
+  const toggleMineOnly = useCallback(() => {
+    onMineOnlyChange?.(!mineOnly);
+  }, [mineOnly, onMineOnlyChange]);
+
+  // showMineOnlyFilter は呼び出し側が canManageTenant && currentUserId != null を
+  // 判定して渡す前提だが、onMineOnlyChange が無ければ描画しない (安全側)。
+  const renderMineOnly = showMineOnlyFilter && !!onMineOnlyChange;
 
   // オーナー要望: 「修正」「却下」「取消」chip は表示しない。
   //   - 型 (StatusFilterValue) と localStorage 永続化キーは互換維持。
@@ -186,37 +272,84 @@ export function ShiftStatusFilter({
   return (
     <div>
       {/* PC: 横並び */}
-      <fieldset
-        className="hidden sm:flex flex-wrap gap-2"
-        aria-label="表示するステータス"
-      >
-        {displayedStatuses.map((status) => (
-          <StatusChip
-            key={status}
-            status={status}
-            isActive={value.has(status)}
-            count={counts?.[status]}
-            onToggle={() => toggle(status)}
-          />
-        ))}
-      </fieldset>
+      <div className="hidden sm:flex flex-wrap items-center gap-2">
+        <fieldset
+          className="flex flex-wrap gap-2"
+          aria-label="表示するステータス"
+        >
+          {displayedStatuses.map((status) => (
+            <StatusChip
+              key={status}
+              status={status}
+              isActive={value.has(status)}
+              count={counts?.[status]}
+              onToggle={() => toggle(status)}
+            />
+          ))}
+        </fieldset>
+
+        {renderMineOnly && (
+          <>
+            {/* ステータス軸とメンバー軸を視覚的に区切る */}
+            <span
+              aria-hidden="true"
+              className="w-px h-4 bg-stone-300 dark:bg-stone-600"
+            />
+            <fieldset
+              className="flex flex-wrap gap-2"
+              aria-label="表示するメンバー"
+            >
+              <MineOnlyChip isActive={mineOnly} onToggle={toggleMineOnly} />
+            </fieldset>
+          </>
+        )}
+      </div>
 
       {/* SP: 常時表示 */}
-      <fieldset
-        className="sm:hidden flex flex-wrap gap-2"
-        aria-label="表示するステータス"
-      >
-        {displayedStatuses.map((status) => (
-          <StatusChip
-            key={status}
-            status={status}
-            isActive={value.has(status)}
-            count={counts?.[status]}
-            onToggle={() => toggle(status)}
-          />
-        ))}
-      </fieldset>
+      <div className="sm:hidden flex flex-wrap items-center gap-2">
+        <fieldset
+          className="flex flex-wrap gap-2"
+          aria-label="表示するステータス"
+        >
+          {displayedStatuses.map((status) => (
+            <StatusChip
+              key={status}
+              status={status}
+              isActive={value.has(status)}
+              count={counts?.[status]}
+              onToggle={() => toggle(status)}
+            />
+          ))}
+        </fieldset>
 
+        {renderMineOnly && (
+          <>
+            <span
+              aria-hidden="true"
+              className="w-px h-4 bg-stone-300 dark:bg-stone-600"
+            />
+            <fieldset
+              className="flex flex-wrap gap-2"
+              aria-label="表示するメンバー"
+            >
+              <MineOnlyChip isActive={mineOnly} onToggle={toggleMineOnly} />
+            </fieldset>
+          </>
+        )}
+      </div>
+
+      {renderMineOnly && mineOnly && (
+        <div
+          role="status"
+          className="mt-2 flex items-center gap-1.5 rounded-md border border-violet-300 bg-violet-50 px-2.5 py-1.5 text-xs font-medium text-violet-800 dark:border-violet-500/40 dark:bg-violet-900/20 dark:text-violet-200"
+        >
+          <span
+            aria-hidden="true"
+            className="inline-block w-1.5 h-1.5 rounded-full shrink-0 bg-violet-600 dark:bg-violet-400"
+          />
+          <span>自分のみ表示中（他のメンバーのシフト・希望は非表示です）</span>
+        </div>
+      )}
     </div>
   );
 }

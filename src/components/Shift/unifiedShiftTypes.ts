@@ -74,3 +74,43 @@ export const STATUS_FILTER_DOT_CLASS: Record<StatusFilterValue, string> = {
   rejected: 'bg-red-400',
   cancelled: 'bg-stone-400',
 };
+
+/**
+ * 「自分のみ」表示トグルの localStorage 保存キー (v1)
+ * STATUS_FILTER_STORAGE_KEY とは別キーで永続化する (互換性のため独立キー)。
+ */
+export const MINE_ONLY_STORAGE_KEY = 'kintai.shift.mineOnly.v1';
+
+/** mineOnly 判定対象となる行が最低限持つべき形状 */
+export interface MineOnlyFilterableRow {
+  user_id: string | null | undefined;
+}
+
+/**
+ * 「自分のみ」フィルタの純関数。
+ * - mineOnly が false の場合は常に true (絞り込みなし)。
+ * - currentUserId が null/undefined の間は絞り込みを一切行わない
+ *   (全件表示のまま保つ。null 同士の比較で全件 false になる罠を避ける)。
+ * - それ以外は row.user_id === currentUserId の行のみ true。
+ */
+export function isMineOnlyVisible(
+  row: MineOnlyFilterableRow,
+  mineOnly: boolean,
+  currentUserId: string | null | undefined
+): boolean {
+  if (!mineOnly) return true;
+  if (currentUserId == null) return true;
+  return !!currentUserId && row.user_id === currentUserId;
+}
+
+/**
+ * 「自分のみ」チップを表示してよいかどうか。
+ * - canManageTenant が false (staff) の場合は元々自分のみの表示なので無意味 → 非表示。
+ * - currentUserId が未確定の間は誤ってフィルタを適用させないよう非表示。
+ */
+export function shouldShowMineOnlyFilter(
+  canManageTenant: boolean,
+  currentUserId: string | null | undefined
+): boolean {
+  return canManageTenant && currentUserId != null;
+}
