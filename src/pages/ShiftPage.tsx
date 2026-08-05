@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, startTransition } fr
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addWeeks, subMonths, addMonths } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { Plus, ChevronLeft, ChevronRight, AlertTriangle, X, LayoutGrid } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, AlertTriangle, LayoutGrid } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Button, Card, Badge, BottomSheet, ShiftSkeleton, EmptyState, Heading, ConfirmDialog } from '../components/ui';
 import { messages } from '../lib/messages';
@@ -36,6 +36,12 @@ import { DayDetailModal } from '../components/Shift/DayDetailModal';
 import { LaborCostCard } from '../components/Shift/LaborCostCard';
 import { ShiftStatusFilter, readStatusFilter, writeStatusFilter } from '../components/Shift/ShiftStatusFilter';
 import type { StatusFilterValue } from '../components/Shift/unifiedShiftTypes';
+import {
+  readMineOnly,
+  writeMineOnly,
+  computeEffectiveMineOnly,
+  shouldShowMineOnlyFilter,
+} from '../components/Shift/unifiedShiftTypes';
 import { BulkShiftPreferenceDialog } from '../components/Shift/BulkShiftPreferenceDialog';
 import { BulkSelectionBar } from '../components/Shift/BulkSelectionBar';
 import { FrameAssignSheet } from '../components/Shift/FrameAssignSheet';
@@ -68,69 +74,6 @@ const EMPTY_LEAVES: LeaveRequest[] = [];
 // 同上の理由でシフト枠 props も安定参照を用意（枠機能 OFF / canManageTenant=false 時）。
 const EMPTY_FRAMES: ShiftFrame[] = [];
 const EMPTY_OVERRIDES: ShiftFrameOverride[] = [];
-
-// 2026-08-05 kintai-shift-mine-filter 機能1:
-// 「自分のみ」表示トグルの永続化キー。既存 STATUS_FILTER_STORAGE_KEY とは別キーにする
-// （型もドメインも違う: こちらは boolean 単体）。
-export const MINE_ONLY_STORAGE_KEY = 'kintai.shift.mineOnly.v1';
-
-/**
- * localStorage から「自分のみ」トグル状態を読み出す。
- * ShiftStatusFilter.tsx の readStatusFilter と同型: SSR 安全 + try/catch。
- * 壊れた値 (非 boolean JSON 等) はデフォルト false 扱い。
- */
-export function readMineOnly(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    const raw = localStorage.getItem(MINE_ONLY_STORAGE_KEY);
-    if (raw == null) return false;
-    return JSON.parse(raw) === true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * localStorage へ「自分のみ」トグル状態を保存する。
- * ShiftStatusFilter.tsx の writeStatusFilter と同型: SSR 安全 + try/catch。
- */
-export function writeMineOnly(value: boolean): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(MINE_ONLY_STORAGE_KEY, JSON.stringify(value));
-  } catch {
-    // ignore quota / serialization errors
-  }
-}
-
-/**
- * 「自分のみ」トグルの実効値を計算するガード関数。
- * - canManageTenant=false (staff) は元々自分スコープのため常に無効
- * - currentUserId が null のとき（未ログイン相当・取得前）は誤って全件を隠さないよう常に無効
- * localStorage に true が残っていても、上記条件下では絶対に true を返さない。
- */
-export function computeEffectiveMineOnly(
-  mineOnly: boolean,
-  canManageTenant: boolean,
-  currentUserId: string | null,
-): boolean {
-  return mineOnly && canManageTenant && !!currentUserId;
-}
-
-/**
- * user_id を持つ行配列を「自分の行のみ」に絞る汎用の純関数。
- * effectiveMineOnly=false または currentUserId=null のときは絞らず全件を返す
- * （currentUserId=null での全件消失事故防止・UnifiedShiftSidebar.tsx:257 と同じ思想）。
- * ShiftCalendar / ShiftMobileCalendar 側の mineOnly 適用ロジックと等価な参照実装。
- */
-export function filterRowsByMine<T extends { user_id: string }>(
-  rows: T[],
-  effectiveMineOnly: boolean,
-  currentUserId: string | null,
-): T[] {
-  if (!effectiveMineOnly || !currentUserId) return rows;
-  return rows.filter((row) => !!currentUserId && row.user_id === currentUserId);
-}
 
 export function ShiftPage() {
   const { user } = useAuth();
@@ -371,7 +314,7 @@ export function ShiftPage() {
   // canManageTenant=false または currentUserId=null のときは常に無効（他人分が誤って全消えしない）。
   const effectiveMineOnly = computeEffectiveMineOnly(mineOnly, canManageTenant, currentUserId);
   // チップ自体の表示可否（currentUserId=null / staff では「自分のみ」チップを出さない）。
-  const canShowMineOnly = canManageTenant && !!currentUserId;
+  const canShowMineOnly = shouldShowMineOnlyFilter(canManageTenant, currentUserId);
   const tentativeCount = useMemo(
     () => shifts.filter(s => s.status === 'tentative').length,
     [shifts]
@@ -1683,31 +1626,6 @@ export function ShiftPage() {
                     </>
                   )}
                 </BottomSheet>
-              )}
-
-              {/* §E-6: bulk mode 中の確定 sticky バーのみ残す。通常時の各申請ボタンは FAB へ移管。 */}
-              {isBulkMode && (
-                <div className="lg:hidden mt-3 rounded-md px-3 py-3">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="secondary"
-                      size="lg"
-                      onClick={handleCancelBulkMode}
-                      iconLeft={<X className="w-4 h-4" />}
-                    >
-                      {messages.shiftPreference.bulk.cancelMode}
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      fullWidth
-                      onClick={handleProceedBulkDialog}
-                      disabled={selectedBulkDates.size === 0}
-                    >
-                      {messages.shiftPreference.bulk.proceedButton(selectedBulkDates.size)}
-                    </Button>
-                  </div>
-                </div>
               )}
 
               {/* §F-3: FAB + 申請メニュー（bulk 中は下部確定バーと競合回避のため非表示）。

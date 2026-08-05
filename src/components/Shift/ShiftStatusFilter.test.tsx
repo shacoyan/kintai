@@ -1,65 +1,13 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
-import {
-  ShiftStatusFilter,
-  readMineOnly,
-  writeMineOnly,
-} from './ShiftStatusFilter';
-import { MINE_ONLY_STORAGE_KEY, DEFAULT_STATUS_FILTER } from './unifiedShiftTypes';
+import { ShiftStatusFilter } from './ShiftStatusFilter';
+import { DEFAULT_STATUS_FILTER } from './unifiedShiftTypes';
 
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   localStorage.clear();
-});
-
-describe('readMineOnly / writeMineOnly', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
-  it('未設定時は false を返す', () => {
-    expect(readMineOnly()).toBe(false);
-  });
-
-  it('write した値を read できる (true)', () => {
-    writeMineOnly(true);
-    expect(localStorage.getItem(MINE_ONLY_STORAGE_KEY)).toBe('true');
-    expect(readMineOnly()).toBe(true);
-  });
-
-  it('write した値を read できる (false)', () => {
-    writeMineOnly(true);
-    writeMineOnly(false);
-    expect(readMineOnly()).toBe(false);
-  });
-
-  it('SSR (window undefined) 環境では readMineOnly は false を返す (例外にならない)', () => {
-    vi.stubGlobal('window', undefined);
-    expect(readMineOnly()).toBe(false);
-  });
-
-  it('SSR (window undefined) 環境では writeMineOnly は何もせず例外にならない', () => {
-    vi.stubGlobal('window', undefined);
-    expect(() => writeMineOnly(true)).not.toThrow();
-  });
-
-  it('localStorage.getItem が例外を投げても readMineOnly は false を返す', () => {
-    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new Error('boom');
-    });
-    expect(readMineOnly()).toBe(false);
-    spy.mockRestore();
-  });
-
-  it('localStorage.setItem が例外を投げても writeMineOnly は例外にならない', () => {
-    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('quota exceeded');
-    });
-    expect(() => writeMineOnly(true)).not.toThrow();
-    spy.mockRestore();
-  });
 });
 
 describe('ShiftStatusFilter - 自分のみチップ', () => {

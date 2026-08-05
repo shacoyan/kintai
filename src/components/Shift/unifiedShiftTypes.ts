@@ -81,28 +81,6 @@ export const STATUS_FILTER_DOT_CLASS: Record<StatusFilterValue, string> = {
  */
 export const MINE_ONLY_STORAGE_KEY = 'kintai.shift.mineOnly.v1';
 
-/** mineOnly 判定対象となる行が最低限持つべき形状 */
-export interface MineOnlyFilterableRow {
-  user_id: string | null | undefined;
-}
-
-/**
- * 「自分のみ」フィルタの純関数。
- * - mineOnly が false の場合は常に true (絞り込みなし)。
- * - currentUserId が null/undefined の間は絞り込みを一切行わない
- *   (全件表示のまま保つ。null 同士の比較で全件 false になる罠を避ける)。
- * - それ以外は row.user_id === currentUserId の行のみ true。
- */
-export function isMineOnlyVisible(
-  row: MineOnlyFilterableRow,
-  mineOnly: boolean,
-  currentUserId: string | null | undefined
-): boolean {
-  if (!mineOnly) return true;
-  if (currentUserId == null) return true;
-  return !!currentUserId && row.user_id === currentUserId;
-}
-
 /**
  * 「自分のみ」チップを表示してよいかどうか。
  * - canManageTenant が false (staff) の場合は元々自分のみの表示なので無意味 → 非表示。
@@ -113,4 +91,50 @@ export function shouldShowMineOnlyFilter(
   currentUserId: string | null | undefined
 ): boolean {
   return canManageTenant && currentUserId != null;
+}
+
+/**
+ * localStorage から「自分のみ」トグル状態を読み出す。
+ * SSR 安全 + try/catch。壊れた値 (非 boolean JSON 等) はデフォルト false 扱い。
+ * 直列化方式は JSON.stringify(boolean) / JSON.parse(raw) === true に統一する。
+ * JSON.stringify(true) === 'true' / JSON.stringify(false) === 'false' のため、
+ * 旧実装 (raw === 'true' 直書き) が書き込んだ既存値もそのまま読める (後方互換)。
+ */
+export function readMineOnly(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const raw = localStorage.getItem(MINE_ONLY_STORAGE_KEY);
+    if (raw == null) return false;
+    return JSON.parse(raw) === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * localStorage へ「自分のみ」トグル状態を保存する。
+ * SSR 安全 + try/catch。
+ */
+export function writeMineOnly(value: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(MINE_ONLY_STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    // ignore quota / serialization errors
+  }
+}
+
+/**
+ * 「自分のみ」トグルの実効値を計算するガード関数。
+ * - canManageTenant=false (staff) は元々自分スコープのため常に無効
+ * - currentUserId が null のとき（未ログイン相当・取得前）は誤って全件を隠さないよう常に無効
+ * localStorage に true が残っていても、上記条件下では絶対に true を返さない。
+ * (式は §9 で凍結: mine_only && canManageTenant && !!currentUserId を変更しない)
+ */
+export function computeEffectiveMineOnly(
+  mineOnly: boolean,
+  canManageTenant: boolean,
+  currentUserId: string | null,
+): boolean {
+  return mineOnly && canManageTenant && !!currentUserId;
 }

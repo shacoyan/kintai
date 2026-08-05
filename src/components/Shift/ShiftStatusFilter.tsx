@@ -5,7 +5,6 @@ import {
   STATUS_FILTER_LABELS,
   STATUS_FILTER_STORAGE_KEY,
   DEFAULT_STATUS_FILTER,
-  MINE_ONLY_STORAGE_KEY,
 } from './unifiedShiftTypes';
 
 /**
@@ -37,34 +36,6 @@ export function writeStatusFilter(set: Set<StatusFilterValue>): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(STATUS_FILTER_STORAGE_KEY, JSON.stringify([...set]));
-  } catch {
-    // ignore quota / serialization errors
-  }
-}
-
-/**
- * localStorage から「自分のみ」表示トグルを読み出す。
- * SSR 安全。失敗時はデフォルト (false = 全員分表示)。
- */
-export function readMineOnly(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    const raw = localStorage.getItem(MINE_ONLY_STORAGE_KEY);
-    if (raw === null) return false;
-    return raw === 'true';
-  } catch {
-    return false;
-  }
-}
-
-/**
- * localStorage へ「自分のみ」表示トグルを保存する。
- * SSR 安全。失敗時は無視。
- */
-export function writeMineOnly(mineOnly: boolean): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(MINE_ONLY_STORAGE_KEY, mineOnly ? 'true' : 'false');
   } catch {
     // ignore quota / serialization errors
   }
@@ -289,11 +260,13 @@ export function ShiftStatusFilter({
         </fieldset>
 
         {renderMineOnly && (
-          <>
+          // FIX-3: 区切り線とチップを 1 要素にまとめ、行送り時も常に同じ行に留める
+          // (区切り線だけが前行末に取り残されチップが孤立するレイアウト崩れを防ぐ)。
+          <div className="inline-flex items-center gap-2 flex-nowrap shrink-0">
             {/* ステータス軸とメンバー軸を視覚的に区切る */}
             <span
               aria-hidden="true"
-              className="w-px h-4 bg-stone-300 dark:bg-stone-600"
+              className="w-px h-4 bg-stone-300 dark:bg-stone-600 shrink-0"
             />
             <fieldset
               className="flex flex-wrap gap-2"
@@ -301,7 +274,7 @@ export function ShiftStatusFilter({
             >
               <MineOnlyChip isActive={mineOnly} onToggle={toggleMineOnly} />
             </fieldset>
-          </>
+          </div>
         )}
       </div>
 
