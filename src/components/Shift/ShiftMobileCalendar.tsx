@@ -60,6 +60,15 @@ interface Props {
    * → false のときは statusFilter を無視して preference を常時表示する（PC と対称）。
    */
   showPreferenceStatus?: boolean;
+  /**
+   * true のとき、確定シフト・希望（preferred ゴーストチップ・出勤不可マーカー）を
+   * currentUserId 本人の行のみに絞り込む（機能1「自分のみ」表示）。
+   * currentUserId が null のときは（ON のまま渡されても）フィルタを適用しない
+   * （全件消失事故防止 / UnifiedShiftSidebar.tsx の defensive guard と同思想）。
+   * isMinePref の常時表示例外（pending / unavailable の自分の希望）とは矛盾しない
+   * ——本フィルタは他人の行を先に除外するだけで、自分の行は従来通り常時残る。
+   */
+  mineOnly?: boolean;
   /** 日セルタップ。SP では即 BottomSheet 起動の意味（§A-3） */
   onDateClick: (date: string) => void;
   /** 姓抽出のための display_name フルネーム（§A-2 必須追加） */
@@ -184,10 +193,13 @@ function ShiftMobileCalendarInner({
   isBulkMode,
   statusFilter,
   showPreferenceStatus = false,
+  mineOnly = false,
   onDateClick,
   memberNames,
   roleTypeMap,
 }: Props) {
+  // currentUserId が null のときは mineOnly を無視する（全件消失事故防止）。
+  const effectiveMineOnly = mineOnly && !!currentUserId;
   const days = useMemo(() => {
     const monthStart = startOfMonth(shiftViewMonth);
     const monthEnd = endOfMonth(shiftViewMonth);
@@ -213,6 +225,9 @@ function ShiftMobileCalendarInner({
 
     // 確定 shift（§B-8: rejected/cancelled は statusFilter 既定 OFF → 通過分のみ）
     for (const shift of shifts) {
+      // mineOnly（機能1）: statusFilter の常時表示例外（pending 等）より優先して
+      // 他人の行を先に除外する。自分の行は従来通り passesFilter の判定に進む。
+      if (effectiveMineOnly && shift.user_id !== currentUserId) continue;
       const passesFilter = !statusFilter || statusFilter.has(shift.status as StatusFilterValue);
       if (!passesFilter) continue;
       const arr = items.get(shift.date) ?? [];
@@ -235,6 +250,10 @@ function ShiftMobileCalendarInner({
     // preference
     for (const preference of preferences) {
       const isMinePref = !!currentUserId && preference.user_id === currentUserId;
+      // mineOnly（機能1）: isMinePref=false（他人）の希望経路を丸ごと除外する。
+      // isMinePref=true の自分の希望は effectiveMineOnly の有無に関わらずこの後の
+      // 常時表示例外（showUnavailable / showPreferred の isMinePref 分岐）で表示され続ける。
+      if (effectiveMineOnly && !isMinePref) continue;
       if (preference.preference_type === 'unavailable') {
         // 休み希望: チップ列に混ぜず隅マーカー（§B-6 / §B-8）
         // PC ShiftCalendar に倣い、showPreferenceStatus=false（staff）のときは
@@ -289,7 +308,16 @@ function ShiftMobileCalendarInner({
       });
     }
     return result;
-  }, [shifts, preferences, currentUserId, statusFilter, showPreferenceStatus, memberNames, roleTypeMap]);
+  }, [
+    shifts,
+    preferences,
+    currentUserId,
+    statusFilter,
+    showPreferenceStatus,
+    effectiveMineOnly,
+    memberNames,
+    roleTypeMap,
+  ]);
 
   const today = new Date();
 
