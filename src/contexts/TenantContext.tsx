@@ -319,8 +319,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (rpcError) {
         const msg = (rpcError.message || '').toLowerCase();
         if (msg.includes('not_authenticated')) throw new Error('認証情報の取得に失敗しました');
-        if (msg.includes('display_name_required')) throw new Error('表示名を入力してください');
-        if (msg.includes('display_name_too_long')) throw new Error('表示名は 30 文字以内で入力してください');
+        if (msg.includes('display_name_required')) throw new Error('勤務時名を入力してください');
+        if (msg.includes('display_name_too_long')) throw new Error('勤務時名は 30 文字以内で入力してください');
         if (msg.includes('invite_code_not_found')) throw new Error('無効な招待コードです');
         if (msg.includes('invite_code_expired')) throw new Error('招待コードの有効期限が切れています');
         if (msg.includes('invite_code_max_uses_reached')) throw new Error('招待コードの使用回数上限に達しています');

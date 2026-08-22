@@ -57,8 +57,8 @@ REVOKE UPDATE (legal_name_kana) ON public.tenant_members FROM anon;
 
 -- ---------------------------------------------------------------------
 -- (C) tenant_members_visible を CREATE OR REPLACE
---     115 の 16 列を名前・順序・型（NULL::text / NULL::integer / NULL::numeric(4,1)）
---     まで完全維持し、末尾（is_parttime の後）に 17 列目 legal_name_kana を追加。
+--     115 の 15 列を名前・順序・型（NULL::text / NULL::integer / NULL::numeric(4,1)）
+--     まで完全維持し、末尾（is_parttime の後）に 16 列目 legal_name_kana を追加。
 --     legal_name_kana の CASE は legal_name と完全同一条件。
 --     security_invoker = false（definer 化）と VIEW 内テナントスコープを維持。
 -- ---------------------------------------------------------------------
@@ -196,7 +196,7 @@ NOTIFY pgrst, 'reload schema';
 -- ============================================================
 -- ロールバック SQL（緊急時のみ・コメントとして記載）
 -- ============================================================
---   -- 1. VIEW を 115 の 16 列版へ戻す（117 の CASE 追加を外す）
+--   -- 1. VIEW を 115 の 15 列版へ戻す（117 の CASE 追加を外す）
 --   --    ※ 115_pay_read_leak_lockdown_v2.sql の (A) ブロックをそのまま再適用する。
 --   --       その後 GRANT SELECT ON public.tenant_members_visible TO authenticated; と
 --   --       115(D) の REVOKE 2 行を再宣言すること。
@@ -227,9 +227,9 @@ NOTIFY pgrst, 'reload schema';
 --   --        has_column_privilege('anon','public.tenant_members','legal_name_kana','UPDATE')          AS n_upd;
 --   --   -- 期待: 全て false
 --   --
---   -- 2. VIEW 列数 17・末尾が legal_name_kana
+--   -- 2. VIEW 列数 16・末尾が legal_name_kana
 --   -- SELECT count(*) FROM information_schema.columns
---   --   WHERE table_schema='public' AND table_name='tenant_members_visible'; -- 期待: 17
+--   --   WHERE table_schema='public' AND table_name='tenant_members_visible'; -- 期待: 16
 --   -- SELECT column_name FROM information_schema.columns
 --   --   WHERE table_schema='public' AND table_name='tenant_members_visible'
 --   --   ORDER BY ordinal_position DESC LIMIT 1; -- 期待: legal_name_kana
