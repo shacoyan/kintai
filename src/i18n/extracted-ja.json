@@ -82,7 +82,14 @@
       "memberRemoved": "メンバーを外しました",
       "memberAdded": "メンバーを追加しました",
       "correctionRequested": "修正申請を送信しました",
-      "correctionDeleted": "削除依頼を送信しました"
+      "correctionDeleted": "削除依頼を送信しました",
+      "shiftPreferenceSubmitted": "シフト申請を送信しました",
+      "shiftPreferenceDeleted": "シフト申請を取り消しました",
+      "correctionApproved": "修正申請を承認しました",
+      "correctionRejected": "修正申請を却下しました",
+      "correctionRecordDeleted": "記録を削除しました",
+      "projectArchived": "プロジェクトをアーカイブしました",
+      "projectRestored": "プロジェクトのアーカイブを解除しました"
     },
     "error": {
       "fetchFailed": "読み込みに失敗しました。再試行するか時間をおいてお試しください。",
@@ -108,11 +115,14 @@
     },
     "onboarding": {
       "welcome": "ようこそ {{tenantName}} へ",
-      "description": "初回設定として、氏名（社内表記用）と表示名を入力してください。氏名はあなたと管理者（オーナー / マネージャー）のみが閲覧できます。",
+      "description": "初回設定として、本名・フリガナ・勤務時名を入力してください。本名とフリガナはあなたと管理者（オーナー / マネージャー）のみが閲覧できます。",
       "submit": "保存して始める",
-      "legalNameLabel": "氏名（本名）",
+      "legalNameLabel": "本名",
       "legalNameHint": "あなたと管理者のみに表示されます",
-      "displayNameLabel": "表示名",
+      "legalNameKanaLabel": "フリガナ",
+      "legalNameKanaHint": "ひらがな・カタカナどちらでも構いません",
+      "legalNameKanaPlaceholder": "例: ヤマダ タロウ",
+      "displayNameLabel": "勤務時名",
       "displayNameHint": "シフト表・出退勤表で他のメンバーに表示されます",
       "legalNamePlaceholder": "例: 山田 太郎",
       "displayNamePlaceholder": "例: たろう",
@@ -188,7 +198,33 @@
     "shiftPreference": {
       "approvedLockedTitle": "承認済みのシフト申請は変更できません",
       "approvedLockedDescription": "修正が必要な場合は店長にご相談ください。",
-      "unavailableApprovedNotice": "出勤不可の解除は店長に通知され、承認が再度必要になります。"
+      "unavailableApprovedNotice": "出勤不可の解除は店長に通知され、承認が再度必要になります。",
+      "bulk": {
+        "entryButton": "まとめてシフト申請",
+        "entryButtonShort": "まとめて申請",
+        "entryButtonAria": "複数の日付にまとめてシフト申請を行う",
+        "cancelMode": "キャンセル",
+        "clearAll": "すべて解除",
+        "dialogTitle": "一括シフト申請",
+        "typeLabel": "希望種別",
+        "typePreferred": "希望",
+        "typeUnavailable": "出勤不可",
+        "presetLabel": "プリセット",
+        "presetPlaceholder": "-- 選択 --",
+        "presetCustom": "カスタム時刻",
+        "presetEmpty": "プリセットが未登録です。設定 > プリセットから追加するか「カスタム時刻」を選んでください。",
+        "customStartLabel": "開始時刻",
+        "customEndLabel": "終了時刻",
+        "unavailableHint": "出勤不可は時間指定なしで一括登録され、自動承認されます。",
+        "submitButton": "申請する",
+        "submitting": "送信中…",
+        "cancelButton": "キャンセル",
+        "lockedToast": "承認済みのシフト申請はスキップされました。",
+        "failureToast": "一括シフト申請に失敗しました。時間をおいて再度お試しください。",
+        "validationError": "入力内容にエラーがあります。修正してください。",
+        "timeRequired": "時刻を入力してください",
+        "deadlinePassed": "提出締切を過ぎているため申請できません。"
+      }
     },
     "_meta": {
       "toast.saved.fallback": "保存しました",
