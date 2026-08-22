@@ -2,11 +2,17 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
+export interface SignUpProfile {
+  legalName: string;
+  legalNameKana: string;
+  displayName: string;
+}
+
 export interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, profile: SignUpProfile) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -50,8 +56,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) throw error;
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+  const signUp = useCallback(async (email: string, password: string, profile: SignUpProfile) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          legal_name: profile.legalName,
+          legal_name_kana: profile.legalNameKana,
+          display_name: profile.displayName,
+        },
+      },
+    });
     if (error) throw error;
   }, []);
 

@@ -102,15 +102,21 @@ export const messages = {
     welcome: (tenantName: string): string => `ようこそ ${tenantName} へ`,
     /** @i18n-key onboarding.description */
     description:
-      '初回設定として、氏名（社内表記用）と表示名を入力してください。氏名はあなたと管理者（オーナー / マネージャー）のみが閲覧できます。',
+      '初回設定として、本名・フリガナ・勤務時名を入力してください。本名とフリガナはあなたと管理者（オーナー / マネージャー）のみが閲覧できます。',
     /** @i18n-key onboarding.submit */
     submit: '保存して始める',
     /** @i18n-key onboarding.legalNameLabel */
-    legalNameLabel: '氏名（本名）',
+    legalNameLabel: '本名',
     /** @i18n-key onboarding.legalNameHint */
     legalNameHint: 'あなたと管理者のみに表示されます',
+    /** @i18n-key onboarding.legalNameKanaLabel */
+    legalNameKanaLabel: 'フリガナ',
+    /** @i18n-key onboarding.legalNameKanaHint */
+    legalNameKanaHint: 'ひらがな・カタカナどちらでも構いません',
+    /** @i18n-key onboarding.legalNameKanaPlaceholder */
+    legalNameKanaPlaceholder: '例: ヤマダ タロウ',
     /** @i18n-key onboarding.displayNameLabel */
-    displayNameLabel: '表示名',
+    displayNameLabel: '勤務時名',
     /** @i18n-key onboarding.displayNameHint */
     displayNameHint: 'シフト表・出退勤表で他のメンバーに表示されます',
     /** @i18n-key onboarding.legalNamePlaceholder */

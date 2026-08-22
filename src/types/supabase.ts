@@ -1093,6 +1093,7 @@ export type Database = {
           id: string
           is_parttime: boolean
           legal_name: string | null
+          legal_name_kana: string | null
           monthly_salary: number | null
           night_shift_enabled: boolean | null
           onboarded_at: string | null
@@ -1110,6 +1111,7 @@ export type Database = {
           id?: string
           is_parttime?: boolean
           legal_name?: string | null
+          legal_name_kana?: string | null
           monthly_salary?: number | null
           night_shift_enabled?: boolean | null
           onboarded_at?: string | null
@@ -1127,6 +1129,7 @@ export type Database = {
           id?: string
           is_parttime?: boolean
           legal_name?: string | null
+          legal_name_kana?: string | null
           monthly_salary?: number | null
           night_shift_enabled?: boolean | null
           onboarded_at?: string | null
@@ -1247,6 +1250,7 @@ export type Database = {
           id: string | null
           is_parttime: boolean | null
           legal_name: string | null
+          legal_name_kana: string | null
           monthly_salary: number | null
           night_shift_enabled: boolean | null
           onboarded_at: string | null
@@ -1264,6 +1268,7 @@ export type Database = {
           id?: string | null
           is_parttime?: boolean | null
           legal_name?: never
+          legal_name_kana?: never
           monthly_salary?: number | null
           night_shift_enabled?: boolean | null
           onboarded_at?: string | null
@@ -1281,6 +1286,7 @@ export type Database = {
           id?: string | null
           is_parttime?: boolean | null
           legal_name?: never
+          legal_name_kana?: never
           monthly_salary?: number | null
           night_shift_enabled?: boolean | null
           onboarded_at?: string | null
@@ -1466,6 +1472,15 @@ export type Database = {
         Args: {
           p_display_name: string
           p_legal_name: string
+          p_tenant_id: string
+        }
+        Returns: undefined
+      }
+      complete_onboarding_v2: {
+        Args: {
+          p_display_name: string
+          p_legal_name: string
+          p_legal_name_kana: string
           p_tenant_id: string
         }
         Returns: undefined

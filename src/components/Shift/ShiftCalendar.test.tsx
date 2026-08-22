@@ -18,8 +18,8 @@ const BASE_DATE = new Date('2026-08-15T00:00:00');
 const DATE = '2026-08-15';
 
 const membersById = new Map<string, TenantMember>([
-  [ME, { id: 'm1', tenant_id: 't', user_id: ME, role: 'staff', display_name: '自分', legal_name: null, onboarded_at: null, hourly_rate: null, night_shift_enabled: null, is_parttime: null, pay_type: 'hourly', monthly_salary: null, paid_leave_days: null, role_id: null, created_at: '' }],
-  [OTHER, { id: 'm2', tenant_id: 't', user_id: OTHER, role: 'staff', display_name: '他人', legal_name: null, onboarded_at: null, hourly_rate: null, night_shift_enabled: null, is_parttime: null, pay_type: 'hourly', monthly_salary: null, paid_leave_days: null, role_id: null, created_at: '' }],
+  [ME, { id: 'm1', tenant_id: 't', user_id: ME, role: 'staff', display_name: '自分', legal_name: null, legal_name_kana: null, onboarded_at: null, hourly_rate: null, night_shift_enabled: null, is_parttime: null, pay_type: 'hourly', monthly_salary: null, paid_leave_days: null, role_id: null, created_at: '' }],
+  [OTHER, { id: 'm2', tenant_id: 't', user_id: OTHER, role: 'staff', display_name: '他人', legal_name: null, legal_name_kana: null, onboarded_at: null, hourly_rate: null, night_shift_enabled: null, is_parttime: null, pay_type: 'hourly', monthly_salary: null, paid_leave_days: null, role_id: null, created_at: '' }],
 ]);
 
 function makeShift(overrides: Partial<Shift> = {}): Shift {

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
 import { formatSupabaseError } from '../lib/errors';
 import { isManagerial } from '../lib/permissions/can';
+import { readSignupProfile } from '../lib/userProfile';
 import type {
   Tenant,
   TenantMember,
@@ -67,7 +68,7 @@ interface TenantContextType {
   // 初期値 []、currentTenant 変更時に fetch。
   myStoreIds: string[];
   needsOnboarding: boolean;
-  completeOnboarding: (legalName: string, displayName: string) => Promise<void>;
+  completeOnboarding: (input: { legalName: string; legalNameKana: string; displayName: string }) => Promise<void>;
 }
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
@@ -255,6 +256,28 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return inviteCode;
   }, []);
 
+  // 2026-08-22 (117 / signup-profile): サインアップ時に user_metadata へ保存した
+  // 本名/フリガナ/勤務時名を、参加・作成直後に complete_onboarding_v2 へ自動適用する。
+  // metadata が無い（既存ユーザー）場合は何もせず、従来の Onboarding Dialog 導線に委ねる。
+  // RPC 失敗時は throw しない（参加/作成自体は成功済みのため）。legal_name が NULL のまま
+  // 残るので Onboarding Dialog が引き続き表示され、ユーザーは手動で完了できる。
+  const applySignupProfile = useCallback(
+    async (tenantId: string, displayNameUsed: string) => {
+      const profile = readSignupProfile(user);
+      if (!profile) return;
+      const { error: rpcError } = await supabase.rpc('complete_onboarding_v2', {
+        p_tenant_id: tenantId,
+        p_legal_name: profile.legalName,
+        p_legal_name_kana: profile.legalNameKana,
+        p_display_name: displayNameUsed.trim() || profile.displayName,
+      });
+      if (rpcError) {
+        logger.error('auto onboarding failed:', formatSupabaseError(rpcError));
+      }
+    },
+    [user]
+  );
+
   const createTenant = useCallback(async (name: string, displayName: string): Promise<Tenant> => {
     setLoading(true);
     setError(null);
@@ -270,6 +293,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (rpcError) throw rpcError;
       if (!tenantData) throw new Error('ワークスペースの作成に失敗しました');
 
+      await applySignupProfile((tenantData as Tenant).id, displayName);
+
       return tenantData as Tenant;
     } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
@@ -277,7 +302,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [applySignupProfile]);
 
   const joinTenant = useCallback(async (inviteCode: string, displayName: string): Promise<Tenant> => {
     setLoading(true);
@@ -315,6 +340,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       if (fetchError || !tenantData) throw new Error('参加先テナントの取得に失敗しました');
 
+      await applySignupProfile(joinedTenantId as string, displayName);
+
       return tenantData as Tenant;
     } catch (err: unknown) {
       setError(formatSupabaseError(err).message);
@@ -322,7 +349,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [applySignupProfile]);
 
   const regenerateInviteCode = useCallback(async (
     tenantId?: string,
@@ -711,12 +738,13 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   }, [currentTenant, isOwner, setCurrentTenant, fetchTenants]);
 
   const completeOnboarding = useCallback(
-    async (legalName: string, displayName: string) => {
+    async (input: { legalName: string; legalNameKana: string; displayName: string }) => {
       if (!currentTenant) throw new Error('no current tenant');
-      const { error: rpcError } = await supabase.rpc('complete_onboarding', {
+      const { error: rpcError } = await supabase.rpc('complete_onboarding_v2', {
         p_tenant_id: currentTenant.id,
-        p_legal_name: legalName,
-        p_display_name: displayName,
+        p_legal_name: input.legalName,
+        p_legal_name_kana: input.legalNameKana,
+        p_display_name: input.displayName,
       });
       if (rpcError) throw rpcError;
       await fetchTenants();

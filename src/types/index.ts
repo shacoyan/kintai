@@ -17,6 +17,7 @@ export interface TenantMember {
   role: 'owner' | 'admin' | 'manager' | 'staff';
   display_name: string;
   legal_name: string | null;
+  legal_name_kana: string | null;
   onboarded_at: string | null;
   hourly_rate: number | null;
   night_shift_enabled: boolean | null;

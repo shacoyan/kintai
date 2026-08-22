@@ -19,6 +19,7 @@ function member(over: Partial<TenantMember> = {}): TenantMember {
     role: 'staff',
     display_name: 'Test',
     legal_name: null,
+    legal_name_kana: null,
     onboarded_at: null,
     hourly_rate: null,
     night_shift_enabled: true,

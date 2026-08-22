@@ -8,6 +8,8 @@ import { Input } from '../ui/Input';
 import { formatSupabaseError } from '../../lib/errors';
 import { messages } from '../../lib/messages';
 import { useToast } from '../../contexts/ToastContext';
+import { useAuth } from '../../hooks/useAuth';
+import { readSignupProfile } from '../../lib/userProfile';
 
 interface CreateTenantProps {
   onCreate: (tenant: Tenant) => void;
@@ -16,8 +18,9 @@ interface CreateTenantProps {
 }
 
 const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createTenant }) => {
+  const { user } = useAuth();
   const [name, setName] = useState('');
-  const [displayName, setDisplayName] = useState('');
+  const [displayName, setDisplayName] = useState(() => readSignupProfile(user)?.displayName ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdTenant, setCreatedTenant] = useState<Tenant | null>(null);
@@ -33,7 +36,7 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
       return;
     }
     if (!displayName.trim()) {
-      setError(messages.validation.required('表示名'));
+      setError(messages.validation.required('勤務時名'));
       return;
     }
 
@@ -127,13 +130,14 @@ const CreateTenant: React.FC<CreateTenantProps> = ({ onCreate, onCancel, createT
           />
 
           <Input
-            label="表示名"
+            label="勤務時名"
             required
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="例: SABABA 本部"
+            placeholder="例: たろう"
             disabled={loading}
             id="displayName"
+            hint="シフト表・出退勤表で他のメンバーに表示されます。後から変更できます。"
           />
 
           <div className="flex gap-3 pt-2">

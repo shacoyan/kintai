@@ -36,6 +36,9 @@ export const LoginForm = function LoginForm() {
   const { showToast } = useToast();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [legalName, setLegalName] = useState<string>('');
+  const [legalNameKana, setLegalNameKana] = useState<string>('');
+  const [displayName, setDisplayName] = useState<string>('');
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +57,36 @@ export const LoginForm = function LoginForm() {
       if (isLogin) {
         await signIn(email, password);
       } else {
-        await signUp(email, password);
+        const legal = legalName.trim();
+        const kana = legalNameKana.trim();
+        const display = displayName.trim();
+
+        if (!legal || !kana || !display) {
+          setError('本名 / フリガナ / 勤務時名 をすべて入力してください。');
+          setLoading(false);
+          return;
+        }
+        if (legal.length > 50) {
+          setError('本名は50文字以内で入力してください。');
+          setLoading(false);
+          return;
+        }
+        if (kana.length > 50) {
+          setError('フリガナは50文字以内で入力してください。');
+          setLoading(false);
+          return;
+        }
+        if (display.length > 30) {
+          setError('勤務時名は30文字以内で入力してください。');
+          setLoading(false);
+          return;
+        }
+
+        await signUp(email, password, {
+          legalName: legal,
+          legalNameKana: kana,
+          displayName: display,
+        });
         try {
           await signIn(email, password);
         } catch {
@@ -214,6 +246,46 @@ export const LoginForm = function LoginForm() {
         </div>
       ) : null}
 
+      {!isLogin ? (
+        <>
+          <Input
+            type="text"
+            label="本名"
+            value={legalName}
+            onChange={(e) => setLegalName(e.target.value)}
+            required
+            maxLength={50}
+            autoComplete="name"
+            placeholder="例: 山田 太郎"
+            hint="給与・労務書類に使います。あなたと管理者のみに表示されます。"
+          />
+
+          <Input
+            type="text"
+            label="フリガナ"
+            value={legalNameKana}
+            onChange={(e) => setLegalNameKana(e.target.value)}
+            required
+            maxLength={50}
+            autoComplete="off"
+            placeholder="例: ヤマダ タロウ"
+            hint="ひらがな・カタカナどちらでも構いません。"
+          />
+
+          <Input
+            type="text"
+            label="勤務時名"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            required
+            maxLength={30}
+            autoComplete="nickname"
+            placeholder="例: たろう"
+            hint="シフト表・出退勤表で他のメンバーに表示されます。"
+          />
+        </>
+      ) : null}
+
       <Button
         type="submit"
         variant="primary"
@@ -255,6 +327,9 @@ export const LoginForm = function LoginForm() {
           onClick={() => {
             setIsLogin((v) => !v);
             setError(null);
+            setLegalName('');
+            setLegalNameKana('');
+            setDisplayName('');
           }}
           className="ml-1 font-semibold text-blue-600 hover:text-blue-700 dark:hover:text-blue-200 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 rounded-md"
         >

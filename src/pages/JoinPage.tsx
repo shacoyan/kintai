@@ -11,7 +11,7 @@
  * 設計書: .company/engineering/docs/2026-05-10-kintai-invite-url-techdesign.md §5.3 / §6.4
  *         .company/engineering/docs/2026-05-12-kintai-invite-url-per-store-techdesign.md §15.1 (P1-B)
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTenant } from '../contexts/TenantContext';
@@ -25,6 +25,7 @@ import { supabase } from '../lib/supabase';
 import { logger } from '../lib/logger';
 import { formatSupabaseError } from '../lib/errors';
 import { messages } from '../lib/messages';
+import { readSignupProfile } from '../lib/userProfile';
 import type { Tenant } from '../types';
 
 type PreviewState =
@@ -79,6 +80,17 @@ export function JoinPage(): JSX.Element {
   const [displayName, setDisplayName] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // サインアップ時 metadata から勤務時名を 1 回だけ prefill する（既存ユーザーは metadata 無し = no-op）
+  const prefilledRef = useRef(false);
+  useEffect(() => {
+    if (prefilledRef.current) return;
+    const p = readSignupProfile(user);
+    if (p?.displayName) {
+      setDisplayName(p.displayName);
+      prefilledRef.current = true;
+    }
+  }, [user]);
 
   // 未ログイン時: pending_join_code 保存 + /login redirect
   useEffect(() => {
@@ -197,7 +209,7 @@ export function JoinPage(): JSX.Element {
   const handleJoin = useCallback(async () => {
     if (!code) return;
     if (!displayName.trim()) {
-      setSubmitError(messages.validation.required('表示名'));
+      setSubmitError(messages.validation.required('勤務時名'));
       return;
     }
     setSubmitting(true);
@@ -338,7 +350,7 @@ export function JoinPage(): JSX.Element {
       >
         <Input
           id="join-display-name"
-          label="表示名"
+          label="勤務時名"
           required
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}

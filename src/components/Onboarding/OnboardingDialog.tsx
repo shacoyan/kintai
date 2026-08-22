@@ -15,9 +15,9 @@ import { formatSupabaseError } from '../../lib/errors';
  * 初回ワークスペースオンボーディング Dialog。
  *
  * - 表示条件: useTenant().needsOnboarding === true
- * - 入力: 氏名 (legal_name, max 50) / 表示名 (display_name, max 30)
+ * - 入力: 本名 (legal_name, max 50) / フリガナ (legal_name_kana, max 50) / 勤務時名 (display_name, max 30)
  * - dismissible=false: escape / overlay click で閉じない、close ボタンなし
- * - 保存は complete_onboarding RPC（SECURITY DEFINER + バリデーション）
+ * - 保存は complete_onboarding_v2 RPC（SECURITY DEFINER + バリデーション）
  * - focus trap は既存 useFocusTrap を使用（Loop 38 で isTop 依存配列問題は解決済）
  */
 export const OnboardingDialog: React.FC = () => {
@@ -29,6 +29,7 @@ export const OnboardingDialog: React.FC = () => {
     : null;
 
   const [legalName, setLegalName] = useState('');
+  const [legalNameKana, setLegalNameKana] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -79,13 +80,18 @@ export const OnboardingDialog: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedLegal = legalName.trim();
+    const trimmedLegalKana = legalNameKana.trim();
     const trimmedDisplay = displayName.trim();
-    if (!trimmedLegal || !trimmedDisplay) return;
+    if (!trimmedLegal || !trimmedLegalKana || !trimmedDisplay) return;
 
     setSubmitting(true);
     setErrorMsg(null);
     try {
-      await completeOnboarding(trimmedLegal, trimmedDisplay);
+      await completeOnboarding({
+        legalName: trimmedLegal,
+        legalNameKana: trimmedLegalKana,
+        displayName: trimmedDisplay,
+      });
       // 成功時は親 context が再 fetch して needsOnboarding=false → return null で消える
     } catch (err: unknown) {
       const f = formatSupabaseError(err);
@@ -95,7 +101,8 @@ export const OnboardingDialog: React.FC = () => {
     }
   };
 
-  const submitDisabled = submitting || !legalName.trim() || !displayName.trim();
+  const submitDisabled =
+    submitting || !legalName.trim() || !legalNameKana.trim() || !displayName.trim();
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center md:justify-center">
@@ -132,6 +139,17 @@ export const OnboardingDialog: React.FC = () => {
               onChange={(e) => setLegalName(e.target.value)}
               hint={messages.onboarding.legalNameHint}
               autoComplete="name"
+            />
+            <Input
+              name="legal_name_kana"
+              label={messages.onboarding.legalNameKanaLabel}
+              placeholder={messages.onboarding.legalNameKanaPlaceholder}
+              required
+              maxLength={50}
+              value={legalNameKana}
+              onChange={(e) => setLegalNameKana(e.target.value)}
+              hint={messages.onboarding.legalNameKanaHint}
+              autoComplete="off"
             />
             <Input
               name="display_name"

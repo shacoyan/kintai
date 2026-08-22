@@ -6,6 +6,8 @@ import { Heading } from '../ui';
 import { Input } from '../ui/Input';
 import { formatSupabaseError } from '../../lib/errors';
 import { messages } from '../../lib/messages';
+import { useAuth } from '../../hooks/useAuth';
+import { readSignupProfile } from '../../lib/userProfile';
 
 interface JoinTenantProps {
   onJoin: (tenant: Tenant) => void;
@@ -14,8 +16,9 @@ interface JoinTenantProps {
 }
 
 const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant }) => {
+  const { user } = useAuth();
   const [inviteCode, setInviteCode] = useState('');
-  const [displayName, setDisplayName] = useState('');
+  const [displayName, setDisplayName] = useState(() => readSignupProfile(user)?.displayName ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +35,7 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
       return;
     }
     if (!displayName.trim()) {
-      setError(messages.validation.required('表示名'));
+      setError(messages.validation.required('勤務時名'));
       return;
     }
 
@@ -65,7 +68,7 @@ const JoinTenant: React.FC<JoinTenantProps> = ({ onJoin, onCancel, joinTenant })
         <form onSubmit={handleSubmit} className="space-y-5">
           <Input label="招待コード" required maxLength={6} value={inviteCode} onChange={(e)=>setInviteCode(e.target.value.toUpperCase())} placeholder="ABC123" disabled={loading} className="font-mono text-lg tracking-widest text-center uppercase" hint="6 桁の英数字" id="inviteCode" />
 
-          <Input label="表示名" required value={displayName} onChange={(e)=>setDisplayName(e.target.value)} placeholder="例: 山田 太郎" disabled={loading} id="displayName" />
+          <Input label="勤務時名" required value={displayName} onChange={(e)=>setDisplayName(e.target.value)} placeholder="例: たろう" disabled={loading} id="displayName" hint="シフト表・出退勤表で他のメンバーに表示されます。後から変更できます。" />
 
           <div className="flex gap-3 pt-2">
             <Button
