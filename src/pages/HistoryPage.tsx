@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useTenant } from '../hooks/useTenant';
 import { useCan } from '../lib/permissions/useCan';
 import { useAuth } from '../hooks/useAuth';
@@ -413,6 +414,23 @@ export function HistoryPage() {
     mode: 'correction',
   });
 
+  const isDesktop = useMediaQuery('(min-width: 1024px)'); // Tailwind lg と一致（ShiftPage.tsx:90 と同値）
+  const dayDetailRef = useRef<HTMLDivElement>(null);
+  const scrollToDetailRef = useRef(false); // カレンダー起点の選択時のみ true
+  const handleCalendarSelectDate = useCallback((d: string | null) => {
+    scrollToDetailRef.current = d != null;
+    setSelectedDate(d);
+  }, []);
+  useEffect(() => {
+    if (!scrollToDetailRef.current) return;
+    scrollToDetailRef.current = false;
+    if (isDesktop || !selectedDate || viewMode !== 'calendar') return;
+    const el = dayDetailRef.current;
+    if (!el || typeof el.scrollIntoView !== 'function') return; // jsdom ガード
+    const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+  }, [selectedDate, isDesktop, viewMode]);
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
 
@@ -714,7 +732,7 @@ export function HistoryPage() {
                 records={monthlyRecords}
                 correctionRequests={ownCorrectionRequests}
                 selectedDate={selectedDate}
-                onSelectDate={setSelectedDate}
+                onSelectDate={handleCalendarSelectDate}
               />
               {showEmpty && (
                 <EmptyState
@@ -727,13 +745,15 @@ export function HistoryPage() {
         </div>
 
         <div className="flex flex-col gap-3.5">
-          <SelectedDayDetail
-            date={selectedDate}
-            record={selectedRecord}
-            pending={selectedDatePending}
-            correction={selectedDateCorrection}
-            onRequestCorrection={handleCorrection}
-          />
+          <div ref={dayDetailRef} className="scroll-mt-14">
+            <SelectedDayDetail
+              date={selectedDate}
+              record={selectedRecord}
+              pending={selectedDatePending}
+              correction={selectedDateCorrection}
+              onRequestCorrection={handleCorrection}
+            />
+          </div>
           <MonthlyBarChart
             year={year}
             month={month}

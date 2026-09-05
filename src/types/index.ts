@@ -290,6 +290,7 @@ export type NotificationType =
   | 'preference_unavailable_submitted'
   | 'correction_approved'
   | 'correction_rejected'
+  | 'correction_requested'
   | 'leave_approved'
   | 'leave_rejected'
   | 'generic';

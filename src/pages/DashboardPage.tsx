@@ -12,7 +12,7 @@ import { useTodaysActiveAttendances } from '../hooks/useTodaysActiveAttendances'
 import { ClockButton } from '../components/Attendance/ClockButton';
 import { BreakButton } from '../components/Attendance/BreakButton';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, CalendarDays, ChevronRight, FileClock } from 'lucide-react';
+import { AlertTriangle, CalendarDays, ChevronRight, FileClock, FileEdit } from 'lucide-react';
 import { Card, StatCard, Badge, Button, DashboardSkeleton, ListRowSkeleton, Heading } from '../components/ui';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { useToast } from '../contexts/ToastContext';
@@ -426,6 +426,18 @@ export function DashboardPage() {
                 />
               </ClockButton>
             )}
+
+            <Link
+              to="/history?view=list"
+              className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-left hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-stone-700 dark:bg-stone-900 dark:hover:bg-stone-800"
+            >
+              <FileEdit className="h-4 w-4 flex-shrink-0 text-stone-500 dark:text-stone-400" aria-hidden="true" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-stone-900 dark:text-stone-50">打刻を修正する</span>
+                <span className="block text-[11px] text-stone-500 dark:text-stone-400">打刻忘れや時間の誤りは、履歴から修正申請できます</span>
+              </span>
+              <ChevronRight className="h-4 w-4 flex-shrink-0 text-stone-400" aria-hidden="true" />
+            </Link>
 
             {carryOverRecord && (
               <Card

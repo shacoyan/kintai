@@ -7,6 +7,8 @@ import {
   judgeFrameFulfillment,
   timeRangesOverlapOvernight,
   resolveUnassignAction,
+  canDropToUnassign,
+  needsUnassignConfirm,
   isCandidatePreferenceType,
   sortFrameCandidates,
   planShiftToFrameSnap,
@@ -197,6 +199,36 @@ describe('resolveUnassignAction', () => {
   });
   it('pending + preference_id あり → unlink(tentative でないため差戻し対象外)', () => {
     expect(resolveUnassignAction({ status: 'pending', preference_id: 'p1' })).toBe('unlink');
+  });
+});
+
+describe('canDropToUnassign', () => {
+  it('frame_id あり + 同日 → true', () => {
+    expect(canDropToUnassign({ frame_id: 'f1', date: '2026-09-05' }, '2026-09-05')).toBe(true);
+  });
+  it('frame_id null → false', () => {
+    expect(canDropToUnassign({ frame_id: null, date: '2026-09-05' }, '2026-09-05')).toBe(false);
+  });
+  it('別日 → false', () => {
+    expect(canDropToUnassign({ frame_id: 'f1', date: '2026-09-05' }, '2026-09-06')).toBe(false);
+  });
+  it('frame_id あり + 別日 → false', () => {
+    expect(canDropToUnassign({ frame_id: 'f1', date: '2026-09-04' }, '2026-09-06')).toBe(false);
+  });
+});
+
+describe('needsUnassignConfirm', () => {
+  it('tentative + preference_id あり → true', () => {
+    expect(needsUnassignConfirm({ status: 'tentative', preference_id: 'p1' })).toBe(true);
+  });
+  it('tentative + preference_id null → false', () => {
+    expect(needsUnassignConfirm({ status: 'tentative', preference_id: null })).toBe(false);
+  });
+  it('approved + preference_id あり → false', () => {
+    expect(needsUnassignConfirm({ status: 'approved', preference_id: 'p1' })).toBe(false);
+  });
+  it('modified + preference_id あり → false', () => {
+    expect(needsUnassignConfirm({ status: 'modified', preference_id: 'p1' })).toBe(false);
   });
 });
 

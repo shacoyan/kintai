@@ -213,6 +213,16 @@ export function resolveUnassignAction(
     : 'unlink';
 }
 
+/** 「枠外へ」ドロップが成立する条件: 枠に紐付いたシフトを同日セル/同日シートへ落とす場合のみ。 */
+export function canDropToUnassign(shift: Pick<Shift, 'frame_id' | 'date'>, cellDate: string): boolean {
+  return shift.frame_id !== null && shift.date === cellDate;
+}
+
+/** DnD 枠外しで確認ダイアログを要するか（希望由来 tentative = revert_preference が走り shifts 行が削除される）。 */
+export function needsUnassignConfirm(shift: Pick<Shift, 'status' | 'preference_id'>): boolean {
+  return resolveUnassignAction(shift) === 'revert_preference';
+}
+
 // ============================================================
 // 候補希望の判定・ソート（FrameAssignSheet.tsx / FrameDndSection.tsx 共用）
 // ============================================================

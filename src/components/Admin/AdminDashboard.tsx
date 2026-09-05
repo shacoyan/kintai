@@ -102,6 +102,15 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
       return next;
     }, { replace: true });
   }, [setSearchParams]);
+  // 118 通知 link（/admin?adminTab=corrections）等、マウント後の URL 変化にもタブを追従させる。
+  // setActiveTab は state 更新後に同値を URL へ書くため、この effect は同値なら no-op でループしない。
+  useEffect(() => {
+    const t = searchParams.get('adminTab');
+    if (t && tabs.some((x) => x.id === t) && t !== activeTab) {
+      setActiveTabState(t as TabId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   const [rejectingLeaveId, setRejectingLeaveId] = useState<string | null>(null);
   const [approveConfirm, setApproveConfirm] = useState<{ leaveId: string; userId: string } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -500,7 +509,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
               {correctionLoading ? (
                 <PageSkeleton />
               ) : (
-                <CorrectionList requests={pendingRequests} onReview={handleReview} storeNames={storeNames} />
+                <CorrectionList requests={pendingRequests} onReview={handleReview} storeNames={storeNames} memberNames={leaveMemberNames} />
               )}
             </Card>
 
@@ -509,7 +518,7 @@ export function AdminDashboard({ tenantId }: AdminDashboardProps) {
                 <div className="px-6 py-4 border-b border-stone-200 dark:border-stone-700">
                   <Heading level={2}>修正申請履歴</Heading>
                 </div>
-                <CorrectionList requests={processedRequests} storeNames={storeNames} />
+                <CorrectionList requests={processedRequests} storeNames={storeNames} memberNames={leaveMemberNames} />
               </Card>
             )}
           </div>

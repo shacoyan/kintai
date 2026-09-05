@@ -227,3 +227,41 @@ describe('ShiftCalendar mineOnly (機能1)', () => {
     expect(screen.queryByText('他人')).toBeNull();
   });
 });
+
+describe('ShiftCalendar 枠外しゾーン (T5 dnd-unassign)', () => {
+  it('idle 時は「枠外へ」ゾーンが存在しない・既存の枠バー aria は非退行', () => {
+    render(
+      <ShiftCalendar
+        shifts={[makeShift({ id: 's-me', user_id: ME, frame_id: 'frame-1', status: 'approved' })]}
+        onDateClick={vi.fn()}
+        currentUserId={ME}
+        membersById={membersById}
+        baseDate={BASE_DATE}
+        frames={[makeFrame()]}
+        frameStoreId={STORE}
+        canAssignFrames
+        onUnassignShiftFromFrame={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText('枠外へ')).toBeNull();
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(screen.getByRole('button', { name: /配置1人\/必要2人/ })).toBeTruthy();
+  });
+
+  it('onUnassignShiftFromFrame 未指定でも DOM は同一(枠バー aria 取得・「枠外へ」なし)', () => {
+    render(
+      <ShiftCalendar
+        shifts={[makeShift({ id: 's-me', user_id: ME, frame_id: 'frame-1', status: 'approved' })]}
+        onDateClick={vi.fn()}
+        currentUserId={ME}
+        membersById={membersById}
+        baseDate={BASE_DATE}
+        frames={[makeFrame()]}
+        frameStoreId={STORE}
+        canAssignFrames
+      />,
+    );
+    expect(screen.queryByText('枠外へ')).toBeNull();
+    expect(screen.getByRole('button', { name: /配置1人\/必要2人/ })).toBeTruthy();
+  });
+});

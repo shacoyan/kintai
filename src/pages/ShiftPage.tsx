@@ -252,6 +252,8 @@ export function ShiftPage() {
       fetchMembers();
     } else {
       getMyShifts(start, end);
+      getAllShifts(start, end);
+      fetchMembers();
     }
   }, [canManageTenant, getAllShifts, getMyShifts, fetchMembers]);
 
@@ -280,19 +282,19 @@ export function ShiftPage() {
     }
   }, [tenantId, fetchPreferenceRange]);
 
-  // §5.5: シフト枠を月グリッド範囲（ShiftCalendar と同套）で取得。canManageTenant && storeId のときのみ。
+  // §5.5/§7.6: シフト枠を月グリッド範囲（ShiftCalendar と同套）で取得。storeId があれば staff も取得（閲覧のみ）。
   const fetchFramesRange = useCallback(() => {
-    if (!canManageTenant || !storeId) return;
+    if (!storeId) return;
     const start = format(startOfWeek(startOfMonth(shiftViewMonth), { weekStartsOn: 1 }), 'yyyy-MM-dd');
     const end = format(endOfWeek(endOfMonth(shiftViewMonth), { weekStartsOn: 1 }), 'yyyy-MM-dd');
     void fetchFrames(start, end);
-  }, [canManageTenant, storeId, shiftViewMonth, fetchFrames]);
+  }, [storeId, shiftViewMonth, fetchFrames]);
 
   useEffect(() => {
-    if (tenantId && storeId && canManageTenant) {
+    if (tenantId && storeId) {
       fetchFramesRange();
     }
-  }, [tenantId, storeId, canManageTenant, shiftViewMonth, fetchFramesRange]);
+  }, [tenantId, storeId, shiftViewMonth, fetchFramesRange]);
 
   // Loop17: roles を取得して人件費サマリ Card で role.default_monthly_salary を参照する
   useEffect(() => {
@@ -1251,6 +1253,7 @@ export function ShiftPage() {
                     onAssignPreferenceToFrame={handleAssignPreferenceToFrame}
                     onAssignShiftToFrame={handleAssignShiftToFrame}
                     onFrameBarClick={handleFrameBarClick}
+                    onUnassignShiftFromFrame={handleUnassignFrameShift}
                     mineOnly={effectiveMineOnly}
                   />
                 </div>
@@ -1546,6 +1549,10 @@ export function ShiftPage() {
                     onDateClick={handleMobileCellOpen}
                     onOverflowClick={handleMobileCellOpen}
                     mineOnly={effectiveMineOnly}
+                    frames={storeId ? frames : EMPTY_FRAMES}
+                    frameOverrides={storeId ? overrides : EMPTY_OVERRIDES}
+                    frameStoreId={storeId}
+                    frameCountShifts={allShifts}
                   />
                 </div>
               </div>

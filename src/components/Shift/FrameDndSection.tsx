@@ -26,12 +26,14 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { X } from 'lucide-react';
-import { Badge, Card, Select } from '../ui';
+import { Badge, Card, ConfirmDialog, Select } from '../ui';
 import { formatTimeRange } from '../../utils/formatTimeRange';
+import { messages } from '../../lib/messages';
 import {
   countFrameAssignments,
   judgeFrameFulfillment,
   resolveUnassignAction,
+  needsUnassignConfirm,
   timeRangesOverlapOvernight,
   type EffectiveFrame,
   type FrameFulfillmentVerdict,
@@ -184,6 +186,39 @@ function DraggableUnframedShiftRow({
         disabled={disabled}
         aria-label={`${memberName}のシフトを枠へ割当`}
       />
+    </div>
+  );
+}
+
+// ============================================================
+// DnD: 「枠外シフト」セクションを包む droppable(§4.3(a)/(d) UnframedDropZone)
+// ============================================================
+
+interface UnframedDropZoneProps {
+  idPrefix: string;
+  eligible: boolean;
+  disabled: boolean;
+  children: ReactNode;
+}
+
+function UnframedDropZone({ idPrefix, eligible, disabled, children }: UnframedDropZoneProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `${idPrefix}unassign`,
+    data: { type: 'unassign' as const },
+    disabled: disabled || !eligible,
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      className={
+        eligible
+          ? `outline outline-1 outline-dashed outline-stone-400 rounded-md -m-1 p-1 ${
+              isOver ? 'outline-red-500 bg-red-50 dark:bg-red-900/20' : ''
+            }`
+          : ''
+      }
+    >
+      {children}
     </div>
   );
 }
@@ -384,6 +419,8 @@ export function FrameDndSection({
 }: FrameDndSectionProps) {
   // 設計書 §4.2 状態機械: idle | dragging | submitting
   const [activeDrag, setActiveDrag] = useState<ActiveDrag>(null);
+  // 設計書 §4.3(b)/(c): 希望由来の仮承認シフトを枠外へドロップした際の確認ダイアログ対象。
+  const [pendingUnassign, setPendingUnassign] = useState<Shift | null>(null);
   const busy = busyKey !== null;
 
   // 設計書 §4.3: センサー正規値(Pointer distance:5 / Touch delay:250 tolerance:5・KeyboardSensor なし)
@@ -413,6 +450,19 @@ export function FrameDndSection({
       const overData = over.data.current as
         | { type?: string; frameId?: string; frame?: EffectiveFrame }
         | undefined;
+
+      // 設計書 §4.3(b): 「枠外へ」ドロップ(frame 分岐より前で判定)。
+      if (overData?.type === 'unassign') {
+        if (drag.kind !== 'shift') return;
+        if (drag.shift.frame_id === null) return;
+        if (needsUnassignConfirm(drag.shift)) {
+          setPendingUnassign(drag.shift);
+          return;
+        }
+        void onUnassign(drag.shift);
+        return;
+      }
+
       if (overData?.type !== 'frame' || !overData.frameId || !overData.frame) return;
       if (drag.kind === 'pref') {
         void onAssign(drag.pref.id, overData.frameId);
@@ -420,7 +470,7 @@ export function FrameDndSection({
         void onAssignShift?.(drag.shift, overData.frame);
       }
     },
-    [activeDrag, onAssign, onAssignShift],
+    [activeDrag, onAssign, onAssignShift, onUnassign],
   );
 
   const handleDragCancel = useCallback(() => setActiveDrag(null), []);
@@ -469,8 +519,17 @@ export function FrameDndSection({
 
         {/* §6.2 新設: 枠外シフト（onAssignShift 未指定時は描画しない = 後方互換） */}
         {onAssignShift && (
-          <div>
-            <div className="text-xs font-semibold text-stone-500 dark:text-stone-400 mb-2">枠外シフト</div>
+          <UnframedDropZone
+            idPrefix={idPrefix}
+            eligible={activeDrag?.kind === 'shift' && activeDrag.shift.frame_id !== null}
+            disabled={busy}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-semibold text-stone-500 dark:text-stone-400">枠外シフト</div>
+              {activeDrag?.kind === 'shift' && activeDrag.shift.frame_id !== null && (
+                <span className="text-[10px] text-stone-500 dark:text-stone-400">ここにドロップで枠から外す</span>
+              )}
+            </div>
             {unframedShifts.length === 0 ? (
               <span className="text-xs text-stone-400 dark:text-stone-500">枠外シフトなし</span>
             ) : (
@@ -488,7 +547,7 @@ export function FrameDndSection({
                 ))}
               </div>
             )}
-          </div>
+          </UnframedDropZone>
         )}
 
         <div className="space-y-3">
@@ -535,6 +594,28 @@ export function FrameDndSection({
               />
             ) : null}
           </DragOverlay>,
+          document.body,
+        )}
+
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <ConfirmDialog
+            open={pendingUnassign !== null}
+            title={messages.confirm.unassignFrameRevertTitle}
+            description={
+              pendingUnassign
+                ? messages.confirm.unassignFrameRevert(memberNames.get(pendingUnassign.user_id) ?? '—')
+                : undefined
+            }
+            confirmLabel={messages.confirm.unassignFrameRevertConfirmLabel}
+            variant="danger"
+            onCancel={() => setPendingUnassign(null)}
+            onConfirm={() => {
+              const s = pendingUnassign;
+              setPendingUnassign(null);
+              if (s) void onUnassign(s);
+            }}
+          />,
           document.body,
         )}
     </DndContext>

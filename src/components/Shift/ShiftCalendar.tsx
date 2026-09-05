@@ -33,9 +33,13 @@ import {
   getEffectiveFramesForDate,
   countFrameAssignments,
   judgeFrameFulfillment,
+  canDropToUnassign,
+  needsUnassignConfirm,
   type EffectiveFrame,
 } from '../../utils/shiftFrames';
 import { formatTimeRange, formatTimeRangeA11y } from '../../utils/formatTimeRange';
+import { ConfirmDialog } from '../ui';
+import { messages } from '../../lib/messages';
 
 type ViewMode = 'week' | '2week' | 'month';
 
@@ -120,6 +124,8 @@ interface ShiftCalendarProps {
   onFrameBarClick?: (date: string) => void;
   // 設計書 §6.3: 枠外シフト→枠 D&D(時間スナップ)。未指定時はシフト draggable を一切出さない。
   onAssignShiftToFrame?: (shift: Shift, frame: EffectiveFrame) => Promise<void>;
+  // 設計書 §4.3: 枠割当済みシフトを「枠外へ」ドロップで外す。未指定時は「枠外へ」ゾーンを一切出さない。
+  onUnassignShiftFromFrame?: (shift: Shift) => Promise<void>;
 }
 
 // ============================================================
@@ -241,6 +247,30 @@ function CalFrameBar({ frame, assigned, dragSourceDate, onFrameBarClick }: CalFr
 }
 
 // ============================================================
+// DnD: 「枠外へ」ドロップゾーン(§4.3(a)/(d) CalUnassignZone)
+// ============================================================
+
+function CalUnassignZone({ date }: { date: string }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `calunassign@${date}`,
+    data: { type: 'unassign' as const, date },
+  });
+  return (
+    <div
+      ref={setNodeRef}
+      aria-label="ここにドロップで枠から外す"
+      className={`min-h-[20px] rounded-[3px] border border-dashed px-1 text-[9px] text-center flex items-center justify-center ${
+        isOver
+          ? 'ring-2 ring-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-500'
+          : 'border-stone-400 dark:border-stone-500 text-stone-500 dark:text-stone-400'
+      }`}
+    >
+      枠外へ
+    </div>
+  );
+}
+
+// ============================================================
 // DnD: DragOverlay 用の簡易バークローン(§4.4。onClick/role は持たせない)
 // ============================================================
 
@@ -286,6 +316,7 @@ function ShiftCalendarInner({
   onAssignPreferenceToFrame,
   onFrameBarClick,
   onAssignShiftToFrame,
+  onUnassignShiftFromFrame,
 }: ShiftCalendarProps) {
   const [internalViewMode] = useState<ViewMode>('month');
   const [internalBaseDate] = useState(getInitialShiftMonth);
@@ -298,6 +329,8 @@ function ShiftCalendarInner({
     { kind: 'pref'; pref: ShiftPreference } | { kind: 'shift'; shift: Shift } | null
   >(null);
   const [busy, setBusy] = useState(false);
+  // 設計書 §4.3(b)/(c): 希望由来の仮承認シフトを枠外へドロップした際の確認ダイアログ対象。
+  const [pendingUnassign, setPendingUnassign] = useState<Shift | null>(null);
 
   // 設計書 §4.3: センサー正規値(Pointer distance:5 / Touch delay:250 tolerance:5・KeyboardSensor なし)
   const sensors = useSensors(
@@ -439,6 +472,22 @@ function ShiftCalendarInner({
       const overData = over.data.current as
         | { type?: string; frameId?: string; date?: string; frame?: EffectiveFrame }
         | undefined;
+
+      // 設計書 §4.3(b): 「枠外へ」ドロップ(frame 分岐より前で判定)。
+      if (overData?.type === 'unassign') {
+        if (drag.kind !== 'shift') return;
+        if (drag.shift.frame_id === null) return;
+        if (overData.date !== drag.shift.date) return;
+        if (needsUnassignConfirm(drag.shift)) {
+          setPendingUnassign(drag.shift);
+          return;
+        }
+        if (!onUnassignShiftFromFrame) return;
+        setBusy(true);
+        onUnassignShiftFromFrame(drag.shift).finally(() => setBusy(false));
+        return;
+      }
+
       if (overData?.type !== 'frame' || !overData.frameId || !overData.date || !overData.frame) return;
 
       if (drag.kind === 'pref') {
@@ -455,8 +504,17 @@ function ShiftCalendarInner({
       setBusy(true);
       onAssignShiftToFrame(drag.shift, overData.frame).finally(() => setBusy(false));
     },
-    [activeDrag, onAssignPreferenceToFrame, onAssignShiftToFrame],
+    [activeDrag, onAssignPreferenceToFrame, onAssignShiftToFrame, onUnassignShiftFromFrame],
   );
+
+  // 設計書 §4.3(b): 確認ダイアログ確定時のハンドラ。
+  const handleConfirmUnassign = useCallback(() => {
+    const s = pendingUnassign;
+    setPendingUnassign(null);
+    if (!s || !onUnassignShiftFromFrame) return;
+    setBusy(true);
+    onUnassignShiftFromFrame(s).finally(() => setBusy(false));
+  }, [pendingUnassign, onUnassignShiftFromFrame]);
 
   const handleDragCancel = useCallback(() => {
     setActiveDrag(null);
@@ -663,6 +721,11 @@ function ShiftCalendarInner({
                     </div>
                   )}
 
+                  {canAssignFrames &&
+                    !!onUnassignShiftFromFrame &&
+                    activeDrag?.kind === 'shift' &&
+                    canDropToUnassign(activeDrag.shift, dateStr) && <CalUnassignZone date={dateStr} />}
+
                   <div className="flex flex-col gap-0.5 min-w-0">
                     {visible.map((it) => {
                       if (it.kind === 'shift') {
@@ -762,6 +825,28 @@ function ShiftCalendarInner({
               />
             ) : null}
           </DragOverlay>,
+          document.body,
+        )}
+
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <ConfirmDialog
+            open={pendingUnassign !== null}
+            title={messages.confirm.unassignFrameRevertTitle}
+            description={
+              pendingUnassign
+                ? messages.confirm.unassignFrameRevert(
+                    membersById?.get(pendingUnassign.user_id)?.display_name ??
+                      memberNames?.get(pendingUnassign.user_id) ??
+                      '—',
+                  )
+                : undefined
+            }
+            confirmLabel={messages.confirm.unassignFrameRevertConfirmLabel}
+            variant="danger"
+            onCancel={() => setPendingUnassign(null)}
+            onConfirm={handleConfirmUnassign}
+          />,
           document.body,
         )}
     </DndContext>

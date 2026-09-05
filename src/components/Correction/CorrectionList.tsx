@@ -54,6 +54,15 @@ function formatTime(time: string | null): string {
   }
 }
 
+function formatCreatedAt(ts: string | null | undefined, pattern: string): string {
+  if (!ts) return '-';
+  try {
+    return format(parseISO(ts), pattern);
+  } catch {
+    return '-';
+  }
+}
+
 export function CorrectionList({ requests, onReview, onRevert, showFilter = false, memberNames, storeNames }: CorrectionListProps) {
   const [confirming, setConfirming] = useState<{ id: string; action: 'approve' | 'reject' } | null>(null);
   const [filterKey, setFilterKey] = useState<FilterKey>('all');
@@ -163,8 +172,11 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                   <Badge tone={statusTone}>{statusCfg.label}</Badge>
                 </div>
               </div>
-              <div className="text-xs text-stone-500 dark:text-stone-300">
-                {memberNames?.get(request.user_id)}
+              <div className="flex items-center justify-between gap-2 text-xs text-stone-500 dark:text-stone-300">
+                <span className="font-medium text-stone-700 dark:text-stone-200">{memberNames?.get(request.user_id) ?? '不明'}</span>
+                <span className="tabular-nums" title={formatCreatedAt(request.created_at, 'yyyy/MM/dd HH:mm')}>
+                  申請 {formatCreatedAt(request.created_at, 'M/d HH:mm')}
+                </span>
               </div>
               {requestType !== 'delete' && (
                 <div className="flex gap-4 text-sm text-stone-600 dark:text-stone-300 tabular-nums">
@@ -207,6 +219,7 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-300 uppercase tracking-wider">日付</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-300 uppercase tracking-wider">申請者</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-300 uppercase tracking-wider">申請日時</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-300 uppercase tracking-wider">種類</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-300 uppercase tracking-wider">申請出勤</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 dark:text-stone-300 uppercase tracking-wider">申請退勤</th>
@@ -231,7 +244,10 @@ export function CorrectionList({ requests, onReview, onRevert, showFilter = fals
                 <tr key={request.id} className="hover:bg-stone-50 dark:hover:bg-stone-700/50 motion-safe:transition-colors duration-150 ease-out">
                   <td className="px-4 py-3 text-sm text-stone-900 dark:text-stone-100 whitespace-nowrap">{request.date}</td>
                   <td className="px-4 py-3 text-sm text-stone-900 dark:text-stone-100 whitespace-nowrap">
-                    {memberNames?.get(request.user_id) ?? '-'}
+                    {memberNames?.get(request.user_id) ?? '不明'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-stone-700 dark:text-stone-300 whitespace-nowrap">
+                    {formatCreatedAt(request.created_at, 'yyyy/MM/dd HH:mm')}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <Badge tone={typeTone}>{typeCfg.label}</Badge>

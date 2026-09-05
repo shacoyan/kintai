@@ -142,6 +142,8 @@ export interface DayChipItem {
   status: string; // shift.status or 'pending'
   isMine: boolean;
   isManager: boolean;
+  /** 割当元のシフト枠 id（shift.frame_id）。preference では未設定（undefined）。SP 枠バー分配用（§4.2(b)）。 */
+  frameId?: string | null;
 }
 
 /**

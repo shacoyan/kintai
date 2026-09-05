@@ -94,6 +94,13 @@ export const messages = {
     /** @i18n-key confirm.unfinalizePayroll {year},{month} */
     unfinalizePayroll: (year: number, month: number): string => `${year}年${month}月の確定を取り消しますか？`,
     deleteShiftDeadline: 'シフト申請の提出期限を削除しますか？',
+    /** @i18n-key confirm.unassignFrameRevertTitle */
+    unassignFrameRevertTitle: '枠から外して申請中に戻す',
+    /** @i18n-key confirm.unassignFrameRevert {memberName} */
+    unassignFrameRevert: (memberName: string): string =>
+      `${memberName}さんのシフトを枠から外します。\n希望から作られた仮承認シフトのため、外すとこのシフトは削除され、希望が「申請中」に戻ります。`,
+    /** @i18n-key confirm.unassignFrameRevertConfirmLabel */
+    unassignFrameRevertConfirmLabel: '外して申請中に戻す',
   },
   /** @i18n-prefix onboarding */
   onboarding: {

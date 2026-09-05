@@ -1,7 +1,7 @@
 import { useMemo, memo } from 'react';
 import { addDays, endOfMonth, endOfWeek, format, isSameDay, isSameMonth, startOfMonth, startOfWeek } from 'date-fns';
-import { PenLine } from 'lucide-react';
-import type { Shift, ShiftPreference } from '../../types';
+import { PenLine, LayoutGrid } from 'lucide-react';
+import type { Shift, ShiftPreference, ShiftFrame, ShiftFrameOverride } from '../../types';
 import type { StatusFilterValue } from './unifiedShiftTypes';
 import { ROLE_COLOR_HEX, type RoleColorKey } from '../../utils/getRoleColor';
 import {
@@ -11,6 +11,13 @@ import {
   prioritizeDayItems,
   type DayChipItem,
 } from '../../utils/shiftSlot';
+import {
+  getEffectiveFramesForDate,
+  countFrameAssignments,
+  judgeFrameFulfillment,
+  type EffectiveFrame,
+} from '../../utils/shiftFrames';
+import { formatTimeRangeA11y } from '../../utils/formatTimeRange';
 
 // === ローカル色定数（getRoleColor.ts は改変しない / §B-3・§C-8） ===
 // 役職別 700 相当 hex（AA 担保 / light text）
@@ -41,6 +48,32 @@ function hexToRgba(hex: string, alpha: number): string {
 
 function roleHexOf(key: RoleColorKey | undefined): string {
   return ROLE_COLOR_HEX[key ?? 'fulltime'];
+}
+
+/** 「配置として数える」status 集合（shiftFrames.ts / ShiftDayCoverageHeader と同一・ファイル内ローカル定義 / §4.2(b)）。 */
+const ASSIGNED_STATUSES = new Set<string>(['tentative', 'approved', 'modified']);
+
+/** 枠バーの tone スタイル（ShiftCalendar.tsx:85-90 と同値のローカル定義 / §4.2(b)）。 */
+const FRAME_TONE_STYLES: Record<'danger' | 'warning' | 'success' | 'info', { border: string; bg: string }> = {
+  danger: { border: '#dc2626', bg: 'bg-red-50 dark:bg-red-900/20' },
+  warning: { border: '#f59e0b', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+  success: { border: '#059669', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+  info: { border: '#2563eb', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+};
+
+/** チップの時刻レンジ文字列を "先頭ハイフンまで" / "残り" に分割する（1 行に収まらない時の折返し用・§4.2(a)）。 */
+function splitChipRange(range: string): { head: string; tail: string } {
+  const idx = range.indexOf('-');
+  if (idx === -1) return { head: range, tail: '' };
+  return { head: range.slice(0, idx + 1), tail: range.slice(idx + 1) };
+}
+
+/** チップ / 枠バー title 用の状態ラベル（§4.2(a)）。 */
+function statusLabelOf(item: Pick<DayChipItem, 'kind' | 'status'>): string {
+  if (item.kind === 'preference') return '申請中';
+  if (item.status === 'approved') return '本承認';
+  if (item.status === 'tentative' || item.status === 'modified') return '仮承認';
+  return '申請中';
 }
 
 interface Props {
@@ -77,6 +110,17 @@ interface Props {
   roleTypeMap?: Map<string, RoleColorKey>;
   /** +N タップ時。未指定時は onDateClick にフォールバック（§A-2） */
   onOverflowClick?: (date: string) => void;
+  /** 枠テンプレート / 単発枠（§4.2(b)）。未指定 = 枠表示 OFF（完全従来挙動）。 */
+  frames?: ShiftFrame[];
+  /** 枠の当日限定上書き（cancel/modify）。§4.2(b)。 */
+  frameOverrides?: ShiftFrameOverride[];
+  /** 枠表示対象の店舗 id。null/undefined = 枠表示 OFF（§4.2(b)）。 */
+  frameStoreId?: string | null;
+  /**
+   * 充足カウント用の生 shifts（statusFilter / mineOnly 非適用）。未指定時は props.shifts を使う。
+   * staff では表示用 shifts=myShifts のため、count 専用に店舗 allShifts を渡す（§4.5 裁定 B）。
+   */
+  frameCountShifts?: Shift[];
 }
 
 /** その日の表示内容（チップ配列 + overflow + 休み希望件数） */
@@ -118,47 +162,55 @@ function StatusMarker({ status }: { status: string }) {
   );
 }
 
-/** 確定シフト = 実体チップ（§B-3） */
+/** 確定シフト = 実体チップ（2 段: 姓+マーカー / 時刻。§4.2(a)） */
 function ShiftChip({ item }: { item: DayChipItem }) {
   const roleHex = roleHexOf(item.roleType);
   const textClass = ROLE_TEXT_CLASS[item.roleType ?? 'fulltime'];
   const timeRange = formatChipTimeRange(item.startTime, item.endTime);
+  const { head, tail } = splitChipRange(timeRange);
+  const statusLabel = statusLabelOf(item);
 
   return (
     <div
       className={[
-        'flex items-center gap-[3px] rounded-[4px] pl-[3px] pr-[2px] h-[15px] overflow-hidden',
+        'flex flex-col rounded-[4px] pl-[3px] pr-[2px] py-[1px] overflow-hidden',
         item.isMine ? 'outline outline-1 outline-blue-400/70 dark:outline-blue-400/60' : '',
       ].join(' ')}
       style={{
         borderLeft: `2px solid ${roleHex}`,
         backgroundColor: hexToRgba(roleHex, 0.1),
       }}
+      title={`${item.lastName} ${timeRange} ${statusLabel}`}
     >
-      {timeRange && (
-        <span className={`text-[11px] leading-none tabular-nums shrink-0 ${textClass}`}>
-          {timeRange}
+      <div className="flex items-center gap-[3px]">
+        <span className={`text-[11px] leading-[1.15] font-medium truncate min-w-0 ${textClass}`}>
+          {item.lastName}
         </span>
+        <span className="ml-auto shrink-0">
+          <StatusMarker status={item.status} />
+        </span>
+      </div>
+      {timeRange && (
+        <div className={`flex flex-wrap items-center text-[10px] leading-[1.15] tabular-nums ${textClass}`}>
+          <span>{head}</span>
+          {tail && <span>{tail}</span>}
+        </div>
       )}
-      <span className={`text-[11px] leading-none font-medium truncate min-w-0 ${textClass}`}>
-        {item.lastName}
-      </span>
-      <span className="ml-auto shrink-0">
-        <StatusMarker status={item.status} />
-      </span>
     </div>
   );
 }
 
-/** 希望ゴーストチップ（§B-5） */
+/** 希望ゴーストチップ（同型 2 段。1 段目 = PenLine + 姓、マーカーなし / §4.2(a)） */
 function PreferenceChip({ item }: { item: DayChipItem }) {
   const roleHex = roleHexOf(item.roleType);
   const textClass = ROLE_TEXT_CLASS[item.roleType ?? 'fulltime'];
   const timeRange = formatChipTimeRange(item.startTime, item.endTime);
+  const { head, tail } = splitChipRange(timeRange);
+  const statusLabel = statusLabelOf(item);
 
   return (
     <div
-      className="flex items-center gap-[3px] rounded-[4px] pl-[3px] pr-[2px] h-[15px] overflow-hidden border border-dashed"
+      className="flex flex-col rounded-[4px] pl-[3px] pr-[2px] py-[1px] overflow-hidden border border-dashed"
       style={{
         // 破線の枠色（半透明）を先に置き、左辺だけ役職色 solid 2px で後勝ち上書き（§B-5）。
         // borderColor ショートハンドを後に置くと border-left-color が潰れるため順序厳守。
@@ -168,16 +220,53 @@ function PreferenceChip({ item }: { item: DayChipItem }) {
         borderLeftColor: roleHex,
         backgroundColor: hexToRgba(roleHex, 0.06),
       }}
+      title={`${item.lastName} ${timeRange} ${statusLabel}`}
     >
-      <PenLine className={`w-[8px] h-[8px] shrink-0 ${textClass}`} aria-hidden />
-      {timeRange && (
-        <span className={`text-[10px] leading-none tabular-nums shrink-0 ${textClass}`}>
-          {timeRange}
+      <div className="flex items-center gap-[3px]">
+        <PenLine className={`w-[8px] h-[8px] shrink-0 ${textClass}`} aria-hidden />
+        <span className={`text-[11px] leading-[1.15] truncate font-medium min-w-0 ${textClass}`}>
+          {item.lastName}
         </span>
+      </div>
+      {timeRange && (
+        <div className={`flex flex-wrap items-center text-[10px] leading-[1.15] tabular-nums ${textClass}`}>
+          <span>{head}</span>
+          {tail && <span>{tail}</span>}
+        </div>
       )}
-      <span className={`text-[11px] leading-none truncate font-medium min-w-0 ${textClass}`}>
-        {item.lastName}
-      </span>
+    </div>
+  );
+}
+
+/** SP 枠バー（枠名 / 時刻 / n・m の 3 行。role/tabIndex/onClick なし = セル button の子でタップはセルへバブル。§4.2(b)） */
+function MobileFrameBar({ frame, assigned }: { frame: EffectiveFrame; assigned: number }) {
+  const verdict = judgeFrameFulfillment(assigned, frame.requiredCount);
+  const tone = FRAME_TONE_STYLES[verdict.tone];
+  const timeRange = formatChipTimeRange(frame.startTime, frame.endTime);
+  const { head, tail } = splitChipRange(timeRange);
+  const a11y = `枠 ${frame.name} ${formatTimeRangeA11y(frame.startTime, frame.endTime)} 配置${assigned}人/必要${frame.requiredCount}人 ${verdict.label}`;
+
+  return (
+    <div
+      className={`flex flex-col rounded-[3px] border-l-2 px-[2px] py-[1px] ${tone.bg}`}
+      style={{ borderLeftColor: tone.border }}
+      title={a11y}
+    >
+      <div className="flex items-center gap-[2px]">
+        <LayoutGrid className="w-[8px] h-[8px] shrink-0 text-stone-700 dark:text-stone-200" aria-hidden />
+        <span className="text-[10px] font-semibold truncate text-stone-800 dark:text-stone-100">
+          {frame.isModified ? `*${frame.name}` : frame.name}
+        </span>
+      </div>
+      {timeRange && (
+        <div className="flex flex-wrap items-center text-[9px] tabular-nums text-stone-700 dark:text-stone-200">
+          <span>{head}</span>
+          {tail && <span>{tail}</span>}
+        </div>
+      )}
+      <div className="text-[9px] tabular-nums font-medium text-stone-800 dark:text-stone-100">
+        {assigned}/{frame.requiredCount}
+      </div>
     </div>
   );
 }
@@ -197,6 +286,10 @@ function ShiftMobileCalendarInner({
   onDateClick,
   memberNames,
   roleTypeMap,
+  frames,
+  frameOverrides,
+  frameStoreId,
+  frameCountShifts,
 }: Props) {
   // currentUserId が null のときは mineOnly を無視する（全件消失事故防止）。
   const effectiveMineOnly = mineOnly && !!currentUserId;
@@ -242,6 +335,7 @@ function ShiftMobileCalendarInner({
         status: shift.status,
         isMine: !!currentUserId && shift.user_id === currentUserId,
         isManager: roleType === 'manager',
+        frameId: shift.frame_id,
       });
       items.set(shift.date, arr);
       counts.set(shift.date, (counts.get(shift.date) ?? 0) + 1);
@@ -319,6 +413,32 @@ function ShiftMobileCalendarInner({
     roleTypeMap,
   ]);
 
+  // 設計書 §4.2(b): framesByDate。枠機能 OFF（frameStoreId 未指定）なら空 Map（PC ShiftCalendar.tsx:391-401 と同型）。
+  const framesByDate = useMemo(() => {
+    const map = new Map<string, EffectiveFrame[]>();
+    if (!frames || !frameStoreId) return map;
+    for (const d of days) {
+      const dateStr = format(d, 'yyyy-MM-dd');
+      const effective = getEffectiveFramesForDate(frames, frameOverrides ?? [], frameStoreId, dateStr);
+      if (effective.length > 0) map.set(dateStr, effective);
+    }
+    return map;
+  }, [frames, frameOverrides, frameStoreId, days]);
+
+  // 設計書 §4.2(b) 注意書き: 充足カウントは statusFilter/mineOnly 非適用の生 shifts から算出。
+  const frameAssignCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    if (framesByDate.size === 0) return map;
+    const countSource = frameCountShifts ?? shifts;
+    for (const effective of framesByDate.values()) {
+      for (const frame of effective) {
+        const key = `${frame.date}@${frame.frameId}`;
+        map.set(key, countFrameAssignments(countSource, frame.frameId, frame.date));
+      }
+    }
+    return map;
+  }, [frameCountShifts, shifts, framesByDate]);
+
   const today = new Date();
 
   return (
@@ -338,13 +458,33 @@ function ShiftMobileCalendarInner({
           const isSelected = !isBulkMode && selectedDate === dateStr;
           const isBulkSelected = isBulkMode && selectedBulkDates?.has(dateStr);
 
+          // 設計書 §4.2(b): 枠バー + 配下グループの分配（visible の順序を保持）。
+          const dayFrames = framesByDate.get(dateStr) ?? [];
+          const dayFrameIds = new Set(dayFrames.map((f) => f.frameId));
+          const groupedByFrame = new Map<string, DayChipItem[]>();
+          const rest: DayChipItem[] = [];
+          for (const item of visible) {
+            if (
+              item.kind === 'shift' &&
+              item.frameId &&
+              dayFrameIds.has(item.frameId) &&
+              ASSIGNED_STATUSES.has(item.status)
+            ) {
+              const arr = groupedByFrame.get(item.frameId) ?? [];
+              arr.push(item);
+              groupedByFrame.set(item.frameId, arr);
+            } else {
+              rest.push(item);
+            }
+          }
+
           return (
             <button
               key={dateStr}
               type="button"
               aria-label={`${format(d, 'M月d日')}${count > 0 ? ` ${count}人` : ''}${
                 unavailableCount > 0 ? ` 出勤不可${unavailableCount}件` : ''
-              }${isToday ? ' (今日)' : ''}`}
+              }${dayFrames.length > 0 ? ` 枠${dayFrames.length}件` : ''}${isToday ? ' (今日)' : ''}`}
               onClick={() => onDateClick(dateStr)}
               className={[
                 'w-full min-h-[88px] p-1 flex flex-col gap-[2px] text-left relative',
@@ -378,10 +518,35 @@ function ShiftMobileCalendarInner({
                 )}
               </div>
 
-              {/* チップ列 */}
+              {/* 枠ブロック（枠バー + 配下グループ。§4.2(b)） */}
+              {!otherMonth && dayFrames.length > 0 && (
+                <div className="flex flex-col gap-[3px]">
+                  {dayFrames.map((frame) => {
+                    const assigned = frameAssignCounts.get(`${dateStr}@${frame.frameId}`) ?? 0;
+                    const grouped = groupedByFrame.get(frame.frameId) ?? [];
+                    return (
+                      <div key={frame.frameId} className="flex flex-col gap-[1px]">
+                        <MobileFrameBar frame={frame} assigned={assigned} />
+                        {grouped.length > 0 && (
+                          <div
+                            data-testid={`sp-frame-group-${frame.frameId}`}
+                            className="ml-[3px] pl-[2px] border-l-2 border-stone-300 dark:border-stone-600 flex flex-col gap-[2px]"
+                          >
+                            {grouped.map((item, i) => (
+                              <ShiftChip key={`${item.userId}-shift-frame-${i}`} item={item} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* チップ列（rest） */}
               {!otherMonth && (
                 <div className="flex flex-col gap-[2px]">
-                  {visible.map((item, i) =>
+                  {rest.map((item, i) =>
                     item.kind === 'preference' ? (
                       <PreferenceChip key={`${item.userId}-pref-${i}`} item={item} />
                     ) : (
