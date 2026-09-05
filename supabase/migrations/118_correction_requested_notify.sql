@@ -19,6 +19,10 @@
 --     申請者本人は除外。店舗不明時は manager 全員（通知漏れより過通知を許容）。
 --   - 035 notify_admins_of_unavailable_preference の同型トリガだが、search_path に pg_temp を
 --     含め、PUBLIC/anon/authenticated から EXECUTE を剥がす（4 行テンプレ準拠）。
+--   - fix-review P1: correction_requests の INSERT ポリシー（099 最新）は
+--     WITH CHECK (user_id = auth.uid()) のみで tenant_id のテナント所属を検査しない。
+--     SECURITY DEFINER の本トリガ冒頭で NEW.user_id が NEW.tenant_id の tenant_members か
+--     EXISTS ガードし、非メンバーなら RETURN NEW（RLS ポリシーは不変）。
 --
 -- 冪等性:
 --   DO ブロック（ドリフト検査）/ DROP CONSTRAINT IF EXISTS + ADD CONSTRAINT /
@@ -112,6 +116,21 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  -- テナント所属検証（fix-review P1）:
+  --   correction_requests の INSERT ポリシー（099 最新）は WITH CHECK (user_id = auth.uid())
+  --   のみで tenant_id のテナント所属スコープを検査しない。SECURITY DEFINER の本トリガが
+  --   その隙間を突かれると、他テナントの tenant_id を指定した INSERT から owner/manager 限定の
+  --   notifications INSERT ポリシーを越境で迂回して通知を注入できてしまう。
+  --   NEW.user_id が NEW.tenant_id のメンバーでなければ、通知を作らずそのまま返す
+  --   （RLS ポリシーは不変・申請 INSERT 自体は落とさない）。
+  IF NOT EXISTS (
+    SELECT 1 FROM public.tenant_members tm0
+    WHERE tm0.tenant_id = NEW.tenant_id
+      AND tm0.user_id = NEW.user_id
+  ) THEN
+    RETURN NEW;
+  END IF;
+
   BEGIN
     -- 店舗解決: correction_requests.store_id → attendance_records.store_id → NULL
     v_store_id := NEW.store_id;
@@ -182,7 +201,9 @@ REVOKE EXECUTE ON FUNCTION public.notify_admins_of_correction_request() FROM aut
 
 COMMENT ON FUNCTION public.notify_admins_of_correction_request() IS
   '118: correction_requests AFTER INSERT で owner/admin 全員 + 当該店舗 manager（申請者除外）へ '
-  'correction_requested 通知を fan-out。best-effort（例外は WARNING）。RLS ポリシーは不変。';
+  'correction_requested 通知を fan-out。NEW.user_id が NEW.tenant_id の tenant_members でなければ '
+  '何もせず RETURN NEW（fix-review P1: テナント越境の通知注入対策）。best-effort（例外は WARNING）。'
+  'RLS ポリシーは不変。';
 
 -- ---------------------------------------------------------------------
 -- (C) トリガ
